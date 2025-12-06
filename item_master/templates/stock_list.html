@@ -1,0 +1,501 @@
+{% extends 'item_base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  h2 {
+      margin-bottom: 20px;
+      text-align: center;
+  }
+
+  .stock-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+  }
+
+  .stock-table th, .stock-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border: 1px solid #ddd;
+  }
+
+  .stock-table th {
+      background-color: #f4f4f4;
+      font-weight: bold;
+  }
+
+  .stock-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+  }
+
+  .stock-table tr:hover {
+      background-color: #f1f1f1;
+  }
+
+  .stock-table a {
+      color: #0066cc;
+      text-decoration: none;
+  }
+
+  .stock-table a:hover {
+      text-decoration: underline;
+  }
+
+  td[colspan="7"] {
+      text-align: center;
+      color: #888;
+      font-style: italic;
+  }
+
+  .low-stock {
+    color: red;
+  }
+
+  .stock-footer td {
+      font-weight: bold;
+      background-color: #f4f4f4;
+  }
+
+  input[type="text"] {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 150px;
+  }
+
+  button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+  }
+
+  button[type="submit"] {
+      background-color: #007BFF;
+      color: white;
+  }
+
+  button[type="button"] {
+      background-color: #6c757d;
+      color: white;
+  }
+
+  .more-btn {
+      background-color: #17a2b8;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+  }
+
+  .more-btn:hover {
+      background-color: #138496;
+  }
+
+  /* Modal Styles */
+  .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 0;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 900px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-header {
+      background-color: #007BFF;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px 8px 0 0;
+  }
+
+  .modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+  }
+
+  .close {
+      color: white;
+      float: right;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: -5px;
+  }
+
+  .close:hover {
+      opacity: 0.8;
+  }
+
+  .modal-body {
+      padding: 20px;
+      max-height: 60vh;
+      overflow-y: auto;
+  }
+
+  .detail-section {
+      margin-bottom: 20px;
+  }
+
+  .detail-section h4 {
+      color: #333;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 2px solid #f4f4f4;
+  }
+
+  .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+  }
+
+  .detail-table th, .detail-table td {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+  }
+
+  .detail-table th {
+      background-color: #f8f9fa;
+      font-weight: bold;
+      font-size: 13px;
+  }
+
+  .detail-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+  }
+
+  .summary-info {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      border-left: 4px solid #007BFF;
+  }
+
+  .summary-info h4 {
+      margin-top: 0;
+      color: #007BFF;
+  }
+
+  .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+  }
+
+  .summary-item {
+      text-align: center;
+  }
+
+  .summary-item .label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+  }
+
+  .summary-item .value {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+  }
+</style>
+
+<h2>Stock Report</h2>
+
+<form method="get" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+    <input type="text" name="item_name" placeholder="Item Name" value="{{ request.GET.item_name }}"
+        style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;">
+    <input type="text" name="item_code" placeholder="Item Code" value="{{ request.GET.item_code }}"
+        style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;">
+    <input type="text" name="cost_center" placeholder="Cost Center" value="{{ request.GET.cost_center }}"
+        style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;">
+    <input type="text" name="batch" placeholder="Batch" value="{{ request.GET.batch }}"
+        style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;">
+    <button type="submit"
+        style="padding: 8px 16px; background-color: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        🔍 Search
+    </button>
+    <a href="{% url 'item_master:stock_list' %}" style="text-decoration: none;">
+        <button type="button"
+            style="padding: 8px 16px; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            All
+        </button>
+    </a>
+</form>
+
+<table class="stock-table" border="1" cellpadding="10" cellspacing="0" id="voucherTable">
+    <thead>
+        <tr>
+            <th>SI No</th>
+            <th>Item Name</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Stock Value</th>
+            <th>More</th>
+        </tr>
+    </thead>
+    <tbody id="stockTableBody">
+        <!-- JavaScript will populate this with grouped data -->
+    </tbody>
+</table>
+
+<!-- Modal -->
+<div id="stockModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle">Item Details</h3>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Modal content will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Store all stock entries data
+    const stockEntries = [
+        {% for stock in stock_entries %}
+        {
+            itemId: {{ stock.item.id }},
+            itemName: "{{ stock.item.item_name|escapejs }}",
+            unitName: "{{ stock.unit.unit_name|escapejs }}",
+            inQuantity: {{ stock.in_quantity|default:0 }},
+            outQuantity: {{ stock.out_quantity|default:0 }},
+            rate: {{ stock.rate|default:0 }},
+            batch: "{{ stock.batch|default:'No Batch'|escapejs }}",
+            batchId: {{ stock.batch.id|default:0 }},
+            costCenter: "{{ stock.costCenter|escapejs }}",
+            costCenterId: {{ stock.costCenter.id }},
+            stockValue: {{ stock.stock_value|default:0 }},
+            hasAlterUnits: {% if stock.has_alter_units %}true{% else %}false{% endif %}
+        },
+        {% endfor %}
+    ];
+
+    // Group stock entries by item
+    function groupStockEntries() {
+        const grouped = {};
+        
+        stockEntries.forEach(stock => {
+            const key = stock.itemId;
+            if (!grouped[key]) {
+                grouped[key] = {
+                    itemId: stock.itemId,
+                    itemName: stock.itemName,
+                    unitName: stock.unitName,
+                    totalQuantity: 0,
+                    totalValue: 0,
+                    entries: [],
+                    hasAlterUnits: false
+                };
+            }
+            
+            const quantity = stock.inQuantity + stock.outQuantity;
+            grouped[key].totalQuantity += quantity;
+            grouped[key].totalValue += stock.stockValue;
+            grouped[key].entries.push(stock);
+            
+            if (stock.hasAlterUnits) {
+                grouped[key].hasAlterUnits = true;
+            }
+        });
+        
+        return Object.values(grouped);
+    }
+
+    // Populate the table with grouped data
+    function populateTable() {
+        const tbody = document.getElementById('stockTableBody');
+        const groupedItems = groupStockEntries();
+        
+        if (groupedItems.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6">No stock available.</td></tr>';
+            return;
+        }
+        
+        let html = '';
+        groupedItems.forEach((item, index) => {
+            html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.itemName}</td>
+                    <td style="color: ${item.totalQuantity < 0 ? 'red' : 'inherit'};">
+                        ${item.totalQuantity.toFixed(2)}
+                    </td>
+                    <td>${item.unitName}</td>
+                    <td style="color: ${item.totalValue < 0 ? 'red' : 'inherit'};">
+                        ${item.totalValue.toFixed(2)}
+                    </td>
+                    <td style="text-align: center;">
+                        <button class="more-btn" onclick="openModal(${item.itemId})">
+                            More
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+    }
+
+    async function openModal(itemId) {
+        const modal = document.getElementById('stockModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        // Find the item data
+        const groupedItems = groupStockEntries();
+        const itemData = groupedItems.find(item => item.itemId === itemId);
+        
+        if (!itemData) return;
+        
+        modalTitle.textContent = `${itemData.itemName} - Complete Details`;
+        modalBody.innerHTML = '<p>Loading...</p>';
+        modal.style.display = 'block';
+        
+        try {
+            // Get all stock entries for this item
+            const itemEntries = itemData.entries;
+            
+            let modalContent = `
+                
+                
+                
+                
+                <div class="detail-section">
+                    <h4>Details</h4>
+                    <table class="detail-table">
+                        <thead>
+                            <tr>
+                                <th>Batch</th>
+                                <th>Cost Center</th>
+                                <th>Quantity</th>
+                                <th>Stock Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            itemEntries.forEach(entry => {
+                const qty = entry.inQuantity + entry.outQuantity;
+                modalContent += `
+                    <tr>
+                        <td>${entry.batch}</td>
+                        <td>${entry.costCenter}</td>
+                        <td style="color: ${qty < 0 ? 'red' : 'inherit'};">${qty.toFixed(2)}</td>
+                        <td style="color: ${entry.stockValue < 0 ? 'red' : 'inherit'};">${entry.stockValue.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            modalContent += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Get alternate units if available
+            if (itemData.hasAlterUnits) {
+                try {
+                    const alterUnitsResponse = await fetch(`/get_alter_units_stock/${itemId}/`);
+                    const alterUnitsData = await alterUnitsResponse.json();
+                    
+                    if (alterUnitsData.units && alterUnitsData.units.length > 0) {
+                        modalContent += `
+                            <div class="detail-section">
+                                <h4>Alternate Units</h4>
+                                <table class="detail-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Unit</th>
+                                            <th> Quantity</th>
+                                            <th>Rate</th>
+                                            <th>Stock Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        alterUnitsData.units.forEach(unit => {
+                            const factor = parseFloat(unit.uc_factor);
+                            const totalInQty = itemEntries.reduce((sum, entry) => sum + entry.inQuantity, 0);
+                            const totalOutQty = itemEntries.reduce((sum, entry) => sum + entry.outQuantity, 0);
+                            
+                            const alterInQty = totalInQty / factor;
+                            const alterOutQty = totalOutQty / factor;
+                            const alterStock = alterInQty - alterOutQty;
+                            const alterRate = parseFloat(unit.sales_rate);
+                            const alterStockValue = alterStock * alterRate;
+                            
+                            modalContent += `
+                                <tr>
+                                    <td>${unit.unit_name}</td>
+                                    <td style="color: ${alterStock < 0 ? 'red' : 'inherit'};">${alterStock.toFixed(2)}</td>
+                                    <td>${alterRate.toFixed(2)}</td>
+                                    <td style="color: ${alterStockValue < 0 ? 'red' : 'inherit'};">${alterStockValue.toFixed(2)}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        modalContent += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    console.error('Error fetching alternate units:', error);
+                }
+            }
+            
+            modalBody.innerHTML = modalContent;
+            
+        } catch (error) {
+            console.error('Error loading modal data:', error);
+            modalBody.innerHTML = '<p>Error loading data. Please try again.</p>';
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('stockModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+        const modal = document.getElementById('stockModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
+
+    // Initialize the page
+    document.addEventListener("DOMContentLoaded", function () {
+        populateTable();
+    });
+</script>
+{% endblock %}

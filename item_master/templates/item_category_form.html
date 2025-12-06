@@ -1,0 +1,164 @@
+{% extends 'item_base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    
+
+    .container {
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    h2 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    form {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 40px;
+    }
+
+    label {
+        font-weight: bold;
+        margin: 10px 0 5px;
+        display: block;
+    }
+
+    input[type="text"], textarea, select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        box-sizing: border-box;
+        transition: border 0.2s;
+    }
+
+    input[type="text"]:focus, textarea:focus, select:focus {
+        border-color: darkred;
+        outline: none;
+    }
+
+    input[type="submit"] {
+        background-color: darkred;
+        color: white;
+        cursor: pointer;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 1rem;
+        display: block;
+        margin: 0 auto;
+        transition: background 0.3s;
+    }
+
+    input[type="submit"]:hover {
+        background-color: #b01033;
+    }
+
+    .errorlist {
+        color: red;
+        font-size: 0.9em;
+        margin-top: -10px;
+        margin-bottom: 10px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    th, td {
+        padding: 12px;
+        border: 1px solid #eee;
+        text-align: left;
+    }
+
+    th {
+        background-color: darkred;
+        color: white;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .no-categories {
+        text-align: center;
+        font-style: italic;
+        padding: 15px;
+    }
+
+    .actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .btn-secondary {
+        background-color: #666;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background 0.3s;
+    }
+
+    .btn-secondary:hover {
+        background-color: #444;
+    }
+</style>
+
+<div class="container">
+    <!-- Form for creating or updating a category -->
+    <h2>{% if category %} Update Item Category {% else %} Create Item Category {% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="{% if category %} Update {% else %} Create {% endif %}">
+        {% if form.non_field_errors %}
+            <div class="errorlist">{{ form.non_field_errors }}</div>
+        {% endif %}
+    </form>
+
+    <!-- List of categories -->
+    <h2>Item Categories List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Category Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category in categories %}
+            <tr>
+                <td>{{ category.category_name }}</td>
+                <td class="actions">
+                    <a href="{% url 'item_master:item_category_create_update_list' category.id %}" class="btn-secondary">Edit</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2" class="no-categories">No categories available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

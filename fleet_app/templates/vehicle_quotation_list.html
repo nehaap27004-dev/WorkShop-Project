@@ -1,0 +1,36 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Vehicle Quotations</h2>
+    
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Quotation No</th>
+                <th>Company Name</th>
+                <th>Customer</th>
+                <th>Created At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for quotation in quotations %}
+            <tr>
+                <td>{{ quotation.quotation_no }}</td>
+                <td>{{ quotation.company_name }}</td>
+                <td>{{ quotation.customer }}</td>
+                <td>{{ quotation.created_at|date:"d M Y" }}</td>
+                <td>
+                    <a href="{% url 'fleet_app:vehicle_quotation_detail' quotation.pk %}" class="btn btn-sm btn-info">View Details</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No quotations found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

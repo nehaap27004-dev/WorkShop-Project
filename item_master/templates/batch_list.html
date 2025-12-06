@@ -1,0 +1,41 @@
+{% extends 'item_base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Batch List</h3>
+    <a href="{% url 'item_master:batch_create' %}" class="btn btn-success mb-3">+ Add New Batch</a>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Batch No</th>
+                <th>Item</th>
+                <th>Manufactured Date</th>
+                <th>Expiry Date</th>
+                <th>Active</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for batch in batches %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ batch.BatchNo }}</td>
+                <td>{{ batch.Item }}</td>
+                <td>{{ batch.Mfd|date:"Y-m-d H:i" }}</td>
+                <td>{{ batch.Exp|date:"Y-m-d H:i" }}</td>
+                <td>{{ batch.IsActive|yesno:"Yes,No" }}</td>
+                <td>
+                    <a href="{% url 'item_master:batch_update' batch.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No batches found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

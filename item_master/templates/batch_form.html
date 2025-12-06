@@ -1,0 +1,77 @@
+{% extends 'item_base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>{{ batch|yesno:"Update Batch,Create Batch" }}</h3>
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}
+            {{ error }}
+        {% endfor %}
+    </div>
+{% endif %}
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="{{ form.BatchNo.id_for_label }}">{{ form.BatchNo.label }}</label>
+                {{ form.BatchNo }}
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="{{ form.Item.id_for_label }}">{{ form.Item.label }}</label>
+                {{ form.Item }}
+            </div>
+            <div class="col-md-6 mb-3" id="batch-barcode-field">
+                <label for="{{ form.barcode_code.id_for_label }}">{{ form.barcode_code.label }}</label>
+                {{ form.barcode_code }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="{{ form.Mfd.id_for_label }}">{{ form.Mfd.label }}</label>
+                {{ form.Mfd }}
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="{{ form.Exp.id_for_label }}">{{ form.Exp.label }}</label>
+                {{ form.Exp }}
+            </div>
+        </div>
+        <div class="form-check mb-3">
+            {{ form.IsActive }} <label class="form-check-label" for="{{ form.IsActive.id_for_label }}">{{ form.IsActive.label }}</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="{% url 'item_master:batch_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const itemSelect = document.getElementById('{{ form.Item.auto_id }}');
+        const barcodeField = document.getElementById('batch-barcode-field');
+
+        function checkBarcodeStatus(itemId) {
+            fetch(`/api/item-barcode-status/${itemId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.IsItemBarcode) {
+                        barcodeField.style.display = 'none';
+                    } else {
+                        barcodeField.style.display = '';
+                    }
+                });
+        }
+
+        itemSelect.addEventListener('change', function () {
+            const itemId = this.value;
+            if (itemId) {
+                checkBarcodeStatus(itemId);
+            }
+        });
+
+        // Initial load (if pre-selected)
+        if (itemSelect.value) {
+            checkBarcodeStatus(itemSelect.value);
+        }
+    });
+</script>
+{% endblock %}

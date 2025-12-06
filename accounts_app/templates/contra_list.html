@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    
+    .table-container {
+        max-width: 900px;
+        margin: 50px auto;
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .table-container h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .btn-primary {
+        margin-bottom: 15px;
+    }
+</style>
+</head>
+<body>
+<div class="table-container">
+    <h1>Contra List</h1>
+    <a href="{% url 'accounts_app:contra_create' %}" class="btn btn-primary">Create New Contra</a>
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Voucher No</th>
+                <th>Type</th>
+                <th>Debit Ledger</th>
+                <th>Credit Ledger</th>
+                <th>Amount</th>
+                
+            </tr>
+        </thead>
+        <tbody>
+            {% for contra in contras %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ contra.date }}</td>
+                <td>{{ contra.voucher_no }}</td>
+                <td>{{ contra.get_contra_type_display }}</td>
+                <td>{{ contra.dr_ledger }}</td>
+                <td>{{ contra.cr_ledger }}</td>
+                <td>{{ contra.amount }}</td>
+                
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center">No Contra entries found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    
+    h3 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    /* Table styles */
+    .table-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    table th, table td {
+        text-align: left;
+        padding: 12px 15px;
+        border-bottom: 1px solid #ddd;
+    }
+    table th {
+        background-color: #007bff;
+        color: #fff;
+    }
+    table tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    table tr:hover {
+        background-color: #e9ecef;
+    }
+
+    /* Buttons */
+    .back-button {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+    .back-button:hover {
+        background-color: #0056b3;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        table th, table td {
+            font-size: 14px;
+        }
+    }
+</style>
+</head>
+<body>
+<h3>Daybook Report</h3>
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Ledger</th>
+                <th>Voucher Type</th>
+                <th>Invoice No</th>
+                <th>Debit Amount</th>
+                <th>Credit Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in daybook_records %}
+            <tr>
+                <td>{{ record.date }}</td>
+                <td>{{ record.ledger }}</td>
+                <td>{{ record.voucher_type }}</td>
+                <td>{{ record.invoice_no }}</td>
+                <td>{{ record.debit_amount }}</td>
+                <td>{{ record.credit_amount }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center;">No records found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

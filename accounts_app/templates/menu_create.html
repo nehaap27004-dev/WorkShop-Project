@@ -1,0 +1,97 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block title %}Menu Management{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+
+           <!-- Add Menu Form -->
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-header bg-primary text-white rounded-top-4">
+                <h4 class="mb-0">
+                    Add New Menu
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" class="row g-3 align-items-center">
+                    {% csrf_token %}
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">{{ form.name.label }}</label>
+                        <input type="text" 
+                            name="{{ form.name.name }}" 
+                            value="{{ form.name.value|default:'' }}" 
+                            class="form-control" 
+                            placeholder="Enter menu name" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">{{ form.url.label }}</label>
+                        <input type="text" 
+                            name="{{ form.url.name }}" 
+                            value="{{ form.url.value|default:'' }}" 
+                            class="form-control" 
+                            placeholder="Enter menu URL (e.g., sales/, purchase/)" >
+                    </div>
+
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button class="btn btn-success w-100" type="submit">
+                             Add 
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+            <!-- Menu List -->
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-secondary text-white rounded-top-4">
+                    <h4 class="mb-0">
+                        <i class="bi bi-list-ul me-2"></i> Menu List
+                    </h4>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:5%">#</th>
+                                <th>Menu Name</th>
+                                <th>Menu url</th>
+                                <th style="width:20%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for menu in menus %}
+                            <tr>
+                                <td>{{ menu.id }}</td>
+                                <td>{{ menu.name }}</td>
+                                <td>{{ menu.url }}</td>
+                                <td>
+                                    <a href="{% url 'accounts_app:menu_edit' menu.id %}" class="btn btn-sm btn-warning me-1">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <a href="{% url 'accounts_app:menu_delete' menu.id %}" class="btn btn-sm btn-danger"
+                                       onclick="return confirm('Are you sure you want to delete this menu?');">
+                                       <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-3">
+                                    <i class="bi bi-exclamation-circle me-1"></i> No menus found
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-sm mx-auto" style="max-width: 600px;">
+        <div class="card-body">
+            <h2 class="text-center">{{ rentalcompany.company_name|default:"Create Supplier Company" }}</h2>
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_name.id_for_label }}" class="form-label">{{ form.company_name.label }}</label>
+                    {{ form.company_name }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_logo.id_for_label }}" class="form-label">{{ form.company_logo.label }}</label>
+                    {{ form.company_logo }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_mobile.id_for_label }}" class="form-label">{{ form.company_mobile.label }}</label>
+                    {{ form.company_mobile }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_phone.id_for_label }}" class="form-label">{{ form.company_phone.label }}</label>
+                    {{ form.company_phone }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_email.id_for_label }}" class="form-label">{{ form.company_email.label }}</label>
+                    {{ form.company_email }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_address_1.id_for_label }}" class="form-label">{{ form.company_address_1.label }}</label>
+                    {{ form.company_address_1 }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_address_2.id_for_label }}" class="form-label">{{ form.company_address_2.label }}</label>
+                    {{ form.company_address_2 }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_country.id_for_label }}" class="form-label">{{ form.company_country.label }}</label>
+                    {{ form.company_country }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_state.id_for_label }}" class="form-label">{{ form.company_state.label }}</label>
+                    {{ form.company_state }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_city.id_for_label }}" class="form-label">{{ form.company_city.label }}</label>
+                    {{ form.company_city }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_zipcode.id_for_label }}" class="form-label">{{ form.company_zipcode.label }}</label>
+                    {{ form.company_zipcode }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_website.id_for_label }}" class="form-label">{{ form.company_website.label }}</label>
+                    {{ form.company_website }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_description.id_for_label }}" class="form-label">{{ form.company_description.label }}</label>
+                    {{ form.company_description }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_VAT.id_for_label }}" class="form-label">{{ form.company_VAT.label }}</label>
+                    {{ form.company_VAT }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.company_TRN_or_CRN.id_for_label }}" class="form-label">{{ form.company_TRN_or_CRN.label }}</label>
+                    {{ form.company_TRN_or_CRN }}
+                </div>
+
+                <button type="submit" class="btn btn-danger w-100">Save</button>
+            </form>
+
+            <a href="{% url 'fleet_app:rentalcompany_list' %}" class="d-block text-center mt-3 text-primary">Back to list</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

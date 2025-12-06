@@ -1,0 +1,143 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load privilege_tags %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Top Right View Button -->
+    <div class="d-flex justify-content-end mb-2">
+        {% has_priv request.user 3 "can_read" as can_read_contract %}
+        {% if can_read_contract %}
+        <a href="{% url 'fleet_app:fleet_contract_list' %}" 
+        class="btn btn-outline-primary btn-sm">
+            View
+        </a>
+        {% endif %}
+
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                {% if edit_mode %} Edit Fleet Contract 
+                {% else %} Create Fleet Contract 
+                {% endif %}
+            </h4>
+        </div>
+
+
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <!-- Left -->
+                    <div class="col-md-6">
+
+                        <div class="mb-3" >
+                            <label>{{ form.voucher_no.label }}</label>
+                            {{ form.voucher_no }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label>{{ form.contract_no.label }}</label>
+                            {{ form.contract_no }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label>{{ form.vehicle.label }}</label>
+                            {{ form.vehicle }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label>{{ form.date.label }}</label>
+                            {{ form.date }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label>{{ form.end_date.label }}</label>
+                            {{ form.end_date }}
+                        </div>
+
+                    </div>
+
+                    <!-- Right -->
+                    <div class="col-md-6">
+
+                        <div class="mb-3">
+                            <label>{{ form.operator_1.label }}</label>
+                            {{ form.operator_1 }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label>{{ form.customer.label }}</label>
+                            {{ form.customer }}
+                        </div>
+
+                        <div class="mb-3" style="display: none;">
+                            <label>{{ form.voucherType.label }}</label>
+                            {{ form.voucherType }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label>{{ form.note.label }}</label>
+                            {{ form.note }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label>{{ form.remark.label }}</label>
+                            {{ form.remark }}
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button class="btn btn-success px-4">
+    {% if edit_mode %} Update Contract {% else %} Save Contract {% endif %}
+</button>
+
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Get Next Voucher_no -->
+<script>
+function updateVoucherNumber() {
+    const select = document.getElementById('id_voucherType');
+    const input = document.getElementById('id_voucher_no');
+
+    if (select && input && select.value) {
+        input.value = 'Loading...';
+        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = data.voucher_number;
+                } else {
+                    input.value = 'Error';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching voucher number:', error);
+                input.value = 'Error';
+            });
+    } else if (input) {
+        input.value = '';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    const voucherSelect = document.getElementById('id_voucherType');
+    if (voucherSelect) {
+        voucherSelect.addEventListener('change', updateVoucherNumber);
+        updateVoucherNumber(); // also run once on load
+    }
+});
+</script>
+
+{% endblock %}

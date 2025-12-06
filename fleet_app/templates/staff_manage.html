@@ -1,0 +1,311 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #343a40;
+        color: white;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <h2 class="mb-4 text-center fw-bold text-primary">
+        {% if edit_id %}Update{% else %}Add{% endif %} Staff
+    </h2>
+
+    <!-- Add/Edit Form -->
+    <form method="post" enctype="multipart/form-data" class="needs-validation">
+        {% csrf_token %}
+        
+        <!-- Personal Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Personal Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        {{ form.staff_category.label_tag }}
+                        {{ form.staff_category }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.staff_id.label_tag }}
+                        {{ form.staff_id }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.full_name.label_tag }}
+                        {{ form.full_name }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.staff_image.label_tag }}
+                        {{ form.staff_image }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.gender.label_tag }}
+                        {{ form.gender }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.date_of_birth.label_tag }}
+                        {{ form.date_of_birth }}
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="col-md-2">
+                        {{ form.nationality.label_tag }}
+                        {{ form.nationality }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.civil_id_or_passport_no.label_tag }}
+                        {{ form.civil_id_or_passport_no }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.marital_status.label_tag }}
+                        {{ form.marital_status }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.contact_number.label_tag }}
+                        {{ form.contact_number }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.email.label_tag }}
+                        {{ form.email }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.address.label_tag }}
+                        {{ form.address }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employment Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Employment Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        {{ form.department.label_tag }}
+                        {{ form.department }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.job_title.label_tag }}
+                        {{ form.job_title }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.joining_date.label_tag }}
+                        {{ form.joining_date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.employment_type.label_tag }}
+                        {{ form.employment_type }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.basic_salary.label_tag }}
+                        {{ form.basic_salary }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.allowances.label_tag }}
+                        {{ form.allowances }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bank & Emergency Contact -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Bank & Emergency Contact</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        {{ form.bank_account_no.label_tag }}
+                        {{ form.bank_account_no }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.bank_name.label_tag }}
+                        {{ form.bank_name }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.emergency_contact_name.label_tag }}
+                        {{ form.emergency_contact_name }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.emergency_contact_number.label_tag }}
+                        {{ form.emergency_contact_number }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents & Licenses -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Documents & Licenses</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        {{ form.visa_expiry_date.label_tag }}
+                        {{ form.visa_expiry_date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.contract_end_date.label_tag }}
+                        {{ form.contract_end_date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.passport_expiry_date.label_tag }}
+                        {{ form.passport_expiry_date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.resident_id_number.label_tag }}
+                        {{ form.resident_id_number }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.resident_id_expiry_date.label_tag }}
+                        {{ form.resident_id_expiry_date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.license_type.label_tag }}
+                        {{ form.license_type }}
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="col-md-2">
+                        {{ form.license_number.label_tag }}
+                        {{ form.license_number }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.license_expiry_date.label_tag }}
+                        {{ form.license_expiry_date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.status.label_tag }}
+                        {{ form.status }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.remarks.label_tag }}
+                        {{ form.remarks }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <div>
+                <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                    {% if edit_id %}Update{% else %}Save{% endif %}
+                </button>
+                {% if edit_id %}
+                    <a href="{% url 'fleet_app:staff_manage' %}" class="btn btn-secondary px-4 py-2">Cancel</a>
+                {% endif %}
+            </div>
+            <a href="{% url 'fleet_app:document_crud' %}" class="btn btn-secondary px-4 py-2">Add Staff Documents</a>
+        </div>
+    </form>
+
+    <!-- Staff List -->
+    <div class="card shadow-sm mt-5">
+        <div class="card-header bg-light">
+            <h5 class="mb-0 fw-bold text-secondary">Staff List</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle text-center">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Staff ID</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for staff in staffs %}
+                            <tr>
+                                <td>{{ staff.id }}</td>
+                                <td>{{ staff.staff_id }}</td>
+                                <td>{{ staff.full_name }}</td>
+                                <td>{{ staff.staff_category }}</td>
+                                <td>{{ staff.department }}</td>
+                                <td>{{ staff.status }}</td>
+                                <td>
+                                    <a href="{% url 'fleet_app:staff_edit' staff.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                    <form method="post" style="display:inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="delete" value="{{ staff.pk }}">
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure to delete?')">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center text-muted">No staff found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

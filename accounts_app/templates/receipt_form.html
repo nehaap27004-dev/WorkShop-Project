@@ -1,0 +1,701 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .form-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .form-section h3 {
+        margin-bottom: 15px;
+        color: #333;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 5px;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+    .form-group {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+    }
+
+    button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: #007bff;
+        color: white;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+
+    table th, table td {
+        padding: 8px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    table th {
+        background: #f8f9fa;
+    }
+
+    .items-table {
+        margin-top: 15px;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .error {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .messages {
+        margin-bottom: 20px;
+    }
+
+    .messages .success {
+        background: #d4edda;
+        color: #155724;
+        padding: 10px;
+        border-radius: 4px;
+    }
+
+    .messages .error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="container">
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" id="paymentForm">
+        {% csrf_token %}
+        
+        <!-- Payment Details Section -->
+        <div class="form-section">
+            <h3>Receipt Details</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ receipt_form.date.id_for_label }}">Date</label>
+                    {{ receipt_form.date }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ receipt_form.voucher_no.id_for_label }}">Voucher No</label>
+                    {{ receipt_form.voucher_no }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ receipt_form.payment_mode.id_for_label }}">Payment Mode</label>
+                    {{ receipt_form.payment_mode }}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ receipt_form.payment_type.id_for_label }}">Payment Type</label>
+                    {{ receipt_form.payment_type }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ receipt_form.reference_no.id_for_label }}">Reference No</label>
+                    {{ receipt_form.reference_no }}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enableVAT"> Enable VAT
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        
+
+        <!-- Payment Items Section -->
+        <div class="form-section">
+            <h3>Receipt Items</h3>
+            {{ items_formset.management_form }}
+            
+            <!-- Static Row for Adding Items -->
+    <div class="form-row" id="staticItemRow">
+        <div class="form-group d-flex align-items-center">
+            <select class="form-control" id="static_ledger">
+                {% for choice in items_formset.forms.0.fields.ledger.choices %}
+                <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn btn-link ml-2 text-primary" data-toggle="modal" data-target="#ledgerModal">
+                <i class="fas fa-plus-circle fa-lg"></i> Add Ledger
+            </button>
+        </div>
+        <div class="form-group">
+            <input type="text" class="form-control" id="static_description" placeholder="Description">
+        </div>
+        <div class="form-group">
+            <input type="number" class="form-control" id="static_amount" placeholder="Amount" step="0.01">
+        </div>
+        <div class="form-group">
+            <button type="button" id="addItemBtn" class="btn-primary">Add Item</button>
+        </div>
+    </div>
+
+    <!-- Outstanding Reports Container -->
+    <div id="outstandingReportsContainer" class="mt-3" style="display: none;">
+        <h4>Outstanding Reports</h4>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Bill No</th>
+                        <th>Invoice No</th>
+                        <th>Type</th>
+                        <th>Debit</th>
+                        <th>Credit</th>
+                        <th>Balance</th>
+                        <th>Settled</th>
+                    </tr>
+                </thead>
+                <tbody id="outstandingReportsBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+            <!-- Items Table -->
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Ledger</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Cheque Details Section -->
+        <div class="form-section hidden" id="chequeSection">
+            <h3>Cheque Details</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ cheque_form.cheque_no.id_for_label }}">Cheque No</label>
+                    {{ cheque_form.cheque_no }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ cheque_form.cheque_date.id_for_label }}">Cheque Date</label>
+                    {{ cheque_form.cheque_date }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ cheque_form.issuing_bank_name.id_for_label }}">Bank Name</label>
+                    {{ cheque_form.issuing_bank_name }}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ cheque_form.cheque_status.id_for_label }}">Status</label>
+                    {{ cheque_form.cheque_status }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ cheque_form.reference_no.id_for_label }}">Reference No</label>
+                    {{ cheque_form.reference_no }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Totals Section -->
+        <div class="form-section">
+            <h3>Totals</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ receipt_form.taxable_amount.id_for_label }}">Taxable Amount</label>
+                    {{ receipt_form.taxable_amount }}
+                </div>
+                <div class="form-group vat-fields hidden">
+                    <label for="{{ receipt_form.VAT_amount.id_for_label }}">VAT Amount</label>
+                    {{ receipt_form.VAT_amount }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ receipt_form.net_amount.id_for_label }}">Net Amount</label>
+                    {{ receipt_form.net_amount }}
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-success">Save Receipt</button>
+    </form>
+
+    <!-- Modal Structure -->
+<div class="modal fade" id="ledgerModal" tabindex="-1" aria-labelledby="ledgerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ledgerModalLabel">Create or Update Ledger</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Form Section -->
+                <div class="form-section">
+                    <form method="POST" >
+                        {% csrf_token %}
+                        <div class="form-group">
+                            {{ ledger_form.ledger_name.label_tag }} {{ ledger_form.ledger_name }}
+                        </div>
+                        <div class="form-group">
+                            {{ ledger_form.group_under.label_tag }} {{ ledger_form.group_under }}
+                        </div>
+                        <div class="form-group">
+                            {{ ledger_form.sub_group.label_tag }} {{ ledger_form.sub_group }}
+                        </div>
+                        <div class="form-group">
+                            {{ ledger_form.opening_balance.label_tag }} {{ ledger_form.opening_balance }}
+                        </div>
+                        <div class="form-group">
+                            {{ ledger_form.types.label_tag }} {{ ledger_form.types }}
+                        </div>
+                        <div class="form-group">
+                            {{ ledger_form.trn_number.label_tag }} {{ ledger_form.trn_number }}
+                        </div>
+                        <button type="submit" name="save" class="btn btn-primary">SAVE</button>
+                        <button type="reset" name="clear" class="btn btn-secondary">CLEAR</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+</div>
+<script>
+    // Add this to your JavaScript file or in a script tag
+    document.addEventListener('DOMContentLoaded', function() {
+    const ledgerSelect = document.getElementById('static_ledger');
+    const reportsContainer = document.getElementById('outstandingReportsContainer');
+    const reportsBody = document.getElementById('outstandingReportsBody');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    ledgerSelect.addEventListener('change', async function() {
+        await fetchAndDisplayReports(this.value);
+    });
+
+    async function fetchAndDisplayReports(ledgerId) {
+        try {
+            const response = await fetch(`/get-outstanding-reports-receipt/?ledger_id=${ledgerId}`);
+            const data = await response.json();
+            
+            if (data.reports && data.reports.length > 0) {
+                reportsContainer.style.display = 'block';
+                reportsBody.innerHTML = data.reports.map(report => {
+                    const remainingBalance = parseFloat(report.balance_amount).toFixed(2);
+                    return `
+                        <tr data-report-id="${report.id}">
+                            <td>${report.bill_no}</td>
+                            <td>${report.invoice_no}</td>
+                            <td>${report.transaction_type}</td>
+                            <td>${report.debit_amount}</td>
+                            <td>${report.credit_amount}</td>
+                            <td>${report.balance_amount}</td>
+                            <td class="settled-amount">${report.settled_amount}</td>
+                            <td>
+                                <div class="d-flex">
+                                    <input type="number" 
+                                           class="form-control settle-amount" 
+                                           step="0.01" 
+                                           min="0" 
+                                           max="${remainingBalance}"
+                                           placeholder="Enter amount"
+                                           data-remaining="${remainingBalance}"
+                                           onchange="validateSettleAmount(this)">
+                                    <button type="button" 
+                                            class="btn btn-primary ml-2"
+                                            onclick="createBillByBill(this)"
+                                            ${remainingBalance <= 0 ? 'disabled' : ''}>
+                                        Settle
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                reportsContainer.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error fetching reports:', error);
+            reportsContainer.style.display = 'none';
+        }
+    }
+
+    // Function to create BillByBill entry
+    window.createBillByBill = async function(button) {
+        const row = button.closest('tr');
+        const reportId = row.dataset.reportId;
+        const settleAmountInput = row.querySelector('.settle-amount');
+        const settleAmount = settleAmountInput.value;
+
+        if (!settleAmount || settleAmount <= 0) {
+            alert('Please enter a valid settle amount');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('settle_amounts', JSON.stringify([{
+            report_id: reportId,
+            settle_amount: settleAmount
+        }]));
+
+        try {
+            const response = await fetch('/create-bill-by-bill/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // Refresh the reports display
+                await fetchAndDisplayReports(ledgerSelect.value);
+                alert('Settlement recorded successfully');
+            } else {
+                alert('Error recording settlement: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error recording settlement');
+        }
+    };
+
+    // Validation function
+    window.validateSettleAmount = function(input) {
+        const remaining = parseFloat(input.dataset.remaining);
+        const value = parseFloat(input.value);
+        
+        if (value > remaining) {
+            alert('Settle amount cannot be greater than remaining balance');
+            input.value = remaining;
+        } else if (value < 0) {
+            alert('Settle amount cannot be negative');
+            input.value = 0;
+        }
+    };
+});
+</script>
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentMode = document.getElementById('id_payment_mode');
+        const chequeSection = document.getElementById('chequeSection');
+        const enableVAT = document.getElementById('enableVAT');
+        const vatFields = document.querySelectorAll('.vat-fields');
+        const addItemBtn = document.getElementById('addItemBtn');
+        const itemsTableBody = document.getElementById('itemsTableBody');
+        const formsetTotal = document.getElementById('id_form-TOTAL_FORMS');
+        const formsetInitial = document.getElementById('id_form-INITIAL_FORMS');
+        let itemCount = parseInt(formsetInitial.value || 0);
+    
+        // Initialize formset management form
+        if (!formsetTotal.value) {
+            formsetTotal.value = '0';
+        }
+        if (!formsetInitial.value) {
+            formsetInitial.value = '0';
+        }
+    
+        // Payment mode change handler
+        paymentMode.addEventListener('change', function() {
+            chequeSection.classList.toggle('hidden', this.value !== 'cheque');
+        });
+    
+        // VAT checkbox handler
+        enableVAT.addEventListener('change', function() {
+            vatFields.forEach(field => {
+                field.classList.toggle('hidden', !this.checked);
+            });
+            calculateTotals();
+        });
+    
+        // Add item button handler
+        addItemBtn.addEventListener('click', function() {
+            const ledger = document.getElementById('static_ledger');
+            const description = document.getElementById('static_description').value;
+            const amount = document.getElementById('static_amount').value;
+    
+            if (!ledger.value || !amount) {
+                alert('Please fill all required fields');
+                return;
+            }
+    
+            // Create new row with formset prefix
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <input type="hidden" name="form-${itemCount}-ledger" value="${ledger.value}">
+                    ${ledger.options[ledger.selectedIndex].text}
+                </td>
+                <td>
+                    <input type="text" name="form-${itemCount}-description" value="${description}" class="form-control" readonly>
+                </td>
+                <td>
+                    <input type="number" name="form-${itemCount}-amount" value="${amount}" class="form-control item-amount" readonly>
+                </td>
+                <td>
+                    <button type="button" class="btn-danger delete-row">Delete</button>
+                    <input type="hidden" name="form-${itemCount}-DELETE" value="" class="delete-flag">
+                </td>
+            `;
+    
+            itemsTableBody.appendChild(tr);
+            itemCount++;
+            formsetTotal.value = itemCount;
+    
+            // Clear static row
+            document.getElementById('static_ledger').value = '';
+            document.getElementById('static_description').value = '';
+            document.getElementById('static_amount').value = '';
+    
+            calculateTotals();
+        });
+    
+        // Delete row handler
+        itemsTableBody.addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-row')) {
+                const row = e.target.closest('tr');
+                row.style.display = 'none';
+                row.querySelector('.delete-flag').value = 'on';
+                calculateTotals();
+            }
+        });
+
+    
+        // Calculate totals
+        function calculateTotals() {
+            const amounts = [...document.querySelectorAll('.item-amount')]
+                .filter(input => !input.closest('tr').querySelector('.delete-flag').value)
+                .map(input => parseFloat(input.value) || 0);
+                
+            const taxableAmount = amounts.reduce((sum, amount) => sum + amount, 0);
+            const vatAmount = enableVAT.checked ? taxableAmount * 0.05 : 0;
+            const netAmount = taxableAmount + vatAmount;
+    
+            document.getElementById('id_taxable_amount').value = taxableAmount.toFixed(2);
+            document.getElementById('id_VAT_amount').value = vatAmount.toFixed(2);
+            document.getElementById('id_net_amount').value = netAmount.toFixed(2);
+        }
+    });
+</script>
+
+
+
+<script>
+
+    // Wait for document to be ready
+$(document).ready(function() {
+    // Initialize Bootstrap modal
+    $('#ledgerModal').modal({
+        show: false
+    });
+
+    // Handle form submission
+    $('#ledgerModal form').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        // Send AJAX request to save ledger
+        $.ajax({
+            url: '/save-ledger/', // Replace with your actual URL
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    // Add new ledger to select dropdown
+                    const newOption = new Option(response.ledger_name, response.ledger_id);
+                    $('#static_ledger').append(newOption);
+                    
+                    // Close modal
+                    $('#ledgerModal').modal('hide');
+                    
+                    // Reset form
+                    $('#ledgerModal form')[0].reset();
+                    
+                    // Show success message
+                    alert('Ledger created successfully!');
+                } else {
+                    alert('Error creating ledger: ' + response.error);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error creating ledger: ' + error);
+            }
+        });
+    });
+
+    // Handle clear button
+    $('button[name="clear"]').on('click', function() {
+        $('#ledgerModal form')[0].reset();
+    });
+
+    // Close modal handler
+    $('#ledgerModal').on('hidden.bs.modal', function() {
+        $('#ledgerModal form')[0].reset();
+    });
+
+    // Optional: Add validation before form submission
+    function validateForm() {
+        const ledgerName = $('#id_ledger_name').val();
+        const groupUnder = $('#id_group_under').val();
+        
+        if (!ledgerName) {
+            alert('Please enter a ledger name');
+            return false;
+        }
+        if (!groupUnder) {
+            alert('Please select a group');
+            return false;
+        }
+        return true;
+    }
+
+    // Add validation to form submission
+    $('#ledgerModal form').on('submit', function(e) {
+        if (!validateForm()) {
+            e.preventDefault();
+        }
+    });
+});
+
+</script>
+<script>
+
+    // Add this JavaScript code to handle the ledger form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const ledgerForm = document.querySelector('#ledgerModal form');
+    
+    ledgerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(ledgerForm);
+        
+        fetch('/create-ledger/', {  // You'll need to create this URL
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the ledger dropdown with the new option
+                const ledgerSelect = document.querySelector('#static_ledger');
+                const option = new Option(data.ledger_name, data.ledger_id);
+                ledgerSelect.add(option);
+                
+                // Close the modal
+                $('#ledgerModal').modal('hide');
+                
+                // Reset the form
+                ledgerForm.reset();
+                
+                // Show success message
+                alert('Ledger created successfully!');
+            } else {
+                // Show error messages
+                alert('Error: ' + data.errors.join(', '));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the ledger.');
+        });
+    });
+});
+
+</script>    
+{% endblock %}

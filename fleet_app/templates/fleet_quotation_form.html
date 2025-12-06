@@ -1,0 +1,386 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <h2 class="mb-4 text-center fw-bold text-primary">Create Fleet Quotation</h2>
+
+    <form method="post" enctype="multipart/form-data" class="needs-validation">
+        {% csrf_token %}
+
+        <!-- Quotation Info -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Quotation Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        {{ quotation_form.quotation_no.label_tag }}
+                        {{ quotation_form.quotation_no }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ quotation_form.date.label_tag }}
+                        {{ quotation_form.date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ quotation_form.company_name.label_tag }}
+                        {{ quotation_form.company_name }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ quotation_form.company_logo.label_tag }}
+                        {{ quotation_form.company_logo }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ quotation_form.company_address.label_tag }}
+                        {{ quotation_form.company_address }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ quotation_form.customer.label_tag }}
+                        {{ quotation_form.customer }}
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="col-md-2">
+                        {{ quotation_form.customer_address.label_tag }}
+                        {{ quotation_form.customer_address }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ quotation_form.text.label_tag }}
+                        {{ quotation_form.text }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quotation Items -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Quotation Items</h5>
+            </div>
+            <div class="card-body">
+                <div id="static-item-row" class="row g-3 mb-3">
+                    {{ quotation_items_formset.management_form }}
+
+                    <div class="col-md-2">
+                        {{ quotation_items_formset.empty_form.vehicle.label_tag }}
+                        {{ quotation_items_formset.empty_form.vehicle }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ quotation_items_formset.empty_form.details.label_tag }}
+                        {{ quotation_items_formset.empty_form.details }}
+                    </div>
+                    <div class="col-md-1">
+                        {{ quotation_items_formset.empty_form.quantity.label_tag }}
+                        {{ quotation_items_formset.empty_form.quantity }}
+                    </div>
+                    <div class="col-md-1">
+                        {{ quotation_items_formset.empty_form.rate_per_hr.label_tag }}
+                        {{ quotation_items_formset.empty_form.rate_per_hr }}
+                    </div>
+                    <div class="col-md-1">
+                        {{ quotation_items_formset.empty_form.rate_per_day.label_tag }}
+                        {{ quotation_items_formset.empty_form.rate_per_day }}
+                    </div>
+                    <div class="col-md-1">
+                        {{ quotation_items_formset.empty_form.rate_per_month.label_tag }}
+                        {{ quotation_items_formset.empty_form.rate_per_month }}
+                    </div>
+                    <div class="col-md-1">
+                        {{ quotation_items_formset.empty_form.unit.label_tag }}
+                        {{ quotation_items_formset.empty_form.unit }}
+                    </div>
+                    <div class="col-md-1">
+                        {{ quotation_items_formset.empty_form.no_of_unit.label_tag }}
+                        {{ quotation_items_formset.empty_form.no_of_unit }}
+                    </div>
+                    <div class="col-md-1">
+                        {{ quotation_items_formset.empty_form.total_amount.label_tag }}
+                        {{ quotation_items_formset.empty_form.total_amount }}
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn text-white w-100" style="background-color:#5A8DEE;" id="add-item-button">
+                            ➕ Add
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="quotation-items-table" class="table table-bordered align-middle text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>Remarks</th>
+                                <th>Quantity</th>
+                                <th>Rate/Hour</th>
+                                <th>Rate/Day</th>
+                                <th>Rate/Month</th>
+                                <th>Unit</th>
+                                <th>No. of Units</th>
+                                <th>Total</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="items-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Additional Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Terms & Conditions</label>
+                        {{ quotation_form.terms_and_condition }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Note</label>
+                        {{ quotation_form.note }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Description</label>
+                        {{ quotation_form.description }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                Save Quotation
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addButton = document.getElementById('add-item-button');
+        const itemsTableBody = document.getElementById('items-table-body');
+        const staticRow = document.getElementById('static-item-row');
+        const managementForm = document.querySelector('[name="form-TOTAL_FORMS"]');
+        
+        // Handle Add Item button click
+        addButton.addEventListener('click', function() {
+            // Get values from the form
+            const vehicleSelect = staticRow.querySelector('select[name$="vehicle"]');
+            const detailsTextarea = staticRow.querySelector('textarea[name$="details"]');
+            const quantityInput = staticRow.querySelector('input[name$="quantity"]');
+            const ratePerHrInput = staticRow.querySelector('input[name$="rate_per_hr"]');
+            const ratePerDayInput = staticRow.querySelector('input[name$="rate_per_day"]');
+            const ratePerMonthInput = staticRow.querySelector('input[name$="rate_per_month"]');
+            const unitSelect = staticRow.querySelector('select[name$="unit"]');
+            const noOfUnitInput = staticRow.querySelector('input[name$="no_of_unit"]');
+            const totalAmountInput = staticRow.querySelector('input[name$="total_amount"]');
+    
+            // Validate that required fields are filled
+            if (!vehicleSelect.value || !quantityInput.value) {
+                alert('Please fill in at least the Vehicle and Quantity fields');
+                return;
+            }
+    
+            // Get the current number of forms and increment
+            let formCount = parseInt(managementForm.value);
+            
+            // Create new table row with entered values
+            const newTableRow = document.createElement('tr');
+            newTableRow.innerHTML = `
+                <td>${vehicleSelect.options[vehicleSelect.selectedIndex].text}</td>
+                <td>${detailsTextarea.value || 'N/A'}</td>
+                <td>${quantityInput.value}</td>
+                <td>${ratePerHrInput.value || 'N/A'}</td>
+                <td>${ratePerDayInput.value || 'N/A'}</td>
+                <td>${ratePerMonthInput.value || 'N/A'}</td>
+                <td>${unitSelect.options[unitSelect.selectedIndex].text}</td>
+                <td>${noOfUnitInput.value || 'N/A'}</td>
+                <td>${totalAmountInput.value || 'N/A'}</td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-item-button">Remove</button>
+                    <input type="hidden" name="form-${formCount}-vehicle" value="${vehicleSelect.value}">
+                    <input type="hidden" name="form-${formCount}-details" value="${detailsTextarea.value}">
+                    <input type="hidden" name="form-${formCount}-quantity" value="${quantityInput.value}">
+                    <input type="hidden" name="form-${formCount}-rate_per_hr" value="${ratePerHrInput.value}">
+                    <input type="hidden" name="form-${formCount}-rate_per_day" value="${ratePerDayInput.value}">
+                    <input type="hidden" name="form-${formCount}-rate_per_month" value="${ratePerMonthInput.value}">
+                    <input type="hidden" name="form-${formCount}-unit" value="${unitSelect.value}">
+                    <input type="hidden" name="form-${formCount}-no_of_unit" value="${noOfUnitInput.value}">
+                    <input type="hidden" name="form-${formCount}-total_amount" value="${totalAmountInput.value}">
+                    <input type="hidden" name="form-${formCount}-id" value="">
+                </td>
+            `;
+    
+            // Add row to the table
+            itemsTableBody.appendChild(newTableRow);
+    
+            // Increment the total forms count
+            managementForm.value = formCount + 1;
+    
+            // Clear form inputs
+            vehicleSelect.selectedIndex = 0;
+            detailsTextarea.value = '';
+            quantityInput.value = '';
+            ratePerHrInput.value = '';
+            ratePerDayInput.value = '';
+            ratePerMonthInput.value = '';
+            unitSelect.selectedIndex = 0;
+            noOfUnitInput.value = '';
+            totalAmountInput.value = '';
+        });
+    
+        // Handle item row removal
+        itemsTableBody.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('remove-item-button')) {
+                const row = e.target.closest('tr');
+                row.remove();
+                
+                // Decrement the total forms count
+                let formCount = parseInt(managementForm.value);
+                managementForm.value = formCount - 1;
+            }
+        });
+    });
+</script>
+
+<script>
+    document.getElementById('id_customer').addEventListener('change', function () {
+        const customerId = this.value;
+        const customerAddressField = document.getElementById('id_customer_address');
+        
+        if (customerId) {
+            fetch(`/get_customer_address/${customerId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.address) {
+                        customerAddressField.value = data.address;
+                    } else {
+                        customerAddressField.value = 'Address not found.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching address:', error);
+                    customerAddressField.value = 'Error fetching address.';
+                });
+        } else {
+            customerAddressField.value = '';
+        }
+    });
+</script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $.ajax({
+            url: "{% url 'fleet_app:get_next_quotation_no' %}",
+            type: "GET",
+            dataType: "json",
+            success: function (data) {
+                console.log("Next Quotation No:", data.next_quotation_no);
+                $('input[name="quotation_no"]').val(data.next_quotation_no);
+            },
+            error: function (error) {
+                console.log("Error fetching quotation_no:", error);
+            }
+        });
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function calculateTotal(row) {
+        const unit = row.querySelector('.unit')?.value;
+        const quantity = parseFloat(row.querySelector('.quantity')?.value) || 0;
+        const noOfUnit = parseFloat(row.querySelector('.no-of-unit')?.value) || 0;
+
+        const ratePerHr = parseFloat(row.querySelector('.rate-per-hr')?.value) || 0;
+        const ratePerDay = parseFloat(row.querySelector('.rate-per-day')?.value) || 0;
+        const ratePerMonth = parseFloat(row.querySelector('.rate-per-month')?.value) || 0;
+
+        let rate = 0;
+        if (unit === 'Hr') {
+            rate = ratePerHr;
+        } else if (unit === 'Day') {
+            rate = ratePerDay;
+        } else if (unit === 'Month') {
+            rate = ratePerMonth;
+        }
+
+        const total = quantity * noOfUnit * rate;
+        const totalAmountField = row.querySelector('.total-amount');
+        if (totalAmountField) {
+            totalAmountField.value = total.toFixed(2);
+        }
+    }
+
+    document.querySelectorAll('.item-form .row').forEach(row => {
+        row.addEventListener('input', function () {
+            calculateTotal(row);
+        });
+        row.addEventListener('change', function () {
+            calculateTotal(row);
+        });
+    });
+});
+</script>
+
+{% endblock %}

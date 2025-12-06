@@ -1,0 +1,632 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load privilege_tags %}
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+
+    .form-control-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    /* Make table scrollable */
+    .table-container {
+        max-height: 600px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+    }
+
+    .table-sm td, .table-sm th {
+        padding: 0.4rem;
+        vertical-align: middle;
+    }
+
+    .table input[type="time"],
+    .table input[type="number"],
+    .table input[type="text"] {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+
+    .table input:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+
+    .date-cell {
+        font-weight: 600;
+        color: #495057;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <h2 class="mb-4 text-center fw-bold text-primary">
+    {% if is_edit_mode %}
+        Edit Timesheet #{{ timesheet_instance.timesheet_no }}
+    {% else %}
+        Create Timesheet
+    {% endif %}
+</h2>
+    <div class="d-flex justify-content-end mb-2">
+        {% has_priv request.user 1 "can_read" as can_read %}
+        {% if can_read %}
+            <a href="{% url 'fleet_app:timesheet_report' %}" 
+            class="btn btn-outline-primary btn-sm">
+                View
+            </a>
+        {% endif %}
+
+    </div>
+    <form method="post" id="timesheet-form" class="needs-validation">
+        {% csrf_token %}
+        {{ detail_formset.management_form }}
+
+        <!-- Timesheet Info -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Timesheet Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        {{ timesheet_form.voucher_no.label_tag }}
+                        {{ timesheet_form.voucher_no }}
+                    </div>
+                    <div class="col-md-2" style="display: none">
+                        {{ timesheet_form.voucherType.label_tag }}
+                        {{ timesheet_form.voucherType }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ timesheet_form.vehicle_name.label_tag }}
+                        {{ timesheet_form.vehicle_name }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ timesheet_form.vehicle_reg_no.label_tag }}
+                        {{ timesheet_form.vehicle_reg_no }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ timesheet_form.project_location.label_tag }}
+                        {{ timesheet_form.project_location }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ timesheet_form.client.label_tag }}
+                        {{ timesheet_form.client }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ timesheet_form.duration.label_tag }}
+                        {{ timesheet_form.duration }}
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="col-md-2">
+                        {{ timesheet_form.PO_reference_no.label_tag }}
+                        {{ timesheet_form.PO_reference_no }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ timesheet_form.date.label_tag }}
+                        {{ timesheet_form.date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ timesheet_form.description.label_tag }}
+                        {{ timesheet_form.description }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ timesheet_form.driver_name.label_tag }}
+                        {{ timesheet_form.driver_name }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ timesheet_form.operator_name.label_tag }}
+                        {{ timesheet_form.operator_name }}
+                    </div>
+
+                    <!-- Checkboxes -->
+                    <div class="form-check col-md-4">
+                        {{ timesheet_form.enable_header }}
+                        <label class="form-check-label" for="{{ timesheet_form.enable_header.id_for_label }}">
+                            {{ timesheet_form.enable_header.label }}
+                        </label>
+                    </div>
+
+                    <div class="form-check col-md-4">
+                        {{ timesheet_form.enable_footer }}
+                        <label class="form-check-label" for="{{ timesheet_form.enable_footer.id_for_label }}">
+                            {{ timesheet_form.enable_footer.label }}
+                        </label>
+                    </div>
+
+                    <div class="form-check col-md-4">
+                        {{ timesheet_form.enable_signature }}
+                        <label class="form-check-label" for="{{ timesheet_form.enable_signature.id_for_label }}">
+                            {{ timesheet_form.enable_signature.label }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timesheet Details - 31 Days -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Timesheet Details (31 Days)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-container">
+                    <table class="table table-bordered table-sm mb-0" id="details-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 120px;">Date</th>
+                                <th style="width: 120px;">Start Time</th>
+                                <th style="width: 120px;">End Time</th>
+                                <th style="width: 100px;">Break (Hrs)</th>
+                                <th style="width: 100px;">OT (Hrs)</th>
+                                <th style="width: 100px;">Total (Hrs)</th>
+                                <th style="width: 200px;">Job Location</th>
+                                <th style="width: 150px;">Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Generate 31 rows dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="text-end mt-4">
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+    {% if is_edit_mode %}
+        💾 Update Timesheet
+    {% else %}
+        💾 Save Timesheet
+    {% endif %}
+</button>
+        </div>
+    </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    // ✅ PRELOAD EXISTING DETAILS (for edit mode) - INCLUDING IDs
+    const existingDetails = [
+        {% if existing_details %}
+            {% for detail in existing_details %}
+                {
+                    id: {{ detail.id }},  // ✅ ADD ID
+                    date: "{{ detail.date|date:'Y-m-d' }}",
+                    start_time: "{{ detail.start_time|time:'H:i' }}",
+                    end_time: "{{ detail.end_time|time:'H:i' }}",
+                    break_hours: "{{ detail.break_hours }}",
+                    ot: "{{ detail.ot }}",
+                    total_hours_worked: "{{ detail.total_hours_worked }}",
+                    job_location: "{{ detail.job_location|escapejs }}",
+                    signature: "{{ detail.signature|escapejs }}"
+                },
+            {% endfor %}
+        {% endif %}
+    ];
+
+    // Generate 31 rows on page load
+    $(document).ready(function() {
+        const tbody = $('#details-table tbody');
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+        
+        console.log("📝 Generating 31-day timesheet grid...");
+        {% if is_edit_mode %}
+            console.log("✏️ Edit mode - will preload {{ existing_details|length }} existing details");
+        {% endif %}
+        
+        // Generate 31 rows
+        for (let day = 1; day <= 31; day++) {
+            const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
+            // ✅ Check if there's existing data for this date
+            const existingData = existingDetails.find(d => d.date === dateStr) || {};
+            
+            const row = `
+                <tr data-row="${day - 1}" data-detail-id="${existingData.id || ''}">
+                    <td>
+                        <input type="date" 
+                               name="details-${day - 1}-date" 
+                               class="form-control form-control-sm date-field" 
+                               data-row="${day - 1}"
+                               value="${dateStr}">
+                    </td>
+                    <td>
+                        <input type="time" 
+                               name="details-${day - 1}-start_time" 
+                               class="form-control form-control-sm start-time" 
+                               data-row="${day - 1}"
+                               value="${existingData.start_time || ''}">
+                    </td>
+                    <td>
+                        <input type="time" 
+                               name="details-${day - 1}-end_time" 
+                               class="form-control form-control-sm end-time" 
+                               data-row="${day - 1}"
+                               value="${existingData.end_time || ''}">
+                    </td>
+                    <td>
+                        <input type="number" 
+                               name="details-${day - 1}-break_hours" 
+                               class="form-control form-control-sm break-hours" 
+                               data-row="${day - 1}" 
+                               value="${existingData.break_hours || '0'}" 
+                               step="0.01" 
+                               min="0">
+                    </td>
+                    <td>
+                        <input type="number" 
+                               name="details-${day - 1}-ot" 
+                               class="form-control form-control-sm ot" 
+                               data-row="${day - 1}" 
+                               value="${existingData.ot || '0'}" 
+                               step="0.01" 
+                               min="0">
+                    </td>
+                    <td>
+                        <input type="number" 
+                               name="details-${day - 1}-total_hours_worked" 
+                               class="form-control form-control-sm total-hours" 
+                               data-row="${day - 1}" 
+                               value="${existingData.total_hours_worked || '0'}" 
+                               step="0.01" 
+                               readonly 
+                               style="background-color: #f8f9fa;">
+                    </td>
+                    <td>
+                        <input type="text" 
+                               name="details-${day - 1}-job_location" 
+                               class="form-control form-control-sm" 
+                               placeholder="Location"
+                               value="${existingData.job_location || ''}">
+                    </td>
+                    <td>
+                        <input type="text" 
+                               name="details-${day - 1}-signature" 
+                               class="form-control form-control-sm" 
+                               placeholder="Remarks"
+                               value="${existingData.signature || ''}">
+                    </td>
+                </tr>
+            `;
+            tbody.append(row);
+        }
+        
+        // Set TOTAL_FORMS and INITIAL_FORMS
+        $('#id_details-TOTAL_FORMS').val(31);
+        {% if is_edit_mode %}
+            $('#id_details-INITIAL_FORMS').val({{ existing_details|length }});
+        {% else %}
+            $('#id_details-INITIAL_FORMS').val(0);
+        {% endif %}
+        
+        console.log("✅ Generated 31 rows");
+        console.log("TOTAL_FORMS:", $('#id_details-TOTAL_FORMS').val());
+        console.log("INITIAL_FORMS:", $('#id_details-INITIAL_FORMS').val());
+        
+        // Attach calculation listeners
+        attachCalculationListeners();
+    });
+
+    // Function to calculate total hours for a row
+    function calculateTotalHours(rowIndex) {
+        const startTime = $(`.start-time[data-row="${rowIndex}"]`).val();
+        const endTime = $(`.end-time[data-row="${rowIndex}"]`).val();
+        const breakHours = parseFloat($(`.break-hours[data-row="${rowIndex}"]`).val()) || 0;
+        const ot = parseFloat($(`.ot[data-row="${rowIndex}"]`).val()) || 0;
+        
+        if (startTime && endTime) {
+            // Calculate hours difference
+            const start = new Date(`1970-01-01T${startTime}:00`);
+            const end = new Date(`1970-01-01T${endTime}:00`);
+            
+            let hoursDiff = (end - start) / (1000 * 60 * 60); // Convert to hours
+            
+            // Handle overnight shifts
+            if (hoursDiff < 0) {
+                hoursDiff += 24;
+            }
+            
+            // Total = (End - Start) - Break + OT
+            const total = Math.max(0, hoursDiff - breakHours + ot);
+            
+            $(`.total-hours[data-row="${rowIndex}"]`).val(total.toFixed(2));
+        } else {
+            $(`.total-hours[data-row="${rowIndex}"]`).val('0.00');
+        }
+    }
+
+    // Attach event listeners for dynamic calculation
+    function attachCalculationListeners() {
+        // Calculate on time change
+        $(document).on('change', '.start-time, .end-time, .break-hours, .ot', function() {
+            const rowIndex = $(this).data('row');
+            calculateTotalHours(rowIndex);
+        });
+        
+        // Validate end time > start time
+        $(document).on('change', '.end-time', function() {
+            const rowIndex = $(this).data('row');
+            const startTime = $(`.start-time[data-row="${rowIndex}"]`).val();
+            const endTime = $(this).val();
+            
+            if (startTime && endTime && endTime <= startTime) {
+                alert('⚠️ End Time must be greater than Start Time!');
+                $(this).val('');
+                calculateTotalHours(rowIndex);
+            }
+        });
+    }
+
+    // Fetch next timesheet number (only in create mode)
+    {% if not is_edit_mode %}
+    $(document).ready(function () {
+        $.ajax({
+            url: "{% url 'fleet_app:get_next_timesheet_no' %}",
+            type: "GET",
+            dataType: "json",
+            success: function (data) {
+                $('input[name="timesheet_no"]').val(data.next_timesheet_no);
+            },
+            error: function (error) {
+                console.log("Error fetching timesheet_no:", error);
+            }
+        });
+    });
+    {% endif %}
+
+    // Handle form submission - only submit rows with data
+    $('#timesheet-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        let validRowCount = 0;
+        const filledRows = [];
+        
+        // First, collect all rows with data
+        $('#details-table tbody tr').each(function() {
+            const row = $(this);
+            const rowIndex = row.data('row');
+            const detailId = row.data('detail-id'); // ✅ Get the detail ID if it exists
+            
+            const date = row.find('.date-field').val();
+            const startTime = row.find('.start-time').val();
+            const endTime = row.find('.end-time').val();
+            
+            // Only include rows that have date AND start time AND end time
+            if (date && startTime && endTime) {
+                const breakHours = row.find('.break-hours').val();
+                const ot = row.find('.ot').val();
+                const totalHours = row.find('.total-hours').val();
+                const jobLocation = row.find('input[name*="job_location"]').val();
+                const signature = row.find('input[name*="signature"]').val();
+                
+                filledRows.push({
+                    id: detailId || '',  // ✅ Include ID (empty string for new records)
+                    date: date,
+                    start_time: startTime,
+                    end_time: endTime,
+                    break_hours: breakHours || '0',
+                    ot: ot || '0',
+                    total_hours_worked: totalHours || '0',
+                    job_location: jobLocation || '',
+                    signature: signature || ''
+                });
+                
+                validRowCount++;
+            }
+        });
+        
+        console.log('Found ' + validRowCount + ' valid rows');
+        
+        // If no valid rows, show alert
+        if (validRowCount === 0) {
+            alert('⚠️ Please fill at least one row with Date, Start Time and End Time!');
+            return false;
+        }
+        
+        // Now remove ALL detail-related inputs (including dates from visible table)
+        $('input[name^="details-"]:not([name*="TOTAL_FORMS"]):not([name*="INITIAL_FORMS"]):not([name*="MIN_NUM_FORMS"]):not([name*="MAX_NUM_FORMS"])').remove();
+        
+        // Add filled rows as hidden inputs with sequential indexing
+        filledRows.forEach(function(rowData, index) {
+            // ✅ CRITICAL: Include ID field for existing records
+            $('<input>').attr({
+                type: 'hidden',
+                name: `details-${index}-id`,
+                value: rowData.id  // Empty for new, ID for existing
+            }).appendTo('#timesheet-form');
+            
+            $('<input>').attr({
+                type: 'hidden',
+                name: `details-${index}-date`,
+                value: rowData.date
+            }).appendTo('#timesheet-form');
+            
+            $('<input>').attr({
+                type: 'hidden',
+                name: `details-${index}-start_time`,
+                value: rowData.start_time
+            }).appendTo('#timesheet-form');
+            
+            $('<input>').attr({
+                type: 'hidden',
+                name: `details-${index}-end_time`,
+                value: rowData.end_time
+            }).appendTo('#timesheet-form');
+            
+            $('<input>').attr({
+                type: 'hidden',
+                name: `details-${index}-break_hours`,
+                value: rowData.break_hours
+            }).appendTo('#timesheet-form');
+            
+            $('<input>').attr({
+                type: 'hidden',
+                name: `details-${index}-ot`,
+                value: rowData.ot
+            }).appendTo('#timesheet-form');
+            
+            $('<input>').attr({
+                type: 'hidden',
+                name: `details-${index}-total_hours_worked`,
+                value: rowData.total_hours_worked
+            }).appendTo('#timesheet-form');
+            
+            $('<input>').attr({
+                type: 'hidden',
+                name: `details-${index}-job_location`,
+                value: rowData.job_location
+            }).appendTo('#timesheet-form');
+            
+            $('<input>').attr({
+                type: 'hidden',
+                name: `details-${index}-signature`,
+                value: rowData.signature
+            }).appendTo('#timesheet-form');
+            
+            console.log(`Form ${index}: ID=${rowData.id || 'NEW'}, Date=${rowData.date}`);
+        });
+        
+        // Update TOTAL_FORMS to actual count of filled rows
+        $('#id_details-TOTAL_FORMS').val(validRowCount);
+        // INITIAL_FORMS stays the same
+        {% if is_edit_mode %}
+            $('#id_details-INITIAL_FORMS').val({{ existing_details|length }});
+        {% else %}
+            $('#id_details-INITIAL_FORMS').val(0);
+        {% endif %}
+        
+        console.log('\n=== SUBMITTING ===');
+        console.log('Valid rows:', validRowCount);
+        console.log('TOTAL_FORMS:', $('#id_details-TOTAL_FORMS').val());
+        console.log('INITIAL_FORMS:', $('#id_details-INITIAL_FORMS').val());
+        
+        // Submit the form
+        this.submit();
+    });
+
+    // Fetch vehicle registration number
+    document.getElementById('id_vehicle_name').addEventListener('change', function () {
+        const vehicleId = this.value;
+        const vehicleRegnoField = document.getElementById('id_vehicle_reg_no');
+
+        if (vehicleId) {
+            fetch(`/get_vehicle_reg_no/${vehicleId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.license_plate_number && data.license_plate_code) {
+                        vehicleRegnoField.value = `${data.license_plate_code} - ${data.license_plate_number}`;
+                    } else if (data.license_plate_number) {
+                        vehicleRegnoField.value = `${data.license_plate_number}`;
+                    } else {
+                        vehicleRegnoField.value = 'Reg No or Code not found.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching vehicle data:', error);
+                    vehicleRegnoField.value = 'Error fetching Reg No or Code.';
+                });
+        } else {
+            vehicleRegnoField.value = '';
+        }
+    });
+</script>
+
+<!-- Get Next Voucher_no -->
+<script>
+function updateVoucherNumber() {
+    const select = document.getElementById('id_voucherType');
+    const input = document.getElementById('id_voucher_no');
+
+    if (select && input && select.value) {
+        input.value = 'Loading...';
+        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = data.voucher_number;
+                } else {
+                    input.value = 'Error';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching voucher number:', error);
+                input.value = 'Error';
+            });
+    } else if (input) {
+        input.value = '';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    const voucherSelect = document.getElementById('id_voucherType');
+    if (voucherSelect) {
+        voucherSelect.addEventListener('change', updateVoucherNumber);
+        updateVoucherNumber(); // also run once on load
+    }
+});
+</script>
+
+
+{% endblock %}

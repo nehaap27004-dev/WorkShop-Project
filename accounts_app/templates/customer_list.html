@@ -1,0 +1,56 @@
+{% extends 'fleet_base1.html' %}
+{% block title %}Customer List{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Customer List</h2>
+        <a href="{% url 'accounts_app:add_customer' %}" class="btn btn-success">Add New Customer</a>
+    </div>
+
+    {% if customers %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Customer Name</th>
+                    <th>Email</th>
+                    <th>Grp</th>
+                    <th>Typ</th>
+                    <th>Mobile</th>
+                    <th>Address</th>
+                    <th>Opening Balance</th>
+                    <th>City</th>
+                    <th>Country</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customers %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ customer.ledger_name }}</td>
+                    <td>{{ customer.email|default:"-" }}</td>
+                    <td>{{ customer.groups|default:"-" }}</td>
+                    <td>{{ customer.types|default:"-" }}</td>
+                    <td>{{ customer.mobile|default:"-" }}</td>
+                    <td>{{ customer.address1|truncatechars:40 }}</td>
+                    <td>{{ customer.opening_balance }}</td>
+                    <td>{{ customer.city|default:"-" }}</td>
+                    <td>{{ customer.country|default:"-" }}</td>
+                    <td>
+                        <!-- Replace these URLs if you implement edit/delete -->
+                        <a href="#" class="btn btn-sm btn-primary disabled">Edit</a>
+                        <a href="#" class="btn btn-sm btn-danger disabled">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="text-muted">No customers found.</p>
+    {% endif %}
+</div>
+{% endblock %}

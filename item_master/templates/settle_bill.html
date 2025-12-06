@@ -1,0 +1,123 @@
+<!-- stock_transfer.html -->
+{% extends 'item_base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Stock Transfer</h2>
+  <form method="post" id="stockTransferForm">
+    {% csrf_token %}
+
+    <div class="form-row mb-3">
+      {{ form.voucher_no.label_tag }} {{ form.voucher_no }}
+    </div>
+
+    <table class="table" id="item-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Batch</th>
+          <th>Unit</th>
+          <th>Quantity</th>
+          <th>Rate</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="item-body">
+      </tbody>
+    </table>
+    <button type="button" class="btn btn-secondary" onclick="addRow()">+ Add Item</button>
+
+    <input type="hidden" name="items_data" id="items_data">
+    <button type="submit" class="btn btn-primary mt-3">Submit Transfer</button>
+  </form>
+
+  {% if messages %}
+    <ul class="mt-3">
+      {% for message in messages %}
+        <li class="alert alert-{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
+
+<script>
+  let rowId = 0;
+
+  function addRow() {
+    fetch("/get-form-options/")  // You can cache options in real app
+      .then(res => res.json())
+      .then(data => {
+        const row = document.createElement('tr');
+        row.setAttribute('data-id', rowId);
+
+        row.innerHTML = `
+          <td><select class="form-control item-select" name="item"></select></td>
+          <td><select class="form-control batch-select" name="batch"></select></td>
+          <td><select class="form-control" name="unit"></select></td>
+          <td><input type="number" step="0.01" class="form-control" name="quantity"></td>
+          <td><input type="number" step="0.01" class="form-control" name="rate"></td>
+          <td><select class="form-control" name="source_cost_center"></select></td>
+          <td><select class="form-control" name="destination_cost_center"></select></td>
+          <td><button type="button" class="btn btn-danger" onclick="this.closest('tr').remove()">X</button></td>
+        `;
+
+        document.getElementById('item-body').appendChild(row);
+        populateOptions(row, data);
+        rowId++;
+      });
+  }
+
+  function populateOptions(row, data) {
+    const itemSelect = row.querySelector('[name="item"]');
+    const batchSelect = row.querySelector('[name="batch"]');
+    const unitSelect = row.querySelector('[name="unit"]');
+    const sourceCC = row.querySelector('[name="source_cost_center"]');
+    const destCC = row.querySelector('[name="destination_cost_center"]');
+
+    data.items.forEach(obj => {
+      itemSelect.innerHTML += `<option value="${obj.id}">${obj.name}</option>`;
+    });
+    data.units.forEach(obj => {
+      unitSelect.innerHTML += `<option value="${obj.id}">${obj.name}</option>`;
+    });
+    data.cost_centers.forEach(obj => {
+      sourceCC.innerHTML += `<option value="${obj.id}">${obj.name}</option>`;
+      destCC.innerHTML += `<option value="${obj.id}">${obj.name}</option>`;
+    });
+
+    itemSelect.addEventListener('change', () => {
+      const itemId = itemSelect.value;
+      fetch(`/get-batches/?item_id=${itemId}`)
+        .then(res => res.json())
+        .then(batches => {
+          batchSelect.innerHTML = '';
+          batches.batches.forEach(batch => {
+            batchSelect.innerHTML += `<option value="${batch.id}">${batch.text}</option>`;
+          });
+        });
+    });
+  }
+
+  document.getElementById('stockTransferForm').addEventListener('submit', function(e) {
+    const rows = document.querySelectorAll('#item-body tr');
+    const data = [];
+
+    rows.forEach(row => {
+      data.push({
+        item: row.querySelector('[name="item"]').value,
+        batch: row.querySelector('[name="batch"]').value,
+        unit: row.querySelector('[name="unit"]').value,
+        quantity: row.querySelector('[name="quantity"]').value,
+        rate: row.querySelector('[name="rate"]').value,
+        source_cost_center: row.querySelector('[name="source_cost_center"]').value,
+        destination_cost_center: row.querySelector('[name="destination_cost_center"]').value
+      });
+    });
+
+    document.getElementById('items_data').value = JSON.stringify(data);
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "fleet_base1.html" %}
+{% block content %}
+
+<style>
+    /* Make form inputs smaller */
+    .small-input input,
+    .small-input select,
+    .small-input textarea {
+        max-width: 250px;   /* reduce width – change to 200 or 180 if needed */
+        width: 100%;
+        padding: 5px 8px;
+        font-size: 14px;
+    }
+
+    .small-label {
+        font-weight: 600;
+        margin-bottom: 3px;
+    }
+
+    .role-card {
+        max-width: 600px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
+
+</style>
+
+<h2 class="mb-3">User Roles</h2>
+
+<!-- Roles Table -->
+<table class="table table-bordered table-sm">
+    <thead class="table-light">
+        <tr>
+            <th>Role</th>
+            <th>Super Admin</th>
+            <th width="170">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for role in roles %}
+        <tr>
+            <td>{{ role.name }}</td>
+            <td>{{ role.is_admin|yesno:"Yes,No" }}</td>
+            <td>
+                <a href="{% url 'accounts_app:role_edit_inline' role.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="delete_id" value="{{ role.pk }}">
+                    <button type="submit" class="btn btn-sm btn-danger"
+                            onclick="return confirm('Delete this role?');">
+                        Delete
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-center text-muted">No roles found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr>
+
+<!-- Role Form -->
+<h3 class="mt-4">
+    {% if edit_role %}
+        Edit Role: {{ edit_role.name }}
+    {% else %}
+        Add New Role
+    {% endif %}
+</h3>
+
+<div class="role-card mt-3">
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="small-input">
+            {{ form.as_p }}
+        </div>
+
+        <button type="submit" class="btn btn-success">
+            {% if edit_role %}Update{% else %}Save{% endif %}
+        </button>
+
+        {% if edit_role %}
+            <a href="{% url 'accounts_app:role_management' %}" class="btn btn-secondary">Cancel</a>
+        {% endif %}
+    </form>
+</div>
+
+{% endblock %}

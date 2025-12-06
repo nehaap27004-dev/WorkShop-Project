@@ -1,0 +1,104 @@
+{% extends 'item_base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+
+
+  h2 {
+      margin-bottom: 20px;
+      text-align: center;
+  }
+
+  .voucher-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+  }
+
+  .voucher-table th, .voucher-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border: 1px solid #ddd;
+  }
+
+  .voucher-table th {
+      background-color: #f4f4f4;
+      font-weight: bold;
+  }
+
+  .voucher-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+  }
+
+  .voucher-table tr:hover {
+      background-color: #f1f1f1;
+  }
+
+  .voucher-table a {
+      color: #0066cc;
+      text-decoration: none;
+  }
+
+  .voucher-table a:hover {
+      text-decoration: underline;
+  }
+
+  .create-link {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 5px;
+  }
+
+  .create-link:hover {
+      background-color: #45a049;
+  }
+
+  td[colspan="5"] {
+      text-align: center;
+      color: #888;
+      font-style: italic;
+  }
+</style>
+
+<h2>Opening Stock List</h2>
+
+<table class="voucher-table">
+    <thead>
+        <tr>
+            <th>Voucher No</th>
+            <th>Voucher Date</th>
+            <th>Supplier</th>
+            <th>Total</th>
+            <th>Cost Center</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for voucher in vouchers %}
+        <tr>
+            <td>{{ voucher.voucher_no }}</td>
+            <td>{{ voucher.transaction_date }}</td>
+            <td>{{ voucher.ledger }}</td>
+            <td>{{ voucher.grand_total_amount }}</td>
+            <td>{{ voucher.cost_center }}</td>
+            <td>
+                <a href="{% url 'item_master:Opening_stock_detail' voucher.id %}">View Details</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No Opening Stock available.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'item_master:create_opeingstock_voucher' %}" class="create-link">Create New Opening Stock</a>
+
+{% endblock %}
+

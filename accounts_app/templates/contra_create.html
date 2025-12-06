@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    
+    .form-container {
+        max-width: 600px;
+        margin: 50px auto;
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .form-container h1 {
+        
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .btn-primary {
+        width: 100%;
+    }
+    .form-footer {
+        margin-top: 20px;
+        text-align: center;
+    }
+    .form-footer a {
+        text-decoration: none;
+        color: #007bff;
+    }
+    .form-footer a:hover {
+        text-decoration: underline;
+    }
+</style>
+</head>
+<body>
+<div class="form-container">
+    <h1>Create Contra</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+    <div class="form-footer">
+        <a href="{% url 'accounts_app:contra_list' %}">Back to Contra List</a> <!-- Replace with your list view URL name -->
+    </div>
+</div>
+
+{% endblock %}

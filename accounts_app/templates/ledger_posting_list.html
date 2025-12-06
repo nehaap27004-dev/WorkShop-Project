@@ -1,0 +1,213 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4">Ledger Postings</h2>
+    
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">From Date</label>
+                    <input type="date" id="fromDate" class="form-control">
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="form-label">To Date</label>
+                    <input type="date" id="toDate" class="form-control">
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="form-label">Single Date</label>
+                    <input type="date" id="singleDate" class="form-control">
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="form-label">Voucher Type</label>
+                    <select id="voucherType" class="form-select">
+                        <option value="">All</option>
+                        {% for vt in voucher_types %}
+                        <option value="{{ vt.VoucherName }}">{{ vt.VoucherName }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="form-label">Ledger</label>
+                    <select id="ledgerFilter" class="form-select">
+                        <option value="">All</option>
+                        {% for ledger in ledgers %}
+                        <option value="{{ ledger.ledger_name }}">{{ ledger.ledger_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-1 d-flex align-items-end">
+                    <button onclick="clearFilters()" class="btn btn-secondary w-100">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ledger Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="ledgerTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Voucher Type</th>
+                            
+                            <th>Ledger</th>
+                            <th class="text-end">Debit</th>
+                            <th class="text-end">Credit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for posting in postings %}
+                        <tr class="ledger-row" 
+                            data-date="{{ posting.date|date:'Y-m-d' }}"
+                            data-voucher="{{ posting.VoucherType.VoucherName }}"
+                            data-ledger="{{ posting.ledger.ledger_name }}"
+                            data-debit="{{ posting.debit|default:'0' }}"
+                            data-credit="{{ posting.credit|default:'0' }}">
+                            <td>{{ posting.date|date:"d-m-Y" }}</td>
+                            <td>{{ posting.VoucherType.VoucherName }}</td>
+                            
+                            <td>{{ posting.ledger.ledger_name }}</td>
+                            <td class="text-end">
+                                {% if posting.debit %}
+                                    {{ posting.debit|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if posting.credit %}
+                                    {{ posting.credit|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No records found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% comment %} <tfoot class="table-secondary">
+                        <tr>
+                            <th colspan="4" class="text-end">Total:</th>
+                            <th class="text-end" id="totalDebit">0.00</th>
+                            <th class="text-end" id="totalCredit">0.00</th>
+                        </tr>
+                        <tr>
+                            <th colspan="4" class="text-end">Balance:</th>
+                            <th colspan="2" class="text-end" id="balance">0.00</th>
+                        </tr>
+                    </tfoot> {% endcomment %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-bordered {
+        border: 2px solid #dee2e6;
+    }
+    .table thead th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .table tfoot th {
+        font-weight: 600;
+        border-top: 2px solid #dee2e6;
+    }
+    .text-end {
+        text-align: right;
+    }
+</style>
+
+<script>
+// Filter function
+function filterTable() {
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+    const singleDate = document.getElementById('singleDate').value;
+    const voucherType = document.getElementById('voucherType').value.toLowerCase();
+    const ledgerFilter = document.getElementById('ledgerFilter').value.toLowerCase();
+    
+    const rows = document.querySelectorAll('.ledger-row');
+    let totalDebit = 0;
+    let totalCredit = 0;
+    
+    rows.forEach(row => {
+        const rowDate = row.dataset.date;
+        const rowVoucher = row.dataset.voucher.toLowerCase();
+        const rowLedger = row.dataset.ledger.toLowerCase();
+        
+        let showRow = true;
+        
+        // Date filter
+        if (singleDate) {
+            showRow = rowDate === singleDate;
+        } else if (fromDate && toDate) {
+            showRow = rowDate >= fromDate && rowDate <= toDate;
+        } else if (fromDate) {
+            showRow = rowDate >= fromDate;
+        } else if (toDate) {
+            showRow = rowDate <= toDate;
+        }
+        
+        // Voucher type filter
+        if (showRow && voucherType) {
+            showRow = rowVoucher.includes(voucherType);
+        }
+        
+        // Ledger filter
+        if (showRow && ledgerFilter) {
+            showRow = rowLedger.includes(ledgerFilter);
+        }
+        
+        // Show or hide row
+        if (showRow) {
+            row.style.display = '';
+            totalDebit += parseFloat(row.dataset.debit);
+            totalCredit += parseFloat(row.dataset.credit);
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update totals
+    document.getElementById('totalDebit').textContent = totalDebit.toFixed(2);
+    document.getElementById('totalCredit').textContent = totalCredit.toFixed(2);
+    document.getElementById('balance').textContent = (totalDebit - totalCredit).toFixed(2);
+}
+
+// Clear filters
+function clearFilters() {
+    document.getElementById('fromDate').value = '';
+    document.getElementById('toDate').value = '';
+    document.getElementById('singleDate').value = '';
+    document.getElementById('voucherType').value = '';
+    document.getElementById('ledgerFilter').value = '';
+    filterTable();
+}
+
+// Add event listeners
+document.getElementById('fromDate').addEventListener('change', filterTable);
+document.getElementById('toDate').addEventListener('change', filterTable);
+document.getElementById('singleDate').addEventListener('change', filterTable);
+document.getElementById('voucherType').addEventListener('change', filterTable);
+document.getElementById('ledgerFilter').addEventListener('change', filterTable);
+
+// Calculate initial totals on page load
+window.addEventListener('DOMContentLoaded', filterTable);
+</script>
+{% endblock %}

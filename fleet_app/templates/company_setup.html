@@ -1,0 +1,95 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-info {
+        background-color: #17a2b8 !important;
+        border-color: #17a2b8 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <h2 class="mb-4 text-center fw-bold text-primary">Company Setup</h2>
+
+    <!-- Company Form -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0 fw-bold text-secondary">Company Information</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+                    {% for field in form %}
+                        <div class="col-md-6">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                        <i class="bi bi-save me-2"></i>Save Company
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if company %}
+    <div class="text-center">
+        <a href="{% url 'fleet_app:document_list' %}" class="btn btn-info text-white px-4 py-2">
+            <i class="bi bi-folder-fill me-2"></i>Manage Documents
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

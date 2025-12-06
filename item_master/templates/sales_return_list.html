@@ -1,0 +1,36 @@
+{% extends 'item_base.html' %}
+{% block title %}Sales Return List{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Sales Return List</h2>
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Voucher No</th>
+                <th>Date</th>
+                <th>Ledger</th>
+                <th>Payment Mode</th>
+                <th>Total</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sale in sales_returns %}
+            <tr>
+                <td>{{ sale.voucher_no }}</td>
+                <td>{{ sale.transaction_date }}</td>
+                <td>{{ sale.ledger }}</td>
+                <td>{{ sale.payment_mode }}</td>
+                <td>{{ sale.grand_total_amount }}</td>
+                <td>
+                    <a href="{% url 'item_master:sales_return_detail' sale.pk %}" class="btn btn-sm btn-primary">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">No sales return found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

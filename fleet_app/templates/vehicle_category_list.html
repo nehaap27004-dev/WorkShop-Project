@@ -1,0 +1,238 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+    }
+
+    .btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+
+    .card {
+        border-radius: 12px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+        min-height: 160px;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(90, 141, 238, 0.3) !important;
+        border-color: #5A8DEE;
+    }
+
+    .card-body {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .category-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        line-height: 1.4;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .action-buttons {
+        margin-top: auto;
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .action-buttons .btn {
+        flex: 1;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+
+    .action-buttons form {
+        flex: 1;
+        margin: 0;
+    }
+
+    .category-input {
+        flex-grow: 1;
+        margin-right: 10px;
+        padding: 10px 15px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 0.95rem;
+    }
+
+    .category-input:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    #new-category {
+        display: none;
+        margin-top: 20px;
+        margin-bottom: 30px;
+        align-items: center;
+        gap: 8px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .col-md-2 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+        
+        .category-name {
+            font-size: 0.9rem;
+            min-height: 40px;
+        }
+        
+        .action-buttons .btn {
+            font-size: 0.8rem;
+            padding: 0.35rem 0.5rem;
+        }
+    }
+
+    @media (min-width: 769px) and (max-width: 1200px) {
+        .col-md-2 {
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary mb-0">Vehicle Types</h2>
+        <button id="add-btn" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;" onclick="toggleInput()">
+            <i class="bi bi-plus-circle me-2"></i>New
+        </button>
+    </div>
+
+    <!-- Create / Edit inline form (NOW AT TOP) -->
+    <div id="new-category">
+        <form id="category-form" method="POST"
+              action="{% if edit_category %}{% url 'fleet_app:vehicle_category_edit' edit_category.pk %}{% else %}{% url 'fleet_app:create_vehicle_category' %}{% endif %}"
+              style="display:flex; width:100%; align-items:center;">
+            {% csrf_token %}
+            <input type="text" id="category-input" class="category-input" name="category_name"
+                   placeholder="Enter vehicle type name"
+                   value="{% if edit_category %}{{ edit_category.category_name }}{% endif %}"
+                   required />
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                <i class="bi bi-{% if edit_category %}check-circle{% else %}save{% endif %} me-2"></i>
+                {% if edit_category %}Update{% else %}Save{% endif %}
+            </button>
+
+            <button type="button" class="btn btn-secondary px-4 py-2" style="margin-left:8px;"
+                    onclick="{% if edit_category %}window.location.href='{% url 'fleet_app:create_vehicle_category' %}';{% else %}toggleInput();{% endif %}">
+                <i class="bi bi-x-circle me-2"></i>Cancel
+            </button>
+        </form>
+    </div>
+
+    <!-- Category List (NOW AT BOTTOM) -->
+    <div class="row justify-content-start">
+        {% for category in categories %}
+            <div class="col-12 col-md-2 mb-4">
+                <div class="card text-center shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="category-name">
+                            {{ category.category_name }}
+                        </div>
+                        
+                        <!-- Edit & Delete buttons -->
+                        <div class="action-buttons">
+                            <a href="{% url 'fleet_app:vehicle_category_edit' category.pk %}"
+                               class="btn btn-primary">
+                                <i class="bi bi-pencil-square"></i>
+                                <span>Edit</span>
+                            </a>
+
+                            <form method="post"
+                                  action="{% url 'fleet_app:vehicle_category_delete' category.pk %}"
+                                  onsubmit="return confirm('Are you sure you want to delete {{ category.category_name }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-trash"></i>
+                                    <span>Delete</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle me-2"></i>No vehicle types found. Create your first type by clicking the "New" button above.
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function toggleInput() {
+        const inputDiv = document.getElementById('new-category');
+        const addBtn = document.getElementById('add-btn');
+
+        if (inputDiv.style.display === 'none' || inputDiv.style.display === '') {
+            inputDiv.style.display = 'flex';
+            document.getElementById('category-input').focus();
+            addBtn.style.display = 'none';
+        } else {
+            inputDiv.style.display = 'none';
+            addBtn.style.display = 'inline-block';
+            document.getElementById('category-input').value = '';
+        }
+    }
+
+    /* If view provided edit_category, auto-show the inline form in edit-mode */
+    {% if edit_category %}
+    document.addEventListener('DOMContentLoaded', function(){
+        document.getElementById('new-category').style.display = 'flex';
+        document.getElementById('add-btn').style.display = 'none';
+    });
+    {% endif %}
+</script>
+{% endblock %}

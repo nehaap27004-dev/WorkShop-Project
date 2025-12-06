@@ -1,0 +1,55 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- New Company Button -->
+    <div class="mb-3 text-start">
+        <a href="{% url 'fleet_app:rentalcompany_create' %}" class="btn btn-danger rounded-pill">New</a>
+        <a href="{% url 'fleet_app:vehicle_create' %}" class="btn btn-danger rounded-pill">Supplier Vehicle</a>
+    </div>
+
+    <!-- Company List -->
+    <div class="row">
+        {% for company in companies %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="row g-0">
+                    <div class="col-4 d-flex justify-content-center align-items-center">
+                        {% if company.company_logo %}
+                            <img src="{{ company.company_logo.url }}" alt="Company Logo" class="img-fluid rounded-3">
+                        {% else %}
+                            <img src="" alt="No Logo" class="img-fluid rounded-3" style="width: 80px; height: 80px;">
+                        {% endif %}
+                    </div>
+                    <div class="col-8">
+                        <div class="card-body">
+                            <h5 class="card-title text-danger">{{ company.company_name }}</h5>
+                            <p class="card-text"><strong>Mobile:</strong> {{ company.company_mobile }}</p>
+                            <p class="card-text"><strong>Email:</strong> {{ company.company_email }}</p>
+                            <div class="d-flex justify-content-start">
+                                <a href="{% url 'fleet_app:rentalcompany_update' company.pk %}" class="btn btn-sm btn-secondary me-2 rounded-pill">Update</a>
+                                <a href="{% url 'fleet_app:supplier_vehicles' company.pk %}" class="btn btn-sm btn-secondary rounded-pill">View vehicle</a>
+                                <!-- Delete Form -->
+                                <form method="post" 
+                                    action="{% url 'fleet_app:rentalcompany_delete' company.pk %}" 
+                                    onsubmit="return confirm('Are you sure you want to delete {{ company.company_name }}?');"
+                                    style="display:inline-block; margin:0; padding:0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
+                                        Delete
+                                    </button>
+                                </form>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p>No Supplier companies found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

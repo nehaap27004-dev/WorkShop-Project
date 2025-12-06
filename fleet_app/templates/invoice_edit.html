@@ -1,0 +1,71 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% block content %}
+<h2>Edit Invoice #{{ invoice.invoice_no }}</h2>
+
+<form method="post">
+    {% csrf_token %}
+
+    <fieldset class="border p-3 mb-3">
+        <legend>Invoice Details</legend>
+        {{ form.as_p }}
+    </fieldset>
+
+    <fieldset class="border p-3 mb-3">
+        <legend>Invoice Items</legend>
+        {{ formset.management_form }}
+        <table class="table table-sm table-bordered" id="details-table">
+            <thead>
+                <tr>
+                    <th>Vehicle</th>
+                    <th>Location</th>
+                    <th>Amount</th>
+                    <th>Tax (%)</th>
+                    <th>Tax Amount</th>
+                    <th>Total Amount</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for f in formset.forms %}
+                <tr>
+                    {% for field in f.visible_fields %}
+                    <td>{{ field.errors }}{{ field }}</td>
+                    {% endfor %}
+                    <td>
+                        {% if f.instance.pk %}
+                            {{ f.DELETE }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="button" id="add-row" class="btn btn-secondary">Add Row</button>
+    </fieldset>
+
+    <button type="submit" class="btn btn-success">Save</button>
+    <a href="{% url 'fleet_app:invoice_list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script>
+$(document).ready(function(){
+    // Add new row dynamically
+    $("#add-row").click(function(){
+        var formIdx = $("#id_details-TOTAL_FORMS").val();
+        var emptyForm = $("#empty-form").html().replace(/__prefix__/g, formIdx);
+        $("#details-table tbody").append("<tr>" + emptyForm + "</tr>");
+        $("#id_details-TOTAL_FORMS").val(parseInt(formIdx) + 1);
+    });
+});
+</script>
+
+<!-- Hidden empty form for adding new row -->
+<table style="display:none;">
+    <tbody id="empty-form">
+        {{ formset.empty_form.as_table }}
+    </tbody>
+</table>
+{% endblock %}

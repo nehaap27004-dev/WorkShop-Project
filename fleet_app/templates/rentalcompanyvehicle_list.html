@@ -1,0 +1,52 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'fleet_app:rentalcompanyvehicle_create' %}" class="btn btn-danger">New</a>
+</div>
+
+<h1>Supplier Vehicles</h1>
+<div class="row">
+    {% for vehicle in vehicles %}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            {% if vehicle.Vehicle_image %}
+            <img src="{{ vehicle.Vehicle_image.url }}" alt="Vehicle Image" class="card-img-top" style="width: 100%; height: 200px; object-fit: cover;">
+            {% else %}
+            <img src="" alt="No Image" class="card-img-top" style="width: 100%; height: 200px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+    <h5 class="card-title" style="color: darkred;">
+        {{ vehicle.license_plate_code.code }}-{{ vehicle.license_plate_number }}
+    </h5>
+    <p><strong>Driver:</strong> {{ vehicle.vehicle_driver }}</p>
+    <p><strong>Vehicle:</strong> {{ vehicle.vehicle_name }}</p>
+    <p><strong>Company:</strong> {{ vehicle.company }}</p>
+
+    <!-- Update -->
+    <a href="{% url 'fleet_app:rentalcompanyvehicle_update' vehicle.pk %}" 
+       class="btn btn-sm btn-outline-primary rounded-pill me-2">
+        Update
+    </a>
+
+    <!-- Delete -->
+    <form method="post" 
+      action="{% url 'fleet_app:rentalcompanyvehicle_delete' vehicle.pk %}" 
+      onsubmit="return confirm('Are you sure you want to delete {% if vehicle.vehicle_name %}{{ vehicle.vehicle_name }}{% else %}{{ vehicle.vehicle_model.model_name }}{% endif %}?');"
+      style="display:inline-block; margin:0; padding:0;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
+        Delete
+    </button>
+</form>
+
+</div>
+
+        </div>
+    </div>
+    {% empty %}
+    <p>No vehicles found.</p>
+    {% endfor %}
+</div>
+{% endblock %}

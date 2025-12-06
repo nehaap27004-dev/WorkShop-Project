@@ -1,0 +1,195 @@
+{% extends 'item_base.html' %}
+
+{% block content %}
+
+<style>
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  .table td input,
+  .table td select,
+  .table td textarea {
+    width: 100%;
+    max-width: 180px;
+    font-size: 0.85rem;
+  }
+
+  .table td {
+    vertical-align: middle !important;
+    padding: 4px 6px;
+  }
+
+  .sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: white;
+  }
+
+  .table thead th {
+    white-space: nowrap;
+  }
+</style>
+
+<div class="container mt-4">
+    <h2 class="mb-3">📝 Edit Purchase Voucher</h2>
+
+    <form method="POST" novalidate>
+        {% csrf_token %}
+
+        <!-- === Voucher Header Fields === -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-light fw-bold">Voucher Details</div>
+            <div class="card-body">
+                <div class="row">
+                    {% for field in form %}
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- === Items Table === -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+                Items
+                <small class="text-muted">Edit quantities or rates to auto-recalculate</small>
+            </div>
+            <div class="card-body table-responsive">
+                {{ formset.management_form }}
+                <table class="table table-bordered align-middle table-sm text-center">
+                    <thead class="table-light sticky-top">
+                        <tr class="align-middle">
+                            <th>Item</th>
+                            <th>Code</th>
+                            <th>Barcode</th>
+                            <th>Qty</th>
+                            <th>Rate</th>
+                            <th>Tax (%)</th>
+                            <th>Net</th>
+                            <th>Tax Amt</th>
+                            <th>Unit</th>
+                            <th>Total</th>
+                            
+                            <th>Free</th>
+                            <th>MFD</th>
+                            <th>EXP</th>
+                            <th>Sales Rate</th>
+                            <th>Profit</th>
+                            <th>Batch</th>
+                            <th>Cost</th>
+                            <th>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+  {% for form in formset %}
+    <tr class="item-row align-middle">
+      {{ form.id }} {# Required hidden field #}
+      {% for field in form.visible_fields %}
+        <td style="min-width: 140px; max-width: 200px;">
+          <div class="form-group mb-0">
+            {{ field }}
+            {% if field.errors %}
+              <div class="text-danger small">{{ field.errors }}</div>
+            {% endif %}
+          </div>
+        </td>
+      {% endfor %}
+    </tr>
+  {% endfor %}
+</tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- === Submit Buttons === -->
+        <div class="d-flex justify-content-between mb-5">
+            <a href="{% url 'item_master:purchase_voucher_list' %}" class="btn btn-outline-secondary">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-success px-4">
+                💾 Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function calculateRow(row) {
+        const getValue = name => parseFloat(row.querySelector(`[name$="${name}"]`)?.value) || 0;
+
+        const qty = getValue("quantity");
+        const rate = getValue("purchase_rate");
+        const taxPercent = getValue("tax");
+        const salesRate = getValue("sales_rate");
+
+        const net = qty * rate;
+        const taxAmt = (net * taxPercent) / 100;
+        const total = net + taxAmt;
+        const profit = salesRate - rate;
+
+        const setField = (name, value) => {
+            const input = row.querySelector(`[name$="${name}"]`);
+            if (input) input.value = value.toFixed(2);
+        };
+
+        setField("item_net_amount", net);
+        setField("item_tax_amount", taxAmt);
+        setField("item_total_amount", total);
+        setField("profit", profit);
+    }
+
+    function calculateAll() {
+        document.querySelectorAll('.item-row').forEach(calculateRow);
+        updateGrandTotals();
+    }
+
+    function updateGrandTotals() {
+        const sumFields = name =>
+            [...document.querySelectorAll(`[name$="${name}"]`)].reduce((total, el) => total + (parseFloat(el.value) || 0), 0);
+
+        const netTotal = sumFields("item_net_amount");
+        const taxTotal = sumFields("item_tax_amount");
+        const discount = parseFloat(document.getElementById('id_discount')?.value) || 0;
+        const grandTotal = netTotal + taxTotal - discount;
+
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val.toFixed(2);
+        };
+
+        setVal('id_total_net_value', netTotal);
+        setVal('id_total_tax_amount', taxTotal);
+        setVal('id_grand_total_amount', grandTotal);
+    }
+
+    // Bind change event to dynamic fields
+    function bindAutoCalcEvents() {
+        const fields = ['quantity', 'purchase_rate', 'tax', 'sales_rate'];
+        fields.forEach(field => {
+            document.querySelectorAll(`[name$="${field}"]`).forEach(input => {
+                input.addEventListener('input', calculateAll);
+            });
+        });
+
+        const discountInput = document.getElementById('id_discount');
+        if (discountInput) {
+            discountInput.addEventListener('input', updateGrandTotals);
+        }
+    }
+
+    bindAutoCalcEvents();
+    calculateAll(); // Initial calc
+});
+</script>
+{% endblock %}

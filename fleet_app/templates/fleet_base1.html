@@ -1,0 +1,623 @@
+<!--fleet_base1.html with Top Navbar-->
+{% load static %}
+{% load privilege_tags %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'images/favicon.ico' %}">
+
+    <title>Rabwafahud - Dashboard</title>
+    
+    <!-- Bootstrap 4.0-->
+    <link rel="stylesheet" href="{% static 'assets/vendor_components/bootstrap/dist/css/bootstrap.css' %}">
+    
+    <!-- Date range picker -->
+    <link rel="stylesheet" href="{% static 'assets/vendor_components/bootstrap-daterangepicker/daterangepicker.css' %}">
+    
+    <!-- Theme style -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <!-- CrmX Admin skins -->
+    <link rel="stylesheet" href="{% static 'css/skin_color.css' %}">
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        body {
+            padding-top: 70px;
+        }
+
+        /* Top Navbar Styling */
+        .top-navbar {
+            background: linear-gradient(135deg, #5A8DEE 0%, #4a7dd8 100%);
+            box-shadow: 0 4px 20px rgba(90, 141, 238, 0.3);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+            height: 70px;
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-brand img {
+            height: 40px;
+        }
+
+        .navbar-nav {
+            align-items: center;
+        }
+
+        .navbar-nav .nav-item {
+            margin: 0 5px;
+        }
+
+        .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            padding: 10px 15px !important;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 500;
+        }
+
+        .navbar-nav .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white !important;
+        }
+
+        .navbar-nav .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white !important;
+        }
+
+        /* Dropdown Menu Styling */
+        .dropdown-menu {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            padding: 10px;
+            margin-top: 5px;
+            min-width: 220px;
+        }
+
+        .dropdown-header {
+            font-size: 12px;
+            font-weight: 600;
+            color: #5A8DEE;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 15px 5px;
+            margin-top: 5px;
+        }
+
+        .dropdown-divider {
+            margin: 8px 0;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .dropdown-item {
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .dropdown-item:hover {
+            background: linear-gradient(90deg, #7ba3f2, #5A8DEE);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* User Dropdown */
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: auto;
+        }
+
+        .user-dropdown img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .user-dropdown .dropdown-toggle::after {
+            display: none;
+        }
+
+        /* Settings Button */
+        .settings-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        /* Content Area */
+        .content-wrapper {
+            margin: 0;
+            padding: 30px;
+            min-height: calc(100vh - 70px);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 992px) {
+            .navbar-nav {
+                background: white;
+                padding: 15px;
+                border-radius: 12px;
+                margin-top: 10px;
+            }
+
+            .navbar-nav .nav-link {
+                color: #2c3e50 !important;
+            }
+
+            .navbar-nav .nav-link:hover {
+                background: #f8f9fa;
+            }
+
+            .dropdown-menu {
+                box-shadow: none;
+                background: #f8f9fa;
+                margin-left: 15px;
+            }
+        }
+
+        /* Navbar Toggler */
+        .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Dropdown on Hover for Desktop */
+        @media (min-width: 992px) {
+            .dropdown:hover .dropdown-menu {
+                display: block;
+                animation: fadeInDown 0.3s;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+  
+</head>
+
+<body class="hold-transition light-skin theme-classic">
+	
+<div class="wrapper">
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg top-navbar">
+        <div class="container-fluid">
+            <!-- Logo/Brand -->
+            <a class="navbar-brand" href="{% url 'fleet_app:fleet_home' %}">
+                <img src="{% static 'images/azure.png' %}" alt="logo">
+            </a>
+
+            <!-- Mobile Toggle Button -->
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navigation Menu -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <!-- Dashboard -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'fleet_app:fleet_home' %}">
+                            <i class="ti-dashboard"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+
+                    <!-- Master Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="masterDropdown" role="button" data-toggle="dropdown">
+                            <i class="ti-files"></i>
+                            <span>Master</span>
+                        </a>
+                        <div class="dropdown-menu">
+                             <a class="dropdown-item" href="{% url 'fleet_app:company_setup' %}">
+                                <i class="ti-more"></i>Company
+                            </a>
+                            <a class="dropdown-item" href="{% url 'fleet_app:manufacturer_list' %}">
+                                <i class="ti-more"></i>V.Manufacturers
+                            </a>
+                            <a class="dropdown-item" href="{% url 'fleet_app:create_vehicle_category' %}">
+                                <i class="ti-more"></i>V.Type
+                            </a>
+                            <a class="dropdown-item" href="{% url 'fleet_app:vehicle_model_list' %}">
+                                <i class="ti-more"></i>V.Models
+                            </a>
+                            <a class="dropdown-item" href="{% url 'fleet_app:vehicle_list' %}">
+                                <i class="ti-more"></i>Create Vehicle
+                            </a>
+                            <a class="dropdown-item" href="{% url 'accounts_app:manage_vendors' %}">
+                                <i class="ti-more"></i>Supplier
+                            </a>
+                            <a class="dropdown-item" href="{% url 'accounts_app:manage_customers' %}">
+                                <i class="ti-more"></i>Client
+                            </a>
+                            <a class="dropdown-item" href="{% url 'fleet_app:staff_category_manage' %}">
+                                <i class="ti-more"></i>Staff Category
+                            </a>
+                            <a class="dropdown-item" href="{% url 'fleet_app:staff_manage' %}">
+                                <i class="ti-more"></i>Staff Creation
+                            </a>
+
+                            <a class="dropdown-item"
+                            href="{% url 'accounts_app:clear_data' %}"
+                            onclick="return confirm('Are you sure you want to clear all transactions? This action cannot be undone!');">
+                                <i class="ti-more"></i>Clear Trnsctns
+                            </a>
+
+                           
+                        </div>
+                    </li>
+
+                    <!-- Transactions Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="transactionsDropdown" role="button" data-toggle="dropdown">
+                            <i class="ti-files"></i>
+                            <span>Transactions</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            {% has_priv request.user 1 "can_add" as can_add_timesheet %}
+                            {% if can_add_timesheet %}
+                                <a class="dropdown-item" href="{% url 'fleet_app:time_sheet' %}">
+                                    <i class="ti-more"></i> V.Timesheet
+                                </a>
+                            {% endif %}
+
+
+                            
+                            
+                            {% has_priv request.user 2 "can_add" as can_add_simple_quotation %}
+                            {% if can_add_simple_quotation %}
+                            <a class="dropdown-item" href="{% url 'fleet_app:create_quotation' %}">
+                                <i class="ti-more"></i> Simple Quotation
+                            </a>
+                            {% endif %}
+
+
+                            {% has_priv request.user 3 "can_add" as can_add_contract %}
+                            {% if can_add_contract %}
+                            <a class="dropdown-item" href="{% url 'fleet_app:create_fleet_contract' %}">
+                                <i class="ti-more"></i> Contract
+                            </a>
+                            {% endif %}
+
+
+                            <a class="dropdown-item" href="{% url 'fleet_app:create_repair_and_maintenance' %}">
+                                <i class="ti-more"></i>Repair 
+                            </a>
+
+                            {% has_priv request.user 5 "can_add" as can_add_invoice %}
+                            {% if can_add_invoice %}
+                            <a class="dropdown-item" href="{% url 'fleet_app:create_invoice' %}">
+                                <i class="ti-more"></i>Invoice
+                            </a>
+                            {% endif %}
+
+
+                            {% has_priv request.user 6 "can_add" as can_add_hire %}
+                            {% if can_add_hire %}
+                            <a class="dropdown-item" href="{% url 'fleet_app:fleet_hire_create' %}">
+                                <i class="ti-more"></i>Hire
+                            </a>
+                            {% endif %}
+
+                            
+                            <a class="dropdown-item" href="{% url 'accounts_app:receipt_create' %}">
+                                <i class="ti-more"></i>Receipt
+                            </a>
+
+                            <a class="dropdown-item" href="{% url 'accounts_app:payment_create' %}">
+                                <i class="ti-more"></i>Payment
+                            </a>
+                            <a class="dropdown-item" href="{% url 'accounts_app:create_local_payment' %}">
+                                <i class="ti-more"></i>Local Payment
+                            </a>
+                            <a class="dropdown-item" href="{% url 'accounts_app:cheque_clearance' %}">
+                                <i class="ti-more"></i>Cheque Clearance
+                            </a>
+
+                            <!-- Bill Clearance Subheading -->
+                            <div class="dropdown-divider"></div>
+                            <h6 class="dropdown-header">Bill Clearance</h6>
+                            <a class="dropdown-item" href="{% url 'accounts_app:create_receiptbill' %}">
+                                <i class="ti-more"></i>Receipt-Bill
+                            </a>
+
+                            <a class="dropdown-item" href="{% url 'accounts_app:create_paymentbill' %}">
+                                <i class="ti-more"></i>Payment-Bill
+                            </a>
+
+                        </div>
+                    </li>
+
+                    
+
+                    <!-- Documents -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="documentsDropdown" role="button" data-toggle="dropdown">
+                            <i class="ti-files"></i>
+                            <span>Documents</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="{% url 'fleet_app:document_crud' %}">
+                                <i class="ti-more"></i>Documents
+                            </a>
+                        </div>
+                    </li>
+
+                    <!-- Reports Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-toggle="dropdown">
+                            <i class="ti-files"></i>
+                            <span>Reports</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="{% url 'accounts_app:ledger_posting_list' %}">
+                                <i class="ti-more"></i>Ledger Posting
+                            </a>
+                            {% comment %} <a class="dropdown-item" href="">
+                                <i class="ti-more"></i>Simple Quotation
+                            </a>
+                            <a class="dropdown-item" href="">
+                                <i class="ti-more"></i>Invoices
+                            </a>
+                            <a class="dropdown-item" href="">
+                                <i class="ti-more"></i>Hire
+                            </a>
+                            <a class="dropdown-item" href="">
+                                <i class="ti-more"></i>Payment-Bill
+                            </a>
+                            <a class="dropdown-item" href="">
+                                <i class="ti-more"></i>Receipt-Bill
+                            </a>
+                            <a class="dropdown-item" href="">
+                                <i class="ti-more"></i>Payment
+                            </a>
+                            <a class="dropdown-item" href="">
+                                <i class="ti-more"></i>Receipt
+                            </a> {% endcomment %}
+                        </div>
+                    </li>
+                </ul>
+
+                <!-- Right Side Items -->
+                <div class="navbar-right">
+                    <!-- Settings Button -->
+                    <button class="settings-btn" data-toggle="control-sidebar" title="Settings">
+                        <i class="fa fa-cog fa-spin"></i>
+                    </button>
+
+                    <!-- User Dropdown -->
+                    <div class="dropdown user-dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" title="User">
+                            <img src="{% static 'images/avatar/7.jpg' %}" alt="User Image">
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <div class="dropdown-header" style="background-image: url({% static 'images/user-info.jpg' %}); background-size: cover; padding: 20px;">
+                                <div style="text-align: center; color: white;">
+                                    <img src="{% static 'images/avatar/7.jpg' %}" class="rounded-circle" style="width: 60px; height: 60px; border: 3px solid white;" alt="User">
+                                    <h5 style="margin-top: 10px;">User</h5>
+                                    <small>User@gmail.com</small>
+                                </div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="javascript:void(0)">
+                                <i class="ion ion-person"></i> My Profile
+                            </a>
+                            <a class="dropdown-item" href="javascript:void(0)">
+                                <i class="ion ion-bag"></i> My Balance
+                            </a>
+                            <a class="dropdown-item" href="javascript:void(0)">
+                                <i class="ion ion-email-unread"></i> Inbox
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'settings:currency_list_create' %}">
+                                <i class="ion ion-settings"></i>  Settings
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'accounts_app:logout_view' %}">
+                                <i class="ion-log-out"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+        {% block content %}
+        {% endblock %}  
+    </div>
+
+    <!-- Control Sidebar -->
+    <aside class="control-sidebar">
+        <div class="rpanel-title">
+            <span class="pull-right btn btn-circle btn-danger">
+                <i class="ion ion-close text-white" data-toggle="control-sidebar"></i>
+            </span>
+        </div>
+        
+        <!-- Create the tabs -->
+        <ul class="nav nav-tabs control-sidebar-tabs">
+            <li class="nav-item"><a href="#control-sidebar-home-tab" data-toggle="tab">Chat</a></li>
+            <li class="nav-item"><a href="#control-sidebar-settings-tab" data-toggle="tab">Todo</a></li>
+        </ul>
+        
+        <!-- Tab panes -->
+        <div class="tab-content">
+            <!-- Home tab content -->
+            <div class="tab-pane" id="control-sidebar-home-tab">
+                <div class="flexbox">
+                    <a href="javascript:void(0)" class="text-grey">
+                        <i class="ti-more"></i>
+                    </a>	
+                    <p>Users</p>
+                    <a href="javascript:void(0)" class="text-right text-grey"><i class="ti-plus"></i></a>
+                </div>
+                <div class="lookup lookup-sm lookup-right d-none d-lg-block">
+                    <input type="text" name="s" placeholder="Search" class="w-p100">
+                </div>
+                <div class="media-list media-list-hover mt-20">
+                    <div class="media py-10 px-0">
+                        <a class="avatar avatar-lg status-success" href="#">
+                            <img src="{% static 'images/avatar/1.jpg' %}" alt="...">
+                        </a>
+                        <div class="media-body">
+                            <p class="font-size-16">
+                                <a class="hover-primary" href="#"><strong>Tyler</strong></a>
+                            </p>
+                            <p>Praesent tristique diam...</p>
+                            <span>Just now</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings tab content -->
+            <div class="tab-pane" id="control-sidebar-settings-tab">
+                <div class="flexbox">
+                    <a href="javascript:void(0)" class="text-grey">
+                        <i class="ti-more"></i>
+                    </a>	
+                    <p>Todo List</p>
+                    <a href="javascript:void(0)" class="text-right text-grey"><i class="ti-plus"></i></a>
+                </div>
+                <ul class="todo-list mt-20">
+                    <li class="py-15 px-5 by-1">
+                        <input type="checkbox" id="basic_checkbox_1" class="filled-in">
+                        <label for="basic_checkbox_1" class="mb-0 h-15"></label>
+                        <span class="text-line">Nulla vitae purus</span>
+                        <small class="badge bg-danger"><i class="fa fa-clock-o"></i> 2 mins</small>
+                        <div class="tools">
+                            <i class="fa fa-edit"></i>
+                            <i class="fa fa-trash-o"></i>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Add the sidebar's background -->
+    <div class="control-sidebar-bg"></div>
+  
+</div>
+<!-- ./wrapper -->
+  	
+<!-- JavaScript -->
+<script src="{% static 'assets/vendor_components/jquery-3.3.1/jquery-3.3.1.js' %}"></script>
+<script src="{% static 'assets/vendor_components/screenfull/screenfull.js' %}"></script>
+<script src="{% static 'assets/vendor_components/popper/dist/popper.min.js' %}"></script>
+<script src="{% static 'assets/vendor_components/bootstrap/dist/js/bootstrap.js' %}"></script>
+<script src="{% static 'assets/vendor_components/fastclick/lib/fastclick.js' %}"></script>
+<script src="{% static 'assets/vendor_components/jquery-slimscroll/jquery.slimscroll.min.js' %}"></script>
+<script src="{% static 'assets/vendor_components/perfect-scrollbar-master/perfect-scrollbar.jquery.min.js' %}"></script>
+
+<!-- Plugin -->
+<script src="{% static 'assets/vendor_components/moment/min/moment.min.js' %}"></script>
+<script src="{% static 'assets/vendor_components/bootstrap-daterangepicker/daterangepicker.js' %}"></script>
+<script src="{% static 'assets/vendor_components/apexcharts-bundle/dist/apexcharts.js' %}"></script>
+
+<!-- CrmX Admin App -->
+<script src="{% static 'js/template.js' %}"></script>
+<script src="{% static 'js/pages/dashboard.js' %}"></script>
+<script src="{% static 'js/demo.js' %}"></script>
+
+<script>
+    // Hover dropdown for desktop
+    $(document).ready(function() {
+        // Desktop hover
+        if ($(window).width() > 992) {
+            $('.dropdown').hover(
+                function() {
+                    $(this).find('.dropdown-menu').stop(true, true).fadeIn(200);
+                },
+                function() {
+                    $(this).find('.dropdown-menu').stop(true, true).fadeOut(200);
+                }
+            );
+        }
+
+        // Mobile click
+        $('.navbar-toggler').click(function() {
+            $('#navbarNav').slideToggle(300);
+        });
+
+        // Active link highlight
+        var currentUrl = window.location.href;
+        $('.navbar-nav .nav-link, .dropdown-item').each(function() {
+            if ($(this).attr('href') === currentUrl) {
+                $(this).addClass('active');
+                $(this).closest('.dropdown').find('.nav-link').addClass('active');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

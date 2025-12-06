@@ -1,0 +1,146 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+
+<h1 class="text-center mb-4">{% if form.instance.pk %}Update Vehicle{% else %}Create Vehicle{% endif %}</h1>
+
+<form method="POST" enctype="multipart/form-data" class="p-4 bg-white shadow rounded">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="form-section mb-4">
+        <h2 class="form-section-title mb-3">Vehicle Information</h2>
+
+        <div class="mb-3">
+            <label for="{{ form.company.id_for_label }}" class="form-label">{{ form.company.label }}</label>
+            {{ form.company }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.vehicle_name.label_tag }} {{ form.vehicle_name }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.contact_person.label_tag }} {{ form.contact_person }}
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.vehicle_driver.id_for_label }}" class="form-label">{{ form.vehicle_driver.label }}</label>
+            {{ form.vehicle_driver }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.vehicle_driver_mobile.label_tag }} {{ form.vehicle_driver_mobile }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.vehicle_manufacturer.label_tag }} {{ form.vehicle_manufacturer }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.vehicle_model.label_tag }} {{ form.vehicle_model }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.model_colour.label_tag }} {{ form.model_colour }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.model_year.label_tag }} {{ form.model_year }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.vehicle_category.label_tag }} {{ form.vehicle_category }}
+        </div>
+    </div>
+
+    <div class="form-section mb-4">
+        <h2 class="form-section-title mb-3">Vehicle Registration</h2>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="{{ form.license_plate_code.id_for_label }}" class="form-label">{{ form.license_plate_code.label }}</label>
+                    {{ form.license_plate_code }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="{{ form.license_plate_number.id_for_label }}" class="form-label">{{ form.license_plate_number.label }}</label>
+                    {{ form.license_plate_number }}
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            {{ form.RC_number.label_tag }} {{ form.RC_number }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.RC_epx_date.label_tag }} {{ form.RC_epx_date }}
+        </div>
+    </div>
+
+    <div class="form-section mb-4">
+        <h2 class="form-section-title mb-3">Engine Information</h2>
+        <div class="mb-3">
+            {{ form.fuel_type.label_tag }} {{ form.fuel_type }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.vehicle_transmission.label_tag }} {{ form.vehicle_transmission }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.chassis_number.label_tag }} {{ form.chassis_number }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.last_odometer.label_tag }} {{ form.last_odometer }}
+        </div>
+    </div>
+
+    <div class="form-section mb-4">
+        <h2 class="form-section-title mb-3">Vehicle Image</h2>
+        <div class="mb-3">
+            <label for="image-preview" class="form-label">Current Vehicle Image Preview:</label>
+            <img id="image-preview" class="img-fluid" src="{% if form.instance.Vehicle_image %}{{ form.instance.Vehicle_image.url }}{% else %}# {% endif %}" alt="Vehicle Image Preview">
+        </div>
+        
+        <div class="mb-3">
+            {{ form.Vehicle_image.label_tag }} {{ form.Vehicle_image }}
+        </div>
+    </div>
+
+    <button type="submit" name="save" class="btn btn-danger w-100">
+        {% if form.instance.pk %}Update{% else %}Create{% endif %} Vehicle
+    </button>
+</form>
+
+<div class="actions text-center mt-4">
+    <a href="{% url 'fleet_app:rentalcompanyvehicle_list' %}" class="btn btn-secondary">Back to Vehicle List</a>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Submit form when company selection changes
+        $('#{{ form.company.id_for_label }}').change(function() {
+            this.form.submit();
+        });
+
+        // Image preview functionality
+        $('#{{ form.Vehicle_image.id_for_label }}').change(function(event) {
+            const [file] = event.target.files;
+            if (file) {
+                const imgPreview = document.getElementById('image-preview');
+                imgPreview.src = URL.createObjectURL(file);
+                imgPreview.onload = function() {
+                    URL.revokeObjectURL(imgPreview.src);  // Free memory once image is loaded
+                };
+            }
+        });
+    });
+</script>
+
+{% endblock %}

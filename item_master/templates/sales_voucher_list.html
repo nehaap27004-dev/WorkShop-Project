@@ -1,0 +1,120 @@
+{% extends 'item_base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  h2 {
+      margin-bottom: 20px;
+      text-align: center;
+  }
+
+  .voucher-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+  }
+
+  .voucher-table th, .voucher-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border: 1px solid #ddd;
+  }
+
+  .voucher-table th {
+      background-color: #f4f4f4;
+      font-weight: bold;
+  }
+
+  .voucher-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+  }
+
+  .voucher-table tr:hover {
+      background-color: #f1f1f1;
+  }
+
+  .voucher-table a {
+      color: #0066cc;
+      text-decoration: none;
+  }
+
+  .voucher-table a:hover {
+      text-decoration: underline;
+  }
+
+  .create-link {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 5px;
+  }
+
+  .create-link:hover {
+      background-color: #45a049;
+  }
+
+  td[colspan="5"] {
+      text-align: center;
+      color: #888;
+      font-style: italic;
+  }
+</style>
+
+<h2>Sales Voucher List</h2>
+
+<table class="voucher-table" id="voucherTable">
+    <thead>
+        <tr>
+            <th>S.No.</th>
+            
+            <th>Voucher No</th>
+            <th>Voucher Date</th>
+            <th>Customer</th>
+            <th>Total</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for voucher in vouchers %}
+        <tr>
+            <td></td> <!-- Serial number will go here -->
+            <td>{{ voucher.voucher_no }}</td>
+            <td>{{ voucher.transaction_date }}</td>
+            <td>{{ voucher.customer }}</td>
+            <td>{{ voucher.grand_total_amount }}</td>
+            <td>
+                <a href="{% url 'item_master:sales_voucher_detail' voucher.id %}">View Details</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No sales vouchers available.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'item_master:sales_voucher_create' %}" class="create-link">Create New Sales Voucher</a>
+
+
+
+
+<script>
+    // Add serial numbers after DOM loads
+    document.addEventListener("DOMContentLoaded", function () {
+        const rows = document.querySelectorAll("#voucherTable tbody tr");
+        let count = 1;
+        rows.forEach(row => {
+            // Skip the empty row when there's no data
+            if (row.children.length > 1) {
+                row.children[0].textContent = count++;
+            }
+        });
+    });
+</script>
+
+
+{% endblock %}

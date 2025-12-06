@@ -1,0 +1,305 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-success {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+
+    .alert {
+        border-radius: 8px;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary mb-0">
+            {% if edit_mode %}Edit{% else %}Create{% endif %} Payment Bill Clearance
+        </h2>
+        <a href="{% url 'accounts_app:list_paymentbill' %}" class="btn btn-primary">
+            <i class="bi bi-list-ul"></i> View List
+        </a>
+    </div>
+
+    
+
+    <form method="POST" id="paymentForm" class="needs-validation">
+        {% csrf_token %}
+
+        <!-- Payment Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Payment Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        {{ master_form.Date.label_tag }}
+                        {{ master_form.Date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ master_form.Supplier.label_tag }}
+                        {{ master_form.Supplier }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ master_form.Ledger.label_tag }}
+                        {{ master_form.Ledger }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ master_form.Remark.label_tag }}
+                        {{ master_form.Remark }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ master_form.TrnNo.label_tag }}
+                        {{ master_form.TrnNo }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ master_form.ChequeNo.label_tag }}
+                        {{ master_form.ChequeNo }}
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="col-md-2">
+                        {{ master_form.ChequeDate.label_tag }}
+                        {{ master_form.ChequeDate }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ master_form.ChequeStatus.label_tag }}
+                        {{ master_form.ChequeStatus }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Purchase Bills -->
+        <div class="card shadow-sm mb-4" id="hireTableContainer" style="display: none;">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Pending Purchase Bills</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center" id="billTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Supplier</th>
+                                <th>Bill Date</th>
+                                <th>Bill #</th>
+                                <th>Amount</th>
+                                <th>Amount Paid</th>
+                                <th>Payable Balance</th>
+                                <th>Amount (to pay)</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hireTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formset Management Form -->
+        <div id="formsetManagement"></div>
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn btn-success px-4 py-2">Save</button>
+        </div>
+    </form>
+</div>
+
+<script>
+$(document).ready(function() {
+    let hireData = [];
+    {% if edit_mode and payment_bill_instance %}
+    var editMode = true;
+    var existingDetails = [
+        {% for detail in payment_bill_instance.paymentbilldetails_set.all %}
+        {
+            hire_id: {{ detail.VoucherNo }},
+            voucher_type: {{ detail.voucherType.id }},
+            current_amount: {{ detail.CurrentAmount }},
+            amount: {{ detail.Amount }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    {% else %}
+    var editMode = false;
+    var existingDetails = [];
+    {% endif %}
+
+    $("#id_supplier").change(function() {
+        if (editMode) {
+            return; // Don't reload data if editing
+        }
+        var supplier_id = $(this).val();
+        if (!supplier_id) {
+            $("#hireTableContainer").hide();
+            return;
+        }
+
+        $.ajax({
+            url: "{% url 'accounts_app:get_supplier_fleethires' %}",
+            data: { supplier_id: supplier_id },
+            success: function(response) {
+                hireData = response.hires;
+                renderHires();
+                $("#hireTableContainer").show();
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching hires:", error);
+                alert("Error loading hire bills. Please try again.");
+            }
+        });
+    });
+
+    function renderHires() {
+        var tbody = $("#hireTableBody");
+        var formsetDiv = $("#formsetManagement");
+
+        tbody.empty();
+        formsetDiv.empty();
+
+        // Add formset management fields
+        formsetDiv.append(`
+            <input type="hidden" name="form-TOTAL_FORMS" value="${hireData.length}">
+            <input type="hidden" name="form-INITIAL_FORMS" value="0">
+            <input type="hidden" name="form-MIN_NUM_FORMS" value="0">
+            <input type="hidden" name="form-MAX_NUM_FORMS" value="1000">
+        `);
+
+        hireData.forEach(function(hire, index) {
+            // Check if this hire has existing data (for edit mode)
+            var existingDetail = existingDetails.find(function(detail) {
+                return detail.hire_id === hire.hire_id;
+            });
+            var existingAmount = existingDetail ? existingDetail.amount : 0;
+
+            var row = `
+                <tr>
+                    <td>${hire.supplier}</td>
+                    <td>${hire.date}</td>
+                    <td>${hire.voucher_no}</td>
+                    <td class="text-end">${parseFloat(hire.grand_total).toFixed(2)}</td>
+                    <td class="text-end">${parseFloat(hire.amount_cleared).toFixed(2)}</td>
+                    <td class="text-end payable">${parseFloat(hire.payable_balance).toFixed(2)}</td>
+                    <td>
+                        <input type="hidden" name="form-${index}-voucherType" value="6">
+                        <input type="hidden" name="form-${index}-VoucherNo" value="${hire.hire_id}">
+                        <input type="number" step="0.01" name="form-${index}-Amount"
+                               class="form-control form-control-sm amount-input"
+                               min="0"
+                               max="${hire.payable_balance}"
+                               data-max="${hire.payable_balance}"
+                               value="${existingAmount}">
+                    </td>
+                    <td class="text-end balance">${parseFloat(hire.payable_balance - existingAmount).toFixed(2)}</td>
+                </tr>`;
+            tbody.append(row);
+        });
+    }
+
+    // Dynamic Balance calculation
+    $(document).on("input", ".amount-input", function() {
+        var row = $(this).closest("tr");
+        var payable = parseFloat($(this).attr('data-max'));
+        var entered = parseFloat($(this).val()) || 0;
+        
+        if (entered > payable) {
+            alert("Amount cannot exceed payable balance!");
+            $(this).val(payable.toFixed(2));
+            entered = payable;
+        }
+        
+        var balance = payable - entered;
+        row.find(".balance").text(balance.toFixed(2));
+    });
+
+    // Form validation before submit
+    $("#paymentForm").submit(function(e) {
+        var hasAmount = false;
+        $(".amount-input").each(function() {
+            if (parseFloat($(this).val()) > 0) {
+                hasAmount = true;
+                return false;
+            }
+        });
+
+        if (!hasAmount) {
+            e.preventDefault();
+            alert("Please enter at least one amount to clear.");
+            return false;
+        }
+    });
+
+    // Load existing data in edit mode
+    {% if edit_mode and payment_bill_instance %}
+    $.ajax({
+        url: "{% url 'accounts_app:get_supplier_fleethires' %}",
+        data: { supplier_id: {{ payment_bill_instance.Supplier.id }} },
+        success: function(response) {
+            hireData = response.hires;
+            // Merge existing amounts with hire data
+            hireData.forEach(function(hire) {
+                var existingDetail = existingDetails.find(function(detail) {
+                    return detail.hire_id === hire.hire_id;
+                });
+                if (existingDetail) {
+                    hire.existing_amount = existingDetail.amount;
+                }
+            });
+            renderHires();
+            $("#hireTableContainer").show();
+        },
+        error: function(xhr, status, error) {
+            console.error("Error loading hires in edit mode:", error);
+        }
+    });
+    {% endif %}
+});
+</script>
+
+{% endblock %}

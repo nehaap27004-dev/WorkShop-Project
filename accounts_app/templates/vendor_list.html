@@ -1,0 +1,49 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+
+<!-- New Vendor Button -->
+<div class="mb-4">
+    <a href="{% url 'fleet_app:vendor_create' %}" class="btn btn-danger">New Vendor</a>
+</div>
+
+<!-- Filter Buttons -->
+<div class="mb-4 d-flex justify-content-center">
+    <a href="{% url 'fleet_app:vendor_list' %}" class="btn btn-light mx-2">All Vendors</a>
+    <a href="{% url 'fleet_app:general_vendor_list' %}" class="btn btn-light mx-2">General Vendors</a>
+    <a href="{% url 'fleet_app:service_vendor_list' %}" class="btn btn-light mx-2">Service Vendors</a>
+</div>
+
+<h1 class="text-center mb-4">Vendor List</h1>
+
+<!-- Vendor Cards -->
+<div class="row">
+    {% for vendor in vendors %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <!-- Vendor Image -->
+                {% if vendor.vendor_image %}
+                    <img src="{{ vendor.vendor_image.url }}" alt="Vendor Image" class="card-img-top" style="height: 200px; object-fit: cover;">
+                {% else %}
+                    <img src="" alt="No Image" class="card-img-top" style="height: 200px; object-fit: cover;">
+                {% endif %}
+
+                <div class="card-body">
+                    <h5 class="card-title" style="color: black;">{{ vendor.vendor_name }}</h5>
+                    <p class="card-text"><strong>Mobile:</strong> {{ vendor.vendor_mobile }}</p>
+                    <p class="card-text"><strong>Email:</strong> {{ vendor.vendor_email }}</p>
+                    <p class="card-text"><strong>Type:</strong> <span style="color: black;">{{ vendor.vendor_type }}</span></p>
+
+                    <a href="{% url 'fleet_app:vendor_update' vendor.id %}" class="btn btn-secondary btn-sm">Update</a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <p class="text-center">No vendors found.</p>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

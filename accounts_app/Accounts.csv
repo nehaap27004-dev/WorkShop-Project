@@ -1,0 +1,49 @@
+id,groupName,groupId_id,isDefault,natureOfGroup
+1,Expense,,TRUE,1
+10,Current Liability,3,TRUE,3
+11,Short Term Deposits (Asset),9,TRUE,4
+12,Direct Expenses,1,TRUE,1
+13,Direct Incomes,2,TRUE,2
+14,Duties & Taxes,10,TRUE,3
+15,Fixed Assets,4,TRUE,4
+16,Indirect Expenses,1,TRUE,1
+17,Indirect Income,2,TRUE,2
+18,Investments,4,TRUE,4
+19,Loans & Advances(Asset),4,TRUE,4
+2,Income,,TRUE,2
+20,Loans & Liability(Liability),3,TRUE,3
+21,Miscellaneous  Expenses,1,TRUE,1
+22,Provisions,10,TRUE,3
+23,Purchase Accounts,1,TRUE,1
+24,Reserves & Surplus,7,TRUE,3
+25,Sales Accounts,2,TRUE,2
+26,Secured Loans,20,TRUE,3
+27,Stock In Hand,9,TRUE,4
+28,Sundry Creditors,10,TRUE,3
+29,Sundry Debtors,9,TRUE,4
+3,Liability,,TRUE,3
+30,Suspense Account(Asset),4,TRUE,4
+31,Suspense Account(Liability),3,TRUE,3
+32,Unsecured Loans,20,TRUE,3
+33,Proprietor Current Account,7,TRUE,3
+34,Chits Or Funds,18,TRUE,4
+35,Accounts Payables,10,TRUE,3
+36,Accounts Receivables,9,TRUE,4
+37,Accrued Income,9,TRUE,4
+38,Long Term Deposits(Asset),3,TRUE,3
+39,Short Term Loans(Liability),10,TRUE,3
+4,Assets,,TRUE,4
+40,Short Term Loans & Advances(Asset),9,TRUE,4
+41,P D C Payable,10,TRUE,3
+42,P D C Receivable,9,TRUE,4
+43,Vendor,28,TRUE,3
+44,Customer,29,TRUE,4
+45,Operating Expense,16,TRUE,1
+46,Non Operating Expense,16,TRUE,1
+47,Additional Cost,12,TRUE,1
+48,Production cost,12,TRUE,1
+5,Bank Account,9,TRUE,4
+6,Bank OD Account,20,TRUE,3
+7,Capital Account,3,TRUE,3
+8,Cash In Hand,9,TRUE,4
+9,Current Assets,4,TRUE,4

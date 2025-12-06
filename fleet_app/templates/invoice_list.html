@@ -1,0 +1,47 @@
+{% extends 'fleet_base1.html' %}
+{% load privilege_tags %}
+
+{% block content %}
+<h2>Invoices</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Invoice No</th>
+            <th>Date</th>
+            <th>Client</th>
+            
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for inv in invoices %}
+        <tr>
+            <td>{{ inv.voucher_no }}</td>
+            <td>{{ inv.date }}</td>
+            <td>{{ inv.customer }}</td>
+           
+            <td>
+                {% has_priv request.user 5 "can_edit" as can_edit_invoice %}
+                {% if can_edit_invoice %}
+                <a href="{% url 'fleet_app:edit_invoice' inv.id %}" 
+                class="btn btn-sm btn-primary">Edit</a>
+                {% endif %}
+
+                {% has_priv request.user 5 "can_delete" as can_delete_invoice %}
+                {% if can_delete_invoice %}
+                <button onclick="deleteInvoice({{ inv.id }}, '{{ inv.invoice_no }}')"
+                        class="btn btn-sm btn-danger">
+                    Delete
+                </button>
+                {% endif %}
+
+
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="5">No invoices found.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

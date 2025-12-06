@@ -1,0 +1,44 @@
+{% extends 'item_base.html' %}
+{% block title %}Sales Return Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Sales Return - {{ purchase.voucher_no }}</h2>
+    <p><strong>Ledger:</strong> {{ purchase.ledger }}</p>
+    <p><strong>Date:</strong> {{ purchase.transaction_date }}</p>
+    <p><strong>Payment Mode:</strong> {{ purchase.payment_mode }}</p>
+    <p><strong>Remarks:</strong> {{ purchase.remarks }}</p>
+
+    <h4 class="mt-4">Returned Items</h4>
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Rate</th>
+                <th>Net Amount</th>
+                <th>Tax</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.item_name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.unit }}</td>
+                <td>{{ item.purchase_rate }}</td>
+                <td>{{ item.item_net_amount }}</td>
+                <td>{{ item.item_tax_amount }}</td>
+                <td>{{ item.item_total_amount }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7">No items found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'item_master:sales_return_list' %}" class="btn btn-secondary mt-3">Back to List</a>
+</div>
+{% endblock %}

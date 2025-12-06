@@ -1,0 +1,135 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Global Settings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .settings-section { display: none; }
+        .settings-section.active { display: block; }
+    </style>
+</head>
+<body class="p-4">
+    {% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} mt-2" role="alert">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+    <div class="container">
+        <h2 class="mb-3">Global Settings</h2>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3" id="settingsTabs">
+            <li class="nav-item">
+                <a class="nav-link active" data-target="general">General</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-target="sales">Transactions</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-target="barcode">Barcode</a>
+            </li>
+        </ul>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- General -->
+<div id="general" class="settings-section active">
+    <div class="form-check">
+        {{ form.update_rate_from_purchase }} {{ form.update_rate_from_purchase.label_tag }}
+    </div>
+    <div class="form-check">
+        {{ form.price_list }} {{ form.price_list.label_tag }}
+    </div>
+    <div class="form-check">
+        {{ form.billbybill }} {{ form.billbybill.label_tag }}
+    </div>
+    <div class="form-check">
+        {{ form.serial_no_tracking_item }} {{ form.serial_no_tracking_item.label_tag }}
+    </div>
+    <div class="form-check">
+        {{ form.costcenter }} {{ form.costcenter.label_tag }}
+    </div>
+</div>
+
+
+            <!-- Sales -->
+            <div id="sales" class="settings-section">
+                <div class="form-check">
+    {{ form.show_customer_rate }} {{ form.show_customer_rate.label_tag }}
+</div>
+<div class="form-check">
+    {{ form.show_vendor_rate }} {{ form.show_vendor_rate.label_tag }}
+</div>
+
+                <div class="mb-2">{{ form.negative_stock.label_tag }} {{ form.negative_stock }}</div>
+                <div class="mb-2">{{ form.credit_limit.label_tag }} {{ form.credit_limit }}</div>
+            </div>
+
+            <!-- Barcode -->
+            <div id="barcode" class="settings-section">
+                <div class="form-check">
+                {{ form.barcode }} {{ form.barcode.label_tag }}
+            </div>
+            <div class="form-check">
+                {{ form.batch_expiry }} {{ form.batch_expiry.label_tag }}
+            </div>
+            <div class="form-check">
+                {{ form.barcode_auto_prefix }} {{ form.barcode_auto_prefix.label_tag }}
+            </div>
+            <div class="form-check">
+                {{ form.barcode_custom_prefix }} {{ form.barcode_custom_prefix.label_tag }}
+            </div>
+
+                <div class="mb-2">{{ form.starting_barcode.label_tag }} {{ form.starting_barcode }}</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">Save</button>
+        </form>
+    </div>
+
+    <script>
+        // Tab switching
+        const tabs = document.querySelectorAll("#settingsTabs .nav-link");
+        const sections = document.querySelectorAll(".settings-section");
+
+        tabs.forEach(tab => {
+            tab.addEventListener("click", () => {
+                tabs.forEach(t => t.classList.remove("active"));
+                tab.classList.add("active");
+
+                sections.forEach(sec => sec.classList.remove("active"));
+                document.getElementById(tab.dataset.target).classList.add("active");
+            });
+        });
+
+        // Barcode field logic
+        const autoPrefix = document.getElementById("id_barcode_auto_prefix");
+    const customPrefix = document.getElementById("id_barcode_custom_prefix");
+    const startingBarcode = document.getElementById("id_starting_barcode");
+
+    function updateBarcodeFields() {
+        if (autoPrefix.checked) {
+            // auto prefix ON → custom prefix readonly
+            customPrefix.setAttribute("readonly", true);
+        } else {
+            // auto prefix OFF → custom prefix writable
+            customPrefix.removeAttribute("readonly");
+        }
+
+        // starting barcode should always be writable
+        startingBarcode.removeAttribute("readonly");
+    }
+
+    // Event listener
+    autoPrefix.addEventListener("change", updateBarcodeFields);
+
+    // Run once on page load
+    updateBarcodeFields();
+    </script>
+</body>
+</html>

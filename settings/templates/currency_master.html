@@ -1,0 +1,109 @@
+{% extends "fleet_base1.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <h3 class="mb-3 text-primary fw-bold">Currency Master</h3>
+
+    <!-- Currency Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            {% if edit_mode %}
+                Edit Currency
+            {% else %}
+                Add New Currency
+            {% endif %}
+        </div>
+        <div class="card-body">
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label>Currency Name</label>
+                {{ form.CurrencyName }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Decimal</label>
+                {{ form.Decimal }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Major Symbol</label>
+                {{ form.MajorSymbol }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Minor Symbol</label>
+                {{ form.MinorSymbol }}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            {% if edit_mode %} Update {% else %} Save {% endif %}
+        </button>
+
+        {% if edit_mode %}
+            <a href="{% url 'settings:currency_list_create' %}" class="btn btn-secondary">Cancel</a>
+        {% endif %}
+    </form>
+</div>
+    </div>
+
+    <!-- Currency List -->
+    <div class="card">
+        <div class="card-header">
+            Currency List
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Decimal</th>
+                        <th>Major Symbol</th>
+                        <th>Minor Symbol</th>
+                        <th width="140">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in currencies %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ c.CurrencyName }}</td>
+                            <td>{{ c.Decimal }}</td>
+                            <td>{{ c.MajorSymbol }}</td>
+                            <td>{{ c.MinorSymbol }}</td>
+                            <td>
+                                <a href="{% url 'settings:currency_edit' c.id %}" class="btn btn-sm btn-warning">Edit</a>
+
+                                <button class="btn btn-sm btn-danger"
+                                        onclick="confirmDelete({{ c.id }})">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No currency records found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Script -->
+<script>
+function confirmDelete(id) {
+    if (confirm("Are you sure want to delete this currency?")) {
+        window.location.href = "/currency/delete/" + id + "/";
+    }
+}
+</script>
+
+{% endblock %}

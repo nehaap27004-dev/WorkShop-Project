@@ -1,0 +1,2050 @@
+{% extends 'item_base.html' %}
+{% block content %}
+
+<style>
+    :root {
+        --primary-color: #4a90e2;
+        --secondary-color: #f5f5f5;
+        --border-color: #ddd;
+        --text-color: #333;
+        --error-color: #dc3545;
+        --success-color: #28a745;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .main-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    h2 {
+        color: var(--text-color);
+        margin-bottom: 2rem;
+    }
+
+    .panel {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .panel-header {
+        background: var(--secondary-color);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .panel-header h4 {
+        margin: 0;
+        color: var(--text-color);
+    }
+
+    .panel-body {
+        padding: 1.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+    }
+
+    .error-feedback {
+        color: var(--error-color);
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+    }
+
+    th, td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+        background-color: var(--secondary-color);
+        font-weight: 600;
+    }
+
+    .button {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .button-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .button-success {
+        background-color: var(--success-color);
+        color: white;
+    }
+
+    .button-danger {
+        background-color: var(--error-color);
+        color: white;
+    }
+
+    .button:hover {
+        opacity: 0.9;
+    }
+
+    .button-container {
+        text-align: right;
+        margin-top: 2rem;
+    }
+
+    .form-grid-v {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 5px;
+    }
+
+    .form-group-v {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .small-field-v input, .small-field-v select {
+        width: 100px;
+        padding: 8px;
+    }
+
+    .medium-field-v input, .medium-field-v select {
+        width: 150px;
+        padding: 8px;
+    }
+
+    .large-field-v input, .large-field-v select {
+        width: 400px;
+        padding: 30px;
+    }
+
+    .form-group-remark.large-field-v {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group-remark textarea {
+        width: 200px;
+        height: 200px;
+        padding: 8px;
+        resize: none;
+    }
+
+    .form-grid-item {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .form-group-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .small-field {
+        flex: 1 1 10%;
+    }
+
+    .medium-field {
+        flex: 1 1 20%;
+    }
+
+    .batch-field {
+        position: relative;
+    }
+
+    .item-row {
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+    }
+
+    .item-row input {
+        margin-bottom: 5px;
+    }
+
+    .formset-item {
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        padding: 15px;
+        border-radius: 5px;
+        background: #f9f9f9;
+    }
+
+    .formset-item.to-delete {
+        background: #ffebee;
+        border-color: #f44336;
+    }
+
+    .formset-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        font-weight: bold;
+        background: #e3f2fd;
+        padding: 10px;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="main-container d-flex justify-content-between align-items-center mb-3">
+    <h2 class="m-0">
+        {% if is_edit %}Edit{% else %}Create{% endif %} Purchase Return Voucher
+    </h2>
+    <a href="" class="btn btn-primary">
+        View Report
+    </a>
+
+    
+</div>
+{% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form id="purchaseReturnVoucherForm" method="POST">
+        {% csrf_token %}
+        
+        <div class="panel">
+            <div class="panel-header">
+                <h4>Voucher Details</h4>
+            </div>
+            <div class="panel-body">
+                <div class="form-grid-v">
+                    <div class="form-group-v small-field-v">
+                        <label>{{ voucher_form.voucher_no.label }}</label>
+                        {{ voucher_form.voucher_no }}
+                        {% if voucher_form.voucher_no.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.voucher_no.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group-v small-field-v">
+                        <label>{{ voucher_form.transaction_date.label }}</label>
+                        {{ voucher_form.transaction_date }}
+                        {% if voucher_form.transaction_date.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.transaction_date.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group-v small-field-v">
+                        <label>{{ voucher_form.payment_mode.label }}</label>
+                        {{ voucher_form.payment_mode }}
+                        {% if voucher_form.payment_mode.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.payment_mode.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group-v medium-field-v d-flex align-items-end gap-2">
+                        <div class="flex-grow-1">
+                            <label class="form-label">{{ voucher_form.ledger.label }}</label>
+                            <div class="d-flex align-items-center gap-2">
+                                {{ voucher_form.ledger }}
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#vendorModal">
+                                    <i class="fas fa-plus"></i> +
+                                </button>
+                            </div>
+                            {% if voucher_form.ledger.errors %}
+                            <div class="error-feedback">
+                                {{ voucher_form.ledger.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group-v medium-field-v">
+                        <label>{{ voucher_form.cost_center.label }}</label>
+                        {{ voucher_form.cost_center }}
+                        {% if voucher_form.cost_center.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.cost_center.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group medium-field">
+                        <label>{{ voucher_form.VendorInvNo.label }}</label>
+                        {{ voucher_form.VendorInvNo }}
+                        {% if voucher_form.VendorInvNo.errors %}
+                        <div class="error-feedback">{{ voucher_form.VendorInvNo.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group medium-field">
+                        <label>{{ voucher_form.InvoiceDate.label }}</label>
+                        {{ voucher_form.InvoiceDate }}
+                        {% if voucher_form.InvoiceDate.errors %}
+                        <div class="error-feedback">{{ voucher_form.InvoiceDate.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group medium-field" style="display: none;">
+                        <label>{{ voucher_form.voucherType.label }}</label>
+                        {{ voucher_form.voucherType }}
+                        {% if voucher_form.voucherType.errors %}
+                        <div class="error-feedback">{{ voucher_form.voucherType.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group-remark large-field-v">
+                        <label>{{ voucher_form.remarks.label }}</label>
+                        {{ voucher_form.remarks }}
+                        {% if voucher_form.remarks.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.remarks.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if is_edit %}
+        <!-- Edit Mode: Show existing items with formset -->
+        <div class="panel">
+            <div class="panel-header">
+                <h4>Purchase Items</h4>
+            </div>
+            <div class="panel-body">
+                {% if item_formset %}
+                    {{ item_formset.management_form }}
+                    
+                    {% for form in item_formset %}
+                        <div class="formset-item" data-form-index="{{ forloop.counter0 }}">
+                            <div class="formset-header">
+                                <span>Item #{{ forloop.counter }}</span>
+                                {% if form.instance.pk %}
+                                <label>
+                                    {{ form.DELETE }}
+                                    Delete this item
+                                </label>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-grid-item">
+                                <!-- Hidden fields -->
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                                
+                                <div class="form-group-item medium-field">
+                                    <label>{{ form.item_name.label }}</label>
+                                    {{ form.item_name }}
+                                    {% if form.item_name.errors %}
+                                    <div class="error-feedback">{{ form.item_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field">
+                                    <label>{{ form.item_code.label }}</label>
+                                    {{ form.item_code }}
+                                    {% if form.item_code.errors %}
+                                    <div class="error-feedback">{{ form.item_code.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field">
+                                    <label>{{ form.barcode_code.label }}</label>
+                                    {{ form.barcode_code }}
+                                    {% if form.barcode_code.errors %}
+                                    <div class="error-feedback">{{ form.barcode_code.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field batch-field">
+                                    <label>{{ form.Batch.label }}</label>
+                                    {{ form.Batch }}
+                                    <button type="button" class="btn btn-sm btn-outline-primary mt-1" data-bs-toggle="modal" data-bs-target="#addBatchModal">
+                                        + Add Batch
+                                    </button>
+                                    {% if form.Batch.errors %}
+                                    <div class="error-feedback">{{ form.Batch.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field mfd-field">
+                                    <label>{{ form.MFD.label }}</label>
+                                    {{ form.MFD }}
+                                    {% if form.MFD.errors %}
+                                    <div class="error-feedback">{{ form.MFD.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field exp-field">
+                                    <label>{{ form.EXP.label }}</label>
+                                    {{ form.EXP }}
+                                    {% if form.EXP.errors %}
+                                    <div class="error-feedback">{{ form.EXP.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field">
+                                    <label>{{ form.unit.label }}</label>
+                                    {{ form.unit }}
+                                    {% if form.unit.errors %}
+                                    <div class="error-feedback">{{ form.unit.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group-item small-field">
+                                    <label>{{ form.quantity.label }}</label>
+                                    {{ form.quantity }}
+                                    {% if form.quantity.errors %}
+                                    <div class="error-feedback">{{ form.quantity.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field">
+                                    <label>{{ form.purchase_rate.label }}</label>
+                                    {{ form.purchase_rate }}
+                                    {% if form.purchase_rate.errors %}
+                                    <div class="error-feedback">{{ form.purchase_rate.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field">
+                                    <label>{{ form.item_net_amount.label }}</label>
+                                    {{ form.item_net_amount }}
+                                    {% if form.item_net_amount.errors %}
+                                    <div class="error-feedback">{{ form.item_net_amount.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field">
+                                    <label>{{ form.tax.label }}</label>
+                                    {{ form.tax }}
+                                    {% if form.tax.errors %}
+                                    <div class="error-feedback">{{ form.tax.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field">
+                                    <label>{{ form.item_tax_amount.label }}</label>
+                                    {{ form.item_tax_amount }}
+                                    {% if form.item_tax_amount.errors %}
+                                    <div class="error-feedback">{{ form.item_tax_amount.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field">
+                                    <label>{{ form.free_quantity.label }}</label>
+                                    {{ form.free_quantity }}
+                                    {% if form.free_quantity.errors %}
+                                    <div class="error-feedback">{{ form.free_quantity.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field">
+                                    <label>{{ form.sales_rate.label }}</label>
+                                    {{ form.sales_rate }}
+                                    {% if form.sales_rate.errors %}
+                                    <div class="error-feedback">{{ form.sales_rate.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item small-field">
+                                    <label>{{ form.profit.label }}</label>
+                                    {{ form.profit }}
+                                    {% if form.profit.errors %}
+                                    <div class="error-feedback">{{ form.profit.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group-item medium-field">
+                                    <label>{{ form.item_total_amount.label }}</label>
+                                    {{ form.item_total_amount }}
+                                    {% if form.item_total_amount.errors %}
+                                    <div class="error-feedback">{{ form.item_total_amount.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if form.non_field_errors %}
+                                <div class="error-feedback">
+                                    {{ form.non_field_errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    
+                    {% if item_formset.non_form_errors %}
+                        <div class="error-feedback">
+                            {{ item_formset.non_form_errors }}
+                        </div>
+                    {% endif %}
+                {% endif %}
+                
+                <!-- Add Item Button for Edit Mode -->
+                <div class="button-container">
+                    <button type="button" class="button button-primary" id="addFormsetItemBtn">Add New Item</button>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Create Mode: JavaScript item addition -->
+        <div class="panel">
+            <div class="panel-header">
+                <h4>Add Items</h4>
+            </div>
+            <div class="panel-body">
+                <input type="hidden" name="items_data" id="itemsData">
+                
+                <div id="itemEntryForm">
+                    <div class="form-grid-item">
+                        <div class="form-group-item medium-field" >
+                            <label>{{ item_form.item_name.label }}</label>
+                            {{ item_form.item_name }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ item_form.item_code.label }}</label>
+                            {{ item_form.item_code }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ item_form.barcode_code.label }}</label>
+                            {{ item_form.barcode_code }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        <div class="form-group-item small-field batch-field">
+                            <label>{{ item_form.Batch.label }}</label>
+                            {{ item_form.Batch }}
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-1" data-bs-toggle="modal" data-bs-target="#addBatchModal">
+                                + Add Batch
+                            </button>
+                            <div class="error-feedback"></div>
+                        </div>
+                        <div class="form-group-item small-field mfd-field">
+                            <label>{{ item_form.MFD.label }}</label>
+                            {{ item_form.MFD }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        <div class="form-group-item small-field exp-field">
+                            <label>{{ item_form.EXP.label }}</label>
+                            {{ item_form.EXP }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ item_form.unit.label }}</label>
+                            {{ item_form.unit }}
+                            <div class="error-feedback"></div>
+                        </div>
+
+                        <div class="form-group-item small-field">
+                            <label>{{ item_form.quantity.label }}</label>
+                            {{ item_form.quantity }}
+                            <div class="error-feedback"></div>
+                            <small id="stockInfo" class="form-text text-muted" style="font-size: 12px; color: green;"></small>
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ item_form.purchase_rate.label }}</label>
+                            {{ item_form.purchase_rate }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ item_form.item_net_amount.label }}</label>
+                            {{ item_form.item_net_amount }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        
+                        <div class="form-group-item small-field">
+                            <label>{{ item_form.tax.label }}</label>
+                            {{ item_form.tax }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ item_form.item_tax_amount.label }}</label>
+                            {{ item_form.item_tax_amount }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        
+                        <div class="form-group-item small-field">
+                            <label>{{ item_form.free_quantity.label }}</label>
+                            {{ item_form.free_quantity }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        
+                        <div class="form-group-item small-field">
+                            <label>{{ item_form.sales_rate.label }}</label>
+                            {{ item_form.sales_rate }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ item_form.profit.label }}</label>
+                            {{ item_form.profit }}
+                            <div class="error-feedback"></div>
+                        </div>
+                        <div class="form-group-item medium-field">
+                            <label>{{ item_form.item_total_amount.label }}</label>
+                            {{ item_form.item_total_amount }}
+                            <div class="error-feedback"></div>
+                        </div>
+                    </div>
+                    <div class="button-container">
+                        <button type="button" class="button button-primary" id="addItemBtn">Add Item</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h4>Added Items</h4>
+            </div>
+            <div class="panel-body">
+                <div class="table-container">
+                    <table id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Code</th>
+                                <th>Quantity</th>
+                                <th>Batch</th>
+                                <th>Rate</th>
+                                <th>Cost</th>
+                                <th>Net Amount</th>
+                                <th>Tax %</th>
+                                <th>Tax Amount</th>
+                                <th>Unit</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Items will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="panel">
+            <div class="panel-header">
+                <h4>Total</h4>
+            </div>
+            <div class="panel-body">
+                <div class="form-grid">
+                    <div class="form-group medium-field">
+                        <label>{{ voucher_form.lrNo.label }}</label>
+                        {{ voucher_form.lrNo }}
+                        {% if voucher_form.lrNo.errors %}
+                        <div class="error-feedback">{{ voucher_form.lrNo.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group medium-field">
+                        <label>{{ voucher_form.transportCompany.label }}</label>
+                        {{ voucher_form.transportCompany }}
+                        {% if voucher_form.transportCompany.errors %}
+                        <div class="error-feedback">{{ voucher_form.transportCompany.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group medium-field">
+                        <label>{{ voucher_form.Freight.label }}</label>
+                        {{ voucher_form.Freight }}
+                        {% if voucher_form.Freight.errors %}
+                        <div class="error-feedback">{{ voucher_form.Freight.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group medium-field">
+                        <label>{{ voucher_form.total_net_value.label }}</label>
+                        {{ voucher_form.total_net_value }}
+                        {% if voucher_form.total_net_value.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.total_net_value.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group medium-field">
+                        <label>{{ voucher_form.total_tax_amount.label }}</label>
+                        {{ voucher_form.total_tax_amount }}
+                        {% if voucher_form.total_tax_amount.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.total_tax_amount.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group small-field">
+                        <label>{{ voucher_form.discount.label }}</label>
+                        {{ voucher_form.discount }}
+                        {% if voucher_form.discount.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.discount.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group medium-field">
+                        <label>{{ voucher_form.grand_total_amount.label }}</label>
+                        {{ voucher_form.grand_total_amount }}
+                        {% if voucher_form.grand_total_amount.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.grand_total_amount.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>            
+
+        <div class="button-container">
+            <button type="submit" class="button button-success" id="saveVoucherBtn">
+                {% if is_edit %}Update{% else %}Save{% endif %} Voucher
+            </button>
+        </div>
+    </form>
+
+    <!-- Batch Modal -->
+    <div class="modal fade" id="addBatchModal" tabindex="-1" aria-labelledby="addBatchModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <form id="addBatchForm">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="addBatchModalLabel">Add New Batch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="p-2 rounded mt-2" style="background: linear-gradient(to right, #6a11cb, #2575fc); color: white;">
+                    <label for="item_select" class="form-label fw-bold">Item</label>
+                    <select class="form-select mt-1" id="item_select" required>
+                        <option value="">-- Select Item --</option>
+                        {% for item in items %}
+                        <option value="{{ item.id }}" data-barcode="{{ item.IsItemBarcode|yesno:"true,false" }}">{{ item.item_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+
+                <label for="batch_no" class="form-label">Batch No</label>
+                <input type="text" class="form-control" id="batch_no" required>
+
+                <div id="modal-barcode-field" style="display: none;">
+                    <label for="modal_barcode_code" class="form-label mt-2">Barcode</label>
+                    <input type="text" class="form-control" id="modal_barcode_code">
+                </div>
+                
+                <label for="mfd" class="form-label mt-2">Manufacture Date</label>
+                <input type="datetime-local" class="form-control" id="mfd">
+      
+                <label for="exp" class="form-label mt-2">Expiry Date</label>
+                <input type="datetime-local" class="form-control" id="exp">
+      
+                <div class="form-check mt-2">
+                    <input type="checkbox" class="form-check-input" id="is_active">
+                    <label class="form-check-label" for="is_active">Is Active</label>
+                </div>
+      
+                <div id="batch-error" class="text-danger mt-2"></div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Batch</button>
+              </div>
+            </div>
+          </form>
+        </div>
+    </div>
+
+    <!-- Vendor Creation Modal -->
+    <div class="modal fade" id="vendorModal" tabindex="-1" aria-labelledby="vendorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="vendorModalLabel">Add New Vendor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="vendorForm" method="post">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vendor_ledger_name" class="form-label">Vendor Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="vendor_ledger_name" name="ledger_name" placeholder="Vendor Name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vendor_opening_balance" class="form-label">Opening Balance</label>
+                                    <input type="number" step="0.01" class="form-control" id="vendor_opening_balance" name="opening_balance" value="0.00">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vendor_email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="vendor_email" name="email" placeholder="email@example.com">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vendor_mobile" class="form-label">Mobile</label>
+                                    <input type="text" class="form-control" id="vendor_mobile" name="mobile" placeholder="Mobile Number">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vendor_phone_no" class="form-label">Phone No</label>
+                                    <input type="text" class="form-control" id="vendor_phone_no" name="phone_no" placeholder="Phone Number">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vendor_trn_number" class="form-label">TRN No</label>
+                                    <input type="text" class="form-control" id="vendor_trn_number" name="trn_number" placeholder="TRN Number">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="vendor_address1" class="form-label">Address</label>
+                            <textarea class="form-control" id="vendor_address1" name="address1" rows="2" placeholder="Address"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="vendor_country" class="form-label">Country</label>
+                                    <input type="text" class="form-control" id="vendor_country" name="country" placeholder="Country">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="vendor_state" class="form-label">State</label>
+                                    <input type="text" class="form-control" id="vendor_state" name="state" placeholder="State">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="vendor_city" class="form-label">City</label>
+                                    <input type="text" class="form-control" id="vendor_city" name="city" placeholder="City">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vendor_zipcode" class="form-label">Zipcode</label>
+                                    <input type="text" class="form-control" id="vendor_zipcode" name="zipcode" placeholder="Zipcode">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="vendor_remark" class="form-label">Remark</label>
+                            <textarea class="form-control" id="vendor_remark" name="remark" rows="2" placeholder="Remarks"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="vendor_description" class="form-label">Description</label>
+                            <textarea class="form-control" id="vendor_description" name="description" rows="2" placeholder="Description"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveVendor">Save Vendor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner (hidden by default) -->
+    <div id="vendorLoadingSpinner" class="d-none">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const isEditMode = {{ is_edit|yesno:"true,false" }};
+    
+    if (isEditMode) {
+        initEditMode();
+    } else {
+        initCreateMode();
+    }
+    
+    // Common functionality
+    initVoucherCalculations();
+    initItemDetailsRetrieval();
+    initBatchModal();
+    initVendorModal();
+});
+
+// ============== EDIT MODE FUNCTIONS ==============
+function initEditMode() {
+    console.log("Initializing edit mode");
+    
+    // Add event listeners to existing formset items
+    const formsetItems = document.querySelectorAll('.formset-item');
+    formsetItems.forEach((item, index) => {
+        setupFormsetItemCalculations(item, index);
+    });
+    
+    // Add item button for edit mode
+    const addFormsetItemBtn = document.getElementById('addFormsetItemBtn');
+    if (addFormsetItemBtn) {
+        addFormsetItemBtn.addEventListener('click', addNewFormsetItem);
+    }
+    
+    // Calculate totals on page load
+    calculateVoucherTotals();
+}
+
+function setupFormsetItemCalculations(formsetItem, formIndex) {
+    const prefix = `form-${formIndex}`;
+    
+    // Get form fields
+    const quantityField = formsetItem.querySelector(`input[name$="-quantity"]`);
+    const purchaseRateField = formsetItem.querySelector(`input[name$="-purchase_rate"]`);
+    const netAmountField = formsetItem.querySelector(`input[name$="-item_net_amount"]`);
+    const taxField = formsetItem.querySelector(`input[name$="-tax"]`);
+    const taxAmountField = formsetItem.querySelector(`input[name$="-item_tax_amount"]`);
+    const salesRateField = formsetItem.querySelector(`input[name$="-sales_rate"]`);
+    const profitField = formsetItem.querySelector(`input[name$="-profit"]`);
+    const totalAmountField = formsetItem.querySelector(`input[name$="-item_total_amount"]`);
+    const deleteCheckbox = formsetItem.querySelector(`input[name$="-DELETE"]`);
+    
+    // Add calculation event listeners
+    if (quantityField && purchaseRateField) {
+        [quantityField, purchaseRateField].forEach(field => {
+            field.addEventListener('input', () => calculateItemAmounts(formsetItem));
+        });
+    }
+    
+    if (taxField) {
+        taxField.addEventListener('input', () => calculateItemAmounts(formsetItem));
+    }
+    
+    if (salesRateField && purchaseRateField) {
+        [salesRateField, purchaseRateField].forEach(field => {
+            field.addEventListener('input', () => calculateProfit(formsetItem));
+        });
+    }
+    
+    // Handle delete checkbox
+    if (deleteCheckbox) {
+        deleteCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                formsetItem.classList.add('to-delete');
+            } else {
+                formsetItem.classList.remove('to-delete');
+            }
+            calculateVoucherTotals();
+        });
+    }
+}
+
+function calculateItemAmounts(formsetItem) {
+    const quantityField = formsetItem.querySelector(`input[name$="-quantity"]`);
+    const purchaseRateField = formsetItem.querySelector(`input[name$="-purchase_rate"]`);
+    const netAmountField = formsetItem.querySelector(`input[name$="-item_net_amount"]`);
+    const taxField = formsetItem.querySelector(`input[name$="-tax"]`);
+    const taxAmountField = formsetItem.querySelector(`input[name$="-item_tax_amount"]`);
+    const totalAmountField = formsetItem.querySelector(`input[name$="-item_total_amount"]`);
+    
+    if (!quantityField || !purchaseRateField || !netAmountField) return;
+    
+    const quantity = parseFloat(quantityField.value) || 0;
+    const purchaseRate = parseFloat(purchaseRateField.value) || 0;
+    const taxPercent = parseFloat(taxField?.value) || 0;
+    
+    // Calculate net amount
+    const netAmount = quantity * purchaseRate;
+    netAmountField.value = netAmount.toFixed(2);
+    
+    // Calculate tax amount
+    const taxAmount = netAmount * (taxPercent / 100);
+    if (taxAmountField) {
+        taxAmountField.value = taxAmount.toFixed(2);
+    }
+    
+    // Calculate total amount
+    const totalAmount = netAmount + taxAmount;
+    if (totalAmountField) {
+        totalAmountField.value = totalAmount.toFixed(2);
+    }
+    
+    // Update voucher totals
+    calculateVoucherTotals();
+}
+
+function calculateProfit(formsetItem) {
+    const purchaseRateField = formsetItem.querySelector(`input[name$="-purchase_rate"]`);
+    const salesRateField = formsetItem.querySelector(`input[name$="-sales_rate"]`);
+    const profitField = formsetItem.querySelector(`input[name$="-profit"]`);
+    
+    if (!purchaseRateField || !salesRateField || !profitField) return;
+    
+    const purchaseRate = parseFloat(purchaseRateField.value) || 0;
+    const salesRate = parseFloat(salesRateField.value) || 0;
+    const profit = salesRate - purchaseRate;
+    
+    profitField.value = profit.toFixed(2);
+}
+
+function addNewFormsetItem() {
+    const formsetContainer = document.querySelector('.panel-body');
+    const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    
+    if (!totalFormsInput) {
+        console.error('TOTAL_FORMS input not found');
+        return;
+    }
+    
+    const currentTotal = parseInt(totalFormsInput.value);
+    const newIndex = currentTotal;
+    
+    // Create new formset item HTML
+    const newItemHtml = createFormsetItemHtml(newIndex);
+    
+    // Insert before the "Add New Item" button
+    const addButton = document.getElementById('addFormsetItemBtn');
+    const newItemDiv = document.createElement('div');
+    newItemDiv.innerHTML = newItemHtml;
+    
+    formsetContainer.insertBefore(newItemDiv.firstElementChild, addButton.parentElement);
+    
+    // Update total forms count
+    totalFormsInput.value = currentTotal + 1;
+    
+    // Setup calculations for new item
+    const newFormsetItem = formsetContainer.querySelector(`[data-form-index="${newIndex}"]`);
+    setupFormsetItemCalculations(newFormsetItem, newIndex);
+}
+
+function createFormsetItemHtml(index) {
+    return `
+        <div class="formset-item" data-form-index="${index}">
+            <div class="formset-header">
+                <span>Item #${index + 1}</span>
+                <label>
+                    <input type="checkbox" name="form-${index}-DELETE" id="id_form-${index}-DELETE">
+                    Delete this item
+                </label>
+            </div>
+            
+            <div class="form-grid-item">
+                <input type="hidden" name="form-${index}-id" id="id_form-${index}-id">
+                
+                <div class="form-group-item medium-field">
+                    <label>Item Name</label>
+                    <select name="form-${index}-item_name" id="id_form-${index}-item_name" class="form-control">
+                        <option value="">---------</option>
+                        {% for item in items %}
+                        <option value="{{ item.id }}">{{ item.item_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group-item small-field">
+                    <label>Item Code</label>
+                    <input type="text" name="form-${index}-item_code" id="id_form-${index}-item_code" class="form-control">
+                </div>
+                
+                <div class="form-group-item small-field">
+                    <label>Barcode</label>
+                    <input type="text" name="form-${index}-barcode_code" id="id_form-${index}-barcode_code" class="form-control">
+                </div>
+                
+                <div class="form-group-item small-field">
+                    <label>Quantity</label>
+                    <input type="number" name="form-${index}-quantity" id="id_form-${index}-quantity" class="form-control">
+                </div>
+                
+                <div class="form-group-item small-field">
+                    <label>Purchase Rate</label>
+                    <input type="number" step="0.01" name="form-${index}-purchase_rate" id="id_form-${index}-purchase_rate" class="form-control">
+                </div>
+                
+                <div class="form-group-item small-field">
+                    <label>Net Amount</label>
+                    <input type="number" step="0.01" name="form-${index}-item_net_amount" id="id_form-${index}-item_net_amount" class="form-control" readonly>
+                </div>
+                
+                <div class="form-group-item small-field">
+                    <label>Tax %</label>
+                    <input type="number" step="0.01" name="form-${index}-tax" id="id_form-${index}-tax" class="form-control">
+                </div>
+                
+                <div class="form-group-item small-field">
+                    <label>Tax Amount</label>
+                    <input type="number" step="0.01" name="form-${index}-item_tax_amount" id="id_form-${index}-item_tax_amount" class="form-control" readonly>
+                </div>
+                
+                <div class="form-group-item small-field">
+                    <label>Sales Rate</label>
+                    <input type="number" step="0.01" name="form-${index}-sales_rate" id="id_form-${index}-sales_rate" class="form-control">
+                </div>
+                
+                <div class="form-group-item medium-field">
+                    <label>Total Amount</label>
+                    <input type="number" step="0.01" name="form-${index}-item_total_amount" id="id_form-${index}-item_total_amount" class="form-control" readonly>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function calculateVoucherTotals() {
+    const formsetItems = document.querySelectorAll('.formset-item:not(.to-delete)');
+    let totalNet = 0;
+    let totalTax = 0;
+    let grandTotal = 0;
+    
+    formsetItems.forEach(item => {
+        const deleteCheckbox = item.querySelector('input[name$="-DELETE"]');
+        if (deleteCheckbox && deleteCheckbox.checked) return; // Skip deleted items
+        
+        const netAmount = parseFloat(item.querySelector('input[name$="-item_net_amount"]')?.value) || 0;
+        const taxAmount = parseFloat(item.querySelector('input[name$="-item_tax_amount"]')?.value) || 0;
+        const itemTotal = parseFloat(item.querySelector('input[name$="-item_total_amount"]')?.value) || 0;
+        
+        totalNet += netAmount;
+        totalTax += taxAmount;
+        grandTotal += itemTotal;
+    });
+    
+    // Update voucher total fields
+    const totalNetField = document.getElementById('id_total_net_value');
+    const totalTaxField = document.getElementById('id_total_tax_amount');
+    const grandTotalField = document.getElementById('id_grand_total_amount');
+    const discountField = document.getElementById('id_discount');
+    const freightField = document.getElementById('id_Freight');
+    
+    if (totalNetField) totalNetField.value = totalNet.toFixed(2);
+    if (totalTaxField) totalTaxField.value = totalTax.toFixed(2);
+    
+    // Calculate final grand total with discount and freight
+    const discount = parseFloat(discountField?.value) || 0;
+    const freight = parseFloat(freightField?.value) || 0;
+    const finalGrandTotal = grandTotal + freight - discount;
+    
+    if (grandTotalField) grandTotalField.value = finalGrandTotal.toFixed(2);
+}
+
+// ============== CREATE MODE FUNCTIONS ==============
+function initCreateMode() {
+    console.log("Initializing create mode");
+    
+    // Initialize variables for tracking items
+    let items = [];
+    let itemCounter = 0;
+    
+    // Get relevant elements
+    const addItemBtn = document.getElementById("addItemBtn");
+    const itemsTable = document.getElementById("itemsTable").getElementsByTagName("tbody")[0];
+    const itemsDataInput = document.getElementById("itemsData");
+    const purchaseVoucherForm = document.getElementById("purchaseVoucherForm");
+    
+    // Input fields for item details
+    const itemNameField = document.getElementById("id_item_name");
+    const itemCodeField = document.getElementById("id_item_code");
+    const barcodeField = document.getElementById("id_barcode_code");
+    const batchField = document.getElementById("id_Batch");
+    const mfdField = document.getElementById("id_MFD");
+    const expField = document.getElementById("id_EXP");
+    const unitField = document.getElementById("id_unit");
+    const quantityField = document.getElementById("id_quantity");
+    const purchaseRateField = document.getElementById("id_purchase_rate");
+    const netAmountField = document.getElementById("id_item_net_amount");
+    const taxField = document.getElementById("id_tax");
+    const taxAmountField = document.getElementById("id_item_tax_amount");
+    const freeQuantityField = document.getElementById("id_free_quantity");
+    const salesRateField = document.getElementById("id_sales_rate");
+    const profitField = document.getElementById("id_profit");
+    const totalAmountField = document.getElementById("id_item_total_amount");
+    
+    // Event listeners for item calculations
+    if (quantityField && purchaseRateField) {
+        quantityField.addEventListener("input", calculateItemNetAmount);
+        purchaseRateField.addEventListener("input", calculateItemNetAmount);
+    }
+    if (taxField) {
+        taxField.addEventListener("input", calculateItemTaxAmount);
+    }
+    if (salesRateField) {
+        salesRateField.addEventListener("input", calculateCreateModeProfit);
+    }
+    
+    // Add item button click handler
+    if (addItemBtn) {
+        addItemBtn.addEventListener("click", function() {
+            // Validate item fields
+            if (!validateItemFields()) {
+                return;
+            }
+            
+            // Create item object
+            const item = createItemObject();
+            
+            // Add item to array and update table
+            items.push(item);
+            addItemToTable(item);
+            
+            // Update totals
+            updateCreateModeTotals();
+            
+            // Reset item form fields
+            resetItemFields();
+            
+            // Show success message
+            showSuccessMessage("Item added successfully!");
+        });
+    }
+    
+    // Form submission handler for create mode
+    if (purchaseVoucherForm) {
+        purchaseVoucherForm.addEventListener("submit", function(e) {
+            const tableRows = document.querySelectorAll("#itemsTable tbody tr");
+            if (tableRows.length === 0) {
+                e.preventDefault();
+                alert("Please add at least one item to the voucher.");
+                return;
+            }
+            
+            if (items.length > 0) {
+                itemsDataInput.value = JSON.stringify(items);
+            }
+        });
+    }
+    
+    // Helper functions for create mode
+    function validateItemFields() {
+        if (!itemNameField.value) {
+            showError(itemNameField, "Please select an item");
+            return false;
+        }
+        
+        if (!quantityField.value || parseInt(quantityField.value) <= 0) {
+            showError(quantityField, "Please enter a valid quantity");
+            return false;
+        }
+        
+        if (!purchaseRateField.value || parseFloat(purchaseRateField.value) <= 0) {
+            showError(purchaseRateField, "Please enter a valid purchase rate");
+            return false;
+        }
+        
+        return true;
+    }
+    
+    function createItemObject() {
+        const batchSelected = batchField.selectedIndex >= 0;
+        
+        return {
+            id: "new_" + itemCounter++,
+            item_name_id: itemNameField.value,
+            item_name_text: itemNameField.options[itemNameField.selectedIndex].text,
+            item_code: itemCodeField.value,
+            barcode_code: barcodeField.value,
+            batch_id: batchField.value || "",
+            batch_text: batchSelected ? batchField.options[batchField.selectedIndex].text : "",
+            mfd: mfdField.value,
+            exp: expField.value,
+            unit_id: unitField.value,
+            unit_text: unitField.options[unitField.selectedIndex].text,
+            quantity: parseInt(quantityField.value) || 0,
+            purchase_rate: parseFloat(purchaseRateField.value) || 0,
+            item_net_amount: parseFloat(netAmountField.value) || 0,
+            tax: parseFloat(taxField.value) || 0,
+            item_tax_amount: parseFloat(taxAmountField.value) || 0,
+            free_quantity: parseInt(freeQuantityField.value) || 0,
+            sales_rate: parseFloat(salesRateField.value) || 0,
+            profit: parseFloat(profitField.value) || 0,
+            item_total_amount: parseFloat(totalAmountField.value) || 0,
+            cost: 0
+        };
+    }
+    
+    function addItemToTable(item) {
+        const row = document.createElement("tr");
+        row.setAttribute("data-id", item.id);
+        
+        row.innerHTML = `
+            <td>${item.item_name_text}</td>
+            <td>${item.item_code}</td>
+            <td>${item.quantity}</td>
+            <td>${item.batch_text}</td>
+            <td>${item.purchase_rate.toFixed(2)}</td>
+            <td class="cost-amount">${item.cost.toFixed(2)}</td>
+            <td class="item-net-amount">${item.item_net_amount.toFixed(2)}</td>
+            <td>${item.tax.toFixed(2)}%</td>
+            <td>${item.item_tax_amount.toFixed(2)}</td>
+            <td>${item.unit_text}</td>
+            <td class="item-total-amount">${item.item_total_amount.toFixed(2)}</td>
+            <td>
+        <button type="button" class="button button-danger remove-item" data-id="${item.id}">Remove</button>
+        <button type="button" class="button button-primary edit-item" data-id="${item.id}">Edit</button>
+    </td>
+        `;
+        
+        itemsTable.appendChild(row);
+        
+        // Add event listener to the remove button
+        row.querySelector(".remove-item").addEventListener("click", function() {
+            const itemId = this.getAttribute("data-id");
+            removeItem(itemId);
+        });
+
+        // Add event listener to the edit button
+        row.querySelector(".edit-item").addEventListener("click", function() {
+            const itemId = this.getAttribute("data-id");
+            editItem(itemId);
+        });
+    }
+    
+    function removeItem(itemId) {
+        items = items.filter(item => item.id !== itemId);
+        
+        const row = itemsTable.querySelector(`tr[data-id="${itemId}"]`);
+        if (row) {
+            row.remove();
+        }
+        
+        updateCreateModeTotals();
+    }
+
+    function editItem(itemId) {
+            // Find the item in the array
+            const item = items.find(item => item.id === itemId);
+            if (!item) return;
+
+            // Populate fields
+            itemNameField.value = item.item_name_id;
+            itemCodeField.value = item.item_code;
+            barcodeField.value = item.barcode_code;
+            batchField.value = item.batch_id;
+            mfdField.value = item.mfd;
+            expField.value = item.exp;
+            unitField.value = item.unit_id;
+            quantityField.value = item.quantity;
+            purchaseRateField.value = item.purchase_rate;
+            netAmountField.value = item.item_net_amount;
+            taxField.value = item.tax;
+            taxAmountField.value = item.item_tax_amount;
+            freeQuantityField.value = item.free_quantity;
+            salesRateField.value = item.sales_rate;
+            profitField.value = item.profit;
+            totalAmountField.value = item.item_total_amount;
+
+            // Remove previously added item
+            removeItem(itemId);
+        }
+    
+    function resetItemFields() {
+        const fieldsToReset = [
+            itemNameField, itemCodeField, barcodeField, batchField,
+            mfdField, expField, unitField, quantityField,
+            purchaseRateField, netAmountField, taxField, taxAmountField,
+            freeQuantityField, salesRateField, profitField, totalAmountField
+        ];
+        
+        fieldsToReset.forEach(field => {
+            if (field) field.value = "";
+        });
+        
+        clearAllErrorMessages();
+        itemNameField.focus();
+    }
+    
+    function calculateItemNetAmount() {
+        const quantity = parseInt(quantityField.value) || 0;
+        const rate = parseFloat(purchaseRateField.value) || 0;
+        const netAmount = quantity * rate;
+        
+        netAmountField.value = netAmount.toFixed(2);
+        calculateItemTaxAmount();
+    }
+    
+    function calculateItemTaxAmount() {
+        const netAmount = parseFloat(netAmountField.value) || 0;
+        const taxPercentage = parseFloat(taxField.value) || 0;
+        const taxAmount = netAmount * (taxPercentage / 100);
+        
+        taxAmountField.value = taxAmount.toFixed(2);
+        calculateItemTotalAmount();
+    }
+    
+    
+    function calculateCreateModeProfit() {
+        const purchaseRate = parseFloat(purchaseRateField.value) || 0;
+        const salesRate = parseFloat(salesRateField.value) || 0;
+        const profit = salesRate - purchaseRate;
+        
+        profitField.value = profit.toFixed(2);
+        calculateItemTotalAmount();
+    }
+    
+    function calculateItemTotalAmount() {
+        const netAmount = parseFloat(netAmountField.value) || 0;
+        const taxAmount = parseFloat(taxAmountField.value) || 0;
+        const totalAmount = netAmount + taxAmount;
+        
+        totalAmountField.value = totalAmount.toFixed(2);
+    }
+    
+    function updateCreateModeTotals() {
+        let totalNetValue = 0;
+        let totalTaxAmount = 0;
+        let grandTotal = 0;
+        
+        items.forEach(item => {
+            totalNetValue += item.item_net_amount;
+            totalTaxAmount += item.item_tax_amount;
+            grandTotal += item.item_total_amount;
+        });
+        
+        const totalNetValueField = document.getElementById("id_total_net_value");
+        const totalTaxAmountField = document.getElementById("id_total_tax_amount");
+        const grandTotalAmountField = document.getElementById("id_grand_total_amount");
+        const discountField = document.getElementById("id_discount");
+        const freightField = document.getElementById("id_Freight");
+        
+        if (totalNetValueField) totalNetValueField.value = totalNetValue.toFixed(2);
+        if (totalTaxAmountField) totalTaxAmountField.value = totalTaxAmount.toFixed(2);
+        
+        const discount = parseFloat(discountField?.value) || 0;
+        const freight = parseFloat(freightField?.value) || 0;
+        const finalGrandTotal = grandTotal + freight - discount;
+        
+        if (grandTotalAmountField) grandTotalAmountField.value = finalGrandTotal.toFixed(2);
+    }
+}
+
+// ============== COMMON FUNCTIONS ==============
+function initVoucherCalculations() {
+    const discountField = document.getElementById("id_discount");
+    const freightField = document.getElementById("id_Freight");
+    
+    if (discountField) {
+        discountField.addEventListener("input", function() {
+            if ({{ is_edit|yesno:"true,false" }}) {
+                calculateVoucherTotals();
+            } else {
+                updateCreateModeTotals();
+            }
+        });
+    }
+    
+    if (freightField) {
+        freightField.addEventListener("input", function() {
+            if ({{ is_edit|yesno:"true,false" }}) {
+                calculateVoucherTotals();
+            } else {
+                updateCreateModeTotals();
+            }
+        });
+    }
+}
+
+function showError(field, message) {
+    const errorDiv = field.nextElementSibling;
+    if (errorDiv && errorDiv.classList.contains('error-feedback')) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = "block";
+        errorDiv.style.color = "red";
+        
+        setTimeout(() => {
+            errorDiv.textContent = "";
+            errorDiv.style.display = "none";
+        }, 3000);
+    }
+}
+
+function showSuccessMessage(message) {
+    let successDiv = document.getElementById('success-message');
+    if (!successDiv) {
+        successDiv = document.createElement('div');
+        successDiv.id = 'success-message';
+        successDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        `;
+        document.body.appendChild(successDiv);
+    }
+    
+    successDiv.textContent = message;
+    successDiv.style.display = "block";
+    
+    setTimeout(() => {
+        successDiv.style.display = "none";
+    }, 2000);
+}
+
+function clearAllErrorMessages() {
+    const errorDivs = document.querySelectorAll('#itemEntryForm .error-feedback');
+    errorDivs.forEach(errorDiv => {
+        errorDiv.textContent = "";
+        errorDiv.style.display = "none";
+    });
+}
+
+function initItemDetailsRetrieval() {
+    const itemNameSelects = document.querySelectorAll('[name="item_name"], [name$="-item_name"]');
+    
+    itemNameSelects.forEach(itemSelect => {
+        itemSelect.addEventListener('change', function() {
+            const itemId = this.value;
+            if (!itemId) {
+                clearItemFields(this);
+                return;
+            }
+
+            fetch(`/get-item-details/?item_id=${itemId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    updateItemFields(data, this);
+                } else {
+                    console.error('Error retrieving item details:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+}
+
+function updateItemFields(data, itemSelect) {
+    const container = itemSelect.closest('.form-grid-item, .formset-item');
+    if (!container) return;
+    
+    const fields = {
+        'item_code': data.item_code || '',
+        'barcode_code': data.barcode_code || '',
+        'tax': data.TAX_percent || 0,
+        'unit': data.item_unit_id || '',
+        'purchase_rate': data.purchase_rate || 0,
+        'sales_rate': data.sales_rate || 0,
+    };
+
+    Object.entries(fields).forEach(([fieldName, value]) => {
+        const field = container.querySelector(`[name$="${fieldName}"]`);
+        if (field) {
+            field.value = value;
+        }
+    });
+}
+
+function clearItemFields(itemSelect) {
+    const container = itemSelect.closest('.form-grid-item, .formset-item');
+    if (!container) return;
+    
+    const fields = [
+        'item_code', 'barcode_code', 'tax', 'unit',
+        'purchase_rate', 'sales_rate', 'quantity',
+        'item_net_amount', 'item_tax_amount', 'item_total_amount', 'profit'
+    ];
+
+    fields.forEach(fieldName => {
+        const field = container.querySelector(`[name$="${fieldName}"]`);
+        if (field) {
+            field.value = fieldName.includes('rate') || fieldName.includes('amount') ? '0.00' : '';
+        }
+    });
+}
+
+function initBatchModal() {
+    const addBatchForm = document.getElementById('addBatchForm');
+    if (addBatchForm) {
+        addBatchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const batchNo = document.getElementById('batch_no').value;
+            const itemId = document.getElementById('item_select').value;
+            const mfd = document.getElementById('mfd').value;
+            const exp = document.getElementById('exp').value;
+            const isActive = document.getElementById('is_active').checked;
+            const errorBox = document.getElementById('batch-error');
+            
+            errorBox.innerText = '';
+            errorBox.style.display = 'none';
+            
+            if (!batchNo || !itemId) {
+                errorBox.innerText = 'Batch number and Item are required.';
+                errorBox.style.display = 'block';
+                return;
+            }
+            
+            fetch("{% url 'item_master:create_batch_modal' %}", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    batch_no: batchNo,
+                    item_id: itemId,
+                    mfd: mfd,
+                    exp: exp,
+                    is_active: isActive
+                })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network error');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addBatchModal'));
+                    modal.hide();
+                    
+                    // Add new option to all batch dropdowns
+                    const batchSelects = document.querySelectorAll('[name="Batch"], [name$="-Batch"]');
+                    batchSelects.forEach(select => {
+                        const newOption = document.createElement('option');
+                        newOption.value = data.id;
+                        newOption.text = data.name;
+                        newOption.selected = true;
+                        select.appendChild(newOption);
+                    });
+                    
+                    addBatchForm.reset();
+                } else {
+                    errorBox.innerText = data.error || 'Batch creation failed.';
+                    errorBox.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                errorBox.innerText = 'An error occurred: ' + error.message;
+                errorBox.style.display = 'block';
+            });
+        });
+    }
+    
+    // Item select in batch modal
+    const itemSelect = document.getElementById('item_select');
+    const barcodeField = document.getElementById('modal-barcode-field');
+    
+    if (itemSelect && barcodeField) {
+        itemSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const isItemBarcode = selectedOption.getAttribute('data-barcode') === 'true';
+            
+            if (!isItemBarcode) {
+                barcodeField.style.display = 'block';
+            } else {
+                barcodeField.style.display = 'none';
+            }
+        });
+    }
+    
+    // Set item in modal when opened
+    const batchModal = document.getElementById('addBatchModal');
+    if (batchModal) {
+        batchModal.addEventListener('show.bs.modal', function() {
+            addBatchForm.reset();
+            document.getElementById('batch-error').style.display = 'none';
+            
+            const mainItemSelects = document.querySelectorAll('[name="item_name"], [name$="-item_name"]');
+            const modalItemSelect = document.getElementById('item_select');
+            
+            // Find the currently selected item
+            let currentItemValue = '';
+            mainItemSelects.forEach(select => {
+                if (select.value && !currentItemValue) {
+                    currentItemValue = select.value;
+                }
+            });
+            
+            if (modalItemSelect && currentItemValue) {
+                modalItemSelect.value = currentItemValue;
+                modalItemSelect.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+}
+
+function initVendorModal() {
+    const vendorForm = document.getElementById('vendorForm');
+    const vendorModal = new bootstrap.Modal(document.getElementById('vendorModal'));
+    const ledgerSelects = document.querySelectorAll('[name="ledger"]');
+    
+    if (vendorForm) {
+        vendorForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(vendorForm);
+            const saveButton = document.getElementById('saveVendor');
+            const originalButtonText = saveButton.innerHTML;
+            
+            saveButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+            saveButton.disabled = true;
+            
+            fetch('/add-vendor-ajax/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    ledgerSelects.forEach(select => {
+                        const newOption = new Option(data.vendor_name, data.vendor_id, true, true);
+                        select.add(newOption);
+                    });
+                    
+                    vendorForm.reset();
+                    vendorModal.hide();
+                    // Manually remove dark backdrop if stuck
+                    document.body.classList.remove('modal-open');
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    showVendorAlert('Vendor created successfully!', 'success');
+                } else {
+                    showVendorAlert('Error creating vendor: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showVendorAlert('An error occurred while creating the vendor.', 'danger');
+            })
+            .finally(() => {
+                saveButton.innerHTML = originalButtonText;
+                saveButton.disabled = false;
+            });
+        });
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    function showVendorAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        const modalBody = document.querySelector('#vendorModal .modal-body');
+        modalBody.insertBefore(alertDiv, modalBody.firstChild);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    const vendorModalElement = document.getElementById('vendorModal');
+    if (vendorModalElement) {
+        vendorModalElement.addEventListener('hidden.bs.modal', function() {
+            vendorForm.reset();
+            const alerts = document.querySelectorAll('#vendorModal .alert');
+            alerts.forEach(alert => alert.remove());
+        });
+    }
+}
+
+// Initialize batch fields functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const itemDropdowns = document.querySelectorAll('[name="item_name"], [name$="-item_name"]');
+    
+    itemDropdowns.forEach(itemDropdown => {
+        itemDropdown.addEventListener('change', function() {
+            const container = this.closest('.form-grid-item, .formset-item');
+            const itemId = this.value;
+            
+            if (itemId) {
+                fetch(`/get-item-batch-status/${itemId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        toggleBatchFields(container, data.IsBatch);
+                        if (data.IsBatch) {
+                            fetchBatchesForItem(container, itemId);
+                        }
+                    })
+                    .catch(() => {
+                        toggleBatchFields(container, false);
+                    });
+            } else {
+                toggleBatchFields(container, false);
+            }
+        });
+        
+        // Trigger on page load for edit mode
+        if (itemDropdown.value) {
+            itemDropdown.dispatchEvent(new Event('change'));
+        }
+    });
+    
+    function toggleBatchFields(container, isBatchEnabled) {
+        const batchField = container.querySelector('.batch-field');
+        const mfdField = container.querySelector('.mfd-field');
+        const expField = container.querySelector('.exp-field');
+        
+        [batchField, mfdField, expField].forEach(field => {
+            if (field) {
+                field.style.display = isBatchEnabled ? '' : 'none';
+            }
+        });
+    }
+    
+    function fetchBatchesForItem(container, itemId) {
+        const batchSelector = container.querySelector('[name$="Batch"]');
+        const mfdField = container.querySelector('[name$="MFD"]');
+        const expField = container.querySelector('[name$="EXP"]');
+        
+        if (!batchSelector) return;
+        
+        fetch(`/get-item-batches/?item_id=${itemId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Clear existing options
+                batchSelector.innerHTML = '';
+                
+                // Add empty option
+                const emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.textContent = '---------';
+                batchSelector.appendChild(emptyOption);
+                
+                // Add new options
+                data.batches.forEach(batch => {
+                    const option = document.createElement('option');
+                    option.value = batch.id;
+                    option.textContent = batch.batch_no;
+                    option.setAttribute('data-mfd', batch.mfd);
+                    option.setAttribute('data-exp', batch.exp);
+                    batchSelector.appendChild(option);
+                });
+                
+                // Add change listener for batch selection
+                batchSelector.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    if (selectedOption) {
+                        const mfd = selectedOption.getAttribute('data-mfd');
+                        const exp = selectedOption.getAttribute('data-exp');
+                        
+                        if (mfdField && mfd) mfdField.value = mfd;
+                        if (expField && exp) expField.value = exp;
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching batch data:', error);
+            });
+    }
+});
+
+// Get Next Voucher Number (for create mode only)
+{% if not is_edit %}
+function updateVoucherNumber() {
+    var select = document.getElementById('id_voucherType');
+    var input = document.getElementById('id_voucher_no');
+    
+    if (select && input && select.value) {
+        input.value = 'Loading...';
+        
+        fetch('/get-voucher-number/?voucher_type_id=' + select.value)
+            .then(response => response.json())
+            .then(data => {
+                input.value = data.voucher_number || 'Error';
+            })
+            .catch(error => {
+                input.value = 'Error';
+            });
+    }
+}
+
+// Auto-update voucher number on page load
+window.addEventListener('DOMContentLoaded', function() {
+    const voucherTypeSelect = document.getElementById('id_voucherType');
+    if (voucherTypeSelect) {
+        voucherTypeSelect.addEventListener('change', updateVoucherNumber);
+        updateVoucherNumber();
+    }
+});
+{% endif %}
+</script>
+<script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const itemNameSelect = document.getElementById("id_item_name");
+                const unitSelect = document.getElementById("id_unit");
+                const barcodeInput = document.getElementById("id_barcode_code");
+                const purchaseRateInput = document.getElementById("id_purchase_rate");
+            
+                let unitData = {};
+            
+                itemNameSelect.addEventListener("change", function () {
+                    const itemId = this.value;
+                    if (!itemId) return;
+            
+                    fetch(`/api/item-alter-units/${itemId}/`)
+                        .then(res => res.json())
+                        .then(data => {
+                            unitData = {};
+                            unitSelect.innerHTML = "";
+            
+                            data.units.forEach(unit => {
+                                unitData[unit.unit_id] = {
+                                    barcode_code: unit.barcode_code,
+                                    purchase_rate: unit.purchase_rate,
+                                    unit_code: unit.unit_code,
+                                };
+            
+                                const option = document.createElement("option");
+                                option.value = unit.unit_id;  // use unit.id instead of unit_code
+                                option.textContent = unit.unit_code;  // display code
+                                unitSelect.appendChild(option);
+                            });
+            
+                            unitSelect.dispatchEvent(new Event("change"));
+                        });
+                });
+            
+                unitSelect.addEventListener("change", function () {
+                    const selectedUnitId = this.value;
+                    if (unitData[selectedUnitId]) {
+                        barcodeInput.value = unitData[selectedUnitId].barcode_code;
+                        purchaseRateInput.value = unitData[selectedUnitId].purchase_rate;
+                    }
+                });
+            });
+            </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const itemField = document.getElementById('id_item_name');
+    const unitField = document.getElementById('id_unit');
+    const batchField = document.getElementById('id_Batch');
+    const costCenterField = document.getElementById('id_cost_center');  // Adjust ID if different
+    const stockInfo = document.getElementById('stockInfo');
+
+    function fetchStock() {
+        const itemId = itemField.value;
+        const unitId = unitField.value;
+        const batchId = batchField.value;
+        const costCenterId = costCenterField ? costCenterField.value : '';
+
+        if (itemId && unitId && costCenterId) {
+            const url = `/ajax/get-stock-quantity/?item_id=${itemId}&unit_id=${unitId}&batch_id=${batchId}&cost_center_id=${costCenterId}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.stock_quantity !== null) {
+                        stockInfo.textContent = `Available Stock: ${data.stock_quantity}`;
+                        stockInfo.style.color = data.stock_quantity <= 0 ? 'red' : 'green';
+                    } else {
+                        stockInfo.textContent = 'Stock not found';
+                        stockInfo.style.color = 'gray';
+                    }
+                });
+        } else {
+            stockInfo.textContent = '';
+        }
+    }
+
+    [itemField, unitField, batchField, costCenterField].forEach(field => {
+        if (field) {
+            field.addEventListener('change', fetchStock);
+        }
+    });
+
+    fetchStock();  // Initial load
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}

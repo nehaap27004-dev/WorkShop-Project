@@ -1,0 +1,97 @@
+{% extends 'fleet_base1.html' %}
+{% load privilege_tags %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Simple Quotations</h3>
+        <a href="{% url 'fleet_app:create_quotation' %}" class="btn btn-sm btn-primary">
+            + New
+        </a>
+    </div>
+
+    <table class="table table-bordered table-striped table-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Quotation No</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Items</th>
+                <th width="120">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+    {% for q in quotations %}
+    <tr>
+        <td><strong>{{ q.voucher_no }}</strong></td>
+        <td>{{ q.date|date:"d-m-Y" }}</td>
+
+        <td>
+            {% if q.customer %}
+                {{ q.customer.ledger_name }}
+                <br>
+                <small class="text-muted">{{ q.customer.email }}</small>
+            {% else %}
+                <span class="text-muted">No Customer</span>
+            {% endif %}
+        </td>
+
+        <td>{{ q.details.count }}</td>
+
+        <td class="text-center">
+            {% has_priv request.user 2 "can_edit" as can_edit_simple_quotation %}
+            {% if can_edit_simple_quotation %}
+            <a href="{% url 'fleet_app:edit_simple_quotation' q.id %}"
+            class="btn btn-sm btn-outline-secondary me-1">
+                Edit
+            </a>
+            {% endif %}
+
+            {% has_priv request.user 2 "can_delete" as can_delete_simple_quotation %}
+            {% if can_delete_simple_quotation %}
+            <button onclick="deleteQuotation({{ q.id }}, '{{ q.voucher_no }}')"
+                    class="btn btn-sm btn-outline-danger">
+                Delete
+            </button>
+            {% endif %}
+
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="5" class="text-center text-muted">No quotations found</td>
+    </tr>
+    {% endfor %}
+</tbody>
+    </table>
+
+</div>
+<script>
+function deleteQuotation(quotationId, voucherNo) {
+    if (confirm(`Are you sure you want to delete Quotation ${voucherNo}?`)) {
+        fetch(`/simple-quotation/delete/${quotationId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error deleting quotation: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

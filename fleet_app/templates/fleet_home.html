@@ -1,0 +1,381 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <!-- Page Header -->
+        {% comment %} <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="page-title">Dashboard</h2>
+            </div>
+        </div> {% endcomment %}
+
+        <!-- Stats Row -->
+        <div class="row mb-4">
+            <!-- Total Invoice -->
+            <div class="col-lg-3 col-md-6 col-6 mb-3 mb-lg-0">
+                <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-label">Total Invoice</span>
+                        <span class="stat-value">953,000</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total Hire -->
+            <div class="col-lg-3 col-md-6 col-6 mb-3 mb-lg-0">
+                <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-label">Total Hire</span>
+                        <span class="stat-value">236,000</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total Quotation -->
+            <div class="col-lg-3 col-md-6 col-6 mb-3 mb-lg-0">
+                <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="bi bi-file-earmark-ruled"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-label">Total Quotation</span>
+                        <span class="stat-value">987,563</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total Repair -->
+            <div class="col-lg-3 col-md-6 col-6 mb-3 mb-lg-0">
+                <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-label">Total Repair</span>
+                        <span class="stat-value">987,563</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- First Row - Two boxes side by side -->
+        <div class="row mb-4">
+            <!-- Box 1: Timesheet, Contract, Quotation, Repair & Maintenance -->
+            <div class="col-lg-8 col-md-8 mb-4 mb-lg-0">
+                <div class="dashboard-box">
+                    <div class="row">
+                        <!-- Timesheet -->
+                        <div class="col-3">
+                            <a href="{% url 'fleet_app:time_sheet' %}" class="dashboard-item">
+                                <i class="bi bi-clock-history"></i>
+                                <h5>TIMESHEET</h5>
+                            </a>
+                        </div>
+                        <!-- Contract -->
+                        <div class="col-3">
+                            <a href="" class="dashboard-item">
+                                <i class="bi bi-file-earmark-text"></i>
+                                <h5>CONTRACT</h5>
+                            </a>
+                        </div>
+                        <!-- Quotation -->
+                        <div class="col-3">
+                            <a href="{% url 'fleet_app:create_quotation' %}" class="dashboard-item">
+                                <i class="bi bi-file-earmark-ruled"></i>
+                                <h5>QUOTATION</h5>
+                            </a>
+                        </div>
+                        <!-- Repair & Maintenance -->
+                        <div class="col-3">
+                            <a href="{% url 'fleet_app:create_repair_and_maintenance' %}" class="dashboard-item">
+                                <i class="bi bi-tools"></i>
+                                <h5>REPAIR &<br>MAINTENANCE</h5>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Box 2: Invoice & Hire -->
+            <div class="col-lg-4 col-md-4">
+                <div class="dashboard-box">
+                    <div class="row">
+                        <!-- Invoice -->
+                        <div class="col-6">
+                            <a href="{% url 'fleet_app:create_invoice' %}" class="dashboard-item">
+                                <i class="bi bi-receipt"></i>
+                                <h5>INVOICE</h5>
+                            </a>
+                        </div>
+                        <!-- Hire -->
+                        <div class="col-6">
+                            <a href="{% url 'fleet_app:fleet_hire_create' %}" class="dashboard-item">
+                                <i class="bi bi-truck"></i>
+                                <h5>HIRE</h5>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Second Row - Two boxes side by side -->
+        <div class="row">
+            <!-- Box 3: Payments & Receipts -->
+            <div class="col-lg-8 col-md-8 mb-4 mb-lg-0">
+                <div class="dashboard-box">
+                    <div class="row">
+                        <!-- Payment -->
+                        <div class="col-4">
+                            <a href="{% url 'accounts_app:payment_create' %}" class="dashboard-item">
+                                <i class="bi bi-cash-coin"></i>
+                                <h5>PAYMENT</h5>
+                            </a>
+                        </div>
+                        <!-- Receipt -->
+                        <div class="col-4">
+                            <a href="{% url 'accounts_app:receipt_create' %}" class="dashboard-item">
+                                <i class="bi bi-wallet2"></i>
+                                <h5>RECEIPT</h5>
+                            </a>
+                        </div>
+                        <!-- Local Payment -->
+                        <div class="col-4">
+                            <a href="{% url 'accounts_app:create_local_payment' %}" class="dashboard-item">
+                                <i class="bi bi-currency-exchange"></i>
+                                <h5>LOCAL<br>PAYMENT</h5>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Box 4: Bill Payments & Receipts -->
+            <div class="col-lg-4 col-md-4">
+                <div class="dashboard-box">
+                    <h6 class="box-heading">Bill Clearance</h6>
+                    <div class="row">
+                        <!-- Payment Bill -->
+                        <div class="col-6">
+                            <a href="{% url 'accounts_app:create_receiptbill' %}" class="dashboard-item">
+                                <i class="bi bi-file-earmark-medical"></i>
+                                <h5>PAYMENT-BILL</h5>
+                            </a>
+                        </div>
+                        <!-- Receipt Bill -->
+                        <div class="col-6">
+                            <a href="{% url 'accounts_app:create_paymentbill' %}" class="dashboard-item">
+                                <i class="bi bi-file-earmark-check"></i>
+                                <h5>RECEIPT-BILL</h5>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .page-title {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 0;
+    }
+
+    .stat-box {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .stat-box:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: rgba(0, 123, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .stat-icon i {
+        font-size: 1.5rem;
+        color: #007bff;
+    }
+
+    .stat-content {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        color: #2c3e50;
+        font-weight: 700;
+    }
+
+    .box-heading {
+        color: #2c3e50;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-align: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #007bff;
+    }
+
+    .dashboard-box {
+        background-color: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        height: 100%;
+        transition: box-shadow 0.3s ease;
+    }
+
+    .dashboard-box:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .dashboard-item {
+        text-decoration: none;
+        text-align: center;
+        display: block;
+        padding: 10px 8px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .dashboard-item:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+        transform: translateY(-3px);
+    }
+
+    .dashboard-item i {
+        font-size: 2rem;
+        color: #007bff;
+        margin-bottom: 8px;
+        display: block;
+        transition: color 0.3s ease;
+    }
+
+    .dashboard-item:hover i {
+        color: #0056b3;
+    }
+
+    .dashboard-item h5 {
+        color: #007bff;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 0;
+        line-height: 1.2;
+        transition: color 0.3s ease;
+    }
+
+    .dashboard-item:hover h5 {
+        color: #0056b3;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 991px) {
+        .stat-box {
+            padding: 15px;
+        }
+
+        .stat-icon {
+            width: 45px;
+            height: 45px;
+        }
+
+        .stat-icon i {
+            font-size: 1.3rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+        }
+
+        .dashboard-item i {
+            font-size: 1.8rem;
+        }
+        
+        .dashboard-item h5 {
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .stat-box {
+            padding: 12px;
+            gap: 10px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .stat-icon i {
+            font-size: 1.1rem;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+        }
+
+        .dashboard-item i {
+            font-size: 1.6rem;
+        }
+        
+        .dashboard-item h5 {
+            font-size: 0.75rem;
+        }
+        
+        .dashboard-box {
+            padding: 15px 10px;
+        }
+        
+        .dashboard-item {
+            padding: 8px 5px;
+        }
+    }
+</style>
+{% endblock %}

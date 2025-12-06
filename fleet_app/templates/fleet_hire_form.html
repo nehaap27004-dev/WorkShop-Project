@@ -1,0 +1,563 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load privilege_tags %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-success {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+    }
+
+    .btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+
+    .total-field {
+        background-color: #f8f9fa !important;
+        font-weight: 600;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+
+    <!-- Title + View Button Row -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text-primary mb-0">
+            {% if is_edit_mode %}
+                Edit Fleet Hire #{{ hire_instance.voucher_no }}
+            {% else %}
+                Create Fleet Hire
+            {% endif %}
+        </h2>
+
+        {% has_priv request.user 6 "can_read" as can_read_hire %}
+        {% if can_read_hire %}
+        <a href="{% url 'fleet_app:fleet_hire_list' %}" 
+        class="btn btn-sm btn-primary">
+            View
+        </a>
+        {% endif %}
+
+    </div>
+    
+    <form method="post" class="needs-validation">
+        {% csrf_token %}
+
+        <!-- Fleet Hire Info -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Fleet Hire Info</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        {{ form.voucher_no.label_tag }}
+                        {{ form.voucher_no }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.supplier.label_tag }}
+                        {{ form.supplier }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.invoice_no.label_tag }}
+                        {{ form.invoice_no }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.date.label_tag }}
+                        {{ form.date }}
+                    </div>
+                    <div class="col-md-2" style="display: none;">
+                        {{ form.voucherType.label_tag }}
+                        {{ form.voucherType }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.invoice_date.label_tag }}
+                        {{ form.invoice_date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.hire_contract.label_tag }}
+                        {{ form.hire_contract }}
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="col-md-2">
+                        {{ form.payment_mode.label_tag }}
+                        {{ form.payment_mode }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle Hire Details -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Add Vehicle Hire Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Vehicle</label>
+                        <select id="vehicle" class="form-select vehicle-select">
+                            <option value="">-- Select Vehicle --</option>
+                            {% for v in vehicle %}
+                                <option value="{{ v.pk }}"
+                                        data-rate-hr="{{ v.rate_per_hr }}"
+                                        data-rate-day="{{ v.rate_per_day }}"
+                                        data-rate-month="{{ v.rate_per_month }}">
+                                {{ v }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Reg No</label>
+                        <input type="text" id="reg_no" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" id="start_date" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">End Date</label>
+                        <input type="date" id="end_date" class="form-control">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">Unit</label>
+                        <select id="unit" class="form-select unit-select">
+                            <option value="">-- Select --</option>
+                            <option value="Hr">Hour</option>
+                            <option value="Day">Day</option>
+                            <option value="Month">Month</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">Nos</label>
+                        <input type="number" id="no_of_unit" class="form-control no-of-unit" value="1" min="1">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Rate/Period</label>
+                        <input type="number" id="rate_per_period" class="form-control rate-per-period" readonly>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-success mt-2" onclick="addDetail()">Add</button>
+
+                <!-- Table for entered details -->
+                <div class="table-responsive mt-3">
+                    <table class="table table-bordered align-middle text-center" id="detailsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>Reg No</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Unit</th>
+                                <th>No Of Unit</th>
+                                <th>Rate</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Totals -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Totals</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        {{ form.subtotal.label_tag }}
+                        {{ form.subtotal }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.vat.label_tag }}
+                        {{ form.vat }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.other_charges.label_tag }}
+                        {{ form.other_charges }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.grand_total.label_tag }}
+                        {{ form.grand_total }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+    {% if is_edit_mode %}
+         Update Fleet Hire
+    {% else %}
+        Save Fleet Hire
+    {% endif %}
+</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  function updateRate(row) {
+    let vehicleSelect = row.querySelector(".vehicle-select");
+    let unitSelect = row.querySelector(".unit-select");
+    let noOfUnitInput = row.querySelector(".no-of-unit");
+    let rateInput = row.querySelector(".rate-per-period");
+
+    let rate = 0;
+    if (vehicleSelect && unitSelect) {
+      let selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
+      let noOfUnit = parseInt(noOfUnitInput.value) || 0;
+
+      if (unitSelect.value === "Hr") {
+        rate = parseFloat(selectedOption.dataset.rateHr || 0);
+      } else if (unitSelect.value === "Day") {
+        rate = parseFloat(selectedOption.dataset.rateDay || 0);
+      } else if (unitSelect.value === "Month") {
+        rate = parseFloat(selectedOption.dataset.rateMonth || 0);
+      }
+      rateInput.value = (rate * noOfUnit).toFixed(2);
+    }
+  }
+
+  let entryRow = document.querySelector(".row.g-3.mb-3");
+  let vehicleSelect = entryRow.querySelector(".vehicle-select");
+  let unitSelect = entryRow.querySelector(".unit-select");
+  let noOfUnitInput = entryRow.querySelector(".no-of-unit");
+
+  if (vehicleSelect) vehicleSelect.addEventListener("change", () => updateRate(entryRow));
+  if (unitSelect) unitSelect.addEventListener("change", () => updateRate(entryRow));
+  if (noOfUnitInput) noOfUnitInput.addEventListener("input", () => updateRate(entryRow));
+
+  // Add event listeners for VAT and Other Charges to recalculate totals
+  const vatInput = document.getElementById('id_vat');
+  const otherChargesInput = document.getElementById('id_other_charges');
+  
+  if (vatInput) {
+    vatInput.addEventListener('input', calculateTotals);
+  }
+  if (otherChargesInput) {
+    otherChargesInput.addEventListener('input', calculateTotals);
+  }
+
+  // Make total fields readonly and add styling
+  const subtotalInput = document.getElementById('id_subtotal');
+  const grandTotalInput = document.getElementById('id_grand_total');
+  
+  if (subtotalInput) {
+    subtotalInput.setAttribute('readonly', 'readonly');
+    subtotalInput.classList.add('total-field');
+  }
+  if (grandTotalInput) {
+    grandTotalInput.setAttribute('readonly', 'readonly');
+    grandTotalInput.classList.add('total-field');
+  }
+
+  // Ensure totals are calculated before form submission
+  const form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      // Recalculate totals one final time
+      calculateTotals();
+      
+      // Log values for debugging
+      console.log('Form Submission Values:');
+      console.log('Subtotal:', document.getElementById('id_subtotal').value);
+      console.log('VAT:', document.getElementById('id_vat').value);
+      console.log('Other Charges:', document.getElementById('id_other_charges').value);
+      console.log('Grand Total:', document.getElementById('id_grand_total').value);
+      
+      // Ensure the values are definitely set
+      const currentGrandTotal = document.getElementById('id_grand_total').value;
+      if (!currentGrandTotal || currentGrandTotal === '0' || currentGrandTotal === '0.00') {
+        console.warn('Grand total might be zero - recalculating');
+        calculateTotals();
+      }
+    });
+  }
+});
+
+// Function to calculate totals dynamically
+function calculateTotals() {
+  const table = document.getElementById("detailsTable").getElementsByTagName("tbody")[0];
+  const rows = table.getElementsByTagName("tr");
+  
+  let subtotal = 0;
+  
+  // Sum up all rates from the table
+  for (let i = 0; i < rows.length; i++) {
+    const rateInput = rows[i].querySelector('input[name="details-rate_per_period[]"]');
+    if (rateInput) {
+      subtotal += parseFloat(rateInput.value) || 0;
+    }
+  }
+  
+  // Get VAT and Other Charges
+  const vat = parseFloat(document.getElementById('id_vat').value) || 0;
+  const otherCharges = parseFloat(document.getElementById('id_other_charges').value) || 0;
+  
+  // Calculate Grand Total
+  const grandTotal = subtotal + vat + otherCharges;
+  
+  // Update the fields - use both value and setAttribute to ensure it sticks
+  const subtotalField = document.getElementById('id_subtotal');
+  const grandTotalField = document.getElementById('id_grand_total');
+  
+  if (subtotalField) {
+    subtotalField.value = subtotal.toFixed(2);
+    subtotalField.setAttribute('value', subtotal.toFixed(2));
+  }
+  
+  if (grandTotalField) {
+    grandTotalField.value = grandTotal.toFixed(2);
+    grandTotalField.setAttribute('value', grandTotal.toFixed(2));
+  }
+  
+  console.log('Calculated - Subtotal:', subtotal.toFixed(2), 'Grand Total:', grandTotal.toFixed(2));
+}
+
+function addDetail() {
+  let vehicleSelect = document.getElementById("vehicle");
+  let vehicleText = vehicleSelect.options[vehicleSelect.selectedIndex].text;
+  let vehicleValue = vehicleSelect.value;
+  let regNo = document.getElementById("reg_no").value;
+  let startDate = document.getElementById("start_date").value;
+  let endDate = document.getElementById("end_date").value;
+  let unitSelect = document.getElementById("unit");
+  let unitText = unitSelect.options[unitSelect.selectedIndex].text;
+  let unitValue = unitSelect.value;
+  let noofunit = document.getElementById("no_of_unit").value;
+  let rate = document.getElementById("rate_per_period").value;
+
+  if (!vehicleValue || !regNo || !startDate || !endDate || !unitValue || !rate || !noofunit) {
+    alert("Please fill all fields before adding.");
+    return;
+  }
+
+  let table = document.getElementById("detailsTable").getElementsByTagName("tbody")[0];
+  let row = table.insertRow();
+
+  row.innerHTML = `
+    <td>
+      <input type="hidden" name="details-vehicle[]" value="${vehicleValue}">
+      ${vehicleText}
+    </td>
+    <td>
+      <input type="hidden" name="details-reg_no[]" value="${regNo}">
+      ${regNo}
+    </td>
+    <td>
+      <input type="hidden" name="details-start_date[]" value="${startDate}">
+      ${startDate}
+    </td>
+    <td>
+      <input type="hidden" name="details-end_date[]" value="${endDate}">
+      ${endDate}
+    </td>
+    <td>
+      <input type="hidden" name="details-unit[]" value="${unitValue}">
+      ${unitText}
+    </td>
+    <td>
+      <input type="hidden" name="details-no_of_unit[]" value="${noofunit}">
+      ${noofunit}
+    </td>
+    <td>
+      <input type="hidden" name="details-rate_per_period[]" value="${rate}">
+      ${rate}
+    </td>
+    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>
+  `;
+
+  // Clear entry fields
+  document.getElementById("vehicle").value = "";
+  document.getElementById("reg_no").value = "";
+  document.getElementById("start_date").value = "";
+  document.getElementById("end_date").value = "";
+  document.getElementById("unit").value = "";
+  document.getElementById("no_of_unit").value = "1";
+  document.getElementById("rate_per_period").value = "";
+
+  // Recalculate totals after adding a row
+  calculateTotals();
+}
+
+function removeRow(button) {
+  let row = button.closest("tr");
+  row.remove();
+  
+  // Recalculate totals after removing a row
+  calculateTotals();
+}
+</script>
+
+<!-- Get Next Voucher_no -->
+<script>
+function updateVoucherNumber() {
+    const select = document.getElementById('id_voucherType');
+    const input = document.getElementById('id_voucher_no');
+
+    if (select && input && select.value) {
+        input.value = 'Loading...';
+        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = data.voucher_number;
+                } else {
+                    input.value = 'Error';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching voucher number:', error);
+                input.value = 'Error';
+            });
+    } else if (input) {
+        input.value = '';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    const voucherSelect = document.getElementById('id_voucherType');
+    if (voucherSelect) {
+        voucherSelect.addEventListener('change', updateVoucherNumber);
+        updateVoucherNumber(); // also run once on load
+    }
+});
+</script>
+
+<!-- Pre-populate Fleet Hire Details for EDIT Mode -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if existing_details %}
+        console.log("📝 Edit mode detected - loading existing hire details...");
+        
+        // Load each existing detail
+        {% for detail in existing_details %}
+            preloadHireDetail(
+                {{ detail.vehicle.id }},
+                "{{ detail.vehicle.vehicle_name|escapejs }}",
+                "{{ detail.reg_no|escapejs }}",
+                "{{ detail.start_date|date:'Y-m-d' }}",
+                "{{ detail.end_date|date:'Y-m-d' }}",
+                "{{ detail.unit }}",
+                {{ detail.no_of_unit }},
+                {{ detail.rate_per_period }}
+            );
+        {% endfor %}
+        
+        console.log("✅ Loaded {{ existing_details|length }} hire details");
+        
+        // Recalculate totals after loading all details
+        calculateTotals();
+    {% endif %}
+});
+
+/**
+ * Preload existing fleet hire detail into the table
+ * Used in EDIT mode to populate existing data
+ */
+function preloadHireDetail(vehicleId, vehicleName, regNo, startDate, endDate, unit, noOfUnit, rate) {
+    let table = document.getElementById("detailsTable").getElementsByTagName("tbody")[0];
+    let row = table.insertRow();
+
+    // Determine unit text
+    let unitText = unit;
+    if (unit === 'Hr') unitText = 'Hour';
+    else if (unit === 'Day') unitText = 'Day';
+    else if (unit === 'Month') unitText = 'Month';
+
+    row.innerHTML = `
+        <td>
+            <input type="hidden" name="details-vehicle[]" value="${vehicleId}">
+            ${vehicleName}
+        </td>
+        <td>
+            <input type="hidden" name="details-reg_no[]" value="${regNo}">
+            ${regNo}
+        </td>
+        <td>
+            <input type="hidden" name="details-start_date[]" value="${startDate}">
+            ${startDate}
+        </td>
+        <td>
+            <input type="hidden" name="details-end_date[]" value="${endDate}">
+            ${endDate}
+        </td>
+        <td>
+            <input type="hidden" name="details-unit[]" value="${unit}">
+            ${unitText}
+        </td>
+        <td>
+            <input type="hidden" name="details-no_of_unit[]" value="${noOfUnit}">
+            ${noOfUnit}
+        </td>
+        <td>
+            <input type="hidden" name="details-rate_per_period[]" value="${rate}">
+            ${parseFloat(rate).toFixed(2)}
+        </td>
+        <td>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button>
+        </td>
+    `;
+}
+</script>
+
+{% endblock %}

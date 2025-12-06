@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* Container styling */
+    .container {
+        margin: 20px auto;
+        max-width: 90%;
+        
+    }
+
+    /* Title styling */
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    h3 {
+        color: #007BFF;
+        margin-top: 30px;
+    }
+
+    /* Table styling */
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background-color: #fff;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .table th, .table td {
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        text-align: center;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        color: #333;
+        font-weight: bold;
+    }
+
+    /* Highlighted rows */
+    .table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    .table tr:nth-child(odd) {
+        background-color: #ffffff;
+    }
+
+    /* Hover effect */
+    .table tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    /* Balance amount colors */
+    .text-success {
+        color: green;
+        font-weight: bold;
+    }
+
+    .text-danger {
+        color: red;
+        font-weight: bold;
+    }
+
+    .text-warning {
+        color: orange;
+        font-weight: bold;
+    }
+
+    /* Totals row */
+    .table tfoot tr td {
+        font-weight: bold;
+        background-color: #f8f9fa;
+    }
+</style>
+
+<div class="container">
+    <h2>Outstanding Report</h2>
+    {% for ledger in outstanding_data %}
+    <h3>{{ ledger.ledger__ledger_name }}</h3>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Type</th>
+                <th>Bill No</th>
+                <th>Invoice No</th>
+                <th>Debit Amount</th>
+                <th>Credit Amount</th>
+                <th>Balance Amount</th>
+                <th>Settled Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in detailed_data %}
+                {% if report.ledger.ledger_name == ledger.ledger__ledger_name %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ report.transaction_type }}</td>
+                    <td>{{ report.bill_no }}</td>
+                    <td>{{ report.invoice_no }}</td>
+                    <td>{{ report.debit_amount }}</td>
+                    <td>{{ report.credit_amount }}</td>
+                    <td>
+                        {% if report.balance_amount > 0 %}
+                            <span class="text-danger">{{ report.balance_amount }}</span>
+                        {% elif report.balance_amount < 0 %}
+                            <span class="text-danger">{{ report.balance_amount }}</span>
+                        {% else %}
+                            <span class="text-success">0.00</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ report.settled_amount }}</td>
+                    
+                     
+                </tr>
+                {% endif %}
+            {% endfor %}
+            <tr>
+                <td colspan="4"></td>
+                <td><strong>Total Debit:</strong> {{ ledger.total_debit }}</td>
+                <td><strong>Total Credit:</strong> {{ ledger.total_credit }}</td>
+                {% comment %} <td><strong>Balance:</strong> 
+                    {% if ledger.balance > 0 %}
+                        <span class="text-success">{{ ledger.balance }}</span>
+                    {% elif ledger.balance < 0 %}
+                        <span class="text-danger">{{ ledger.balance }}</span>
+                    {% else %}
+                        <span class="text-warning">0.00</span>
+                    {% endif %}
+                </td> {% endcomment %}
+                
+            </tr>
+        </tbody>
+    </table>
+    {% empty %}
+    <p>No outstanding records found.</p>
+    {% endfor %}
+</div>
+{% endblock %}

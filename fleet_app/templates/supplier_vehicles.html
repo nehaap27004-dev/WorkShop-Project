@@ -1,0 +1,82 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <div class="mb-4">
+       
+    </div>
+
+    <div class="row">
+        {% for vehicle in vehicles %}
+          <div class="col-md-2 mb-3">
+            <div class="card shadow-sm" style="width: 100%; margin: 0 auto;">
+              <div class="row g-0">
+                <div class="col-12">
+                  <div class="image-container p-2 text-center">
+                    {% if vehicle.vehicle_image %}
+                      <img 
+                        src="{{ vehicle.vehicle_image.url }}" 
+                        alt="Vehicle Image" 
+                        class="img-fluid rounded" 
+                        style="max-height: 70px; object-fit: contain;">
+                    {% else %}
+                      <div 
+                        class="d-flex align-items-center justify-content-center" 
+                        style="max-height: 70px; height: 70px; border: 1px solid #ddd; border-radius: 5px;">
+                        <span class="text-muted">No Image</span>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-12">
+    <div class="card-body p-2 text-center">
+        <h5 class="card-title mb-1">
+            <b>{{ vehicle.vehicle_name|default:vehicle.model.model_name }}</b>
+        </h5>
+        <p class="text-danger font-weight-bold mb-2">
+            {{ vehicle.license_plate_code.code }}-{{ vehicle.license_plate_number }}
+        </p>
+
+        <div class="d-flex justify-content-center gap-2">
+            <!-- Edit button -->
+            <a href="{% url 'fleet_app:vehicle_update' vehicle.pk %}" 
+               class="btn btn-sm btn-outline-secondary px-2 py-1">
+                Edit
+            </a>
+
+            <!-- Delete button -->
+            <form method="post" 
+                  action="{% url 'fleet_app:delete_vehicle' vehicle.pk %}" 
+                  onsubmit="return confirm('Are you sure you want to delete {{ vehicle.vehicle_name|default:vehicle.model.model_name }}?');"
+                  style="display:inline-block; margin:0; padding:0;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1">
+                    Delete
+                </button>
+            </form>
+        </div>
+        {% if vehicle.is_owned %}
+              <span class="badge bg-success">Owned</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">Supplier Vehicle</span>
+            {% endif %}
+    </div>
+</div>
+
+              </div>
+            </div>
+          </div>
+          {% if forloop.counter|divisibleby:5 and not forloop.last %}
+            </div><div class="row">
+          {% endif %}
+        {% empty %}
+          <p>No vehicles found.</p>
+        {% endfor %}
+    </div>
+    
+      
+
+</div>
+{% endblock %}

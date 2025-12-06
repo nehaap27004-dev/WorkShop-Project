@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Group </h2>
+
+<style>
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .col-md-4, .col-md-8 {
+        padding: 15px;
+    }
+    .col-md-4 {
+        flex: 1;
+        max-width: 33.33%;
+    }
+    .col-md-8 {
+        flex: 2;
+        max-width: 66.66%;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+    }
+    .form-group input, .form-group textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    button {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        color: #fff;
+    }
+    .btn-primary {
+        background-color: #007bff;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+    }
+    .btn-warning {
+        border-color: #00274d; 
+        color: #00274d;
+    }
+    .btn-danger {
+        border-color: #b71c1c;
+        color: #b71c1c; 
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 10px;
+        border: 1px solid #ddd;
+    }
+    th {
+        background-color: #f4f4f4;
+        text-align: left;
+    }
+    .text-left {
+        text-align: left;
+    }
+    .text-right {
+        text-align: right;
+    }
+</style>
+
+<div class="row">
+    <!-- Form Section -->
+    <div class="col-md-4">
+        <h3>Create or Update Group</h3>
+        <form method="POST" class="form-horizontal">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.main_group.label_tag }} 
+                {{ form.main_group }}
+            </div>
+            <div class="form-group">
+                {{ form.group_name.label_tag }} 
+                {{ form.group_name }}
+            </div>
+            <div class="form-group">
+                {{ form.group_description.label_tag }} 
+                {{ form.group_description }}
+            </div>
+            <button type="submit" name="save" class="btn btn-primary">SAVE</button>
+            <button type="reset" name="clear" class="btn btn-secondary">CLEAR</button>
+        </form>
+    </div>
+
+    <!-- List Section -->
+    <div class="col-md-8">
+        <h3>Group List</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th class="text-left">Group No</th>
+                    <th class="text-left">Main Group</th>
+                    <th class="text-left">Group Name</th>
+                    <th class="text-right">Description</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for group in groups %}
+                <tr>
+                    <td class="text-left">{{ forloop.counter }}</td>
+                    <td class="text-left">{{ group.main_group.main_group_name }}</td>
+                    <td class="text-left">{{ group.group_name }}</td>
+                    <td class="text-right">{{ group.group_description }}</td>
+                    <td class="text-right">
+                        <a href="{% url 'accounts_app:group_edit' group.id %}" class="btn btn-warning btn-sm">EDIT</a>
+                        <a href="{% url 'accounts_app:group_delete' group.id %}" class="btn btn-danger btn-sm">DELETE</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

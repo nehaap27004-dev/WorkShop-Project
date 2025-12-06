@@ -1,0 +1,23 @@
+{% for item in items %}
+<tr>
+    <td>{{ item.barcode_code }}</td>
+    <td>{{ item.item_code }}</td>
+    <td>{{ item.item_name }}</td>
+    <td>{{ item.item_category }}</td>
+    <td>{{ item.item_manufacturer }}</td>
+    <td>{{ item.item_unit }}</td>
+    <td>{{ item.item_class }}</td>
+    <td>{{ item.item_stock }}</td>
+    <td>{{ item.min_stock }}</td>
+    <td>{{ item.purchase_rate }}</td>
+    <td>{{ item.sales_rate }}</td>
+    <td>{{ item.MRP }}</td>
+    <td class="action-links">
+        <a href="{% url 'item_master:item_create_update' item.id %}">Update</a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="13">No items found.</td>
+</tr>
+{% endfor %}

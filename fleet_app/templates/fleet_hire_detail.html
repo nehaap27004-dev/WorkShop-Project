@@ -1,0 +1,59 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4">
+  <h2>Fleet Hire Detail</h2>
+  <a href="{% url 'fleet_app:fleet_hire_list' %}" class="btn btn-secondary mb-3">Back to List</a>
+
+  <div class="card p-3 mb-3">
+    <h5>Fleet Hire Info</h5>
+    <p><strong>Voucher No:</strong> {{ fleet_hire.voucher_no }}</p>
+    <p><strong>Supplier:</strong> {{ fleet_hire.supplier }}</p>
+    <p><strong>Invoice No:</strong> {{ fleet_hire.invoice_no }}</p>
+    <p><strong>Invoice Date:</strong> {{ fleet_hire.invoice_date }}</p>
+    <p><strong>Hire Contract:</strong> {{ fleet_hire.hire_contract }}</p>
+  </div>
+
+  <div class="card p-3 mb-3">
+    <h5>Vehicle Hire Details</h5>
+    <table class="table table-bordered table-sm">
+      <thead>
+        <tr>
+          <th>Vehicle</th>
+          <th>Reg No</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>No. of Period</th>
+          <th>Rate per Period</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for detail in details %}
+        <tr>
+          <td>{{ detail.vehicle }}</td>
+          <td>{{ detail.reg_no }}</td>
+          <td>{{ detail.start_date }}</td>
+          <td>{{ detail.end_date }}</td>
+          <td>{{ detail.no_of_period }}</td>
+          <td>{{ detail.rate_per_period }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center">No vehicle hire details.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card p-3 mb-3">
+    <h5>Totals</h5>
+    <p><strong>Subtotal:</strong> {{ fleet_hire.subtotal }}</p>
+    <p><strong>VAT:</strong> {{ fleet_hire.vat }}</p>
+    <p><strong>Other Charges:</strong> {{ fleet_hire.other_charges }}</p>
+    <p><strong>Grand Total:</strong> {{ fleet_hire.grand_total }}</p>
+  </div>
+</div>
+{% endblock %}

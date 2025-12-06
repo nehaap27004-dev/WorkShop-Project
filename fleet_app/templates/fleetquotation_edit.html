@@ -1,0 +1,75 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% block content %}
+<h1>Edit Fleet Quotation #{{ quotation.quotation_no }}</h1>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <fieldset class="border p-3 mb-3">
+        <legend class="w-auto">Quotation Details</legend>
+        {{ form.as_p }}
+    </fieldset>
+
+    <fieldset class="border p-3 mb-3">
+        <legend class="w-auto">Quotation Items</legend>
+        {{ formset.management_form }}
+        <table class="table table-sm table-bordered">
+            <thead>
+                <tr>
+                    <th>Fleet No</th>
+                    <th>Remarks</th>
+                    <th>Quantity</th>
+                    <th>Rate per Hr</th>
+                    <th>Rate per Day</th>
+                    <th>Rate per Month</th>
+                    <th>Unit</th>
+                    <th>No. of Units</th>
+                    <th>Total Amount</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for form in formset.forms %}
+                <tr>
+                    {% for field in form.visible_fields %}
+                    <td>
+                        {{ field.errors }}
+                        {{ field }}
+                    </td>
+                    {% endfor %}
+                    <td>
+                        {% if form.instance.pk %}
+                            {{ form.DELETE }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <button type="button" class="btn btn-secondary" id="add-item">Add Item</button>
+    </fieldset>
+
+    <button type="submit" class="btn btn-success">Save</button>
+    <a href="{% url 'fleet_app:fleetquotation_list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script>
+    // Simple add new item form in formset dynamically
+    $(document).ready(function(){
+        $('#add-item').click(function(){
+            var form_idx = $('#id_items-TOTAL_FORMS').val();
+            $('#formset-table tbody').append($('#empty_form').html().replace(/__prefix__/g, form_idx));
+            $('#id_items-TOTAL_FORMS').val(parseInt(form_idx) + 1);
+        });
+    });
+</script>
+
+<!-- Hidden empty form template for adding new form dynamically -->
+<table style="display:none;">
+    <tbody id="empty_form">
+        {{ formset.empty_form.as_table }}
+    </tbody>
+</table>
+
+{% endblock %}

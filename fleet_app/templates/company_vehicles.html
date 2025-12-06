@@ -1,0 +1,50 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Add Company Button -->
+  <div class="mb-4 text-start">
+    <a href="{% url 'fleet_app:rentalcompany_list' %}" class="btn btn-danger btn-rounded">
+      Companies
+    </a>
+  </div>
+
+  <!-- Company Header -->
+  <h2 class="mb-4">Available Vehicles from {{ company.company_name }}</h2>
+
+  <!-- Vehicles Grid -->
+  <div class="row g-3">
+    {% for vehicle in vehicles %}
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm text-center">
+          <div class="card-body">
+            {% if vehicle.Vehicle_image %}
+              <img 
+                src="{{ vehicle.Vehicle_image.url }}" 
+                alt="Vehicle Image" 
+                class="img-fluid rounded mb-3" 
+                style="width: 95px; height: 100px;">
+            {% else %}
+              <img 
+                src="" 
+                alt="No Image Available" 
+                class="img-fluid rounded mb-3" 
+                style="width: 95px; height: 100px;">
+            {% endif %}
+            <h5 class="card-title">{{ vehicle.vehicle_model }}</h5>
+            <p class="card-text"><strong>License Plate:</strong> {{ vehicle.vehicle_license_plate }}</p>
+            <p class="card-text"><strong>Driver:</strong> {{ vehicle.vehicle_driver }}</p>
+            <p class="card-text"><strong>Odometer:</strong> {{ vehicle.last_odometer }} km</p>
+            <a href="#" class="btn btn-secondary">Hire This Vehicle</a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-center">No vehicles available for hire from this company.</p>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

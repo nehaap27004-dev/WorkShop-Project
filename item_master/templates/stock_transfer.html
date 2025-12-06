@@ -1,0 +1,332 @@
+{% extends 'item_base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Stock Transfer</h2>
+    <form method="POST" id="stock-transfer-form">
+        {% csrf_token %}
+        <div class="row mb-3">
+            <div class="col-md-3">
+                {{ transfer_form.voucher_no.label_tag }} 
+                {{ transfer_form.voucher_no }}
+                {% if transfer_form.voucher_no.errors %}
+                    <div class="text-danger">{{ transfer_form.voucher_no.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                {{ transfer_form.source_cost_center.label_tag }} 
+                {{ transfer_form.source_cost_center }}
+                {% if transfer_form.source_cost_center.errors %}
+                    <div class="text-danger">{{ transfer_form.source_cost_center.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                {{ transfer_form.destination_cost_center.label_tag }} 
+                {{ transfer_form.destination_cost_center }}
+                {% if transfer_form.destination_cost_center.errors %}
+                    <div class="text-danger">{{ transfer_form.destination_cost_center.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                {{ transfer_form.remarks.label_tag }} 
+                {{ transfer_form.remarks }}
+                {% if transfer_form.remarks.errors %}
+                    <div class="text-danger">{{ transfer_form.remarks.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr>
+        <h5>Add Item</h5>
+        <div class="row">
+            <div class="col-md-3">
+                <label>Item</label>
+                <select id="item-select" class="form-control">
+                    <option value="">Select</option>
+                    
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label>Unit</label>
+                <select id="unit-select" class="form-control">
+                    <option value="">Select</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label>Batch</label>
+                <select id="batch-select" class="form-control">
+                    <option value="">Optional</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label>Quantity</label>
+                <input type="number" class="form-control" id="quantity" step="0.01" min="0">
+                <small id="available-stock" class="text-muted" style="font-size:12px;"></small>
+            </div>
+            <div class="col-md-2">
+                <label>Rate</label>
+                <input type="number" class="form-control" id="rate" step="0.01" min="0">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn btn-primary" onclick="addItem()">Add</button>
+            </div>
+        </div>
+
+        <input type="hidden" name="items_data" id="items-data">
+        <hr>
+
+        <h5>Items to Transfer</h5>
+        <table class="table table-bordered mt-2" id="item-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Unit</th>
+                    <th>Batch</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Total</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="text-end mt-3">
+            <strong>Grand Total: ₹<span id="grand-total">0.00</span></strong>
+        </div>
+
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-success">Save Stock Transfer</button>
+        </div>
+    </form>
+</div>
+
+<script>
+let items = [];
+
+document.getElementById("item-select").addEventListener("change", function () {
+    let itemId = this.value;
+    if (!itemId) {
+        // Clear dependent dropdowns
+        document.getElementById("unit-select").innerHTML = '<option value="">Select</option>';
+        document.getElementById("batch-select").innerHTML = '<option value="">Optional</option>';
+        document.getElementById("rate").value = "";
+        return;
+    }
+
+    // Fetch alternate units and rate
+    fetch(`/api/get-item-units-rate/${itemId}/`)
+        .then(res => res.json())
+        .then(data => {
+            const unitSelect = document.getElementById("unit-select");
+            unitSelect.innerHTML = '<option value="">Select</option>';
+            data.units.forEach(unit => {
+                unitSelect.innerHTML += `<option value="${unit.id}">${unit.name}</option>`;
+            });
+
+            document.getElementById("rate").value = data.rate || 0;
+        })
+        .catch(error => {
+            console.error('Error fetching units:', error);
+        });
+
+    // Fetch batches for the selected item
+    fetch(`/api/get-item-batches/${itemId}/`)
+        .then(res => res.json())
+        .then(data => {
+            const batchSelect = document.getElementById("batch-select");
+            batchSelect.innerHTML = '<option value="">Optional</option>';
+            if (data.batches && data.batches.length > 0) {
+                data.batches.forEach(batch => {
+                    batchSelect.innerHTML += `<option value="${batch.id}">${batch.BatchNo}</option>`;
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching batches:', error);
+        });
+});
+
+function addItem() {
+    const itemSelect = document.getElementById("item-select");
+    const unitSelect = document.getElementById("unit-select");
+    const batchSelect = document.getElementById("batch-select");
+    const quantity = parseFloat(document.getElementById("quantity").value);
+    const rate = parseFloat(document.getElementById("rate").value);
+
+    const itemId = itemSelect.value;
+    const unitId = unitSelect.value;
+    const batchId = batchSelect.value;
+
+    if (!itemId || !unitId || !quantity || !rate) {
+        alert("Please fill all required fields.");
+        return;
+    }
+
+    if (quantity <= 0 || rate <= 0) {
+        alert("Quantity and rate must be greater than 0.");
+        return;
+    }
+
+    const total = quantity * rate;
+
+    const item = {
+        item: parseInt(itemId),
+        item_text: itemSelect.options[itemSelect.selectedIndex].text,
+        unit: parseInt(unitId),
+        unit_text: unitSelect.options[unitSelect.selectedIndex].text,
+        batch: batchId ? parseInt(batchId) : null,
+        batch_text: batchId ? batchSelect.options[batchSelect.selectedIndex].text : '',
+        quantity: quantity,
+        rate: rate,
+        total: total
+    };
+
+    items.push(item);
+    updateTable();
+    clearInputs();
+}
+
+function clearInputs() {
+    document.getElementById("item-select").value = "";
+    document.getElementById("unit-select").innerHTML = "<option value=''>Select</option>";
+    document.getElementById("batch-select").innerHTML = "<option value=''>Optional</option>";
+    document.getElementById("quantity").value = "";
+    document.getElementById("rate").value = "";
+}
+
+function updateTable() {
+    const tbody = document.querySelector("#item-table tbody");
+    tbody.innerHTML = "";
+
+    let grandTotal = 0;
+
+    items.forEach((item, index) => {
+        grandTotal += item.total;
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${item.item_text}</td>
+                <td>${item.unit_text}</td>
+                <td>${item.batch_text || ''}</td>
+                <td>${item.quantity}</td>
+                <td>₹${item.rate.toFixed(2)}</td>
+                <td>₹${item.total.toFixed(2)}</td>
+                <td><button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${index})">Remove</button></td>
+            </tr>
+        `;
+    });
+
+    document.getElementById("grand-total").innerText = grandTotal.toFixed(2);
+    document.getElementById("items-data").value = JSON.stringify(items);
+    
+    // Debug: Log the items data to console
+    console.log('Items data:', JSON.stringify(items));
+}
+
+function removeItem(index) {
+    items.splice(index, 1);
+    updateTable();
+}
+
+// Add form submission handler to ensure items data is properly set
+document.getElementById("stock-transfer-form").addEventListener("submit", function(e) {
+    // Validate form fields
+    const voucherNo = document.querySelector('input[name="voucher_no"]');
+    const sourceCenter = document.querySelector('select[name="source_cost_center"]');
+    const destCenter = document.querySelector('select[name="destination_cost_center"]');
+    
+    if (!voucherNo || !voucherNo.value.trim()) {
+        e.preventDefault();
+        alert("Please enter a voucher number.");
+        return false;
+    }
+    
+    if (!sourceCenter || !sourceCenter.value) {
+        e.preventDefault();
+        alert("Please select a source cost center.");
+        return false;
+    }
+    
+    if (!destCenter || !destCenter.value) {
+        e.preventDefault();
+        alert("Please select a destination cost center.");
+        return false;
+    }
+    
+    if (sourceCenter.value === destCenter.value) {
+        e.preventDefault();
+        alert("Source and destination cost centers cannot be the same.");
+        return false;
+    }
+    
+    if (items.length === 0) {
+        e.preventDefault();
+        alert("Please add at least one item to transfer.");
+        return false;
+    }
+    
+    // Ensure items data is set before submission
+    document.getElementById("items-data").value = JSON.stringify(items);
+    console.log('Form submission - Items data:', document.getElementById("items-data").value);
+    console.log('Form submission - Items array:', items);
+    
+    // Show loading message
+    const submitBtn = document.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+
+    
+});
+</script>
+
+<script>
+    document.querySelector('[name="source_cost_center"]').addEventListener("change", function () {
+    let costCenterId = this.value;
+    let itemSelect = document.getElementById("item-select");
+    itemSelect.innerHTML = "<option value=''>Loading...</option>";
+
+    fetch(`/get-items/${costCenterId}/`)
+        .then(response => response.json())
+        .then(data => {
+            itemSelect.innerHTML = "<option value=''>Select</option>";
+            data.forEach(item => {
+                let option = document.createElement("option");
+                option.value = item.id;
+                option.textContent = item.item_name;
+                option.dataset.code = item.item_code;
+                itemSelect.appendChild(option);
+            });
+        });
+});
+
+
+
+</script>
+
+<script>
+document.getElementById("item-select").addEventListener("change", function () {
+    const itemId = this.value;
+    const costCenterId = document.querySelector('[name="source_cost_center"]').value;
+    const availableStockElem = document.getElementById("available-stock");
+
+    if (!itemId || !costCenterId) {
+        availableStockElem.textContent = "";
+        return;
+    }
+
+    fetch(`/get-item-stock/${costCenterId}/${itemId}/`)
+        .then(response => response.json())
+        .then(data => {
+            availableStockElem.textContent = data.quantity > 0
+                ? `Available: ${data.quantity}`
+                : "No stock available";
+        })
+        .catch(error => {
+            availableStockElem.textContent = "";
+            console.error('Error fetching available stock:', error);
+        });
+});
+</script>
+{% endblock %}

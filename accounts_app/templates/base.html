@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Add this in your <head> -->
+
+
+
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" 
+          integrity="sha384-M3wBv4ZblF26i+nkJm9XhP19CpKk8x7TQ10TUMZ0Z83a3pRxN4QRjsNxKIsJ8TXR" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Accounts Software</title>
+    <style>
+        /* Basic styling for layout */
+        body {
+            font-family: Calibri, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Navbar styling */
+        .navbar {
+            background-color: #fff;
+            padding: 10px;
+            padding: 10px;
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+            
+
+        }
+        .content {
+            padding: 60px 20px 20px; 
+        }
+
+        .navbar a {
+            color: darkred;
+            text-decoration: none;
+            padding: 14px 20px;
+            display: inline-block;
+        }
+
+        .navbar a:hover {
+            background-color: #cfbebe;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f5f5f5;
+            min-width: 160px;
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: darkred;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #c4c2c2;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* Content area */
+        .content {
+            padding: 20px;
+            margin-top: 60px;
+        }
+
+        /* Custom classes for spacing and layout */
+        .navbar-brand {
+            font-weight: bold;
+            padding-right: 20px;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="{% url 'accounts_app:home' %}" class="navbar-brand">Accounts</a>
+        
+
+        <div class="dropdown">
+            <a href="#" class="dropdown-toggle">Master</a>
+            <div class="dropdown-content">
+                
+                <a href="{% url 'accounts_app:group_management' %}">Groups</a>
+                <a href="{% url 'accounts_app:subgroup_view' %}">Subgroup</a>
+                <a href="{% url 'accounts_app:ledger_view' %}">Ledger Creation</a>
+                <a href="{% url 'accounts_app:manage_customers' %}">Customer</a>
+                <a href="{% url 'accounts_app:manage_vendors' %}">Vendor</a>
+                <a href="{% url 'accounts_app:clear_data' %}" 
+   onclick="return confirm('⚠️ Are you sure you want to clear ALL Transactions?');">
+   Clear
+</a>
+
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <a href="#" class="dropdown-toggle">Accounts</a>
+            <div class="dropdown-content">
+                <a href="{% url 'accounts_app:create_local_payment' %}">Local Payment</a>
+                <a href="">Payment</a>
+                
+
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <a href="#" class="dropdown-toggle">Reports</a>
+            <div class="dropdown-content">
+                <a href="{% url 'accounts_app:local_payment_list' %}">Local Payment</a>
+                <a href="' %}">Payment</a>
+                
+                
+                <a href="{% url 'accounts_app:ledger_posting_report' %}">Ledger Posting</a>
+
+            </div>
+        </div>        
+
+        <a href="#">Transactions</a>
+        
+
+        <div class="dropdown" style="float:right;">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="userMenu" 
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                👤 {{ request.user.username }} 
+                {% if request.user.user_role %}
+                    <small class="text-muted">({{ request.user.user_role.name }})</small>
+                {% endif %}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                <li><a class="dropdown-item" href="{% url 'fleet_app:fleet_home' %}">🚗 Fleet</a></li>
+                <li><a class="dropdown-item" href="{% url 'item_master:item_list' %}">📦 Items</a></li>
+                <li><a class="dropdown-item" href="{% url 'settings:settings_view' %}">📦 Settings</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'accounts_app:logout_view' %}">🚪 Logout</a></li>
+            </ul>
+        </div>
+
+        
+        
+    </nav>
+
+    <!-- Main Content -->
+    <div class="content">
+        {% block content %}
+        <!-- Page specific content goes here -->
+        {% endblock %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js" integrity="sha384-OERcA2AvErhMwbcehCQRyk+KJ0e69S16GGgLLlmV2KA4+cI1iBR5zI9wx5JL2Blz" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgYP2BAPM5m0CZ0mo6I6bmT6iVmG5A0NE5jxR6HFLhb+9GHKXG3" crossorigin="anonymous"></script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.4.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Include Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" 
+            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js" 
+            integrity="sha384-eMNpSt9rwMUcnwnldfZfj2TYKZqX5ajS65XYhJ0MpgwG8s6vTQnbBdrXkW1nFhsL" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" 
+            integrity="sha384-B4gt1jrGC7Jh4AgSN5wL1XxHa9hXmbz+flGGXs2RxhlEkKPCz9f9kaYltz4xU8p3" crossorigin="anonymous"></script>
+            <!-- Add this before the closing </body> tag -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

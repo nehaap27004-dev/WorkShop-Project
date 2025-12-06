@@ -1,0 +1,838 @@
+{% extends 'item_base.html' %}
+{% block content %}
+
+<style>
+    :root {
+        --primary-color: #4a90e2;
+        --secondary-color: #f5f5f5;
+        --border-color: #ddd;
+        --text-color: #333;
+        --error-color: #dc3545;
+        --success-color: #28a745;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+
+
+    .main-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    h2 {
+        color: var(--text-color);
+        margin-bottom: 2rem;
+    }
+
+    .panel {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .panel-header {
+        background: var(--secondary-color);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .panel-header h4 {
+        margin: 0;
+        color: var(--text-color);
+    }
+
+    .panel-body {
+        padding: 1.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        
+    }
+
+    input:focus, select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+    }
+
+    .error-feedback {
+        color: var(--error-color);
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+    }
+
+    th, td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+        background-color: var(--secondary-color);
+        font-weight: 600;
+    }
+
+    .button {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        
+        transition: background-color 0.2s;
+    }
+
+    .button-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .button-success {
+        background-color: var(--success-color);
+        color: white;
+    }
+
+    .button:hover {
+        opacity: 0.9;
+    }
+
+    .button-container {
+        text-align: right;
+        margin-top: 2rem;
+    }
+
+    .action-button {
+        padding: 0.25rem 0.5rem;
+        background-color: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .action-button:hover {
+        background-color: var(--secondary-color);
+    }
+
+    .form-grid-item {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px; /* Adjust spacing between fields */
+    }
+    
+    .form-group-item {
+        display: flex;
+        flex-direction: column;
+    }
+    /* Define sizes for the fields */
+.small-field {
+    flex: 1 1 10%; /* Adjust as needed for small fields */
+}
+
+.medium-field {
+    flex: 1 1 20%; /* Adjust for medium-sized fields */
+}
+
+
+.form-grid-v {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 5px;
+}
+
+.form-group-v {
+    display: flex;
+    flex-direction: column;
+}
+
+.small-field-v input, .small-field-v select {
+    width: 100px;
+    padding: 8px;
+}
+
+.medium-field-v input, .medium-field-v select {
+    width: 150px;
+    padding: 8px;
+}
+
+.large-field-v input, .large-field-v select {
+    width: 400px;
+    padding: 30px;
+}
+
+.form-group-remark.large-field-v {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group-remark textarea {
+    width: 200px;
+    height: 200px; /* Make it a square */
+    padding: 8px;
+    resize: none;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.error-feedback {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+}
+    
+</style>
+<div class="main-container">
+    <h2>Opening Stock</h2>
+    <form id="OpeningStockForm" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="items_data" id="itemsData">
+        
+        <div class="panel">
+            <div class="panel-header">
+                <h4>Voucher Details</h4>
+            </div>
+            <div class="panel-body">
+                <div class="form-grid-v">
+                    <div class="form-group-v small-field-v">
+                        <label>{{ voucher_form.voucher_no.label }}</label>
+                        {{ voucher_form.voucher_no }}
+                        {% if voucher_form.voucher_no.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.voucher_no.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group-v small-field-v">
+                        <label>{{ voucher_form.transaction_date.label }}</label>
+                        {{ voucher_form.transaction_date }}
+                        {% if voucher_form.transaction_date.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.transaction_date.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group-v small-field-v">
+                        <label>{{ voucher_form.payment_mode.label }}</label>
+                        {{ voucher_form.payment_mode }}
+                        {% if voucher_form.payment_mode.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.payment_mode.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group-v medium-field-v">
+                        <label>{{ voucher_form.ledger.label }}</label>
+                        {{ voucher_form.ledger }}
+                        {% if voucher_form.ledger.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.ledger.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group-v medium-field-v">
+                        <label>{{ voucher_form.cost_center.label }}</label>
+                        {{ voucher_form.cost_center }}
+                        {% if voucher_form.cost_center.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.cost_center.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+
+                    <div class="form-group-remark large-field-v">
+                        <label>{{ voucher_form.remarks.label }}</label>
+                        {{ voucher_form.remarks }}
+                        {% if voucher_form.remarks.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.remarks.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h4>Add Items</h4>
+            </div>
+
+            <div class="panel-body">
+    <div id="itemEntryForm">
+        <div class="form-grid-item">
+            <div class="form-group-item medium-field">
+                <label>{{ item_form.item_name.label }}</label>
+                {{ item_form.item_name }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.item_code.label }}</label>
+                {{ item_form.item_code }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.barcode_code.label }}</label>
+                {{ item_form.barcode_code }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.quantity.label }}</label>
+                {{ item_form.quantity }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.purchase_rate.label }}</label>
+                {{ item_form.purchase_rate }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.item_net_amount.label }}</label>
+                {{ item_form.item_net_amount }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.tax.label }}</label>
+                {{ item_form.tax }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.item_tax_amount.label }}</label>
+                {{ item_form.item_tax_amount }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.unit.label }}</label>
+                {{ item_form.unit }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.free_quantity.label }}</label>
+                {{ item_form.free_quantity }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.manufacture_date.label }}</label>
+                {{ item_form.manufacture_date }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.expire_date.label }}</label>
+                {{ item_form.expire_date }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.sales_rate.label }}</label>
+                {{ item_form.sales_rate }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item small-field">
+                <label>{{ item_form.profit.label }}</label>
+                {{ item_form.profit }}
+                <div class="error-feedback"></div>
+            </div>
+            <div class="form-group-item medium-field">
+                <label>{{ item_form.item_total_amount.label }}</label>
+                {{ item_form.item_total_amount }}
+                <div class="error-feedback"></div>
+            </div>
+        </div>
+        <div class="button-container">
+            <button type="button" class="button button-primary" id="addItemBtn">Add Item</button>
+        </div>
+    </div>
+</div>
+
+
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h4>Added Items</h4>
+            </div>
+            <div class="panel-body">
+                <div class="table-container">
+                    <table id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Code</th>
+                                <th>Quantity</th>
+                                <th>Rate</th>
+                                <th>Net Amount</th>
+                                <th>Tax %</th>
+                                <th>Tax Amount</th>
+                                <th>Unit</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                  </div>
+          </table>
+                </div>
+            </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h4>Total</h4>
+            </div>
+            <div class="panel-body">
+                <div class="form-grid">
+
+                    <div class="form-group medium-field">
+                        <label>{{ voucher_form.total_net_value.label }}</label>
+                        {{ voucher_form.total_net_value }}
+                        {% if voucher_form.total_net_value.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.total_net_value.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group medium-field">
+                        <label>{{ voucher_form.total_tax_amount.label }}</label>
+                        {{ voucher_form.total_tax_amount }}
+                        {% if voucher_form.total_tax_amount.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.total_tax_amount.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group small-field">
+                        <label>{{ voucher_form.discount.label }}</label>
+                        {{ voucher_form.discount }}
+                        {% if voucher_form.discount.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.discount.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group medium-field">
+                        <label>{{ voucher_form.grand_total_amount.label }}</label>
+                        {{ voucher_form.grand_total_amount }}
+                        {% if voucher_form.grand_total_amount.errors %}
+                        <div class="error-feedback">
+                            {{ voucher_form.grand_total_amount.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>            
+
+
+
+        <div class="button-container">
+            <button type="submit" class="button button-success" id="saveVoucherBtn">Save Voucher</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let items = [];
+    const itemEntryForm = document.getElementById('itemEntryForm');
+    const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+    
+    // Calculate item amounts
+    function calculateAmounts() {
+        const quantity = parseFloat(document.querySelector('[name="quantity"]').value) || 0;
+        const purchaseRate = parseFloat(document.querySelector('[name="purchase_rate"]').value) || 0;
+        const taxPercent = parseFloat(document.querySelector('[name="tax"]').value) || 0;
+        const salesRate = parseFloat(document.querySelector('[name="sales_rate"]').value) || 0;
+
+        // Calculate net amount
+        const netAmount = quantity * purchaseRate;
+        document.querySelector('[name="item_net_amount"]').value = netAmount.toFixed(2);
+
+        // Calculate tax amount
+        const taxAmount = (netAmount * taxPercent) / 100;
+        document.querySelector('[name="item_tax_amount"]').value = taxAmount.toFixed(2);
+
+        // Calculate total amount
+        const totalAmount = netAmount + taxAmount;
+        document.querySelector('[name="item_total_amount"]').value = totalAmount.toFixed(2);
+
+        // Calculate profit
+        const potentialRevenue = quantity * salesRate;
+        const profit = potentialRevenue - totalAmount;
+        document.querySelector('[name="profit"]').value = profit.toFixed(2);
+    }
+
+    // Add event listeners for calculation
+    ['quantity', 'purchase_rate', 'tax', 'sales_rate'].forEach(fieldName => {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (field) {
+            field.addEventListener('input', calculateAmounts);
+        }
+    });
+
+    // Add item to table
+    document.getElementById('addItemBtn').addEventListener('click', function() {
+        // Reset previous error states
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+
+        // Collect form data
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        
+        // Add all form fields to formData
+        itemEntryForm.querySelectorAll('input, select, textarea').forEach(element => {
+            if (element.name) {
+                formData.append(element.name, element.value);
+            }
+        });
+
+        // Send AJAX request
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Add item to array
+                items.push(data.item);
+                
+                // Update table and totals
+                updateItemsTable();
+                updateTotals();
+                
+                // Clear form fields
+                itemEntryForm.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(element => {
+                    if (element.type === 'select-one') {
+                        element.selectedIndex = 0;
+                    } else {
+                        element.value = '';
+                    }
+                });
+                
+                // Reset readonly fields
+                ['item_net_amount', 'item_tax_amount', 'profit', 'item_total_amount'].forEach(fieldName => {
+                    const field = document.querySelector(`[name="${fieldName}"]`);
+                    if (field) field.value = '0.00';
+                });
+            } else if (data.status === 'error') {
+                // Show errors
+                Object.entries(data.errors).forEach(([fieldName, errors]) => {
+                    const field = document.querySelector(`[name="${fieldName}"]`);
+                    const feedback = field?.closest('.col-md-3')?.querySelector('.invalid-feedback');
+                    if (field && feedback) {
+                        field.classList.add('is-invalid');
+                        feedback.textContent = errors[0];
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while adding the item. Please try again.');
+        });
+    });
+
+    // Update items table
+    function updateItemsTable() {
+        const tbody = document.querySelector('#itemsTable tbody');
+        tbody.innerHTML = '';
+        
+        items.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.item_name_text}</td>
+                <td>${item.item_code}</td>
+                <td>${item.quantity}</td>
+                <td>${item.purchase_rate}</td>
+                <td>${item.item_net_amount}</td>
+                <td>${item.tax}</td>
+                <td>${item.item_tax_amount}</td>
+                <td>${item.unit_text}</td>
+                <td>${item.item_total_amount}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${index})">
+                        Remove
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Update voucher totals
+    function updateTotals() {
+        const totalNetValue = items.reduce((sum, item) => sum + parseFloat(item.item_net_amount), 0);
+        const totalTaxAmount = items.reduce((sum, item) => sum + parseFloat(item.item_tax_amount), 0);
+        const discount = parseFloat(document.querySelector('[name="discount"]').value) || 0;
+        const grandTotal = totalNetValue + totalTaxAmount - discount;
+
+        document.querySelector('[name="total_net_value"]').value = totalNetValue.toFixed(2);
+        document.querySelector('[name="total_tax_amount"]').value = totalTaxAmount.toFixed(2);
+        document.querySelector('[name="grand_total_amount"]').value = grandTotal.toFixed(2);
+    }
+
+    // Remove item
+    window.removeItem = function(index) {
+        items.splice(index, 1);
+        updateItemsTable();
+        updateTotals();
+    };
+
+    // Handle form submission
+    document.getElementById('OpeningStockForm').addEventListener('submit', function(e) {
+        if (items.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one item to the voucher.');
+            return;
+        }
+        document.getElementById('itemsData').value = JSON.stringify(items);
+    });
+
+    // Update totals when discount changes
+    const discountField = document.querySelector('[name="discount"]');
+    if (discountField) {
+        discountField.addEventListener('input', updateTotals);
+    }
+});
+</script>
+<script>
+    // Item Retrieval Functions
+    function getItemDetails() {
+        const itemNameField = document.querySelector('[name="item_name"]');
+        
+        itemNameField.addEventListener('change', function() {
+            const itemId = this.value;
+            if (!itemId) {
+                clearItemFields();
+                return;
+            }
+    
+            // Make AJAX request to get item details
+            fetch(`/get-item-details/?item_id=${itemId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    updateItemFields(data);
+                } else {
+                    console.error('Error retrieving item details:', data.message);
+                    showErrorMessage(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showErrorMessage('An error occurred while retrieving item details. Please try again.');
+            });
+        });
+    }
+    
+    function updateItemFields(data) {
+        // Fields to update with their corresponding data values
+        const fields = {
+            'item_code': data.item_code || '',
+            'barcode_code': data.barcode_code || '',
+            'tax': data.VAT_percent || 0,
+            'unit': data.item_unit_id || '',
+            'purchase_rate': data.purchase_rate || 0,
+            'sales_rate': data.sales_rate || 0,
+            
+            
+        };
+    
+        // Update each field
+        Object.entries(fields).forEach(([fieldName, value]) => {
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            if (field) {
+                field.value = value;
+            }
+        });
+    
+        // If calculateAmounts function exists, call it
+        if (typeof calculateAmounts === 'function') {
+            calculateAmounts();
+        }
+    }
+    
+    function clearItemFields() {
+        const fields = [
+            'item_code',
+            'barcode_code',
+            'tax',
+            'unit',
+            'purchase_rate',
+            'sales_rate',
+            'quantity',
+            'item_net_amount',
+            'item_tax_amount',
+            'item_total_amount',
+            'profit'
+        ];
+    
+        fields.forEach(fieldName => {
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            if (field) {
+                field.value = fieldName.includes('rate') || fieldName.includes('amount') ? '0.00' : '';
+            }
+        });
+    }
+    
+    function showErrorMessage(message) {
+        // You can customize this to show error messages in your preferred way
+        alert(message);
+    }
+    
+    // Initialize item retrieval functionality when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        getItemDetails();
+    });
+    </script>
+    <script>
+        // Item Search Functions
+        function initializeItemSearch() {
+            const searchInput = document.getElementById('item_name_search');
+            const suggestionsList = document.getElementById('item_suggestions');
+            let selectedItemId = null;
+            
+            // Debounce function to limit API calls
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+        
+            // Function to fetch search results
+            const searchItems = debounce(async (searchTerm) => {
+                try {
+                    const response = await fetch(`/search-items/?term=${encodeURIComponent(searchTerm)}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const items = await response.json();
+                    
+                    // Clear previous suggestions
+                    suggestionsList.innerHTML = '';
+                    
+                    // Add new suggestions
+                    items.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.item_name;
+                        option.setAttribute('data-id', item.id);
+                        option.setAttribute('data-code', item.item_code);
+                        suggestionsList.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error fetching items:', error);
+                }
+            }, 300); // 300ms debounce delay
+        
+            // Handle input changes
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.trim();
+                if (searchTerm.length >= 2) { // Only search if 2 or more characters
+                    searchItems(searchTerm);
+                } else {
+                    suggestionsList.innerHTML = '';
+                }
+            });
+        
+            // Handle item selection
+            searchInput.addEventListener('change', function(e) {
+                const selectedOption = Array.from(suggestionsList.options).find(
+                    option => option.value === e.target.value
+                );
+        
+                if (selectedOption) {
+                    const itemId = selectedOption.getAttribute('data-id');
+                    // Fetch and populate item details
+                    fetch(`/get-item-details/?item_id=${itemId}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            updateItemFields(data);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching item details:', error);
+                        showErrorMessage('Error fetching item details');
+                    });
+                } else {
+                    // Clear fields if no valid item is selected
+                    clearItemFields();
+                }
+            });
+        
+            // Clear suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (e.target !== searchInput) {
+                    suggestionsList.innerHTML = '';
+                }
+            });
+        }
+        
+        // Initialize search when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeItemSearch();
+        });
+        </script>
+    
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends 'item_base.html' %}
+
+{% block content %}
+<style>
+    h2 {
+        text-align: center;
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    .form-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    .form-card {
+        background: #fff;
+        padding: 20px 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 450px;
+    }
+
+    .form-card label {
+        font-weight: 500;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .form-card input,
+    .form-card textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .form-card button {
+        width: 100%;
+        padding: 10px;
+        background-color: darkred;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .form-card button:hover {
+        background-color: #b01033;
+    }
+</style>
+
+<div class="form-wrapper">
+    <div class="form-card">
+        <h2>Create Cost Center</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div>
+                {{ form.name.label_tag }}
+                {{ form.name }}
+            </div>
+            <div>
+                {{ form.code.label_tag }}
+                {{ form.code }}
+            </div>
+            <div>
+                {{ form.description.label_tag }}
+                {{ form.description }}
+            </div>
+            <button type="submit">Save</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

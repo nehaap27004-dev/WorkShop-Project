@@ -1,0 +1,121 @@
+{% extends 'item_base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+     h2 {
+        text-align: center;
+        color: #333;
+    }
+
+    form {
+        background: white;
+        padding: 20px;
+        margin: 20px auto;
+        width: 50%;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+        font-weight: bold;
+        margin-top: 10px;
+    }
+
+    input, textarea, select {
+        width: 100%;
+        padding: 8px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    input[type="submit"] {
+        background-color: darkred;
+        color: white;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    input[type="submit"]:hover {
+        background-color: #b01033;
+    }
+
+    .vendor-list {
+        margin-top: 30px;
+        border-collapse: collapse;
+        width: 80%;
+        margin: 0 auto;
+        font-size: 14px;
+    }
+
+    .vendor-list th, .vendor-list td {
+        padding: 10px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+
+    .vendor-list th {
+        background-color: #f4f4f4;
+    }
+
+    .actions a {
+        margin-right: 10px;
+        text-decoration: none;
+        color: #007BFF;
+    }
+
+    .actions a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<h2>Vendor Management</h2>
+
+<!-- Vendor Creation/Update Form -->
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <input type="submit" value="{% if vendor %}Update Vendor{% else %}Create Vendor{% endif %}">
+</form>
+
+<!-- Vendor List -->
+<h2>Vendors List</h2>
+
+<table class="vendor-list">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Mobile</th>
+            <th>Email</th>
+            <th>City</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for vendor in vendors %}
+        <tr>
+            <td>{{ vendor.vendor_name }}</td>
+            <td>{{ vendor.vendor_mobile }}</td>
+            <td>{{ vendor.vendor_email }}</td>
+            <td>{{ vendor.vendor_city }}</td>
+            <td class="actions">
+                <a href="{% url 'item_master:vendor_management' vendor.id %}">Update</a>
+                
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No vendors available.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

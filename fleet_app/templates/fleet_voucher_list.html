@@ -1,0 +1,45 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Vouchers List</h3>
+    <a href="{% url 'fleet_app:fleet_voucher_create_update' %}" class="btn btn-primary mb-3">+ Add New Voucher</a>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>id</th>
+                <th>Voucher Type</th>
+                <th>Voucher Name</th>
+                <th>Prefix</th>
+                <th>Suffix</th>
+                <th>Min Length</th>
+                <th>Starting No</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for voucher in vouchers %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ voucher.id }}</td>
+                <td>{{ voucher.VoucherType }}</td>
+                
+                <td>{{ voucher.VoucherName }}</td>
+                <td>{{ voucher.Prefix }}</td>
+                <td>{{ voucher.Suffix }}</td>
+                <td>{{ voucher.MinLength }}</td>
+                <td>{{ voucher.StartingNo }}</td>
+                <td>
+                    <a href="{% url 'fleet_app:fleet_voucher_create_update' voucher.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No vouchers found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

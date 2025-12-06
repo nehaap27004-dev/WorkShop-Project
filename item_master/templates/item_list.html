@@ -1,0 +1,177 @@
+{% extends 'item_base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    h2 {
+        text-align: center;
+    }
+
+    .add-item {
+        text-align: left;
+        margin-bottom: 20px;
+    }
+
+    .add-item a {
+        padding: 10px 15px;
+        background-color: darkred;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+
+    .add-item a:hover {
+        background-color: #b01033;
+    }
+
+    /* Table Styling */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f4f4f4;
+        font-weight: bold;
+    }
+
+    tr:hover {
+        background-color: #f9f9f9;
+    }
+
+    .action-links a {
+        margin-right: 10px;
+        padding: 6px 10px;
+        background-color: grey;
+        color: white;
+        text-decoration: none;
+        border-radius: 3px;
+    }
+
+    .action-links a:hover {
+        background-color: #bbb;
+    }
+
+    .action-links {
+        text-align: right; /* Align the action buttons to the right */
+    }
+    .low-stock {
+        color: red;
+    }
+</style>
+
+<div class="add-item">
+    <a href="{% url 'item_master:item_create_update' %}">Add New Item</a>
+</div>
+
+<!-- Item List Section -->
+<div class="table-responsive">
+    <table id="item-list" class="table table-striped">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Barcode</th>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>Cost center</th>
+                <th>Category</th>
+                <th>Manufacturer</th>
+                <th>Unit</th>
+                <th>Class</th>
+                <th>Min. Stock</th>
+                <th>Purchase Rate</th>
+                <th>Sales Rate</th>
+                <th>MRP</th>
+                <th colspan="3">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="item-results">
+            {% for item in items %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.barcode_code }}</td>
+                <td>{{ item.item_code }}</td>
+                <td>{{ item.item_name }}</td>
+                <td>{{ item.cost_center }}</td>
+                <td>{{ item.item_category }}</td>
+                <td>{{ item.item_manufacturer }}</td>
+                <td>{{ item.item_unit }}</td>
+                <td>{{ item.item_class }}</td>
+                <td>{{ item.min_stock }}</td>
+                <td>{{ item.purchase_rate }}</td>
+                <td>{{ item.sales_rate }}</td>
+                <td>{{ item.MRP }}</td>
+                <td class="action-links">
+                    <a href="{% url 'item_master:item_create_update' item.id %}" class="btn btn-sm btn-primary">Edit</a>
+                </td>
+                <td class="action-links">
+                    <a href="{% url 'item_master:item_alter_units_view' item.id %}" class="btn btn-sm btn-info">View</a>
+                </td>
+                <td class="action-links">
+                    <button type="button" class="btn btn-sm btn-danger" 
+                            onclick="openDeleteModal('{{ item.id }}', '{{ item.item_name|escapejs }}')">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="15">No items found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteItemModal" tabindex="-1" aria-labelledby="deleteItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteItemModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete the item "<span id="itemNameToDelete"></span>"?
+                <p class="text-danger mt-2">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteItemForm" method="post" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Delete Confirmation Modal -->
+<script>
+    function openDeleteModal(itemId, itemName) {
+        // Set the item name in the modal
+        document.getElementById('itemNameToDelete').textContent = itemName;
+        
+        // Set the form action URL for the delete
+        document.getElementById('deleteItemForm').action = "{% url 'item_master:delete_item' 0 %}".replace('0', itemId);
+        
+        // Show the modal
+        var deleteModal = new bootstrap.Modal(document.getElementById('deleteItemModal'));
+        deleteModal.show();
+    }
+</script>
+
+
+{% endblock %}

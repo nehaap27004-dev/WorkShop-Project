@@ -1,0 +1,302 @@
+{% extends "fleet_base1.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Card container for a clean look */
+    .priv-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    /* Table style */
+    .priv-table {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #dee2e6;
+    }
+    .priv-table thead {
+        background: linear-gradient(90deg, #007bff, #0056b3);
+        color: white;
+    }
+    .priv-table thead th {
+        text-align: center;
+        font-weight: 500;
+        padding: 10px;
+    }
+    .priv-table tbody tr:hover {
+        background-color: #f8f9fa;
+        transition: 0.2s;
+    }
+    .priv-table td {
+        text-align: center;
+        vertical-align: middle;
+        padding: 8px;
+    }
+
+    /* AGGRESSIVE checkbox visibility fix for Bootstrap 4 */
+    .priv-table input[type="checkbox"] {
+        /* Reset all Bootstrap custom styling */
+        position: static !important;
+        margin: 0 auto !important;
+        margin-left: 0 !important;
+        width: 20px !important;
+        height: 20px !important;
+        min-width: 20px !important;
+        min-height: 20px !important;
+        cursor: pointer !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+        
+        /* Force native checkbox appearance */
+        -webkit-appearance: checkbox !important;
+        -moz-appearance: checkbox !important;
+        appearance: checkbox !important;
+        
+        /* Remove any before/after pseudo elements */
+        background: none !important;
+        border: 2px solid #6c757d !important;
+        border-radius: 3px !important;
+        
+        /* Ensure it's above everything */
+        z-index: 1 !important;
+        
+        /* Remove transforms */
+        transform: none !important;
+        
+        /* Pointer events */
+        pointer-events: auto !important;
+    }
+
+    /* Checked state */
+    .priv-table input[type="checkbox"]:checked {
+        background-color: #007bff !important;
+        border-color: #007bff !important;
+    }
+
+    /* Header checkboxes - slightly larger */
+    .priv-table thead input[type="checkbox"] {
+        width: 22px !important;
+        height: 22px !important;
+        border-color: #fff !important;
+    }
+
+    .priv-table thead input[type="checkbox"]:checked {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+    }
+
+    /* Checkbox wrapper for better control */
+    .checkbox-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 30px;
+    }
+
+    /* Role dropdown styling */
+    .role-select {
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        padding: 8px;
+    }
+
+    /* Buttons */
+    .btn-save {
+        background: linear-gradient(90deg, #28a745, #218838);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        transition: 0.2s;
+    }
+    .btn-save:hover {
+        background: linear-gradient(90deg, #218838, #1e7e34);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Title styling */
+    .priv-card h2 {
+        color: #2d3748;
+        font-weight: 600;
+        margin-bottom: 24px;
+    }
+
+    /* Role selection label */
+    .role-label {
+        font-weight: 500;
+        color: #4a5568;
+        margin-bottom: 8px;
+    }
+
+    /* Screen name column */
+    .screen-name {
+        text-align: left !important;
+        font-weight: 600;
+        color: #495057;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="priv-card">
+        <h2>Manage Privileges</h2>
+
+        <form method="get" class="mb-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="role-label">Select Role</label>
+                    <select name="role" class="form-control role-select" onchange="this.form.submit()">
+                        <option value="">-- Select Role --</option>
+                        {% for role in roles %}
+                            <option value="{{ role.id }}" {% if selected_role_id == role.id %}selected{% endif %}>{{ role.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </form>
+
+        {% if selected_role_id %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="role" value="{{ selected_role_id }}">
+
+            <div class="table-responsive">
+                <table class="table priv-table table-bordered">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 200px;">Screen Name</th>
+                            <th style="min-width: 80px;">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" onclick="toggleColumn(this, 'read')">
+                                </div>
+                                Read
+                            </th>
+                            <th style="min-width: 80px;">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" onclick="toggleColumn(this, 'add')">
+                                </div>
+                                Add
+                            </th>
+                            <th style="min-width: 80px;">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" onclick="toggleColumn(this, 'edit')">
+                                </div>
+                                Edit
+                            </th>
+                            <th style="min-width: 80px;">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" onclick="toggleColumn(this, 'cancel')">
+                                </div>
+                                Cancel
+                            </th>
+                            <th style="min-width: 80px;">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" onclick="toggleColumn(this, 'delete')">
+                                </div>
+                                Delete
+                            </th>
+                            <th style="min-width: 80px;">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" onclick="toggleColumn(this, 'print')">
+                                </div>
+                                Print
+                            </th>
+                            <th style="min-width: 80px;">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" onclick="toggleColumn(this, 'export')">
+                                </div>
+                                Export
+                            </th>
+                            <th style="min-width: 80px;">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" onclick="toggleColumn(this, 'email')">
+                                </div>
+                                Email
+                            </th>
+                            <th style="min-width: 80px;">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" onclick="toggleColumn(this, 'sms')">
+                                </div>
+                                SMS
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for menu in menus %}
+                        <tr>
+                            <td class="screen-name">{{ menu.name }}</td>
+                            <td>
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" name="read_{{ menu.id }}" class="perm-read" {% if menu.priv and menu.priv.can_read %}checked{% endif %}>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" name="add_{{ menu.id }}" class="perm-add" {% if menu.priv and menu.priv.can_add %}checked{% endif %}>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" name="edit_{{ menu.id }}" class="perm-edit" {% if menu.priv and menu.priv.can_edit %}checked{% endif %}>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" name="cancel_{{ menu.id }}" class="perm-cancel" {% if menu.priv and menu.priv.can_cancel %}checked{% endif %}>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" name="delete_{{ menu.id }}" class="perm-delete" {% if menu.priv and menu.priv.can_delete %}checked{% endif %}>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" name="print_{{ menu.id }}" class="perm-print" {% if menu.priv and menu.priv.can_print %}checked{% endif %}>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" name="export_{{ menu.id }}" class="perm-export" {% if menu.priv and menu.priv.can_export %}checked{% endif %}>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" name="email_{{ menu.id }}" class="perm-email" {% if menu.priv and menu.priv.can_email %}checked{% endif %}>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" name="sms_{{ menu.id }}" class="perm-sms" {% if menu.priv and menu.priv.can_sms %}checked{% endif %}>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-save">💾 Save Privileges</button>
+            </div>
+        </form>
+        {% else %}
+        <div class="alert alert-info">
+            <strong>ℹ️ Please select a role</strong> from the dropdown above to manage privileges.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleColumn(source, perm) {
+    const checkboxes = document.querySelectorAll('.perm-' + perm);
+    checkboxes.forEach(cb => cb.checked = source.checked);
+}
+</script>
+{% endblock %}

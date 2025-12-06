@@ -1,0 +1,25 @@
+id,ledger_name,groups_id, 
+10,Salary,16
+1000,Payroll,16
+11,Rent,16
+12,Advertisement,16
+13,Transportation,12
+14,Wages,12
+15,Loading and Unloading,12
+16,Bank Charges,16
+17,Interest Paid,16
+18,Interest Received,17
+19,Discount Allowed,16
+2,Vat Payable,10
+20,Discount Received,17
+21,Advance Payment,9
+24,Cash,8
+299,Service,2
+3,Vat Refundable,9
+300,RoundOff,17
+4,P D C Payable,41
+5,P D C Receivable,42
+6,Purchase Account,23
+7,Sales Account,25
+8,Interest Receivable,9
+9,Interest Payable,10

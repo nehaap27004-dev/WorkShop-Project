@@ -1,0 +1,114 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+
+    .img-thumbnail {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 5px;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <h2 class="mb-4 text-center fw-bold text-primary">Create Manufacturer</h2>
+
+    <!-- Form -->
+    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <!-- Manufacturer Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Manufacturer Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.manufacturer_name.id_for_label }}" class="form-label">
+                            {{ form.manufacturer_name.label }}
+                        </label>
+                        {{ form.manufacturer_name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.manufacturer_logo.id_for_label }}" class="form-label">
+                            {{ form.manufacturer_logo.label }}
+                        </label>
+                        {{ form.manufacturer_logo }}
+                        <img id="logo-preview" src="" alt="Logo preview" class="mt-2 img-thumbnail d-none" style="max-width: 200px; max-height: 100px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                Create Manufacturer
+            </button>
+            <a href="{% url 'fleet_app:manufacturer_list' %}" class="btn btn-secondary px-4 py-2">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<!-- JavaScript for Logo Preview -->
+<script>
+    document.getElementById('{{ form.manufacturer_logo.id_for_label }}').addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var preview = document.getElementById('logo-preview');
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+</script>
+{% endblock %}

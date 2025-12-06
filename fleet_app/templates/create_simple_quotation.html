@@ -1,0 +1,362 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load privilege_tags %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary, .btn-secondary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-success {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+    }
+
+    .btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <h2 class="mb-4 text-center fw-bold text-primary">
+    {% if is_edit_mode %}
+        Edit Quotation #{{ quotation_instance.quotation_no }}
+    {% else %}
+        Create Simple Quotation
+    {% endif %}
+</h2>
+<div class="d-flex justify-content-end mb-2">
+        {% has_priv request.user 2 "can_read" as can_read_simple_quotation %}
+        {% if can_read_simple_quotation %}
+        <a href="{% url 'fleet_app:simple_quotation_list' %}"
+        class="btn btn-outline-primary btn-sm">
+            View
+        </a>
+        {% endif %}
+
+    </div>
+    
+    <form method="post" id="quotationForm" class="needs-validation">
+        {% csrf_token %}
+
+        <!-- Quotation Info -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Quotation Info</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-4">
+                        {{ form.voucher_no.label_tag }}
+                        {{ form.voucher_no }}
+                        {% if form.voucher_no.help_text %}
+                            <small class="form-text text-muted">{{ form.voucher_no.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4" style="display: none">
+                        {{ form.voucherType.label_tag }}
+                        {{ form.voucherType }}
+                        {% if form.voucherType.help_text %}
+                            <small class="form-text text-muted">{{ form.voucherType.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.date.label_tag }}
+                        {{ form.date }}
+                        {% if form.date.help_text %}
+                            <small class="form-text text-muted">{{ form.date.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.customer.label_tag }}
+                        <div class="d-flex align-items-center">
+                            {{ form.customer }}
+                            <a href="{% url 'accounts_app:manage_customers' %}" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                                Manage Client
+                            </a>
+                        </div>
+                    </div>
+                    <div class="form-check col-md-4">
+                        {{ form.enable_header }}
+                        <label class="form-check-label" for="{{ form.enable_header.id_for_label }}">
+                            {{ form.enable_header.label }}
+                        </label>
+                    </div>
+
+                    <div class="form-check col-md-4">
+                        {{ form.enable_footer }}
+                        <label class="form-check-label" for="{{ form.enable_footer.id_for_label }}">
+                            {{ form.enable_footer.label }}
+                        </label>
+                    </div>
+
+                    <div class="form-check col-md-4">
+                        {{ form.enable_signature }}
+                        <label class="form-check-label" for="{{ form.enable_signature.id_for_label }}">
+                            {{ form.enable_signature.label }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quotation Details -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Add Quotation Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="description" rows="1"></textarea>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="quantity" min="1">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Rent</label>
+                        <input type="number" class="form-control" id="rent" step="0.001">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Period</label>
+                        <select class="form-select" id="period">
+                            <option value="Hour">Hour</option>
+                            <option value="Day">Day</option>
+                            <option value="Month">Month</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn text-white w-100" style="background-color:#5A8DEE;" onclick="addItem()">Add</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center" id="detailsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Rent</th>
+                                <th>Period</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Container for hidden inputs -->
+        <div id="hiddenDetailsContainer"></div>
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn btn-success px-4 py-2">
+    {% if is_edit_mode %}
+        💾 Update Quotation
+    {% else %}
+        💾 Save Quotation
+    {% endif %}
+</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    let details = [];
+
+    // ✅ PRELOAD EXISTING DETAILS IN EDIT MODE
+    {% if existing_details %}
+        console.log("📝 Edit mode - preloading {{ existing_details|length }} existing details...");
+        
+        {% for detail in existing_details %}
+            details.push({
+                rowId: Date.now() + {{ forloop.counter }},  // Unique ID
+                description: "{{ detail.description|escapejs }}",
+                quantity: "{{ detail.quantity }}",
+                rent: "{{ detail.rent }}",
+                period: "{{ detail.period }}"
+            });
+        {% endfor %}
+        
+        console.log("✅ Preloaded details:", details);
+        
+        // Update table immediately
+        updateTable();
+    {% endif %}
+
+    function addItem() {
+        const description = document.getElementById('description').value.trim();
+        const quantity = document.getElementById('quantity').value.trim();
+        const rent = document.getElementById('rent').value.trim();
+        const period = document.getElementById('period').value.trim();
+
+        if (!description || !quantity || !rent || !period) {
+            alert("Please fill in all fields.");
+            return;
+        }
+
+        if (isNaN(quantity) || quantity <= 0) {
+            alert("Please enter a valid quantity.");
+            return;
+        }
+
+        if (isNaN(rent) || rent <= 0) {
+            alert("Please enter a valid rent amount.");
+            return;
+        }
+
+        const rowId = Date.now();
+        details.push({ rowId, description, quantity, rent, period });
+        
+        console.log("Added new detail:", { rowId, description, quantity, rent, period });
+        
+        updateTable();
+        clearInputs();
+    }
+
+    function removeItem(rowId) {
+        console.log("Removing item with rowId:", rowId);
+        details = details.filter(item => item.rowId !== rowId);
+        updateTable();
+    }
+
+    function updateTable() {
+        const tbody = document.querySelector("#detailsTable tbody");
+        tbody.innerHTML = "";
+        const hiddenContainer = document.getElementById("hiddenDetailsContainer");
+        hiddenContainer.innerHTML = "";
+
+        details.forEach((item, index) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${item.description}</td>
+                <td>${item.quantity}</td>
+                <td>${item.rent}</td>
+                <td>${item.period}</td>
+                <td><button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${item.rowId})">Remove</button></td>
+            `;
+            tbody.appendChild(tr);
+
+            const hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.name = "details[]";
+            hiddenInput.value = `${item.description}|${item.quantity}|${item.rent}|${item.period}`;
+            hiddenContainer.appendChild(hiddenInput);
+        });
+        
+        console.log("Table updated. Total details:", details.length);
+    }
+
+    function clearInputs() {
+        document.getElementById('description').value = '';
+        document.getElementById('quantity').value = '';
+        document.getElementById('rent').value = '';
+        document.getElementById('period').selectedIndex = 0;
+    }
+
+    // Debug: Log form data before submission
+    document.getElementById('quotationForm').addEventListener('submit', function(e) {
+        const formData = new FormData(this);
+        const detailsArray = formData.getAll('details[]');
+        
+        console.log('\n=== FORM SUBMISSION ===');
+        console.log('Total details:', detailsArray.length);
+        detailsArray.forEach((detail, index) => {
+            console.log(`  Detail ${index}: ${detail}`);
+        });
+        
+        if (detailsArray.length === 0) {
+            if (!confirm('No details added. Continue anyway?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+</script>
+
+<!-- Get Next Voucher_no -->
+<script>
+function updateVoucherNumber() {
+    const select = document.getElementById('id_voucherType');
+    const input = document.getElementById('id_voucher_no');
+
+    if (select && input && select.value) {
+        input.value = 'Loading...';
+        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = data.voucher_number;
+                } else {
+                    input.value = 'Error';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching voucher number:', error);
+                input.value = 'Error';
+            });
+    } else if (input) {
+        input.value = '';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    const voucherSelect = document.getElementById('id_voucherType');
+    if (voucherSelect) {
+        voucherSelect.addEventListener('change', updateVoucherNumber);
+        updateVoucherNumber(); // also run once on load
+    }
+});
+</script>
+
+
+{% endblock %}

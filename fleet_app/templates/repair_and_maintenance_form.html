@@ -1,0 +1,406 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary, .btn-secondary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .form-check-label {
+        font-size: 0.9rem;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+</style>
+<div class="container mt-4 mb-5">
+
+    <h2 class="mb-4 text-center fw-bold text-primary">Repair & Maintenance</h2>
+
+    <form method="post" enctype="multipart/form-data" class="needs-validation">
+        {% csrf_token %}
+
+        <!-- Repair & Maintenance Details -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Repair & Maintenance Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        {{ maintenance_form.voucher_no.label_tag }}
+                        {{ maintenance_form.voucher_no }}
+                    </div>
+                    <div class="col-md-2" style="display: none">>
+                        {{ maintenance_form.voucherType.label_tag }}
+                        {{ maintenance_form.voucherType }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ maintenance_form.bill_no.label_tag }}
+                        {{ maintenance_form.bill_no }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ maintenance_form.date.label_tag }}
+                        {{ maintenance_form.date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ maintenance_form.payment_mode.label_tag }}
+                        {{ maintenance_form.payment_mode }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ maintenance_form.party.label_tag }}
+                        {{ maintenance_form.party }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ maintenance_form.reference_no.label_tag }}
+                        {{ maintenance_form.reference_no }}
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="col-md-2">
+                        {{ maintenance_form.date_on_bill.label_tag }}
+                        {{ maintenance_form.date_on_bill }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ maintenance_form.vehicle_name.label_tag }}
+                        {{ maintenance_form.vehicle_name }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ maintenance_form.vehicle_driver.label_tag }}
+                        {{ maintenance_form.vehicle_driver }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ maintenance_form.VAT_no.label_tag }}
+                        {{ maintenance_form.VAT_no }}
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="vat-checkbox">
+                            <label for="vat-checkbox" class="form-check-label">Enable VAT</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance Items -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Maintenance Items</h5>
+            </div>
+            <div class="card-body">
+
+                <div id="static-item-row" class="row g-3 mb-3">
+                    {{ maintenance_items_formset.management_form }}
+                    <div class="col-md-3">
+                        {{ maintenance_items_formset.empty_form.narration.label_tag }}
+                        {{ maintenance_items_formset.empty_form.narration }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ maintenance_items_formset.empty_form.bill_amount.label_tag }}
+                        {{ maintenance_items_formset.empty_form.bill_amount }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ maintenance_items_formset.empty_form.VAT_amount.label_tag }}
+                        {{ maintenance_items_formset.empty_form.VAT_amount }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ maintenance_items_formset.empty_form.total_amount.label_tag }}
+                        {{ maintenance_items_formset.empty_form.total_amount }}
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="quotation-items-table" class="table table-bordered align-middle text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Narration</th>
+                                <th>Bill Amount</th>
+                                <th>VAT Amount</th>
+                                <th>Total Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="items-table-body"></tbody>
+                    </table>
+                </div>
+
+                <button type="button" class="btn text-white mt-2" id="add-item-button" style="background-color:#5A8DEE;">
+                    Add Item
+                </button>
+            </div>
+        </div>
+
+        <!-- Grand Total -->
+        <div class="row mt-4 justify-content-end">
+            <div class="col-md-4">
+                <label for="grand-total-amount" class="form-label fw-semibold">
+                    {{ maintenance_form.grand_total_amount.label_tag }}
+                </label>
+                {{ maintenance_form.grand_total_amount }}
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                Save
+            </button>
+        </div>
+
+    </form>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const vatCheckbox = document.getElementById('vat-checkbox');
+        const addButton = document.getElementById('add-item-button');
+        const itemsTableBody = document.getElementById('items-table-body');
+        const staticRow = document.getElementById('static-item-row');
+        const managementForm = document.querySelector('[name="form-TOTAL_FORMS"]');
+        const grandTotalField = document.querySelector('[name="grand_total_amount"]'); // Grand total field from the form
+
+        // Function to toggle VAT fields
+        function toggleVATFields(disabled) {
+            const VATAmountInput = staticRow.querySelector('input[name$="VAT_amount"]');
+            VATAmountInput.readOnly = disabled;
+            if (disabled) {
+                VATAmountInput.value = ''; // Clear VAT field if disabled
+            }
+        }
+
+        toggleVATFields(true); // Initially disable VAT fields
+
+        // Event listener for VAT checkbox
+        vatCheckbox.addEventListener('change', function () {
+            toggleVATFields(!this.checked);
+            calculateAmounts(); // Recalculate when VAT toggles
+        });
+
+        // Function to calculate VAT and total amounts dynamically
+        function calculateAmounts() {
+            const billAmountInput = staticRow.querySelector('input[name$="bill_amount"]');
+            const VATAmountInput = staticRow.querySelector('input[name$="VAT_amount"]');
+            const totalAmountInput = staticRow.querySelector('input[name$="total_amount"]');
+
+            const billAmount = parseFloat(billAmountInput.value) || 0;
+            let VATAmount = 0;
+
+            if (vatCheckbox.checked) {
+                VATAmount = (billAmount * 5) / 100; // Calculate VAT (5%)
+                VATAmountInput.value = VATAmount.toFixed(2);
+            } else {
+                VATAmountInput.value = '';
+            }
+
+            totalAmountInput.value = (billAmount + VATAmount).toFixed(2); // Calculate total amount
+        }
+
+        // Function to update grand total
+        function updateGrandTotal() {
+            let grandTotal = 0;
+
+            // Sum all total amounts from the table
+            const totalAmountCells = itemsTableBody.querySelectorAll('tr td:nth-child(4)');
+            totalAmountCells.forEach(cell => {
+                grandTotal += parseFloat(cell.textContent) || 0;
+            });
+
+            grandTotalField.value = grandTotal.toFixed(2); // Update grand total in the form field
+        }
+
+        // Event listener for bill amount input
+        const billAmountInput = staticRow.querySelector('input[name$="bill_amount"]');
+        billAmountInput.addEventListener('input', calculateAmounts);
+
+        // Handle Add Item button click
+        addButton.addEventListener('click', function () {
+            const narrationTextarea = staticRow.querySelector('textarea[name$="narration"]');
+            const billAmountInput = staticRow.querySelector('input[name$="bill_amount"]');
+            const VATAmountInput = staticRow.querySelector('input[name$="VAT_amount"]');
+            const totalAmountInput = staticRow.querySelector('input[name$="total_amount"]');
+
+            // Validate required fields
+            if (!narrationTextarea.value || !billAmountInput.value) {
+                alert('Please fill in at least the Narration and Bill Amount fields');
+                return;
+            }
+
+            // Get values for new row
+            const narration = narrationTextarea.value;
+            const billAmount = parseFloat(billAmountInput.value).toFixed(2);
+            const VATAmount = VATAmountInput.value || '0.00';
+            const totalAmount = totalAmountInput.value;
+
+            // Create new table row
+            const newTableRow = document.createElement('tr');
+            const formCount = parseInt(managementForm.value);
+            newTableRow.innerHTML = `
+                <td>${narration}</td>
+                <td>${billAmount}</td>
+                <td>${VATAmount}</td>
+                <td>${totalAmount}</td>
+                <td>
+                    <button type="button" class="btn btn-danger remove-item-button">Remove</button>
+                    <input type="hidden" name="form-${formCount}-narration" value="${narration}">
+                    <input type="hidden" name="form-${formCount}-bill_amount" value="${billAmount}">
+                    <input type="hidden" name="form-${formCount}-VAT_amount" value="${VATAmount}">
+                    <input type="hidden" name="form-${formCount}-total_amount" value="${totalAmount}">
+                    <input type="hidden" name="form-${formCount}-id" value="">
+                </td>
+            `;
+
+            // Add row to the table
+            itemsTableBody.appendChild(newTableRow);
+
+            // Increment total forms count
+            managementForm.value = formCount + 1;
+
+            // Clear form inputs
+            narrationTextarea.value = '';
+            billAmountInput.value = '';
+            VATAmountInput.value = '';
+            totalAmountInput.value = '';
+
+            // Update grand total
+            updateGrandTotal();
+        });
+
+        // Handle item row removal
+        itemsTableBody.addEventListener('click', function (e) {
+            if (e.target && e.target.classList.contains('remove-item-button')) {
+                const row = e.target.closest('tr');
+                row.remove();
+
+                // Decrement total forms count
+                let formCount = parseInt(managementForm.value);
+                managementForm.value = formCount - 1;
+
+                // Update grand total
+                updateGrandTotal();
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const vatCheckbox = document.getElementById('vat-checkbox');
+        const vatField = document.querySelector('[name="VAT_no"]');
+
+        // Initially make VAT_no field read-only
+        vatField.setAttribute('readonly', true);
+
+        // Toggle read-only attribute based on checkbox state
+        vatCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                vatField.removeAttribute('readonly');
+            } else {
+                vatField.setAttribute('readonly', true);
+            }
+        });
+    });
+</script> 
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $.ajax({
+            url: "{% url 'fleet_app:get_next_voucher_no' %}",  // Replace with your URL pattern name
+            type: "GET",
+            dataType: "json",
+            success: function (data) {
+                console.log("Next Voucher No:", data.next_voucher_no);  // Debugging
+                // Ensure the correct field is targeted
+                $('input[name="voucher_no"]').val(data.next_voucher_no);
+            },
+            error: function (error) {
+                console.log("Error fetching voucher_no:", error);
+            }
+        });
+    });
+</script>
+
+<!-- Get Next Voucher_no -->
+<script>
+function updateVoucherNumber() {
+    const select = document.getElementById('id_voucherType');
+    const input = document.getElementById('id_voucher_no');
+
+    if (select && input && select.value) {
+        input.value = 'Loading...';
+        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = data.voucher_number;
+                } else {
+                    input.value = 'Error';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching voucher number:', error);
+                input.value = 'Error';
+            });
+    } else if (input) {
+        input.value = '';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    const voucherSelect = document.getElementById('id_voucherType');
+    if (voucherSelect) {
+        voucherSelect.addEventListener('change', updateVoucherNumber);
+        updateVoucherNumber(); // also run once on load
+    }
+});
+</script>
+
+
+{% endblock %}

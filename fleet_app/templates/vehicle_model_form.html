@@ -1,0 +1,147 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <h2 class="mb-4 text-center fw-bold text-primary">Create Vehicle Model</h2>
+
+    <form method="POST" class="needs-validation">
+        {% csrf_token %}
+
+        <!-- Vehicle Model Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Vehicle Model Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        <label for="{{ form.model_name.id_for_label }}" class="form-label">{{ form.model_name.label }}</label>
+                        {{ form.model_name }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="{{ form.manufacturer.id_for_label }}" class="form-label">{{ form.manufacturer.label }}</label>
+                        {{ form.manufacturer }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="{{ form.vehicle_category.id_for_label }}" class="form-label">{{ form.vehicle_category.label }}</label>
+                        {{ form.vehicle_category }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="{{ form.model_colour.id_for_label }}" class="form-label">{{ form.model_colour.label }}</label>
+                        {{ form.model_colour }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="{{ form.seat_number.id_for_label }}" class="form-label">{{ form.seat_number.label }}</label>
+                        {{ form.seat_number }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="{{ form.door_number.id_for_label }}" class="form-label">{{ form.door_number.label }}</label>
+                        {{ form.door_number }}
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="col-md-2">
+                        <label for="{{ form.model_year.id_for_label }}" class="form-label">{{ form.model_year.label }}</label>
+                        {{ form.model_year }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="{{ form.fuel_type.id_for_label }}" class="form-label">{{ form.fuel_type.label }}</label>
+                        {{ form.fuel_type }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="{{ form.model_range.id_for_label }}" class="form-label">{{ form.model_range.label }}</label>
+                        {{ form.model_range }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="{{ form.CO2_standard.id_for_label }}" class="form-label">{{ form.CO2_standard.label }}</label>
+                        {{ form.CO2_standard }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="{{ form.CO2_emission.id_for_label }}" class="form-label">{{ form.CO2_emission.label }}</label>
+                        <div class="input-group">
+                            {{ form.CO2_emission }}
+                            <span class="input-group-text">g/km</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="{{ form.model_transmission.id_for_label }}" class="form-label">{{ form.model_transmission.label }}</label>
+                        {{ form.model_transmission }}
+                    </div>
+
+                    <!-- Row 3 -->
+                    <div class="col-md-2">
+                        <label for="{{ form.model_power.id_for_label }}" class="form-label">{{ form.model_power.label }}</label>
+                        <div class="input-group">
+                            {{ form.model_power }}
+                            <span class="input-group-text">kW</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="{{ form.model_horse_power.id_for_label }}" class="form-label">{{ form.model_horse_power.label }}</label>
+                        <div class="input-group">
+                            {{ form.model_horse_power }}
+                            <span class="input-group-text">HP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">Save</button>
+            <a href="{% url 'fleet_app:vehicle_model_list' %}" class="btn btn-secondary px-4 py-2">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

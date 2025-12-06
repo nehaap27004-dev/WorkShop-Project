@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    h2 {
+        color: #4CAF50;
+        text-align: center;
+    }
+
+    h2 {
+        font-size: 20px;
+        margin-top: 30px;
+        margin-bottom: 10px;
+    }
+
+    p {
+        font-size: 16px;
+        margin: 5px 0;
+    }
+
+    p strong {
+        color: #333;
+    }
+
+    .details-section {
+        margin-bottom: 30px;
+    }
+
+    .details-section h3 {
+        background-color: #f8f8f8;
+        padding: 10px;
+        font-size: 18px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+    }
+
+    .details-section table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    thead tr {
+        background-color: #4CAF50;
+        color: #fff;
+    }
+
+    th, td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        font-weight: bold;
+    }
+
+    tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    a {
+        display: inline-block;
+        color: #4CAF50;
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: none;
+    }
+</style>
+
+<h2>Voucher Details - {{ payment.voucher_no }}</h2>
+
+<div class="details-section">
+    <h3>Voucher Information</h3>
+    <p><strong>Date:</strong> {{ payment.date }}</p>
+    <p><strong>Payment Mode:</strong> {{ payment.payment_mode }}</p>
+    <p><strong>Vendor:</strong> {{ payment.vendor }}</p>
+    <p><strong>Reference No:</strong> {{ payment.reference_no }}</p>
+    
+    
+    <p><strong>Taxable Amount:</strong> {{ payment.taxable_amount }}</p>
+    <p><strong>VAT Amount:</strong> {{ payment.VAT_amount }}</p>
+    <p><strong>Net Amount:</strong> {{ payment.net_amount }}</p>
+</div>
+
+{% if payment_cheque %}
+    <div class="details-section">
+        <h3>Cheque Details</h3>
+        <p><strong>Cheque No:</strong> {{ payment_cheque.cheque_no }}</p>
+        <p><strong>Cheque Date:</strong> {{ payment_cheque.cheque_date }}</p>
+        <p><strong>Issuing Bank:</strong> {{ payment_cheque.issuing_bank_name }}</p>
+        <p><strong>Reference No:</strong> {{ payment_cheque.reference_no }}</p>
+        <p><strong>Cheque Status:</strong> {{ payment_cheque.cheque_status }}</p>
+    </div>
+{% else %}
+    
+{% endif %}
+
+<div class="details-section">
+    <h3>Payment Items</h3>
+    <table>
+        <thead>
+            <tr>
+                
+                <th>Ledger</th>
+                <th>Description</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in payment_items %}
+            <tr>
+                
+                <td>{{ item.ledger }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.amount }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p><a href="{% url 'accounts_app:payment_list' %}">Back to Voucher List</a></p>
+
+
+{% endblock %}

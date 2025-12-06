@@ -1,0 +1,39 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Repair & Maintenance List</h2>
+    
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Voucher No</th>
+                <th>Date</th>
+                <th>Bill No</th>
+                <th>Party</th>
+                <th>Grand Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for maintenance in maintenances %}
+            <tr>
+                <td>{{ maintenance.voucher_no }}</td>
+                <td>{{ maintenance.date}}</td>
+                <td>{{ maintenance.bill_no }}</td>
+                <td>{{ maintenance.party }}</td>
+                <td>{{ maintenance.grand_total_amount }}</td>
+                
+                
+                <td>
+                    <a href="{% url 'fleet_app:maintenance_detail' maintenance.pk %}" class="btn btn-sm btn-info">View Details</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No report found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

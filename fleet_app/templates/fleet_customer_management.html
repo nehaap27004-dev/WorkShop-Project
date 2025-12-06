@@ -1,0 +1,79 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    .helptext {
+        display: none !important;
+    }
+</style>
+
+<div class="container my-5">
+    <h2 class="text-center text-dark mb-4">Client Management</h2>
+
+    <!-- Customer Creation/Update Form -->
+    <div class="card shadow mb-5">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-danger">
+                        {% if customer %}Update Client{% else %}Create Client{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer List -->
+    <h2 class="text-center text-dark mb-4">Client List</h2>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Mobile</th>
+                    <th>Email</th>
+                    <th>Address</th>
+                    <th>City</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customers %}
+                <tr>
+                    <td>{{ customer.customer_name }}</td>
+                    <td>{{ customer.customer_mobile }}</td>
+                    <td>{{ customer.customer_email }}</td>
+                    <td>{{ customer.customer_address_1 }}</td>
+                    <td>{{ customer.customer_city }}</td>
+                    <td>
+    <a href="{% url 'fleet_app:fleet_customer_management' customer.id %}" 
+       class="btn btn-sm btn-primary me-1">
+        Update
+    </a>
+
+    <form method="post"
+          action="{% url 'fleet_app:fleetcustomer_delete' customer.id %}"
+          onsubmit="return confirm('Are you sure you want to delete {{ customer.customer_name }}?');"
+          style="display:inline-block; margin:0; padding:0;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline-danger">
+            Delete
+        </button>
+    </form>
+</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted">No Client available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

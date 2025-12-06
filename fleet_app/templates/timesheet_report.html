@@ -1,0 +1,91 @@
+{% extends 'fleet_base1.html' %}
+{% load privilege_tags %}
+
+
+{% block content %}
+
+<div class="container mt-4">
+    <h2 class="mb-3">Timesheet Report</h2>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>TS No</th>
+                    <th>Vehicle</th>
+                    <th>Project</th>
+                    <th>Client</th>
+                    <th>Date</th>
+                    <th>Duration</th>
+                    <th>Edit</th>
+                </tr>
+            </thead>
+
+            <tbody>
+    {% for ts in timesheets %}
+        <tr>
+            <td class="text-center fw-bold">{{ ts.voucher_no }}</td>
+            <td>{{ ts.vehicle_reg_no }}</td>
+            <td>{{ ts.project_location }}</td>
+            <td>{{ ts.client }}</td>
+            <td class="text-center">{{ ts.date|date:"d M Y" }}</td>
+            <td class="text-center">{{ ts.duration }}</td>
+
+            <td class="text-center">
+                {% has_priv request.user 1 "can_edit" as can_edit_timesheet %}
+                {% if can_edit_timesheet %}
+                <a href="{% url 'fleet_app:timesheet_edit' ts.id %}"
+                class="btn btn-sm btn-primary me-1">
+                    Edit
+                </a>
+                {% endif %}
+
+
+                {% has_priv request.user 1 "can_delete" as can_delete %}
+                {% if can_delete %}
+                <button onclick="deleteTimesheet({{ ts.id }}, '{{ ts.voucher_no }}')" 
+                        class="btn btn-sm btn-danger">
+                    Delete
+                </button>
+                {% endif %}
+
+            </td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="7" class="text-center text-muted">
+                No timesheets found
+            </td>
+        </tr>
+    {% endfor %}
+</tbody>
+
+        </table>
+    </div>
+</div>
+<script>
+function deleteTimesheet(timesheetId, voucherNo) {
+    if (confirm(`Are you sure you want to delete Timesheet ${voucherNo}?`)) {
+        fetch(`/timesheet/delete/${timesheetId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error deleting timesheet: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

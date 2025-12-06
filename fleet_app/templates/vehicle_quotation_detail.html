@@ -1,0 +1,73 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Quotation Details</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Quotation Information</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Quotation Number:</strong> {{ quotation.quotation_no }}</p>
+                    <p><strong>Company Name:</strong> {{ quotation.company_name }}</p>
+                    <p><strong>Customer:</strong> {{ quotation.customer }}</p>
+                    <p><strong>Customer Address:</strong> {{ quotation.customer_address }}</p>
+                </div>
+                <div class="col-md-6">
+                    
+                    {% if quotation.company_logo %}
+                    <p><strong>Company Logo:</strong> 
+                        <img src="{{ quotation.company_logo.url }}" alt="Company Logo" class="img-fluid" style="max-height: 100px;">
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Quotation Items</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Vehicle</th>
+                        <th>Details</th>
+                        <th>Quantity</th>
+                        <th>Rate per Hour</th>
+                        <th>Rate per Day</th>
+                        <th>Rate per Month</th>
+                        <th>Total Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.vehicle }}</td>
+                        <td>{{ item.details }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.rate_per_hr }}</td>
+                        <td>{{ item.rate_per_day }}</td>
+                        <td>{{ item.rate_per_month }}</td>
+                        <td>{{ item.total_amount }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No items in this quotation.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a href="{% url 'fleet_app:vehicle_quotation_list' %}" class="btn btn-secondary">Back to List</a>
+    </div>
+</div>
+{% endblock %}

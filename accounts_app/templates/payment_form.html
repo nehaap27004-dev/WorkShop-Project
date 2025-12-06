@@ -1,0 +1,265 @@
+{% extends "fleet_base1.html" %}
+{% load static %}
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-header bg-primary text-white rounded-top-4">
+            <h4 class="mb-0">
+                <i class="bi bi-credit-card-2-front me-2"></i> New Payment Entry
+            </h4>
+        </div>
+
+        <div class="card-body p-4">
+            <form method="post" id="paymentForm">
+                {% csrf_token %}
+                <div class="row g-3">
+
+                    <!-- Payment Basic Info -->
+                     <div class="col-md-3">
+                        <label class="form-label fw-semibold">Voucher No</label>
+                        {{ form.voucher_no }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Payment No</label>
+                        {{ form.PaymentNo }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Date</label>
+                        {{ form.Date }}
+                    </div>
+                    <div class="col-md-3" style="display: none;">
+                        <label class="form-label fw-semibold">Voucher Type</label>
+                        {{ form.voucherType }}
+                    </div>
+                    
+
+                    <!-- Ledger Selection -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Credit Ledger (From)</label>
+                        {{ form.LedgerCr }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Debit Ledger (To)</label>
+                        {{ form.LedgerDr }}
+                    </div>
+
+                    <!-- Payment Mode -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Payment Mode</label>
+                        {{ form.PaymentMode }}
+                    </div>
+
+                    <!-- Hidden Bank Fields -->
+                    <div class="col-md-4 bank-fields d-none">
+                        <label class="form-label fw-semibold">Payment Type</label>
+                        {{ form.PaymentType }}
+                    </div>
+                    <div class="col-md-4 bank-fields d-none">
+                        <label class="form-label fw-semibold">Bank Transfer ID</label>
+                        {{ form.BankTransferID }}
+                    </div>
+
+                    <!-- Cheque Fields -->
+                    <div class="col-md-3 bank-fields d-none">
+                        <label class="form-label fw-semibold">Cheque No</label>
+                        {{ form.ChequeNo }}
+                    </div>
+                    <div class="col-md-3 bank-fields d-none">
+                        <label class="form-label fw-semibold">Cheque Date</label>
+                        {{ form.ChequeDate }}
+                    </div>
+                    <div class="col-md-3 bank-fields d-none">
+                        <label class="form-label fw-semibold">Is PDC?</label>
+                        {{ form.IsPDC }}
+                    </div>
+                    <div class="col-md-3 bank-fields d-none">
+                        <label class="form-label fw-semibold">Cleared?</label>
+                        {{ form.Cleared }}
+                    </div>
+
+                    <!-- Bill Clearance Section -->
+                    <div class="col-12 mt-4">
+                        <h5 class="fw-bold text-primary border-bottom pb-2">
+                            <i class="bi bi-receipt-cutoff me-1"></i> Pending Bills for Selected Ledger
+                        </h5>
+                        <div id="billClearanceContainer" class="table-responsive mt-3">
+                            <table class="table table-bordered align-middle text-center" id="billClearanceTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Ref Voucher Type</th>
+                                        <th>Ref No</th>
+                                        <th>Invoice Amount</th>
+                                        <th>Balance</th>
+                                        <th>Payment Amount</th>
+                                        <th>Payment Date</th>
+                                        <th>Mode</th>
+                                        <th class="bank-extra d-none">Ledger2</th>
+                                        <th class="bank-extra d-none">Trn No</th>
+                                        <th class="bank-extra d-none">Cheque No</th>
+                                        <th class="bank-extra d-none">Cheque Date</th>
+                                        <th class="bank-extra d-none">Cheque Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="7" class="text-muted">Select a ledger to view pending bills.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="col-12 mt-3">
+                        <label class="form-label fw-semibold">Remarks</label>
+                        {{ form.Remarks }}
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="col-12 text-end mt-4">
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="bi bi-check-circle me-1"></i> Save Payment
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JS Logic -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const paymentModeField = document.querySelector("#id_PaymentMode");
+    const bankFields = document.querySelectorAll(".bank-fields");
+    const ledgerSelect = document.querySelector("#id_LedgerCr");
+    const tableBody = document.querySelector("#billClearanceTable tbody");
+
+    // 🔄 Toggle global Bank Fields
+    function toggleBankFields() {
+        if (paymentModeField.value === "bank") {
+            bankFields.forEach(el => el.classList.remove("d-none"));
+        } else {
+            bankFields.forEach(el => el.classList.add("d-none"));
+        }
+    }
+    paymentModeField.addEventListener("change", toggleBankFields);
+    toggleBankFields();
+
+    // 🔄 Fetch BillClearance dynamically when ledger selected
+    ledgerSelect.addEventListener("change", function() {
+        const ledgerId = this.value;
+        if (!ledgerId) return;
+
+        fetch(`/get-bill-clearance/${ledgerId}/`)
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = "";
+                const bills = data.bills || data; // handle both key structures
+                if (bills.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="12" class="text-muted">No pending bills for this ledger.</td></tr>`;
+                    return;
+                }
+
+                bills.forEach(bill => {
+                    const today = new Date().toISOString().split('T')[0];
+                    tableBody.innerHTML += `
+                        <tr data-bill-id="${bill.id}">
+                            <td>${bill.RefVoucherType__VoucherName || bill.RefVoucherType}</td>
+                            <td>${bill.RefVoucherNo}</td>
+                            <td>${bill.InvAmount}</td>
+                            <td>${bill.Balance}</td>
+                            <td>
+                                <input type="number" name="amount_${bill.id}" class="form-control form-control-sm" step="0.01" value="${bill.Balance}">
+                            </td>
+                            <td>
+                                <input type="date" name="date_${bill.id}" class="form-control form-control-sm" value="${today}">
+                            </td>
+                            <td>
+                                <select name="mode_${bill.id}" class="form-select form-select-sm bill-mode">
+                                    <option value="cash">Cash</option>
+                                    <option value="bank">Bank</option>
+                                </select>
+                            </td>
+                            <!-- Hidden bank-specific fields (will toggle when 'Bank' selected) -->
+                            <td class="bank-extra d-none">
+                                <input type="text" name="ledger2_${bill.id}" class="form-control form-control-sm" placeholder="Ledger2">
+                            </td>
+                            <td class="bank-extra d-none">
+                                <input type="text" name="trnno_${bill.id}" class="form-control form-control-sm" placeholder="Trn No">
+                            </td>
+                            <td class="bank-extra d-none">
+                                <input type="text" name="chequeno_${bill.id}" class="form-control form-control-sm" placeholder="Cheque No">
+                            </td>
+                            <td class="bank-extra d-none">
+                                <input type="date" name="chequedate_${bill.id}" class="form-control form-control-sm">
+                            </td>
+                            <td class="bank-extra d-none">
+                                <select name="chequestatus_${bill.id}" class="form-select form-select-sm">
+                                    <option value="">--Status--</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="cleared">Cleared</option>
+                                    <option value="bounced">Bounced</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </td>
+                        </tr>`;
+                });
+
+                // 🧠 Add per-row Mode change handler
+                document.querySelectorAll(".bill-mode").forEach(select => {
+                    select.addEventListener("change", function() {
+                        const row = this.closest("tr");
+                        const extraFields = row.querySelectorAll(".bank-extra");
+                        if (this.value === "bank") {
+                            extraFields.forEach(td => td.classList.remove("d-none"));
+                        } else {
+                            extraFields.forEach(td => td.classList.add("d-none"));
+                        }
+                    });
+                });
+            })
+            .catch(err => {
+                console.error("Error fetching bill clearance:", err);
+                tableBody.innerHTML = `<tr><td colspan="12" class="text-danger">Error loading bills.</td></tr>`;
+            });
+    });
+});
+</script>
+
+<!-- Get Next Voucher_no -->
+<script>
+function updateVoucherNumber() {
+    const select = document.getElementById('id_voucherType');
+    const input = document.getElementById('id_voucher_no');
+
+    if (select && input && select.value) {
+        input.value = 'Loading...';
+        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = data.voucher_number;
+                } else {
+                    input.value = 'Error';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching voucher number:', error);
+                input.value = 'Error';
+            });
+    } else if (input) {
+        input.value = '';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    const voucherSelect = document.getElementById('id_voucherType');
+    if (voucherSelect) {
+        voucherSelect.addEventListener('change', updateVoucherNumber);
+        updateVoucherNumber(); // also run once on load
+    }
+});
+</script>
+
+{% endblock %}

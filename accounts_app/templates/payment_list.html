@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    
+    
+
+    h2 {
+        text-align: center;
+        color: #333;
+    }
+
+    /* Table styling */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    thead tr {
+        background-color: #4CAF50;
+        color: #fff;
+    }
+
+    th, td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        font-weight: bold;
+    }
+
+    tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    /* Link styling */
+    a {
+        color: #4CAF50;
+        text-decoration: none;
+        
+    }
+
+    a:hover {
+        text-decoration: none;
+    }
+</style>
+</head>
+<body>
+<h2>Voucher List</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Voucher No</th>
+            <th>Date</th>
+            <th>Payment Mode</th>
+            <th>Vendor</th>
+            <th>Net Amount</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for payment in payments %}
+        <tr>
+            <td>{{ payment.voucher_no }}</td>
+            <td>{{ payment.date }}</td>
+            <td>{{ payment.payment_mode }}</td>
+            <td>{{ payment.vendor }}</td>
+            <td>{{ payment.net_amount }}</td>
+            <td><a href="{% url 'accounts_app:payment_detail' payment.pk %}">View Details</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p><a href="{% url 'accounts_app:create_payment' %}">Create new Payment</a></p>
+
+{% endblock %}

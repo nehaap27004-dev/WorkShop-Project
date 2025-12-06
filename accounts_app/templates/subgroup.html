@@ -1,0 +1,145 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+    }
+
+    .btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #343a40;
+        color: white;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <h2 class="mb-4 text-center fw-bold text-primary">Subgroup Management</h2>
+
+    <!-- Form Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0 fw-bold text-secondary">Create or Update Subgroup</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        {{ form.sub_group_name.label_tag }}
+                        {{ form.sub_group_name }}
+                    </div>
+                    <div class="col-md-8">
+                        {{ form.sub_group_description.label_tag }}
+                        {{ form.sub_group_description }}
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" name="save" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                        <i class="bi bi-save me-2"></i>SAVE
+                    </button>
+                    <button type="reset" name="clear" class="btn btn-secondary px-4 py-2">
+                        <i class="bi bi-x-circle me-2"></i>CLEAR
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- List Section -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0 fw-bold text-secondary">Subgroup List</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle text-center">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Subgroup No</th>
+                            <th>Subgroup Name</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subgroup in subgroups %}
+                            <tr>
+                                <td>{{ subgroup.sub_group_no }}</td>
+                                <td><strong>{{ subgroup.sub_group_name }}</strong></td>
+                                <td>{{ subgroup.sub_group_description }}</td>
+                                <td>
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <a href="{% url 'accounts_app:subgroup_edit' subgroup.id %}" class="btn btn-sm btn-primary px-3 py-1">
+                                            <i class="bi bi-pencil-square me-1"></i>EDIT
+                                        </a>
+                                        <a href="{% url 'accounts_app:subgroup_delete' subgroup.id %}" class="btn btn-sm btn-danger px-3 py-1" onclick="return confirm('Are you sure you want to delete this subgroup?')">
+                                            <i class="bi bi-trash me-1"></i>DELETE
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    No subgroups found. Create your first subgroup using the form above.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

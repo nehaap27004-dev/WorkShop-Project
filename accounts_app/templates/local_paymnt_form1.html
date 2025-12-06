@@ -1,0 +1,144 @@
+{% extends 'fleet_base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Create Fleet Quotation</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Quotation Details</h3>
+                {{ quotation_form.as_p }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Quotation Items</h3>
+                
+                <!-- Static row for entering quotation item -->
+                <div id="static-item-row">
+                    <div class="item-form">
+                        {{ quotation_items_formset.management_form }}
+                        {{ quotation_items_formset.empty_form.as_p }}
+                    </div>
+                </div>
+
+                <!-- Table for dynamically added items -->
+                <table id="quotation-items-table" class="table table-bordered mt-3">
+                    <thead>
+                        <tr>
+                            <th>Vehicle</th>
+                            <th>Details</th>
+                            <th>Quantity</th>
+                            <th>Rate per Hour</th>
+                            <th>Rate per Day</th>
+                            <th>Rate per Month</th>
+                            <th>Unit</th>
+                            <th>Number of Units</th>
+                            <th>Total Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-table-body">
+                        <!-- Dynamically added items will appear here -->
+                    </tbody>
+                </table>
+                
+                <button type="button" class="btn btn-secondary" id="add-item-button">Add Item</button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">Save Quotation</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addButton = document.getElementById('add-item-button');
+        const itemsTableBody = document.getElementById('items-table-body');
+        const staticRow = document.getElementById('static-item-row');
+        const managementForm = document.querySelector('[name="form-TOTAL_FORMS"]');
+        
+        // Handle Add Item button click
+        addButton.addEventListener('click', function() {
+            // Get values from the form
+            const vehicleSelect = staticRow.querySelector('select[name$="vehicle"]');
+            const detailsTextarea = staticRow.querySelector('textarea[name$="details"]');
+            const quantityInput = staticRow.querySelector('input[name$="quantity"]');
+            const ratePerHrInput = staticRow.querySelector('input[name$="rate_per_hr"]');
+            const ratePerDayInput = staticRow.querySelector('input[name$="rate_per_day"]');
+            const ratePerMonthInput = staticRow.querySelector('input[name$="rate_per_month"]');
+            const unitSelect = staticRow.querySelector('select[name$="unit"]');
+            const noOfUnitInput = staticRow.querySelector('input[name$="no_of_unit"]');
+            const totalAmountInput = staticRow.querySelector('input[name$="total_amount"]');
+    
+            // Validate that required fields are filled
+            if (!vehicleSelect.value || !quantityInput.value) {
+                alert('Please fill in at least the Vehicle and Quantity fields');
+                return;
+            }
+    
+            // Get the current number of forms and increment
+            let formCount = parseInt(managementForm.value);
+            
+            // Create new table row with entered values
+            const newTableRow = document.createElement('tr');
+            newTableRow.innerHTML = `
+                <td>${vehicleSelect.options[vehicleSelect.selectedIndex].text}</td>
+                <td>${detailsTextarea.value || 'N/A'}</td>
+                <td>${quantityInput.value}</td>
+                <td>${ratePerHrInput.value || 'N/A'}</td>
+                <td>${ratePerDayInput.value || 'N/A'}</td>
+                <td>${ratePerMonthInput.value || 'N/A'}</td>
+                <td>${unitSelect.options[unitSelect.selectedIndex].text}</td>
+                <td>${noOfUnitInput.value || 'N/A'}</td>
+                <td>${totalAmountInput.value || 'N/A'}</td>
+                <td>
+                    <button type="button" class="btn btn-danger remove-item-button">Remove</button>
+                    <input type="hidden" name="form-${formCount}-vehicle" value="${vehicleSelect.value}">
+                    <input type="hidden" name="form-${formCount}-details" value="${detailsTextarea.value}">
+                    <input type="hidden" name="form-${formCount}-quantity" value="${quantityInput.value}">
+                    <input type="hidden" name="form-${formCount}-rate_per_hr" value="${ratePerHrInput.value}">
+                    <input type="hidden" name="form-${formCount}-rate_per_day" value="${ratePerDayInput.value}">
+                    <input type="hidden" name="form-${formCount}-rate_per_month" value="${ratePerMonthInput.value}">
+                    <input type="hidden" name="form-${formCount}-unit" value="${unitSelect.value}">
+                    <input type="hidden" name="form-${formCount}-no_of_unit" value="${noOfUnitInput.value}">
+                    <input type="hidden" name="form-${formCount}-total_amount" value="${totalAmountInput.value}">
+                    <input type="hidden" name="form-${formCount}-id" value="">
+                </td>
+            `;
+    
+            // Add row to the table
+            itemsTableBody.appendChild(newTableRow);
+    
+            // Increment the total forms count
+            managementForm.value = formCount + 1;
+    
+            // Clear form inputs
+            vehicleSelect.selectedIndex = 0;
+            detailsTextarea.value = '';
+            quantityInput.value = '';
+            ratePerHrInput.value = '';
+            ratePerDayInput.value = '';
+            ratePerMonthInput.value = '';
+            unitSelect.selectedIndex = 0;
+            noOfUnitInput.value = '';
+            totalAmountInput.value = '';
+        });
+    
+        // Handle item row removal
+        itemsTableBody.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('remove-item-button')) {
+                const row = e.target.closest('tr');
+                row.remove();
+                
+                // Decrement the total forms count
+                let formCount = parseInt(managementForm.value);
+                managementForm.value = formCount - 1;
+            }
+        });
+    });
+</script>
+{% endblock %}

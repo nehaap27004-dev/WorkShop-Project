@@ -1,0 +1,307 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #343a40;
+        color: white;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+
+    .radio-group {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .radio-group label {
+        margin-right: 20px;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 8px 15px;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+    }
+
+    .radio-group label:hover {
+        background: #e9ecef;
+    }
+
+    .radio-group input[type="radio"]:checked + span {
+        color: #5A8DEE;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-inactive {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .linked-field {
+        transition: all 0.3s ease;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <h2 class="mb-4 text-center fw-bold text-primary">
+        {{ instance|yesno:"Update Document,Create Document" }}
+    </h2>
+
+    <!-- Add/Edit Form -->
+    <form method="POST" enctype="multipart/form-data" class="needs-validation">
+        {% csrf_token %}
+
+        <!-- Document Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">Document Information</h5>
+            </div>
+            <div class="card-body">
+                <!-- Link Type Selection -->
+                <div class="radio-group">
+                    <label class="form-check-label">
+                        <input type="radio" name="linked_to" value="staff" checked class="form-check-input me-2">
+                        <span><i class="bi bi-person-fill me-1"></i>Staff</span>
+                    </label>
+                    <label class="form-check-label">
+                        <input type="radio" name="linked_to" value="vehicle" class="form-check-input me-2">
+                        <span><i class="bi bi-truck me-1"></i>Vehicle</span>
+                    </label>
+                    <label class="form-check-label">
+                        <input type="radio" class="form-check-input me-2">
+                        <span>
+                            <i class="bi bi-building me-1"></i>
+                            <a href="{% url 'fleet_app:document_list'%}" class="text-decoration-none">Office</a>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        {{ form.title.label_tag }}
+                        {{ form.title }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.status.label_tag }}
+                        {{ form.status }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.file_path.label_tag }}
+                        {{ form.file_path }}
+                    </div>
+                    <div class="col-md-2" id="staff-field">
+                        <label class="form-label">
+                            <i class="bi bi-person-fill me-1"></i>{{ form.staff.label }}
+                        </label>
+                        {{ form.staff }}
+                    </div>
+                    <div class="col-md-2" id="vehicle-field" style="display:none;">
+                        <label class="form-label">
+                            <i class="bi bi-truck me-1"></i>{{ form.vehicle.label }}
+                        </label>
+                        {{ form.vehicle }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.expiry_date.label_tag }}
+                        {{ form.expiry_date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.reminder_date.label_tag }}
+                        {{ form.reminder_date }}
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="col-md-12">
+                        {{ form.description.label_tag }}
+                        {{ form.description }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-3 mt-4">
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                <i class="bi bi-{% if instance %}check-circle{% else %}plus-circle{% endif %} me-2"></i>
+                {% if instance %}Update{% else %}Create{% endif %}
+            </button>
+            {% if instance %}
+                <button type="submit" name="delete" class="btn btn-danger px-4 py-2" onclick="return confirm('Are you sure you want to delete this document?')">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
+            {% endif %}
+        </div>
+    </form>
+
+    <!-- Documents Table -->
+    <div class="card shadow-sm mt-5">
+        <div class="card-header bg-light">
+            <h5 class="mb-0 fw-bold text-secondary">All Documents</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle text-center">
+                    <thead class="table-dark">
+                        <tr>
+                            <th><i class="bi bi-file-text me-2"></i>Title</th>
+                            <th><i class="bi bi-circle-fill me-2"></i>Status</th>
+                            <th><i class="bi bi-link-45deg me-2"></i>Linked To</th>
+                            <th><i class="bi bi-paperclip me-2"></i>File</th>
+                            <th><i class="bi bi-calendar me-2"></i>Uploaded</th>
+                            <th><i class="bi bi-gear me-2"></i>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documents %}
+                        <tr>
+                            <td><strong>{{ doc.title }}</strong></td>
+                            <td>
+                                <span class="status-badge {% if doc.status == 'active' %}status-active{% else %}status-inactive{% endif %}">
+                                    {{ doc.status|capfirst }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if doc.staff %}
+                                    <i class="bi bi-person-fill text-primary me-1"></i>
+                                    <strong>Staff:</strong> {{ doc.staff.name }}
+                                {% endif %}
+                                {% if doc.vehicle %}
+                                    <i class="bi bi-truck text-success me-1"></i>
+                                    <strong>Vehicle:</strong> {{ doc.vehicle.number_plate }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if doc.file %}
+                                    <a href="{{ doc.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i>View
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">No File</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ doc.upload_date|date:"M d, Y" }}</small>
+                            </td>
+                            <td>
+                                <a href="{% url 'fleet_app:document_update' doc.pk %}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-pencil-square me-1"></i>Edit
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>
+                                No documents found. Create your first document above!
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        function toggleLinkedFields() {
+            let selected = $('input[name="linked_to"]:checked').val();
+            
+            if (selected === 'staff') {
+                $('#staff-field').addClass('fade-in').show();
+                $('#vehicle-field').hide();
+                $('#id_vehicle').val('');
+            } else if (selected === 'vehicle') {
+                $('#staff-field').hide();
+                $('#vehicle-field').addClass('fade-in').show();
+                $('#id_staff').val('');
+            }
+        }
+
+        $('input[name="linked_to"]').change(toggleLinkedFields);
+        toggleLinkedFields(); // Initial check
+        
+        // Add smooth scrolling for form submission
+        $('form').on('submit', function() {
+            $('html, body').animate({
+                scrollTop: 0
+            }, 300);
+        });
+    });
+</script>
+
+{% endblock %}

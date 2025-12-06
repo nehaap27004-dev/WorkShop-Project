@@ -1,0 +1,60 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Contract Details</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Contract Information</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Contract Number:</strong> {{ contract.contract_no }}</p>
+                    <p><strong>Date:</strong> {{ contract.date }}</p>
+                    <p><strong>Customer:</strong> {{ contract.customer }}</p>
+                    
+                </div>
+               
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Contract Items</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Fleet No</th>
+                        <th>Description</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.vehicle }}</td>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.start_time }}</td>
+                        <td>{{ item.end_time }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No items.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a href="{% url 'fleet_app:contract_list' %}" class="btn btn-secondary">Back to List</a>
+    </div>
+</div>
+{% endblock %}

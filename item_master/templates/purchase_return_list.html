@@ -1,0 +1,36 @@
+{% extends 'item_base.html' %}
+{% block title %}Purchase Return List{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Purchase Return List</h2>
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Voucher No</th>
+                <th>Date</th>
+                <th>Ledger</th>
+                <th>Payment Mode</th>
+                <th>Total</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for return in purchase_returns %}
+            <tr>
+                <td>{{ return.voucher_no }}</td>
+                <td>{{ return.transaction_date }}</td>
+                <td>{{ return.ledger }}</td>
+                <td>{{ return.payment_mode }}</td>
+                <td>{{ return.grand_total_amount }}</td>
+                <td>
+                    <a href="{% url 'item_master:purchase_return_detail' return.pk %}" class="btn btn-sm btn-primary">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">No purchase returns found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
