@@ -2,13 +2,13 @@ import psycopg2
 import csv
 import datetime
 # Database connection details
-DB_NAME = "rabwafahoud"
+DB_NAME = "SilverL"
 DB_USER = "postgres"
 DB_PASS = "shnd6775"
 DB_HOST = "localhost"
 DB_PORT = "5432"
 # DB_HOST = 'Rbizgroup-4102.postgres.pythonanywhere-services.com'
-# DB_NAME = 'rabwafahoud'
+# DB_NAME = 'SilverL'
 # DB_USER = 'super'
 # DB_PASS = 'pass@12345678'
 # DB_PORT = '14102'
@@ -55,6 +55,7 @@ with open(CSV_FILE, "r", encoding="utf-8") as f:
             now,
             now
         ))
+
 # Commit and close
 conn.commit()
 cur.close()

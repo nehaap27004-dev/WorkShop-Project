@@ -1,0 +1,786 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load privilege_tags %}
+{% load i18n %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+    }
+
+    .btn-success {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+    }
+
+    .btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+
+    #detailsTable tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .contract-selector {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+
+    <!-- Title + View Button Row -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text-primary mb-0">
+            {% if is_edit_mode %}
+                {% trans "Edit OffHire" %} #{{ offhire_instance.voucher_no }}
+            {% else %}
+                {% trans "Create OffHire" %}
+            {% endif %}
+        </h2>
+
+        {% has_priv request.user 13 "can_read" as can_read_offhire %}
+        {% if can_read_offhire %}
+        <a href="{% url 'fleet_app:offhire_list' %}" 
+        class="btn btn-sm btn-primary">{% trans "View List" %}</a>
+        {% endif %}
+    </div>
+    
+    <form method="post" id="offhireForm" class="needs-validation">
+        {% csrf_token %}
+        
+        <!-- Contract Selector -->
+        <div class="contract-selector">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="fw-bold mb-2">{% trans "Select Customer" %}:</label>
+                    {{ offhire_form.customer }}
+                </div>
+                <div class="col-md-4">
+                    <label class="fw-bold mb-2">{% trans "Select Delivery Contract" %}:</label>
+                    {{ offhire_form.delivery_contract }}
+                </div>
+                <div class="col-md-4">
+                    <label class="fw-bold mb-2">&nbsp;</label>
+                    <button type="button" class="btn btn-success w-100" onclick="loadContractDetails()">
+                        📥 {% trans "Load Contract Details" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- OffHire Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "OffHire Information" %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-3">
+                        {{ offhire_form.voucher_no.label_tag }}
+                        {{ offhire_form.voucher_no }}
+                        {% if offhire_form.voucher_no.errors %}
+                            <div class="text-danger small">{{ offhire_form.voucher_no.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        {{ offhire_form.date.label_tag }}
+                        {{ offhire_form.date }}
+                        {% if offhire_form.date.errors %}
+                            <div class="text-danger small">{{ offhire_form.date.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3" style="display: none;">
+                        {{ offhire_form.voucherType.label_tag }}
+                        {{ offhire_form.voucherType }}
+                        {% if offhire_form.voucherType.errors %}
+                            <div class="text-danger small">{{ offhire_form.voucherType.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        {{ offhire_form.offhire_date_time.label_tag }}
+                        {{ offhire_form.offhire_date_time }}
+                        {% if offhire_form.offhire_date_time.errors %}
+                            <div class="text-danger small">{{ offhire_form.offhire_date_time.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        {{ offhire_form.remarks.label_tag }}
+                        {{ offhire_form.remarks }}
+                        {% if offhire_form.remarks.errors %}
+                            <div class="text-danger small">{{ offhire_form.remarks.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>    
+        
+        <!-- OffHire Details Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "OffHire Details" %}</h5>
+            </div>
+            <div class="card-body">
+                <!-- Details Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center" id="detailsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 3%">#</th>
+                                <th style="width: 12%">{% trans "Vehicle" %}</th>
+                                <th style="width: 10%">{% trans "Location" %}</th>
+                                <th style="width: 6%">{% trans "Period" %}</th>
+                                <th style="width: 5%">{% trans "Qty" %}</th>
+                                <th style="width: 7%">{% trans "Rate" %}</th>
+                                <th style="width: 7%">{% trans "From" %}</th>
+                                <th style="width: 7%">{% trans "To" %}</th>
+                                <th style="width: 8%">{% trans "Amount" %}</th>
+                                <th style="width: 5%">{% trans "Tax %" %}</th>
+                                <th style="width: 8%">{% trans "Total" %}</th>
+                                <th style="width: 7%">{% trans "Meter" %}</th>
+                                <th style="width: 7%">{% trans "Fuel" %}</th>
+                                <th style="width: 8%">{% trans "Action" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr id="noDataRow">
+                                <td colspan="14" class="text-center text-muted">
+                                    {% trans "Please select a customer and delivery contract, then click 'Load Contract Details'" %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Details Input Array -->
+        <div id="hiddenDetails"></div>
+
+        <!-- Form Actions -->
+        <div class="text-end mt-4">
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                {% if is_edit_mode %}
+                    💾 {% trans "Update OffHire" %}
+                {% else %}
+                    💾 {% trans "Save OffHire" %}
+                {% endif %}
+            </button>
+            <button type="button" class="btn btn-secondary px-4 py-2 ms-3" onclick="window.history.back()">
+                ← {% trans "Back" %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- OffHire Details Modal -->
+<div class="modal fade" id="offhireDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans "OffHire Details" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modal_row_index">
+                <input type="hidden" id="modal_contract_detail_id">
+                <input type="hidden" id="modal_vehicle_id">
+                <input type="hidden" id="modal_location">
+                <input type="hidden" id="modal_period">
+                <input type="hidden" id="modal_quantity">
+                <input type="hidden" id="modal_unit_rate">
+                <input type="hidden" id="modal_from_date">
+                <input type="hidden" id="modal_to_date">
+                <input type="hidden" id="modal_amount">
+                <input type="hidden" id="modal_tax">
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{% trans "Meter Reading" %}</label>
+                        <input type="number" id="modal_meter_reading" class="form-control" 
+                               placeholder="{% trans 'Meter reading' %}" step="0.01">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{% trans "Fuel Level" %}</label>
+                        <select id="modal_fuel_level" class="form-control">
+                            <option value="">{% trans "Select fuel level" %}</option>
+                            <option value="Full">{% trans "Full" %}</option>
+                            <option value="3/4">3/4</option>
+                            <option value="1/2">1/2</option>
+                            <option value="1/4">1/4</option>
+                            <option value="Empty">{% trans "Empty" %}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">{% trans "Vehicle Condition" %}</label>
+                        <textarea id="modal_vehicle_condition" class="form-control" rows="2" 
+                                  placeholder="{% trans 'Describe vehicle condition...' %}"></textarea>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">{% trans "Remarks" %}</label>
+                        <textarea id="modal_remarks" class="form-control" rows="2" 
+                                  placeholder="{% trans 'Additional remarks...' %}"></textarea>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">{% trans "OffHire Date & Time" %}</label>
+                        <input type="datetime-local" id="modal_offhire_datetime" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-success" onclick="saveOffhireDetails()">{% trans "Save" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Translation strings for JavaScript
+    const translations = {
+        selectCustomer: "{% trans 'Please select a customer.' %}",
+        selectContract: "{% trans 'Please select a delivery contract.' %}",
+        addDetail: "{% trans 'Please add at least one offhire detail before saving.' %}",
+        loading: "{% trans 'Loading...' %}",
+        error: "{% trans 'Error' %}",
+        noHiredVehicles: "{% trans 'No hired vehicles found for this contract.' %}",
+    };
+
+    let details = [];
+    let contractDetails = [];
+
+    // Load delivery contracts when customer is selected
+    document.getElementById('id_customer').addEventListener('change', function() {
+        const customerId = this.value;
+        const contractSelect = document.getElementById('id_delivery_contract');
+        
+        if (!customerId) {
+            contractSelect.innerHTML = '<option value="">{% trans "Select customer first" %}</option>';
+            return;
+        }
+        
+        contractSelect.innerHTML = '<option value="">{% trans "Loading..." %}</option>';
+        
+        fetch(`/get-customer-delivery-contracts-offhire/?customer_id=${customerId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    contractSelect.innerHTML = '<option value="">{% trans "Select contract" %}</option>';
+                    data.contracts.forEach(contract => {
+                        const option = document.createElement('option');
+                        option.value = contract.id;
+                        option.textContent = `${contract.voucher_no} - ${contract.date} (${contract.hired_vehicles} hired)`;
+                        contractSelect.appendChild(option);
+                    });
+                } else {
+                    alert(data.message);
+                    contractSelect.innerHTML = '<option value="">{% trans "No contracts found" %}</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(translations.error);
+                contractSelect.innerHTML = '<option value="">{% trans "Error loading contracts" %}</option>';
+            });
+    });
+
+    function loadContractDetails() {
+        const customerId = document.getElementById('id_customer').value;
+        const contractId = document.getElementById('id_delivery_contract').value;
+        
+        if (!customerId) {
+            alert(translations.selectCustomer);
+            return;
+        }
+        
+        if (!contractId) {
+            alert(translations.selectContract);
+            return;
+        }
+        
+        fetch(`/get-delivery-contract-details-offhire/?contract_id=${contractId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.details.length === 0) {
+                        alert(translations.noHiredVehicles);
+                        return;
+                    }
+                    
+                    // Clear existing details
+                    details = [];
+                    contractDetails = data.details;
+                    document.getElementById('hiddenDetails').innerHTML = '';
+                    document.querySelector('#detailsTable tbody').innerHTML = '';
+                    
+                    const noDataRow = document.getElementById('noDataRow');
+                    if (noDataRow) {
+                        noDataRow.style.display = 'none';
+                    }
+                    
+                    // Add each detail to the table
+                    data.details.forEach((detail, index) => {
+                        addDetailRow(detail, index);
+                    });
+                    
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(translations.error);
+            });
+    }
+
+    function removeDetailRow(index) {
+    // Remove from array
+    details.splice(index, 1);
+
+    // Remove row from table
+    document.querySelector(`#detailsTable tbody tr[data-index="${index}"]`)?.remove();
+
+    // Re-index remaining rows
+    document.querySelectorAll('#detailsTable tbody tr').forEach((row, i) => {
+        row.setAttribute('data-index', i);
+        row.children[0].textContent = i + 1;
+
+        const btn = row.querySelector('button');
+        if (btn) {
+            btn.setAttribute('onclick', `removeDetailRow(${i})`);
+        }
+    });
+
+    // Update hidden inputs
+    updateHiddenInputs();
+
+    // Show empty message if no rows
+    if (details.length === 0) {
+        document.querySelector('#detailsTable tbody').innerHTML = `
+            <tr id="noDataRow">
+                <td colspan="14" class="text-center text-muted">
+                    No offhire details added
+                </td>
+            </tr>`;
+    }
+}
+
+    function addDetailRow(detail, index) {
+        const periodDisplay = detail.period ? detail.period.charAt(0).toUpperCase() + detail.period.slice(1) : '-';
+        const fromDateDisplay = detail.from_date ? new Date(detail.from_date).toLocaleDateString('en-GB') : '-';
+        const toDateDisplay = detail.to_date ? new Date(detail.to_date).toLocaleDateString('en-GB') : '-';
+        
+        const row = `
+            <tr data-index="${index}">
+                <td>${index + 1}</td>
+                <td>${detail.vehicle_name}</td>
+                <td>${detail.location}</td>
+                <td>${periodDisplay}</td>
+                <td class="text-end">${detail.quantity || '-'}</td>
+                <td class="text-end">${detail.unit_rate ? parseFloat(detail.unit_rate).toFixed(3) : '-'}</td>
+                <td>${fromDateDisplay}</td>
+                <td>${toDateDisplay}</td>
+                <td class="text-end">${parseFloat(detail.amount).toFixed(3)}</td>
+                <td class="text-center">${parseFloat(detail.tax).toFixed(2)}%</td>
+                <td class="text-end">${parseFloat(detail.total_amount).toFixed(3)}</td>
+                <td class="text-center" id="meter_${index}">-</td>
+                <td class="text-center" id="fuel_${index}">-</td>
+                <td class="text-center">
+                    <button type="button"
+                            class="btn btn-sm btn-danger"
+                            onclick="removeDetailRow(${index})"
+                            title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+        
+        document.querySelector('#detailsTable tbody').insertAdjacentHTML('beforeend', row);
+        
+        // Initialize detail with empty offhire data
+        details.push({
+            contract_detail_id: detail.id,
+            vehicle_id: detail.vehicle_id,
+            location: detail.location,
+            period: detail.period,
+            quantity: detail.quantity,
+            unit_rate: detail.unit_rate,
+            from_date: detail.from_date,
+            to_date: detail.to_date,
+            amount: detail.amount,
+            tax: detail.tax,
+            meter_reading: '',
+            fuel_level: '',
+            vehicle_condition: '',
+            remarks: '',
+            offhire_datetime: ''
+        });
+    }
+
+    function openOffhireModal(index) {
+        const detail = details[index];
+        
+        document.getElementById('modal_row_index').value = index;
+        document.getElementById('modal_contract_detail_id').value = detail.contract_detail_id;
+        document.getElementById('modal_vehicle_id').value = detail.vehicle_id;
+        document.getElementById('modal_location').value = detail.location;
+        document.getElementById('modal_period').value = detail.period;
+        document.getElementById('modal_quantity').value = detail.quantity;
+        document.getElementById('modal_unit_rate').value = detail.unit_rate;
+        document.getElementById('modal_from_date').value = detail.from_date;
+        document.getElementById('modal_to_date').value = detail.to_date;
+        document.getElementById('modal_amount').value = detail.amount;
+        document.getElementById('modal_tax').value = detail.tax;
+        
+        document.getElementById('modal_meter_reading').value = detail.meter_reading || '';
+        document.getElementById('modal_fuel_level').value = detail.fuel_level || '';
+        document.getElementById('modal_vehicle_condition').value = detail.vehicle_condition || '';
+        document.getElementById('modal_remarks').value = detail.remarks || '';
+        document.getElementById('modal_offhire_datetime').value = detail.offhire_datetime || '';
+        
+        const modal = new bootstrap.Modal(document.getElementById('offhireDetailsModal'));
+        modal.show();
+    }
+
+    function saveOffhireDetails() {
+        const index = parseInt(document.getElementById('modal_row_index').value);
+        
+        const meterReading = document.getElementById('modal_meter_reading').value;
+        const fuelLevel = document.getElementById('modal_fuel_level').value;
+        const vehicleCondition = document.getElementById('modal_vehicle_condition').value;
+        const remarks = document.getElementById('modal_remarks').value;
+        const offhireDatetime = document.getElementById('modal_offhire_datetime').value;
+        
+        // Update detail object
+        details[index].meter_reading = meterReading;
+        details[index].fuel_level = fuelLevel;
+        details[index].vehicle_condition = vehicleCondition;
+        details[index].remarks = remarks;
+        details[index].offhire_datetime = offhireDatetime;
+        
+        // Update table display
+        document.getElementById(`meter_${index}`).textContent = meterReading || '-';
+        document.getElementById(`fuel_${index}`).textContent = fuelLevel || '-';
+        
+        // Update hidden inputs
+        updateHiddenInputs();
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('offhireDetailsModal'));
+        modal.hide();
+    }
+
+    function updateHiddenInputs() {
+        const hiddenDiv = document.getElementById('hiddenDetails');
+        hiddenDiv.innerHTML = '';
+        
+        details.forEach((detail, index) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'details[]';
+            // Format: contract_detail_id|vehicle_id|location|period|quantity|unit_rate|from_date|to_date|amount|tax|meter_reading|fuel_level|vehicle_condition|remarks|offhire_datetime
+            input.value = `${detail.contract_detail_id}|${detail.vehicle_id}|${detail.location}|${detail.period}|${detail.quantity}|${detail.unit_rate}|${detail.from_date}|${detail.to_date}|${detail.amount}|${detail.tax}|${detail.meter_reading}|${detail.fuel_level}|${detail.vehicle_condition}|${detail.remarks}|${detail.offhire_datetime}`;
+            input.setAttribute('data-index', index);
+            hiddenDiv.appendChild(input);
+        });
+    }
+
+    // Form validation before submit
+    document.getElementById('offhireForm').addEventListener('submit', function(e) {
+        if (details.length === 0) {
+            e.preventDefault();
+            alert(translations.addDetail);
+            return false;
+        }
+        
+        // Update hidden inputs before submit
+        updateHiddenInputs();
+        
+        // Check required fields
+        const requiredFields = ['voucher_no', 'date', 'delivery_contract'];
+        for (let field of requiredFields) {
+            const input = document.querySelector(`[name="${field}"]`);
+            if (!input || !input.value.trim()) {
+                e.preventDefault();
+                alert(`Please fill in the ${field.replace('_', ' ')} field.`);
+                if (input) input.focus();
+                return false;
+            }
+        }
+    });
+
+    // Set default date to today and datetime to now
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.querySelector('input[name="date"]');
+        if (dateInput && !dateInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+        
+        const datetimeInput = document.querySelector('input[name="offhire_date_time"]');
+        if (datetimeInput && !datetimeInput.value) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            datetimeInput.value = now.toISOString().slice(0, 16);
+        }
+    });
+</script>
+
+<!-- Pre-populate OffHire Details for EDIT Mode -->
+{% if is_edit_mode %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if existing_details %}
+        console.log("📝 Edit mode detected - loading existing details...");
+        
+        // Load each existing detail
+        {% for detail in existing_details %}
+            preloadDetail(
+                {{ detail.delivery_contract_detail.id }},
+                {{ detail.vehicle.id }},
+                "{{ detail.vehicle.vehicle_name|escapejs }}",
+                "{{ detail.location|escapejs }}",
+                "{{ detail.period|default:'' }}",
+                {{ detail.quantity|default:'0' }},
+                {{ detail.unit_rate|default:'0' }},
+                "{% if detail.from_date %}{{ detail.from_date|date:'Y-m-d' }}{% endif %}",
+                "{% if detail.to_date %}{{ detail.to_date|date:'Y-m-d' }}{% endif %}",
+                {{ detail.amount }},
+                {{ detail.tax }},
+                {{ detail.total_amount }},
+                {{ detail.meter_reading|default:'0' }},
+                "{{ detail.fuel_level|default:''|escapejs }}",
+                "{{ detail.vehicle_condition|default:''|escapejs }}",
+                "{{ detail.remarks|default:''|escapejs }}",
+                "{% if detail.offhire_date_time %}{{ detail.offhire_date_time|date:'Y-m-d\TH:i' }}{% endif %}"
+            );
+        {% endfor %}
+        
+        console.log("✅ Loaded {{ existing_details|length }} offhire details");
+    {% endif %}
+});
+
+function preloadDetail(contractDetailId, vehicleId, vehicleName, location, period, quantity, unitRate, 
+                       fromDate, toDate, amount, tax, totalAmount, meterReading, fuelLevel, 
+                       vehicleCondition, remarks, offhireDatetime) {
+    const index = details.length;
+
+    const noDataRow = document.getElementById('noDataRow');
+    if (noDataRow) {
+        noDataRow.style.display = 'none';
+    }
+
+    const periodDisplay = period ? period.charAt(0).toUpperCase() + period.slice(1) : '-';
+    
+    let fromDateDisplay = '-';
+    if (fromDate && fromDate.trim() !== '') {
+        try {
+            const fromDateObj = new Date(fromDate);
+            if (!isNaN(fromDateObj.getTime())) {
+                fromDateDisplay = fromDateObj.toLocaleDateString('en-GB');
+            }
+        } catch (e) {
+            console.error('Error parsing from_date:', e);
+        }
+    }
+    
+    let toDateDisplay = '-';
+    if (toDate && toDate.trim() !== '') {
+        try {
+            const toDateObj = new Date(toDate);
+            if (!isNaN(toDateObj.getTime())) {
+                toDateDisplay = toDateObj.toLocaleDateString('en-GB');
+            }
+        } catch (e) {
+            console.error('Error parsing to_date:', e);
+        }
+    }
+    
+    const row = `
+        <tr data-index="${index}">
+            <td>${index + 1}</td>
+            <td>${vehicleName}</td>
+            <td>${location}</td>
+            <td>${periodDisplay}</td>
+            <td class="text-end">${quantity > 0 ? parseFloat(quantity).toFixed(2) : '-'}</td>
+            <td class="text-end">${unitRate > 0 ? parseFloat(unitRate).toFixed(3) : '-'}</td>
+            <td>${fromDateDisplay}</td>
+            <td>${toDateDisplay}</td>
+            <td class="text-end">${parseFloat(amount).toFixed(3)}</td>
+            <td class="text-center">${parseFloat(tax).toFixed(2)}%</td>
+            <td class="text-end">${parseFloat(totalAmount).toFixed(3)}</td>
+            <td class="text-center" id="meter_${index}">${meterReading > 0 ? parseFloat(meterReading).toFixed(2) : '-'}</td>
+            <td class="text-center" id="fuel_${index}">${fuelLevel || '-'}</td>
+            <td class="text-center">
+                <button type="button"
+                        class="btn btn-sm btn-danger"
+                        onclick="removeDetailRow(${index})"
+                        title="Remove">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+
+    document.querySelector('#detailsTable tbody').insertAdjacentHTML('beforeend', row);
+
+    details.push({
+        contract_detail_id: contractDetailId,
+        vehicle_id: vehicleId,
+        location: location,
+        period: period,
+        quantity: quantity,
+        unit_rate: unitRate,
+        from_date: fromDate,
+        to_date: toDate,
+        amount: amount,
+        tax: tax,
+        meter_reading: meterReading,
+        fuel_level: fuelLevel,
+        vehicle_condition: vehicleCondition,
+        remarks: remarks,
+        offhire_datetime: offhireDatetime
+    });
+    
+    updateHiddenInputs();
+}
+</script>
+{% endif %}
+
+<!-- Admin Override -->
+<script>
+$(document).on("submit", "#offhireForm", function (e) {
+    e.preventDefault();
+
+    window.pendingFormId = "offhireForm";
+    window.pendingFormAction = this.action;
+    window.afterSuccessRedirect = "{% url 'fleet_app:offhire_list' %}";
+
+    let formData = new FormData(this);
+
+    $.ajax({
+        url: window.pendingFormAction,
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+
+        success: function (response) {
+            if (response.admin_required) {
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+
+                setTimeout(function () {
+                    window.location.href = window.afterSuccessRedirect;
+                }, 1000);
+            }
+        },
+
+        error: function (xhr) {
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+            } else {
+                alert("Something went wrong");
+            }
+        }
+    });
+});
+</script>
+
+<!-- Get Next Voucher_no -->
+{% if not is_edit_mode %}
+<script>
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
+
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = data.voucher_number;
+                    } else {
+                        input.value = "{% trans 'Error' %}";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching voucher number:', error);
+                    input.value = "{% trans 'Error' %}";
+                });
+        } else if (input) {
+            input.value = '';
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
+{% endblock %}

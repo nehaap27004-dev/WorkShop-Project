@@ -37,6 +37,10 @@ INSTALLED_APPS = [
     'item_master',
     'audit_app',
     'settings',
+    'asset_app',
+    'jobcard_app',
+    
+   
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,10 +52,24 @@ INSTALLED_APPS = [
 # Which apps/models should be auto-audited
 AUDITLOG_INCLUDE_APPS = ["accounts_app", "fleet_app", "item_master"]
 
+LANGUAGE_CODE = 'en'
+
+USE_I18N = True
+
+LANGUAGES = [
+    ('en', 'English'),
+    ('ar', 'Arabic'),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',  # 👈 add this
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -74,11 +92,13 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                "settings.context_processors.global_settings_context",  # 👈 add here
+                'django.template.context_processors.i18n',  # for LANGUAGE_CODE
+                "settings.context_processors.global_settings_context",
             ],
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'accounts.wsgi.application'
 
@@ -89,11 +109,11 @@ WSGI_APPLICATION = 'accounts.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql', 
-        'NAME': 'rabwafahoud',
+        'NAME': 'erp_db',
         'HOST': 'localhost',  
         'PORT': '5432', 
         'USER': 'postgres',  
-        'PASSWORD': 'shnd6775', 
+        'PASSWORD': 'Admin', 
     }
 }
 
@@ -122,11 +142,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
 USE_TZ = True
+
+# 1. Set this to your local timezone
+TIME_ZONE = 'Asia/Kolkata' 
 
 
 # Static files (CSS, JavaScript, Images)
@@ -149,3 +172,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'accounts_app.CustomUser'
 
+FINYEAR = "2026-01-01"

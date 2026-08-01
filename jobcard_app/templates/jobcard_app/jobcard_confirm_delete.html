@@ -1,0 +1,27 @@
+{% extends 'fleet_base1.html' %}
+{% block content %}
+<div style="max-width:500px;margin:60px auto;text-align:center;padding:0 16px">
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:32px">
+    <div style="font-size:48px;margin-bottom:16px">🗑️</div>
+    <h3 style="font-size:18px;font-weight:700;color:#1e293b;margin:0 0 8px">Delete Job Card?</h3>
+    <p style="font-size:14px;color:#64748b;margin:0 0 24px">
+      You are about to delete <strong>{{ job.job_number }}</strong>.<br>
+      This will also delete all complaints, parts, and inspection data.<br>
+      <strong style="color:#dc2626">This action cannot be undone.</strong>
+    </p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <a href="{% url 'jobcard_app:jobcard_detail' job.pk %}"
+         style="background:#f1f5f9;color:#64748b;border:1px solid #d1d5db;border-radius:8px;padding:10px 22px;font-size:13px;font-weight:600;text-decoration:none">
+        Cancel
+      </a>
+      <form method="post" style="margin:0">
+        {% csrf_token %}
+        <button type="submit"
+                style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">
+          Yes, Delete
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

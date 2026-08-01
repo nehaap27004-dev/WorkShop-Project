@@ -1,0 +1,346 @@
+{% extends "fleet_base1.html" %}
+{% load static %}
+
+
+
+{% block content %}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        
+        .filters {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #495057;
+            font-size: 14px;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .vehicle-section {
+            margin-bottom: 40px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .vehicle-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .vehicle-info h2 {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+        
+        .vehicle-license {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .summary-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .summary-card-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #6c757d;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .summary-card-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .income { color: #28a745; }
+        .expense { color: #dc3545; }
+        .profit { color: #007bff; }
+        .profit.negative { color: #dc3545; }
+        
+        .entries-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .entries-table thead {
+            background: #343a40;
+            color: white;
+        }
+        
+        .entries-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .entries-table tbody tr {
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .entries-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .entries-table td {
+            padding: 12px;
+            font-size: 14px;
+        }
+        
+        .amount-positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .amount-negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        .balance-cell {
+            font-weight: 700;
+            font-size: 15px;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        @media print {
+            .filters, .actions, .btn {
+                display: none;
+            }
+        }
+    </style>
+
+    <div class="container">
+        <h1>🚗 Vehicle Profit & Loss Report</h1>
+        
+        <!-- Filters -->
+        <form method="GET" class="filters">
+            <div class="filter-group">
+                <label>Vehicle</label>
+                <select name="vehicle_id">
+                    <option value="">All Vehicles</option>
+                    {% for vehicle in all_vehicles %}
+                        <option value="{{ vehicle.id }}" 
+                            {% if selected_vehicle_id == vehicle.id|stringformat:"s" %}selected{% endif %}>
+                            {{ vehicle.vehicle_name }} - {{ vehicle.license_plate_code }}{{ vehicle.license_plate_number }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Start Date</label>
+                <input type="date" name="start_date" 
+                    value="{% if start_date %}{{ start_date|date:'Y-m-d' }}{% endif %}">
+            </div>
+            
+            <div class="filter-group">
+                <label>End Date</label>
+                <input type="date" name="end_date" 
+                    value="{% if end_date %}{{ end_date|date:'Y-m-d' }}{% endif %}">
+            </div>
+            
+            <div class="filter-group" style="justify-content: flex-end;">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+            </div>
+        </form>
+        
+        <!-- Vehicle Reports -->
+        {% if vehicle_reports %}
+            {% for report in vehicle_reports %}
+                <div class="vehicle-section">
+                    <!-- Vehicle Header -->
+                    <div class="vehicle-header">
+                        <div class="vehicle-info">
+                            <h2>{{ report.vehicle.vehicle_name }}</h2>
+                            <div class="vehicle-license">
+                                License: {{ report.vehicle.license_plate_code }}{{ report.vehicle.license_plate_number }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary Cards -->
+                    <div class="summary-cards">
+                        <div class="summary-card">
+                            <div class="summary-card-label">Total Income</div>
+                            <div class="summary-card-value income">
+                                ${{ report.summary.income|floatformat:2 }}
+                            </div>
+                        </div>
+                        
+                        <div class="summary-card">
+                            <div class="summary-card-label">Total Expense</div>
+                            <div class="summary-card-value expense">
+                                ${{ report.summary.expense|floatformat:2 }}
+                            </div>
+                        </div>
+                        
+                        <div class="summary-card">
+                            <div class="summary-card-label">Net Profit/Loss</div>
+                            <div class="summary-card-value profit {% if report.summary.profit < 0 %}negative{% endif %}">
+                                ${{ report.summary.profit|floatformat:2 }}
+                            </div>
+                        </div>
+                        
+                        <div class="summary-card">
+                            <div class="summary-card-label">Profit Margin</div>
+                            <div class="summary-card-value {% if report.summary.profit_percentage < 0 %}negative{% else %}profit{% endif %}">
+                                {{ report.summary.profit_percentage|floatformat:1 }}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Entries Table -->
+                    {% if report.entries %}
+                        <table class="entries-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Details</th>
+                                    <th>Voucher No</th>
+                                    <th>Amount</th>
+                                    <th>Running Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in report.entries %}
+                                    <tr>
+                                        <td>{{ entry.Date|date:"M d, Y" }}</td>
+                                        <td>{{ entry.Details }}</td>
+                                        <td>{{ entry.InvNo }}</td>
+                                        <td>
+                                            <span class="{% if entry.Amount >= 0 %}amount-positive{% else %}amount-negative{% endif %}">
+                                                {% if entry.Amount >= 0 %}+{% endif %}${{ entry.Amount|floatformat:2 }}
+                                            </span>
+                                        </td>
+                                        <td class="balance-cell">
+                                            <span class="{% if entry.Balance >= 0 %}profit{% else %}negative{% endif %}">
+                                                ${{ entry.Balance|floatformat:2 }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="no-data">
+                            No transactions found for this vehicle in the selected period.
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-data">
+                <h3>No data available</h3>
+                <p>Select filters above to view vehicle profit & loss reports.</p>
+            </div>
+        {% endif %}
+        
+        <!-- Actions -->
+        <div class="actions">
+            <button onclick="window.print()" class="btn btn-primary">Print Report</button>
+            <!-- <button onclick="window.location.href=" class="btn btn-secondary">
+                View Comparison Report
+            </button> -->
+        </div>
+    </div>
+{% endblock %}

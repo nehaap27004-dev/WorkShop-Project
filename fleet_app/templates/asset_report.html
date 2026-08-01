@@ -1,0 +1,214 @@
+{% extends "fleet_base1.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- HEADER -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-file-earmark-bar-graph"></i> Fleet Summary Report
+            </h2>
+            <p class="text-muted mb-0">Fleet status and financial performance overview</p>
+        </div>
+    </div>
+
+    <!-- INSTANT SEARCH -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input
+                    type="text"
+                    id="fleetSearch"
+                    class="form-control border-start-0 ps-0"
+                    placeholder="Search by vehicle or client..."
+                    autocomplete="off"
+                >
+            </div>
+        </div>
+        <div class="col-md-8 d-flex align-items-center">
+            <small class="text-muted" id="searchResultCount"></small>
+        </div>
+    </div>
+
+    <!-- VEHICLE DETAILS TABLE -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0" id="fleetTable">
+
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Vehicle Name</th>
+                            <th>Location</th>
+                            <th>Client</th>
+                            <th class="text-center">On Rent</th>
+                            <th class="text-center">Available</th>
+                            <th class="text-end">Income</th>
+                            <th class="text-end">Expense</th>
+                            <th class="text-end">Net Profit</th>
+                            <th class="text-end">Profit %</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="fleetTableBody">
+                        {% for detail in vehicle_details %}
+                        <tr
+                            data-vehicle="{{ detail.vehicle.vehicle_name|lower }}"
+                            data-client="{{ detail.client|lower }}"
+                        >
+                            <td class="row-counter">{{ forloop.counter }}</td>
+
+                            <td><strong>{{ detail.vehicle.vehicle_name }}</strong></td>
+
+                            <!-- LOCATION -->
+                            <td>
+                                {% if detail.location %}
+                                    {% if detail.location == 'Own Yard' %}
+                                        <span class="text-muted">
+                                            <i class="bi bi-house-door me-1"></i>Own Yard
+                                        </span>
+                                    {% else %}
+                                        <span>
+                                            <i class="bi bi-geo-alt me-1 text-secondary"></i>{{ detail.location }}
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- CLIENT -->
+                            <td>
+                                {% if detail.client %}
+                                    {{ detail.client }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- ON RENT -->
+                            <td class="text-center">
+                                {% if detail.on_rent %}
+                                    <span class="badge bg-warning text-dark">Yes</span>
+                                {% else %}
+                                    <span class="text-muted">No</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- AVAILABLE -->
+                            <td class="text-center">
+                                {% if detail.available %}
+                                    <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                    <span class="text-muted">No</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- INCOME -->
+                            <td class="text-end text-success">{{ detail.income|floatformat:3 }}</td>
+
+                            <!-- EXPENSE -->
+                            <td class="text-end text-danger">{{ detail.expense|floatformat:3 }}</td>
+
+                            <!-- PROFIT -->
+                            <td class="text-end fw-bold {% if detail.profit >= 0 %}text-primary{% else %}text-danger{% endif %}">
+                                {{ detail.profit|floatformat:3 }}
+                            </td>
+
+                            <!-- PROFIT MARGIN -->
+                            <td class="text-end {% if detail.profit_margin >= 0 %}text-info{% else %}text-danger{% endif %}">
+                                {{ detail.profit_margin|floatformat:1 }}%
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr id="emptyRow">
+                            <td colspan="10" class="text-center text-muted py-4">No vehicles found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                    <tfoot class="table-light" id="fleetTotals">
+                        <tr class="fw-bold">
+                            <td colspan="6" class="text-end">TOTAL:</td>
+                            <td class="text-end text-success">{{ total_income|floatformat:3 }}</td>
+                            <td class="text-end text-danger">{{ total_expense|floatformat:3 }}</td>
+                            <td class="text-end">{{ net_profit|floatformat:3 }}</td>
+                            <td class="text-end">{{ profit_margin|floatformat:1 }}%</td>
+                        </tr>
+                    </tfoot>
+
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+(function () {
+    const searchInput = document.getElementById('fleetSearch');
+    const tableBody   = document.getElementById('fleetTableBody');
+    const resultCount = document.getElementById('searchResultCount');
+
+    // tfoot cells (by column index: income=6, expense=7, profit=8, margin=9)
+    const tfoot = document.getElementById('fleetTotals').querySelector('tr');
+
+    searchInput.addEventListener('input', function () {
+        const query = this.value.trim().toLowerCase();
+        const rows  = tableBody.querySelectorAll('tr[data-vehicle]');
+
+        let visible      = 0;
+        let sumIncome    = 0;
+        let sumExpense   = 0;
+
+        rows.forEach(function (row) {
+            const vehicleName = row.dataset.vehicle || '';
+            const clientName  = row.dataset.client  || '';
+            const match = !query || vehicleName.includes(query) || clientName.includes(query);
+
+            row.style.display = match ? '' : 'none';
+
+            if (match) {
+                visible++;
+                // Read values from the cells (strip commas just in case)
+                const cells   = row.querySelectorAll('td');
+                const income  = parseFloat(cells[6].textContent.replace(/,/g, '')) || 0;
+                const expense = parseFloat(cells[7].textContent.replace(/,/g, '')) || 0;
+                sumIncome  += income;
+                sumExpense += expense;
+            }
+        });
+
+        // Re-number visible rows
+        let counter = 1;
+        rows.forEach(function (row) {
+            if (row.style.display !== 'none') {
+                row.querySelector('.row-counter').textContent = counter++;
+            }
+        });
+
+        // Recalculate derived totals
+        const sumProfit = sumIncome - sumExpense;
+        const sumMargin = sumIncome > 0 ? (sumProfit / sumIncome * 100) : 0;
+
+        // Update tfoot cells
+        const tfootCells = tfoot.querySelectorAll('td');
+        tfootCells[1].textContent = sumIncome.toFixed(3);   // income  (col index 6 → tfoot index 1)
+        tfootCells[2].textContent = sumExpense.toFixed(3);  // expense
+        tfootCells[3].textContent = sumProfit.toFixed(3);   // net profit
+        tfootCells[4].textContent = sumMargin.toFixed(1) + '%'; // margin
+
+        // Update result hint
+        resultCount.textContent = query
+            ? visible + ' result' + (visible !== 1 ? 's' : '') + ' found'
+            : '';
+    });
+})();
+</script>
+{% endblock %}

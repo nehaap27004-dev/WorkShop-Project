@@ -1,0 +1,235 @@
+{% extends 'fleet_base1.html' %}
+{% block content %}
+<style>
+*{box-sizing:border-box}
+.wrap{max-width:1100px;margin:0 auto;padding:0 8px}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.page-title{font-size:17px;font-weight:700;color:#1e293b}
+.btn-back{background:#f1f5f9;color:#64748b;border:1px solid #d1d5db;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:16px;overflow:hidden}
+.card-hdr{background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:11px 18px;font-size:13px;font-weight:700;color:#334155;display:flex;align-items:center;gap:8px}
+.card-body{padding:18px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media(max-width:700px){.g4{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}}
+.info-lbl{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.info-val{font-size:13px;font-weight:600;color:#1e293b}
+.badge{display:inline-block;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700}
+.badge-draft{background:#f1f5f9;color:#475569}
+.badge-sent{background:#dbeafe;color:#1d4ed8}
+.badge-approved{background:#d1fae5;color:#065f46}
+.badge-rejected{background:#fee2e2;color:#991b1b}
+table.dt{width:100%;border-collapse:collapse}
+table.dt thead th{background:#f8fafc;color:#64748b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;border-bottom:1px solid #e2e8f0;text-align:left}
+table.dt tbody td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#1e293b}
+table.dt tbody tr:last-child td{border-bottom:none}
+.total-bar{background:#f8fafc;border-top:2px solid #e2e8f0;padding:14px 18px;display:flex;justify-content:flex-end;gap:24px;flex-wrap:wrap}
+.tl{font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase}
+.tv{font-size:15px;font-weight:700;color:#1e293b;margin-top:2px}
+.tv.accent{color:#2563eb;font-size:20px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;border:none;cursor:pointer}
+.btn-quotation{background:#2563eb;color:#fff;font-weight:700}
+.btn-quotation:hover{background:#1d4ed8;color:#fff}
+.btn-edit{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.btn-del{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5}
+</style>
+
+<div class="wrap">
+  <div class="top-bar">
+    <div>
+      <div class="page-title">📋 Estimate: {{ est.estimate_number }}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:2px">
+        {{ est.date|date:"d M Y" }} &nbsp;•&nbsp;
+        <span class="badge badge-{{ est.status }}">{{ est.get_status_display }}</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="{% url 'jobcard_app:estimate_list' %}" class="btn-back">← Back</a>
+      <a href="{% url 'jobcard_app:quotation_create' %}?from_estimate={{ est.pk }}" class="btn btn-quotation">📄 Create Quotation →</a>
+      <a href="{% url 'jobcard_app:estimate_edit' est.pk %}" class="btn btn-edit">✏️ Edit</a>
+      <form method="post" action="{% url 'jobcard_app:estimate_delete' est.pk %}"
+            onsubmit="return confirm('Delete {{ est.estimate_number }}?')" style="margin:0">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-del">🗑 Delete</button>
+      </form>
+    </div>
+  </div>
+
+  {% if messages %}{% for m in messages %}
+  <div style="padding:10px 16px;border-radius:8px;margin-bottom:12px;
+    background:#f0fdf4;border:1px solid #86efac;color:#15803d;font-size:13px">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <!-- Quick Convert Banner -->
+  <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div style="font-size:13px;color:#1e40af;font-weight:600">
+      📄 Ready to convert this estimate to a formal customer quotation?
+    </div>
+    <a href="{% url 'jobcard_app:quotation_create' %}?from_estimate={{ est.pk }}"
+       style="background:#2563eb;color:#fff;border-radius:7px;padding:8px 18px;font-size:13px;font-weight:700;text-decoration:none">
+      Create Quotation Now →
+    </a>
+  </div>
+
+  <!-- Info -->
+  <div class="card">
+    <div class="card-hdr">📋 Estimate Details</div>
+    <div class="card-body">
+      <div class="g4" style="margin-bottom:14px">
+        <div><div class="info-lbl">Customer</div><div class="info-val">{{ est.customer.customer_name|default:est.customer.ledger_name }}</div></div>
+        <div><div class="info-lbl">Vehicle</div><div class="info-val">
+          {% if est.vehicle %}
+            {{ est.vehicle.vehicle_name|default:est.vehicle.make }}
+            {% if est.vehicle.license_plate_number or est.vehicle.registration_number %}
+            <span style="background:#f1f5f9;padding:2px 8px;border-radius:5px;font-family:monospace;font-size:11px">
+              {{ est.vehicle.license_plate_number|default:est.vehicle.registration_number }}
+            </span>
+            {% endif %}
+          {% else %}—{% endif %}
+        </div></div>
+        <div><div class="info-lbl">Date</div><div class="info-val">{{ est.date|date:"d M Y" }}</div></div>
+        <div><div class="info-lbl">Advisor</div><div class="info-val">{{ est.advisor.full_name|default:"—" }}</div></div>
+        <div><div class="info-lbl">Job Card</div><div class="info-val">
+          {% if est.jobcard %}
+          <a href="{% url 'jobcard_app:jobcard_detail' est.jobcard.pk %}" style="color:#2563eb;font-weight:700">
+            {{ est.jobcard.job_number }}
+          </a>
+          {% else %}—{% endif %}
+        </div></div>
+        <div><div class="info-lbl">Mileage / VIN</div><div class="info-val">
+          {% if est.mileage %}{{ est.mileage }} KM{% else %}—{% endif %}
+          {% if est.vin %} / {{ est.vin }}{% endif %}
+        </div></div>
+      </div>
+      {% if est.notes %}
+      <div style="padding:10px 14px;background:#f8fafc;border-radius:7px;font-size:13px;color:#475569">
+        📝 {{ est.notes }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Complaints & Findings -->
+  {% if complaints or findings %}
+  <div class="card">
+    <div class="card-hdr">💬 Customer Complaints &amp; Technician Findings</div>
+    <div class="card-body">
+      <div class="g2">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#2563eb;margin-bottom:8px">💬 Customer Complaints</div>
+          {% for c in complaints %}
+          <div style="padding:6px 10px;background:#f0f7ff;border-radius:6px;font-size:13px;color:#1e3a8a;margin-bottom:6px">
+            {{ forloop.counter }}. {{ c.description }}
+          </div>
+          {% empty %}
+          <div style="font-size:12px;color:#94a3b8;font-style:italic">No customer complaints recorded.</div>
+          {% endfor %}
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#ca8a04;margin-bottom:8px">🔩 Technician Findings</div>
+          {% for f in findings %}
+          <div style="padding:6px 10px;background:#fefce8;border-radius:6px;font-size:13px;color:#854d0e;margin-bottom:6px">
+            {{ forloop.counter }}. {{ f.description }}
+          </div>
+          {% empty %}
+          <div style="font-size:12px;color:#94a3b8;font-style:italic">No technician findings recorded.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Parts -->
+  <div class="card">
+    <div class="card-hdr">🔩 Spare Parts</div>
+    <table class="dt">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Description / Item</th>
+          <th>Unit</th>
+          <th style="text-align:right">Qty</th>
+          <th style="text-align:right">Price (OMR)</th>
+          <th>Warranty</th>
+          <th style="text-align:right">Total (OMR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in parts %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td><strong>{{ p.description }}</strong></td>
+          <td>{{ p.unit|default:"Pcs" }}</td>
+          <td style="text-align:right">{{ p.quantity }}</td>
+          <td style="text-align:right">{{ p.unit_price|floatformat:3 }}</td>
+          <td>{{ p.warranty|default:"—" }}</td>
+          <td style="text-align:right;font-weight:600">{{ p.total_price|floatformat:3 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:16px">No parts listed.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Labour -->
+  <div class="card">
+    <div class="card-hdr">👷 Labour &amp; Service Charges</div>
+    <table class="dt">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Labour Description</th>
+          <th>Technician</th>
+          <th style="text-align:right">Hours</th>
+          <th style="text-align:right">Rate / Hr (OMR)</th>
+          <th style="text-align:right">Total (OMR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in labour %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td><strong>{{ l.description }}</strong></td>
+          <td>{{ l.technician.full_name|default:"—" }}</td>
+          <td style="text-align:right">{{ l.hours|default:1 }}</td>
+          <td style="text-align:right">{{ l.unit_price|floatformat:3 }}</td>
+          <td style="text-align:right;font-weight:600">{{ l.total_price|floatformat:3 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:16px">No labour items listed.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Totals Summary -->
+  <div class="card">
+    <div class="total-bar">
+      <div>
+        <div class="tl">Parts Total</div>
+        <div class="tv">{{ est.get_parts_total|floatformat:3 }} OMR</div>
+      </div>
+      <div>
+        <div class="tl">Labour Total</div>
+        <div class="tv">{{ est.get_labour_total|floatformat:3 }} OMR</div>
+      </div>
+      <div>
+        <div class="tl">Tax ({{ est.tax_percent }}%)</div>
+        <div class="tv">{{ est.get_tax_amount|floatformat:3 }} OMR</div>
+      </div>
+      {% if est.discount %}
+      <div>
+        <div class="tl">Discount</div>
+        <div class="tv" style="color:#dc2626">-{{ est.discount|floatformat:3 }} OMR</div>
+      </div>
+      {% endif %}
+      <div>
+        <div class="tl">Grand Total</div>
+        <div class="tv accent">{{ est.get_grand_total|floatformat:3 }} OMR</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

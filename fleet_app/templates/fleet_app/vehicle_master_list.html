@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vehicle Master</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f4f4f4; font-weight: bold; }
+        tr:hover { background: #f9f9f9; }
+        .btn { padding: 6px 14px; border-radius: 4px; text-decoration: none; color: white; font-size: 0.85em; display: inline-block; }
+        .btn-success   { background: #28a745; }
+        .btn-warning   { background: #ffc107; color: #000; }
+        .btn-danger    { background: #dc3545; }
+        .btn-primary   { background: #007bff; }
+        .filter-bar    { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-bar select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; }
+        .vehicle-img   { width: 60px; height: 45px; object-fit: cover; border-radius: 4px; }
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 0.8em; color: white; }
+        h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        .empty { text-align: center; padding: 40px; color: #888; }
+    </style>
+</head>
+<body>
+
+<h2>🚗 Vehicle Master</h2>
+
+{% if messages %}
+    {% for message in messages %}
+        <div style="padding:10px;background:#d4edda;border:1px solid #c3e6cb;border-radius:4px;margin-bottom:16px;color:#155724;">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="filter-bar">
+    <a href="{% url 'fleet_app:vehicle_master_create' %}" class="btn btn-success">+ Add Vehicle</a>
+
+    <form method="GET" style="display:flex;gap:10px;align-items:center;">
+        <select name="customer_id" onchange="this.form.submit()">
+            <option value="">— All Customers —</option>
+            {% for c in customers %}
+                <option value="{{ c.id }}"
+                    {% if selected_customer == c.id|stringformat:"s" %}selected{% endif %}>
+                    {{ c.customer_name }}
+                </option>
+            {% endfor %}
+        </select>
+        {% if selected_customer %}
+            <a href="{% url 'fleet_app:vehicle_master_list' %}" class="btn" style="background:#6c757d;">✕ Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Image</th>
+            <th>Vehicle Name</th>
+            <th>Customer</th>
+            <th>Plate</th>
+            <th>Category</th>
+            <th>Driver</th>
+            <th>RC Number</th>
+            <th>Contract No</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for v in vehicles %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>
+                {% if v.vehicle_image %}
+                    <img src="{{ v.vehicle_image.url }}" class="vehicle-img">
+                {% else %}
+                    <span style="color:#aaa;">—</span>
+                {% endif %}
+            </td>
+            <td><strong>{{ v.vehicle_name }}</strong></td>
+            <td>{{ v.customer.customer_name }}</td>
+            <td>{{ v.license_plate_code }} {{ v.license_plate_number }}</td>
+            <td>{{ v.vehicle_category|default:"—" }}</td>
+            <td>{{ v.vehicle_driver|default:"—" }}</td>
+            <td>{{ v.RC_number|default:"—" }}</td>
+            <td>{{ v.contract_no|default:"—" }}</td>
+            <td>{{ v.contract_start_date|default:"—" }}</td>
+            <td>{{ v.contract_end_date|default:"—" }}</td>
+            <td>
+                <a href="{% url 'fleet_app:vehicle_master_edit'   v.pk %}" class="btn btn-warning">Edit</a>
+                <a href="{% url 'fleet_app:vehicle_master_delete' v.pk %}" class="btn btn-danger">Delete</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="12" class="empty">No vehicles found. <a href="{% url 'fleet_app:vehicle_master_create' %}">Add one now →</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

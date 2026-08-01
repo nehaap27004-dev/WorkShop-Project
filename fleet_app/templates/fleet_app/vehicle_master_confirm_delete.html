@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head><title>Delete Vehicle</title></head>
+<body style="font-family:Arial;padding:30px;max-width:500px;margin:auto;">
+    <h2>Delete Vehicle</h2>
+    <p>Are you sure you want to delete <strong>{{ vehicle.vehicle_name }}</strong>?</p>
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" style="background:#dc3545;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;">
+            Yes, Delete
+        </button>
+        <a href="{% url 'fleet_app:vehicle_master_list' %}" style="margin-left:10px;">Cancel</a>
+    </form>
+</body>
+</html>

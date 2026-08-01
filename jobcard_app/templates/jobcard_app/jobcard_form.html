@@ -1,0 +1,1530 @@
+{% extends 'fleet_base1.html' %}
+{% block content %}
+<style>
+*{box-sizing:border-box}
+body{background:#f0f2f5;font-family:'Segoe UI',sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:16px 16px 60px}
+
+/* breadcrumb */
+.breadcrumb{font-size:12px;color:#6b7280;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.breadcrumb a{color:#2563eb;text-decoration:none}
+.breadcrumb a:hover{text-decoration:underline}
+.breadcrumb span{color:#9ca3af}
+.page-title{font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:16px}
+
+/* section cards */
+.sec{background:#fff;border:1px solid #d1d5db;border-radius:6px;margin-bottom:16px;overflow:hidden}
+.sec-hdr{background:#f3f4f6;border-bottom:1px solid #d1d5db;padding:10px 16px;
+         display:flex;align-items:center;justify-content:space-between}
+.sec-hdr-title{font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.6px}
+.sec-body{padding:16px}
+
+/* field labels */
+.fl{display:block;font-size:11px;font-weight:600;color:#374151;margin-bottom:4px}
+.req{color:#ef4444}
+
+/* inputs */
+.fi{width:100%;border:1px solid #d1d5db;border-radius:4px;padding:7px 10px;
+    font-size:13px;color:#111827;background:#fff;outline:none;
+    transition:border-color .15s}
+.fi:focus{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+.fi::placeholder{color:#9ca3af}
+.fi[readonly]{background:#f9fafb;color:#374151}
+select.fi{cursor:pointer}
+
+/* auto chip */
+.auto-wrap{position:relative}
+.auto-wrap .fi{padding-right:40px}
+.auto-wrap .auto-tag{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+                     font-size:10px;color:#9ca3af;font-weight:600;background:#f3f4f6;
+                     border-radius:3px;padding:2px 6px}
+
+/* grids */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mb{margin-bottom:12px}
+@media(max-width:700px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.g4,.g3,.g2{grid-template-columns:1fr}}
+
+/* section tables */
+.stbl{width:100%;border-collapse:collapse}
+.stbl thead th{padding:8px 10px;font-size:11px;font-weight:700;color:#374151;
+               text-transform:uppercase;letter-spacing:.4px;
+               border-bottom:1px solid #e5e7eb;text-align:left;
+               background:#f9fafb;white-space:nowrap}
+.stbl tbody td{padding:7px 6px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+.stbl tbody tr:last-child td{border-bottom:none}
+.stbl input,.stbl select{width:100%;border:1px solid #d1d5db;border-radius:4px;
+                          padding:6px 8px;font-size:12px;color:#111827;
+                          background:#fff;outline:none}
+.stbl input:focus,.stbl select:focus{border-color:#2563eb}
+.stbl input::placeholder{color:#9ca3af}
+
+/* add buttons */
+.btn-add{background:#2563eb;color:#fff;border:none;border-radius:5px;
+         padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;
+         display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-add:hover{background:#1d4ed8}
+
+/* remove buttons */
+.btn-rm{background:#dc2626;color:#fff;border:none;border-radius:4px;
+        padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;
+        display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.btn-rm:hover{background:#b91c1c}
+
+/* totals bar */
+.totals-bar{padding:12px 16px;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:right}
+.totals-bar .t-row{display:flex;justify-content:flex-end;gap:16px;margin-bottom:4px;font-size:13px}
+.totals-bar .t-row:last-child{margin-bottom:0}
+.t-lbl{color:#374151;font-weight:500}
+.t-val{font-weight:700;color:#111827;min-width:100px;text-align:right}
+
+/* grand totals section */
+.grand-totals{background:#fff;border:1px solid #d1d5db;border-radius:6px;padding:16px;text-align:right;margin-bottom:16px}
+.gt-row{display:flex;justify-content:flex-end;align-items:center;gap:20px;margin-bottom:8px;font-size:13px}
+.gt-row:last-child{margin-bottom:0;padding-top:8px;border-top:2px solid #e5e7eb}
+.gt-lbl{color:#374151;font-weight:500}
+.gt-val{font-weight:700;color:#111827;min-width:120px;text-align:right}
+.gt-val.grand{color:#2563eb;font-size:16px}
+
+/* save button */
+.btn-save{background:#16a34a;color:#fff;border:none;border-radius:6px;
+          padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;
+          display:inline-flex;align-items:center;gap:7px;
+          box-shadow:0 2px 8px rgba(22,163,74,.3)}
+.btn-save:hover{background:#15803d}
+.save-bar{padding:16px 0;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.btn-cancel{background:#f9fafb;color:#6b7280;border:1px solid #d1d5db;
+            border-radius:6px;padding:10px 22px;font-size:13px;font-weight:600;
+            text-decoration:none;display:inline-flex;align-items:center}
+
+/* flash */
+.flash{padding:10px 16px;border-radius:6px;margin-bottom:14px;font-size:13px}
+.flash-ok {background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+.flash-err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
+
+/* warranty select width */
+.warranty-sel{min-width:100px}
+</style>
+
+<div class="wrap">
+  
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    {% if inspection %}
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;
+                padding:10px 16px;margin-bottom:14px;font-size:13px;color:#92400e;
+                display:flex;align-items:center;gap:10px">
+      <strong>Loaded from Inspection {{ inspection.inspection_number }}</strong>
+      &nbsp;—&nbsp;
+      {{ inspection.vehicle.registration_number }}
+      {{ inspection.vehicle.make }} {{ inspection.vehicle.model }}
+      &nbsp;·&nbsp; {{ inspection.customer.ledger_name }}
+      &nbsp;·&nbsp; {{ inspection.inspection_date|date:"d M Y" }}
+    </div>
+    {% endif %}
+    <a href="#">Transactions</a>
+    <span>›</span>
+    <a href="{% url 'jobcard_app:jobcard_list' %}">Job Card</a>
+    <span>›</span>
+    <span>{% if edit_mode %}{{ job.job_number }}{% else %}New{% endif %}</span>
+  </div>
+  <div class="page-title">Job Card Management</div>
+
+  {% if messages %}{% for m in messages %}
+  <div class="flash {% if 'error' in m.tags %}flash-err{% else %}flash-ok{% endif %}">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <form method="post" id="jcForm">{% csrf_token %}
+  <input type="hidden" name="from_inspection" value="{{ prefill_inspection.pk|default:'' }}">
+  <input type="hidden" name="source_inspection_id" value="{{ prefill_inspection.pk|default:'' }}">
+  {% if inspection %}
+  <input type="hidden" name="from_inspection_id" value="{{ inspection.pk }}">
+  {% endif %}
+  <select name="from_inspection" style="display:none">
+    {% for insp in inspections %}
+    <option value="{{ insp.pk }}" {% if prefill_inspection and prefill_inspection.pk == insp.pk %}selected{% endif %}>{{ insp.pk }}</option>
+    {% endfor %}
+  </select>
+
+  <!-- ════════════════════════════════
+       JOB CARD HEADER
+  ════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <span class="sec-hdr-title">Job Card Header</span>
+    </div>
+    <div class="sec-body">
+
+      <div class="g4 mb">
+        <!-- Voucher Number -->
+        <div>
+          <label class="fl">Voucher Number</label>
+          <input type="text" name="voucher_number" class="fi"
+            placeholder="e.g. VCH-2026-001"
+            value="{% if edit_mode %}{{ job.voucher_number|default:'' }}{% endif %}">
+        </div>
+        <!-- Job Card No -->
+        <div>
+          <label class="fl">Job Card No.<span class="req">*</span></label>
+          <input type="text" name="job_number" class="fi" required
+            placeholder="e.g. JC-2026-001"
+            value="{% if edit_mode %}{{ job.job_number }}{% endif %}">
+        </div>
+        
+        <!-- Date -->
+        <div>
+          <label class="fl">Date <span class="req">*</span></label>
+          <input type="date" name="date" class="fi" required
+            value="{% if edit_mode %}{{ job.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
+        </div>
+        <!-- Customer -->
+        <div>
+          <label class="fl">Customer <span class="req">*</span></label>
+          <select name="customer" class="fi" required id="custSel"
+            {% if edit_mode %}disabled{% endif %}
+            onchange="loadVehicles(this.value)">
+            <option value="">— Select Customer —</option>
+            {% for c in customers %}
+            <option value="{{ c.id }}"
+              {% if edit_mode and job.customer_id == c.id %}selected{% endif %}
+              {% if inspection and inspection.customer_id == c.id %}selected{% endif %}>
+
+              {{ c.ledger_name }}
+            </option>
+            {% endfor %}
+          </select>
+          {% if edit_mode %}<input type="hidden" name="customer" value="{{ job.customer_id }}">{% endif %}
+        </div>
+        <div>
+          <label class="fl">Customer Phone</label>
+          <input type="text" name="customer_phone" class="fi" id="customerPhone"
+            placeholder="e.g. +971 50 123 4567"
+            value="{% if edit_mode %}{{ job.customer_phone|default:'' }}{% endif %}">
+        </div>
+      </div>
+
+      <div class="g4 mb">
+        <!-- Vehicle -->
+        <div>
+          <label class="fl">Vehicle</label>
+          <select name="vehicle" class="fi" id="vehicleSel" onchange="fillVehicleInfo(this)">
+            <option value="">----------</option>
+            {% if edit_mode and job.workshop_vehicle %}
+            <option value="{{ job.workshop_vehicle_id }}" selected>{{ job.workshop_vehicle }}</option>
+            {% elif inspection and inspection.vehicle %}
+            <option value="{{ inspection.vehicle.id }}" selected>
+              {{ inspection.vehicle.registration_number }} — {{ inspection.vehicle.make }} {{ inspection.vehicle.model }}
+            </option>
+            {% endif %}
+          </select>
+        </div>
+        <div>
+          <label class="fl">Vehicle Model</label>
+          <input type="text" name="vehicle_model" class="fi" id="vehicleModel"
+            placeholder="e.g. Toyota Camry (2021)"
+            value="{% if edit_mode %}{{ job.vehicle_model|default:'' }}{% elif prefill_jc and prefill_jc.workshop_vehicle %}{{ prefill_jc.workshop_vehicle.make }} {{ prefill_jc.workshop_vehicle.model }}{% endif %}">
+        </div>
+              <!-- Service Advisor -->
+        <div>
+          <label class="fl">Service Advisor</label>
+          <select name="advisor" class="fi">
+            <option value="">----------</option>
+            {% for s in advisors %}
+            <option value="{{ s.id }}"
+              {% if edit_mode and job.advisor_id == s.id %}selected{% endif %}>
+              {{ s.staff_id }} — {{ s.full_name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <!-- Priority -->
+        <div>
+          <label class="fl">Priority</label>
+          <select name="priority" class="fi">
+            <option value="normal"  {% if not edit_mode or job.priority == 'normal' %}selected{% endif %}>Normal</option>
+            <option value="urgent"  {% if edit_mode and job.priority == 'urgent' %}selected{% endif %}>Urgent</option>
+            <option value="express" {% if edit_mode and job.priority == 'express' %}selected{% endif %}>Express</option>
+          </select>
+        </div>
+        <!-- Status -->
+        <div>
+          <label class="fl">Status</label>
+          <select name="status" class="fi">
+            <option value="open"         {% if not edit_mode or job.status == 'open' %}selected{% endif %}>Open</option>
+            <option value="in_progress"  {% if edit_mode and job.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+            <option value="waiting"      {% if edit_mode and job.status == 'waiting' %}selected{% endif %}>Waiting</option>
+            <option value="completed"    {% if edit_mode and job.status == 'completed' %}selected{% endif %}>Completed</option>
+            <option value="closed"       {% if edit_mode and job.status == 'closed' %}selected{% endif %}>Closed</option>
+            <option value="cancelled"    {% if edit_mode and job.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="g3">
+        <!-- Expected Delivery Date -->
+        <div>
+          <label class="fl">Expected Delivery Date</label>
+          <input type="date" name="delivery_date" class="fi"
+            value="{% if edit_mode %}{{ job.delivery_date|date:'Y-m-d'|default:'' }}{% endif %}">
+        </div>
+        <!-- Current Mileage -->
+        <div>
+          <label class="fl">Current Mileage (km)</label>
+          <input type="number" name="mileage" id="mileageInp" class="fi"
+            min="0" placeholder="e.g. 87420"
+            value="{% if inspection %}{{ inspection.odometer|default:'' }}{% elif edit_mode %}{{ job.mileage|default:'' }}{% endif %}">
+        </div>
+        <!-- Fuel Level -->
+        <div>
+          <label class="fl">Fuel Level</label>
+          <select name="fuel_level" class="fi">
+            <option value="empty" {% if inspection and inspection.fuel_level == 'empty' %}selected{% endif %}>Empty</option>
+            <option value="1/4"   {% if inspection and inspection.fuel_level == '1/4' %}selected{% endif %}>1/4</option>
+            <option value="1/2"   {% if not inspection and not edit_mode %}selected{% endif %}{% if inspection and inspection.fuel_level == '1/2' %}selected{% endif %}>1/2</option>
+            <option value="3/4"   {% if inspection and inspection.fuel_level == '3/4' %}selected{% endif %}>3/4</option>
+            <option value="full"  {% if inspection and inspection.fuel_level == 'full' %}selected{% endif %}>Full</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       COMPLAINT MANAGEMENT
+  ════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════
+     COMPLAINT MANAGEMENT SECTION
+     Replace entire section in jobcard_form.html
+══════════════════════════════════════════ -->
+  <div class="sec">
+
+    <!-- Section header -->
+    <div class="sec-hdr" style="background:#f3f4f6;padding:12px 16px;
+        border-bottom:1px solid #e5e7eb;display:flex;align-items:center;
+        justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:#374151;
+                  text-transform:uppercase;letter-spacing:.5px">
+        Complaint Management
+      </span>
+      <div style="display:flex;align-items:center;gap:8px">
+
+        <!-- Load from Inspection -->
+        <div style="position:relative" id="inspPickerWrap">
+          <button type="button" onclick="toggleInspPicker()"
+                  style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
+                        border-radius:5px;padding:6px 12px;font-size:12px;font-weight:600;
+                        cursor:pointer;display:inline-flex;align-items:center;gap:5px;
+                        white-space:nowrap">
+            🔍 Load from Inspection ▾
+          </button>
+
+          <!-- Dropdown panel -->
+          <div id="inspPickerPanel"
+              style="display:none;position:absolute;right:0;top:110%;
+                      background:#fff;border:1.5px solid #2563eb;border-radius:8px;
+                      min-width:360px;z-index:400;
+                      box-shadow:0 8px 24px rgba(0,0,0,.13);overflow:hidden">
+            <div style="background:#eff6ff;padding:10px 14px;
+                        border-bottom:1px solid #dbeafe;
+                        display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;font-weight:700;color:#1d4ed8">
+                🔍 Select Inspection
+              </span>
+              <button type="button" onclick="closeInspPicker()"
+                      style="background:none;border:none;color:#9ca3af;
+                            font-size:16px;cursor:pointer;line-height:1">✕</button>
+            </div>
+            <div id="inspNoCustomer"
+                style="padding:14px;font-size:12px;color:#9ca3af;text-align:center">
+              Please select a customer and vehicle first
+            </div>
+            <div id="inspList" style="max-height:280px;overflow-y:auto;display:none"></div>
+            <div id="inspEmpty"
+                style="display:none;padding:14px;font-size:12px;
+                        color:#9ca3af;text-align:center">
+              No inspections found for this customer / vehicle
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Complaint -->
+        <button type="button" class="btn-add" onclick="addComplaint()">
+          + Add Complaint
+        </button>
+      </div>
+    </div>
+
+    <!-- Inspection loaded banner -->
+    <div id="inspBanner" style="display:none;background:#fffbeb;
+        border-bottom:1px solid #fde68a;padding:8px 16px;font-size:12px;
+        color:#92400e;display:flex;align-items:center;
+        justify-content:space-between;gap:10px">
+      <span id="inspBannerText"></span>
+      <button type="button" onclick="this.parentElement.style.display='none'"
+              style="background:none;border:none;color:#ca8a04;
+                    cursor:pointer;font-size:14px">✕</button>
+    </div>
+
+    <!-- Complaint table -->
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;min-width:750px">
+        <thead>
+          <tr style="background:#f9fafb">
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
+                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
+                      text-align:left;width:18%">Service Category</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
+                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
+                      text-align:left;width:30%">Complaint Description</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
+                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
+                      text-align:left;width:12%">Type</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
+                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
+                      text-align:left;width:20%">Technician</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
+                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
+                      text-align:left;width:12%">Status</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
+                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
+                      text-align:center;width:8%">Action</th>
+          </tr>
+        </thead>
+        <tbody id="complaintBody">
+
+          {% if edit_mode %}
+            {% for c in job.complaints.all %}
+            <tr style="border-bottom:1px solid #f3f4f6">
+              <td style="padding:6px 6px">
+                <select name="complaint_category_id[]" onchange="setCatText(this)"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 8px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="">— Category —</option>
+                  {% for cat in categories %}
+                  <option value="{{ cat.id }}"
+                    {% if c.service_category_id == cat.id %}selected{% endif %}>
+                    {{ cat.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <input type="hidden" name="complaint_category[]"
+                      class="cat-txt" value="{{ c.category }}">
+              </td>
+              <td style="padding:6px 6px">
+                <input type="text" name="complaint_description[]"
+                      value="{{ c.description }}"
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 8px;font-size:12px;color:#111827;
+                              background:#fff;outline:none">
+              </td>
+              <td style="padding:6px 6px">
+                <select name="complaint_type[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="Mechanical" {% if c.type == 'Mechanical' %}selected{% endif %}>Mechanical</option>
+                  <option value="Electrical" {% if c.type == 'Electrical' %}selected{% endif %}>Electrical</option>
+                  <option value="Body"       {% if c.type == 'Body'       %}selected{% endif %}>Body</option>
+                  <option value="AC"         {% if c.type == 'AC'         %}selected{% endif %}>AC</option>
+                  <option value="Other"      {% if c.type == 'Other'      %}selected{% endif %}>Other</option>
+                </select>
+              </td>
+              <td style="padding:6px 6px">
+                <select name="complaint_technician[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="">----------</option>
+                  {% for s in technicians %}
+                  <option value="{{ s.id }}" {% if c.technician_id == s.id %}selected{% endif %}>
+                    {{ s.staff_id }} — {{ s.full_name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td style="padding:6px 6px">
+                <select name="complaint_status[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="Open"        {% if c.status == 'Open'        %}selected{% endif %}>Open</option>
+                  <option value="In Progress" {% if c.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                  <option value="Resolved"    {% if c.status == 'Resolved'    %}selected{% endif %}>Resolved</option>
+                </select>
+              </td>
+              <td style="padding:6px 6px;text-align:center">
+                <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+              </td>
+            </tr>
+            {% endfor %}
+
+          {% elif prefill_complaints %}
+            {% for desc in prefill_complaints %}
+            <tr style="border-bottom:1px solid #f3f4f6;background:#fffbeb">
+              <td style="padding:6px 6px">
+                <select name="complaint_category_id[]" onchange="setCatText(this)"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 8px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="">— Category —</option>
+                  {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
+                </select>
+                <input type="hidden" name="complaint_category[]" class="cat-txt">
+              </td>
+              <td style="padding:6px 6px">
+                <input type="text" name="complaint_description[]" value="{{ desc }}"
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 8px;font-size:12px;color:#111827;
+                              background:#fff;outline:none">
+              </td>
+              <td style="padding:6px 6px">
+                <select name="complaint_type[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="Mechanical" selected>Mechanical</option>
+                  <option value="Electrical">Electrical</option>
+                  <option value="Body">Body</option>
+                  <option value="AC">AC</option>
+                  <option value="Other">Other</option>
+                </select>
+              </td>
+              <td style="padding:6px 6px">
+                <select name="complaint_technician[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="">----------</option>
+                  {% for s in technicians %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}
+                </select>
+              </td>
+              <td style="padding:6px 6px">
+                <select name="complaint_status[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="Open" selected>Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </td>
+              <td style="padding:6px 6px;text-align:center">
+                <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+              </td>
+            </tr>
+            {% endfor %}
+
+          {% else %}
+            <tr style="border-bottom:1px solid #f3f4f6" id="cmpDefaultRow">
+              <td style="padding:6px 6px">
+                <select name="complaint_category_id[]" onchange="setCatText(this)"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 8px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="">— Category —</option>
+                  {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
+                </select>
+                <input type="hidden" name="complaint_category[]" class="cat-txt">
+              </td>
+              <td style="padding:6px 6px">
+                <input type="text" name="complaint_description[]"
+                      placeholder="Describe complaint..."
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 8px;font-size:12px;color:#111827;
+                              background:#fff;outline:none">
+              </td>
+              <td style="padding:6px 6px">
+                <select name="complaint_type[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="Mechanical">Mechanical</option>
+                  <option value="Electrical">Electrical</option>
+                  <option value="Body">Body</option>
+                  <option value="AC">AC</option>
+                  <option value="Other">Other</option>
+                </select>
+              </td>
+              <td style="padding:6px 6px">
+                <select name="complaint_technician[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="">----------</option>
+                  {% for s in technicians %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}
+                </select>
+              </td>
+              <td style="padding:6px 6px">
+                <select name="complaint_status[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </td>
+              <td style="padding:6px 6px;text-align:center">
+                <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+              </td>
+            </tr>
+          {% endif %}
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+      TECHNICIAN FINDINGS SECTION
+  ══════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-hdr" style="background:#f3f4f6;padding:12px 16px;
+        border-bottom:1px solid #e5e7eb;display:flex;align-items:center;
+        justify-content:space-between">
+      <span style="font-size:11px;font-weight:700;color:#374151;
+                  text-transform:uppercase;letter-spacing:.5px">
+        Technician Findings
+      </span>
+      <button type="button" class="btn-add" onclick="addFinding()">
+        + Add Finding
+      </button>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;min-width:600px">
+        <thead>
+          <tr style="background:#f9fafb">
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
+                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
+                      text-align:left;width:44%">Finding Description</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
+                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
+                      text-align:left;width:28%">Technician</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
+                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
+                      text-align:left;width:18%">Status</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
+                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
+                      text-align:center;width:10%">Action</th>
+          </tr>
+        </thead>
+        <tbody id="findingsBody">
+
+          {% if edit_mode %}
+            {% for f in job.findings.all %}
+            <tr style="border-bottom:1px solid #f3f4f6">
+              <td style="padding:6px 6px">
+                <input type="text" name="finding_description[]" value="{{ f.description }}"
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 8px;font-size:12px;color:#111827;
+                              background:#fff;outline:none">
+              </td>
+              <td style="padding:6px 6px">
+                <select name="finding_technician[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="">----------</option>
+                  {% for s in technicians %}
+                  <option value="{{ s.id }}" {% if f.technician_id == s.id %}selected{% endif %}>
+                    {{ s.staff_id }} — {{ s.full_name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td style="padding:6px 6px">
+                <select name="finding_status[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="Pending"   {% if f.status == 'Pending'   %}selected{% endif %}>Pending</option>
+                  <option value="Confirmed" {% if f.status == 'Confirmed' %}selected{% endif %}>Confirmed</option>
+                  <option value="Resolved"  {% if f.status == 'Resolved'  %}selected{% endif %}>Resolved</option>
+                </select>
+              </td>
+              <td style="padding:6px 6px;text-align:center">
+                <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+              </td>
+            </tr>
+            {% endfor %}
+
+          {% elif prefill_findings %}
+            {% for desc in prefill_findings %}
+            <tr style="border-bottom:1px solid #f3f4f6;background:#fffbeb">
+              <td style="padding:6px 6px">
+                <input type="text" name="finding_description[]" value="{{ desc }}"
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 8px;font-size:12px;color:#111827;
+                              background:#fff;outline:none">
+              </td>
+              <td style="padding:6px 6px">
+                <select name="finding_technician[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="">----------</option>
+                  {% for s in technicians %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}
+                </select>
+              </td>
+              <td style="padding:6px 6px">
+                <select name="finding_status[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="Pending">Pending</option>
+                  <option value="Confirmed" selected>Confirmed</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </td>
+              <td style="padding:6px 6px;text-align:center">
+                <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+              </td>
+            </tr>
+            {% endfor %}
+
+          {% else %}
+            <tr style="border-bottom:1px solid #f3f4f6">
+              <td style="padding:6px 6px">
+                <input type="text" name="finding_description[]"
+                      placeholder="Describe finding..."
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 8px;font-size:12px;color:#111827;
+                              background:#fff;outline:none">
+              </td>
+              <td style="padding:6px 6px">
+                <select name="finding_technician[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="">----------</option>
+                  {% for s in technicians %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}
+                </select>
+              </td>
+              <td style="padding:6px 6px">
+                <select name="finding_status[]"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:7px 6px;font-size:12px;color:#111827;
+                              background:#fff;outline:none;cursor:pointer">
+                  <option value="Pending">Pending</option>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </td>
+              <td style="padding:6px 6px;text-align:center">
+                <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+              </td>
+            </tr>
+          {% endif %}
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <!-- ══════════════════════════════════════════
+      SPARE PARTS MANAGEMENT
+  ══════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-hdr" style="background:#f3f4f6;padding:12px 16px;
+        border-bottom:1px solid #e5e7eb;display:flex;align-items:center;
+        justify-content:space-between">
+      <span style="font-size:11px;font-weight:700;color:#374151;
+                  text-transform:uppercase;letter-spacing:.5px">
+        Spare Parts Management
+      </span>
+    </div>
+
+    <!-- ── Add Part input row ── -->
+    <div style="padding:16px;background:#f9fafb;border-bottom:1px solid #e5e7eb">
+      <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr 1fr auto;
+                  gap:12px;align-items:end">
+
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;
+                        text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">
+            Item
+          </label>
+          <select id="addPartItem"
+                  style="width:100%;border:1px solid #d1d5db;border-radius:6px;
+                        padding:9px 10px;font-size:13px;color:#111827;
+                        background:#fff;outline:none;cursor:pointer"
+                  onchange="onAddPartItemChange(this)">
+            <option value="">— Select Item —</option>
+            <!-- filled by JS -->
+          </select>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;
+                        text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">
+            Part Number
+          </label>
+          <input type="text" id="addPartNo"
+                placeholder="Part No."
+                style="width:100%;border:1px solid #d1d5db;border-radius:6px;
+                        padding:9px 10px;font-size:13px;color:#111827;
+                        background:#fff;outline:none">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;
+                        text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">
+            Quantity
+          </label>
+          <input type="number" id="addPartQty" value="1" min="0" step="0.01"
+                style="width:100%;border:1px solid #d1d5db;border-radius:6px;
+                        padding:9px 10px;font-size:13px;color:#111827;
+                        background:#fff;outline:none;text-align:right"
+                oninput="calcAddPartAmount()">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;
+                        text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">
+            Rate
+          </label>
+          <input type="number" id="addPartRate" value="0" min="0" step="0.001"
+                style="width:100%;border:1px solid #d1d5db;border-radius:6px;
+                        padding:9px 10px;font-size:13px;color:#111827;
+                        background:#fff;outline:none;text-align:right"
+                oninput="calcAddPartAmount()">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;
+                        text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">
+            Amount
+          </label>
+          <input type="text" id="addPartAmount" value="0.000" readonly
+                style="width:100%;border:1px solid #e5e7eb;border-radius:6px;
+                        padding:9px 10px;font-size:13px;color:#374151;
+                        background:#f3f4f6;outline:none;text-align:right;
+                        font-weight:700">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;color:transparent;
+                        margin-bottom:5px">-</label>
+          <button type="button" onclick="commitAddPart()"
+                  style="background:#2563eb;color:#fff;border:none;border-radius:6px;
+                        padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;
+                        white-space:nowrap;height:40px">
+            Add
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Parts table ── -->
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;min-width:700px">
+        <thead>
+          <tr style="background:#f9fafb">
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
+                      border-bottom:1px solid #e5e7eb;text-align:left">Item</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
+                      border-bottom:1px solid #e5e7eb;text-align:left;width:16%">Part Number</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
+                      border-bottom:1px solid #e5e7eb;text-align:right;width:10%">Quantity</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
+                      border-bottom:1px solid #e5e7eb;text-align:right;width:13%">Rate</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
+                      border-bottom:1px solid #e5e7eb;text-align:right;width:13%">Total Amount</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
+                      border-bottom:1px solid #e5e7eb;text-align:center;width:8%">Action</th>
+          </tr>
+        </thead>
+        <tbody id="partsBody">
+
+          <!-- Edit mode — existing rows -->
+          {% if edit_mode %}
+            {% for p in job.parts.all %}
+            <tr style="border-bottom:1px solid #f3f4f6" data-item-id="{{ p.part_number|default:'' }}">
+              <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:500">
+                {{ p.description }}
+                <input type="hidden" name="part_item[]"   value="{{ p.description }}">
+                <input type="hidden" name="part_item_id[]" value="">
+              </td>
+              <td style="padding:10px 14px">
+                <input type="text" name="part_number[]" value="{{ p.part_number|default:'' }}"
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:6px 9px;font-size:12px;color:#374151;outline:none">
+              </td>
+              <td style="padding:10px 14px">
+                <input type="number" name="part_qty[]" value="{{ p.quantity }}"
+                      min="0" step="0.01"
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:6px 9px;font-size:12px;text-align:right;outline:none"
+                      class="pq" oninput="calcPartRow(this)">
+              </td>
+              <td style="padding:10px 14px">
+                <input type="number" name="part_rate[]" value="{{ p.unit_price }}"
+                      min="0" step="0.001"
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                              padding:6px 9px;font-size:12px;text-align:right;outline:none"
+                      class="pr" oninput="calcPartRow(this)">
+              </td>
+              <td style="padding:10px 14px;text-align:right;font-size:13px;
+                        font-weight:700;color:#111827;font-family:monospace">
+                <span class="pa">{{ p.total_price|floatformat:3 }}</span>
+                <input type="hidden" name="part_amount[]" class="pa-inp" value="{{ p.total_price }}">
+              </td>
+              <td style="padding:10px 14px;text-align:center">
+                <button type="button" onclick="removePartRow(this)"
+                        style="background:#dc2626;color:#fff;border:none;border-radius:5px;
+                              padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">
+                  Remove
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          {% endif %}
+
+        </tbody>
+      </table>
+
+      <!-- Empty state -->
+      <div id="partsEmpty"
+          style="{% if edit_mode and job.parts.exists %}display:none{% else %}display:block{% endif %};
+                  text-align:center;padding:24px;color:#9ca3af;font-size:13px;
+                  border-top:1px solid #f3f4f6">
+        No parts added yet. Select an item above and click Add.
+      </div>
+
+    </div>
+
+    <!-- Parts total -->
+    <div style="padding:12px 16px;background:#f9fafb;border-top:1px solid #e5e7eb;
+                display:flex;justify-content:flex-end;align-items:center;gap:12px">
+      <span style="font-size:13px;font-weight:700;color:#374151">Parts Total</span>
+      <span id="partsTotal"
+            style="font-size:15px;font-weight:700;color:#2563eb;font-family:monospace">
+        0.000
+      </span>
+    </div>
+
+  </div>
+  <!-- ════════════════════════════════
+       LABOUR MANAGEMENT
+  ════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <span class="sec-hdr-title">Labour Management</span>
+      <button type="button" class="btn-add" onclick="addLabour()">+ Add Labour</button>
+    </div>
+    <div class="sec-body" style="padding:0">
+      <div style="overflow-x:auto">
+        <table class="stbl" id="labourTbl">
+          <thead>
+            <tr>
+              <th style="width:22%">Technician</th>
+              <th style="width:32%">Labour Description</th>
+              <th style="width:14%">Hours Worked</th>
+              <th style="width:14%">Rate</th>
+              <th style="width:12%">Amount</th>
+              <th style="width:6%">Action</th>
+            </tr>
+          </thead>
+          <tbody id="labourBody">
+            {% if edit_mode %}
+              {% for l in job.labours.all %}
+              <tr>
+                <td>
+                  <select name="labour_technician[]">
+                    <option value="">----------</option>
+                    {% for s in staff %}
+                    <option value="{{ s.id }}" {% if l.technician_id == s.id %}selected{% endif %}>
+                      {{ s.staff_id }} — {{ s.full_name }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td><input type="text" name="labour_description[]" value="{{ l.description }}"></td>
+                <td><input type="number" name="labour_hours[]" value="{{ l.hours|default:1 }}" min="0" step="0.5" class="lab-hrs" oninput="calcLabourRow(this)"></td>
+                <td><input type="number" name="labour_rate[]" value="{{ l.rate|default:0 }}" min="0" step="0.01" class="lab-rate" oninput="calcLabourRow(this)"></td>
+                <td><input type="number" name="labour_amount[]" value="{{ l.amount }}" readonly class="lab-amount" style="background:#f9fafb"></td>
+                <td><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕ Remove</button></td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td>
+                  <select name="labour_technician[]">
+                    <option value="">----------</option>
+                    {% for s in staff %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}
+                  </select>
+                </td>
+                <td><input type="text" name="labour_description[]" placeholder="Labour description..."></td>
+                <td><input type="number" name="labour_hours[]" value="1" min="0" step="0.5" class="lab-hrs" oninput="calcLabourRow(this)"></td>
+                <td><input type="number" name="labour_rate[]" value="0" min="0" step="0.01" class="lab-rate" oninput="calcLabourRow(this)"></td>
+                <td><input type="number" name="labour_amount[]" value="0" readonly class="lab-amount" style="background:#f9fafb"></td>
+                <td><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕ Remove</button></td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      <div class="totals-bar">
+        <div class="t-row">
+          <span class="t-lbl">Labour Total</span>
+          <span class="t-val" id="labourTotal">0.000 </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       GRAND TOTALS
+  ════════════════════════════════ -->
+  <div class="grand-totals">
+    <div class="gt-row">
+      <span class="gt-lbl">Parts Total</span>
+      <span class="gt-val" id="gtParts">2130.000</span>
+    </div>
+    <div class="gt-row">
+      <span class="gt-lbl">Labour Total</span>
+      <span class="gt-val" id="gtLabour">30.000  </span>
+    </div>
+    <div class="gt-row">
+      <span class="gt-lbl" style="font-weight:700;font-size:14px">Grand Total</span>
+      <span class="gt-val grand" id="gtGrand">2160.000</span>
+    </div>
+  </div>
+
+  <!-- Save bar -->
+  <div class="save-bar">
+    <button type="submit" class="btn-save">💾 Save Job Card</button>
+    <a href="{% url 'jobcard_app:jobcard_list' %}" class="btn-cancel">Cancel</a>
+  </div>
+
+  </form>
+</div>
+
+<script>
+const VEH_URL = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
+
+/* ── Load vehicles ── */
+function loadVehicles(cid, selectedVehicleId) {
+  const sel = document.getElementById('vehicleSel');
+  sel.innerHTML = '<option value="">— Loading... —</option>';
+  if (!cid) { sel.innerHTML = '<option value="">----------</option>'; return; }
+  fetch(VEH_URL + '?customer_id=' + cid)
+    .then(r => r.json())
+    .then(d => {
+      sel.innerHTML = '<option value="">----------</option>';
+      d.vehicles.forEach(v => {
+        const o = new Option(v.label, v.id);
+        o.dataset.odo = v.odometer || '';
+        if (selectedVehicleId && String(v.id) === String(selectedVehicleId)) {
+          o.selected = true;
+        }
+        sel.add(o);
+      });
+      if (d.customer_phone) {
+        document.getElementById('customerPhone').value = d.customer_phone;
+      }
+    });
+}
+function fillVehicleInfo(sel) {
+  const o = sel.options[sel.selectedIndex];
+  if (o && o.dataset.odo) {
+    const m = document.getElementById('mileageInp');
+    if (m && !m.value) m.value = o.dataset.odo;
+  }
+}
+
+/* ── Remove row ── */
+function removeRow(btn) {
+  const tr = btn.closest('tr');
+  const tbody = tr.closest('tbody');
+  if (tbody.rows.length > 1) tr.remove();
+  else {
+    tr.querySelectorAll('input[type=text],input[type=number]').forEach(i => i.value = '');
+    tr.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+  }
+  calcTotals();
+}
+
+
+const INSP_URL = "{% url 'jobcard_app:ajax_get_inspections' %}";
+const catOpts  = `<option value="">— Category —</option>{% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}`;
+const techOpts = `{% for s in technicians %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}`;
+const inpStyle = 'width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none';
+const selStyle = 'width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer';
+const rowStyle = 'border-bottom:1px solid #f3f4f6';
+const cellStyle = 'padding:6px 6px';
+
+/* ── Inspection picker ── */
+function toggleInspPicker() {
+  const p = document.getElementById('inspPickerPanel');
+  p.style.display === 'none' ? openInspPicker() : closeInspPicker();
+}
+
+function closeInspPicker() {
+  document.getElementById('inspPickerPanel').style.display = 'none';
+}
+
+function openInspPicker() {
+  document.getElementById('inspPickerPanel').style.display = 'block';
+
+  const custId = document.getElementById('custSel')?.value;
+  const vehId  = document.getElementById('vehicleSel')?.value;
+
+  const noCustomer = document.getElementById('inspNoCustomer');
+  const list       = document.getElementById('inspList');
+  const empty      = document.getElementById('inspEmpty');
+
+  if (!custId) {
+    noCustomer.style.display = 'block';
+    list.style.display       = 'none';
+    empty.style.display      = 'none';
+    return;
+  }
+
+  noCustomer.style.display = 'none';
+  empty.style.display      = 'none';
+  list.style.display       = 'block';
+  list.innerHTML = '<div style="padding:14px;text-align:center;font-size:12px;color:#9ca3af">Loading...</div>';
+
+  let url = INSP_URL + '?customer_id=' + custId;
+  if (vehId) url += '&vehicle_id=' + vehId;
+
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.inspections || !data.inspections.length) {
+        list.style.display  = 'none';
+        empty.style.display = 'block';
+        return;
+      }
+
+      list.innerHTML = data.inspections.map(insp => `
+        <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer"
+             onmouseover="this.style.background='#eff6ff'"
+             onmouseout="this.style.background=''"
+             onclick='loadInspection(${JSON.stringify(insp).replace(/'/g, "&#39;")})'>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:12px;font-weight:700;color:#2563eb;font-family:monospace">
+              ${insp.inspection_number}
+            </span>
+            <div style="display:flex;gap:5px">
+              <span style="font-size:10px;font-weight:700;background:#dcfce7;color:#16a34a;border-radius:20px;padding:2px 8px">
+                ${insp.complaints_count} complaint${insp.complaints_count !== 1 ? 's' : ''}
+              </span>
+              <span style="font-size:10px;font-weight:700;background:#fef3c7;color:#ca8a04;border-radius:20px;padding:2px 8px">
+                ${insp.findings_count} finding${insp.findings_count !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+          <div style="font-size:11px;color:#6b7280;margin-bottom:6px">
+            📅 ${insp.date}
+            ${insp.vehicle ? ' &nbsp;·&nbsp; 🚗 ' + insp.vehicle : ''}
+            ${insp.odometer ? ' &nbsp;·&nbsp; 📍 ' + insp.odometer + ' km' : ''}
+            ${insp.fuel_level ? ' &nbsp;·&nbsp; ⛽ ' + insp.fuel_level : ''}
+          </div>
+          ${insp.complaints.length > 0 ? `
+            <div style="margin-bottom:4px">
+              <div style="font-size:10px;font-weight:700;color:#2563eb;margin-bottom:3px">COMPLAINTS:</div>
+              ${insp.complaints.map(c =>
+                `<div style="font-size:11px;color:#374151;padding:1px 0;display:flex;align-items:flex-start;gap:5px">
+                  <span style="color:#2563eb;flex-shrink:0">●</span>${c}
+                </div>`).join('')}
+            </div>` : ''}
+          ${insp.findings.length > 0 ? `
+            <div>
+              <div style="font-size:10px;font-weight:700;color:#ca8a04;margin-bottom:3px">FINDINGS:</div>
+              ${insp.findings.map(f =>
+                `<div style="font-size:11px;color:#374151;padding:1px 0;display:flex;align-items:flex-start;gap:5px">
+                  <span style="color:#ca8a04;flex-shrink:0">●</span>${f}
+                </div>`).join('')}
+            </div>` : ''}
+        </div>`).join('');
+    })
+    .catch(err => {
+      list.innerHTML = '<div style="padding:14px;font-size:12px;color:#ef4444;text-align:center">Failed to load. Try again.</div>';
+      console.error('Inspection load error:', err);
+    });
+}
+
+/* ── Load inspection into complaint/finding tables ── */
+function loadInspection(insp) {
+  closeInspPicker();
+
+  const hasComplaints = insp.complaints && insp.complaints.length > 0;
+  const hasFindings   = insp.findings   && insp.findings.length   > 0;
+
+  if (!hasComplaints && !hasFindings) {
+    alert('No complaints or findings in ' + insp.inspection_number);
+    return;
+  }
+
+  const existCmp = document.querySelectorAll('#complaintBody tr').length;
+  const existFnd = document.querySelectorAll('#findingsBody tr').length;
+
+  let replace = false;
+  if (existCmp > 0 || existFnd > 0) {
+    replace = confirm(
+      'Load from ' + insp.inspection_number + '?\n\n' +
+      'OK = Clear existing rows and load\n' +
+      'Cancel = Add below existing rows'
+    );
+  }
+
+  if (replace) {
+    document.getElementById('complaintBody').innerHTML = '';
+    document.getElementById('findingsBody').innerHTML  = '';
+  }
+
+  // ── Add complaints ────────────────────────────────────
+  if (hasComplaints) {
+    insp.complaints.forEach(desc => addComplaint(desc, '#fffbeb'));
+  }
+
+  // ── Add findings ──────────────────────────────────────
+  if (hasFindings) {
+    insp.findings.forEach(desc => addFinding(desc, '#fffbeb'));
+  }
+
+  // ── Show banner ───────────────────────────────────────
+  const banner = document.getElementById('inspBanner');
+  const text   = document.getElementById('inspBannerText');
+  if (banner && text) {
+    text.innerHTML =
+      `🔍 Loaded from <strong>${insp.inspection_number}</strong>
+       &nbsp;·&nbsp; ${insp.date}
+       &nbsp;·&nbsp;
+       <span style="color:#16a34a;font-weight:700">${insp.complaints_count} complaint(s)</span>
+       &nbsp;+&nbsp;
+       <span style="color:#ca8a04;font-weight:700">${insp.findings_count} finding(s)</span>`;
+    banner.style.display = 'flex';
+  }
+}
+
+/* ── Add complaint row ── */
+function addComplaint(desc = '', bg = '') {
+  const tr = document.createElement('tr');
+  tr.style.cssText = rowStyle + (bg ? ';background:' + bg : '');
+  tr.innerHTML = `
+    <td style="${cellStyle}">
+      <select name="complaint_category_id[]" style="${selStyle}" onchange="setCatText(this)">
+        ${catOpts}
+      </select>
+      <input type="hidden" name="complaint_category[]" class="cat-txt">
+    </td>
+    <td style="${cellStyle}">
+      <input type="text" name="complaint_description[]"
+             value="${desc.replace(/"/g,'&quot;')}"
+             placeholder="Describe complaint..."
+             style="${inpStyle}">
+    </td>
+    <td style="${cellStyle}">
+      <select name="complaint_type[]" style="${selStyle}">
+        <option value="Mechanical">Mechanical</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Body">Body</option>
+        <option value="AC">AC</option>
+        <option value="Other">Other</option>
+      </select>
+    </td>
+    <td style="${cellStyle}">
+      <select name="complaint_technician[]" style="${selStyle}">
+        <option value="">----------</option>
+        ${techOpts}
+      </select>
+    </td>
+    <td style="${cellStyle}">
+      <select name="complaint_status[]" style="${selStyle}">
+        <option value="Open">Open</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Resolved">Resolved</option>
+      </select>
+    </td>
+    <td style="${cellStyle};text-align:center">
+      <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+    </td>`;
+  document.getElementById('complaintBody').appendChild(tr);
+}
+
+/* ── Add finding row ── */
+function addFinding(desc = '', bg = '') {
+  const tr = document.createElement('tr');
+  tr.style.cssText = rowStyle + (bg ? ';background:' + bg : '');
+  tr.innerHTML = `
+    <td style="${cellStyle}">
+      <input type="text" name="finding_description[]"
+             value="${desc.replace(/"/g,'&quot;')}"
+             placeholder="Describe finding..."
+             style="${inpStyle}">
+    </td>
+    <td style="${cellStyle}">
+      <select name="finding_technician[]" style="${selStyle}">
+        <option value="">----------</option>
+        ${techOpts}
+      </select>
+    </td>
+    <td style="${cellStyle}">
+      <select name="finding_status[]" style="${selStyle}">
+        <option value="Pending">Pending</option>
+        <option value="Confirmed">Confirmed</option>
+        <option value="Resolved">Resolved</option>
+      </select>
+    </td>
+    <td style="${cellStyle};text-align:center">
+      <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+    </td>`;
+  document.getElementById('findingsBody').appendChild(tr);
+}
+
+function setCatText(sel) {
+  const hidden = sel.closest('td').querySelector('.cat-txt');
+  if (hidden) hidden.value = sel.options[sel.selectedIndex]?.text || '';
+}
+
+function removeRow(btn) {
+  const tbody = btn.closest('tbody');
+  const tr    = btn.closest('tr');
+  if (tbody.rows.length > 1) tr.remove();
+  else {
+    tr.querySelectorAll('input[type=text],input[type=number]')
+      .forEach(i => i.value = '');
+    tr.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+  }
+  calcTotals && calcTotals();
+}
+
+/* ══════════════════════════════════════════
+   SPARE PARTS — image 2 style
+══════════════════════════════════════════ */
+const ALL_ITEMS_URL = "{% url 'jobcard_app:ajax_get_all_items' %}";
+let allJcItems = [];
+
+/* ── Load all items on page load ── */
+document.addEventListener('DOMContentLoaded', function () {
+  fetch(ALL_ITEMS_URL)
+    .then(r => r.json())
+    .then(data => {
+      allJcItems = data.items || [];
+      buildItemDropdown();
+      calcPartsTotal();
+    })
+    .catch(e => console.error('Items load error:', e));
+});
+
+/* ── Build the top input dropdown ── */
+function buildItemDropdown() {
+  const sel = document.getElementById('addPartItem');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select Item —</option>';
+  allJcItems.forEach(item => {
+    const o = document.createElement('option');
+    o.value            = item.id;
+    o.textContent      = item.name;
+    o.dataset.name     = item.name;
+    o.dataset.code     = item.code  || '';
+    o.dataset.unit     = item.unit  || 'No';
+    o.dataset.rate     = item.unit_price;
+    sel.appendChild(o);
+  });
+}
+
+/* ── When item selected from top dropdown ── */
+function onAddPartItemChange(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+
+  const partNoInp = document.getElementById('addPartNo');
+  const rateInp   = document.getElementById('addPartRate');
+
+  if (partNoInp) partNoInp.value = opt.dataset.code || '';
+  if (rateInp)   rateInp.value  = parseFloat(opt.dataset.rate || 0).toFixed(3);
+
+  calcAddPartAmount();
+}
+
+/* ── Calc amount in top input row ── */
+function calcAddPartAmount() {
+  const qty  = parseFloat(document.getElementById('addPartQty')?.value)  || 0;
+  const rate = parseFloat(document.getElementById('addPartRate')?.value) || 0;
+  const amtEl = document.getElementById('addPartAmount');
+  if (amtEl) amtEl.value = (qty * rate).toFixed(3);
+}
+
+/* ── Commit — add row to table ── */
+function commitAddPart() {
+  const sel    = document.getElementById('addPartItem');
+  const partNo = document.getElementById('addPartNo');
+  const qty    = document.getElementById('addPartQty');
+  const rate   = document.getElementById('addPartRate');
+  const amt    = document.getElementById('addPartAmount');
+
+  const opt = sel?.options[sel.selectedIndex];
+  if (!opt || !opt.value) {
+    alert('Please select an item first.');
+    sel?.focus();
+    return;
+  }
+
+  const itemId   = opt.value;
+  const itemName = opt.dataset.name || opt.textContent.trim();
+  const qtyVal   = parseFloat(qty?.value) || 1;
+  const rateVal  = parseFloat(rate?.value) || 0;
+  const amtVal   = (qtyVal * rateVal).toFixed(3);
+
+  // Add row to table
+  addPartRowToTable(itemId, itemName, partNo?.value || '', qtyVal, rateVal, amtVal);
+
+  // Reset top input row
+  if (sel)    sel.value    = '';
+  if (partNo) partNo.value = '';
+  if (qty)    qty.value    = 1;
+  if (rate)   rate.value   = '0.000';
+  if (amt)    amt.value    = '0.000';
+
+  // Hide empty state
+  const emptyEl = document.getElementById('partsEmpty');
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  calcPartsTotal();
+}
+
+/* ── Add a row to the table ── */
+function addPartRowToTable(itemId, itemName, partNo, qty, rate, amtVal) {
+  const tbody = document.getElementById('partsBody');
+  const tr    = document.createElement('tr');
+  tr.style.borderBottom = '1px solid #f3f4f6';
+  tr.innerHTML = `
+    <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:500">
+      ${itemName}
+      <input type="hidden" name="part_item[]"    value="${itemName}">
+      <input type="hidden" name="part_item_id[]" value="${itemId}">
+    </td>
+    <td style="padding:10px 14px">
+      <input type="text" name="part_number[]" value="${partNo}"
+             placeholder="Part No."
+             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                    padding:6px 9px;font-size:12px;color:#374151;outline:none">
+    </td>
+    <td style="padding:10px 14px">
+      <input type="number" name="part_qty[]" value="${qty}"
+             min="0" step="0.01" class="pq"
+             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                    padding:6px 9px;font-size:12px;text-align:right;outline:none"
+             oninput="calcPartRow(this)">
+    </td>
+    <td style="padding:10px 14px">
+      <input type="number" name="part_rate[]" value="${parseFloat(rate).toFixed(3)}"
+             min="0" step="0.001" class="pr"
+             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                    padding:6px 9px;font-size:12px;text-align:right;outline:none"
+             oninput="calcPartRow(this)">
+    </td>
+    <td style="padding:10px 14px;text-align:right">
+      <span class="pa" style="font-size:13px;font-weight:700;
+                               color:#111827;font-family:monospace">${amtVal}</span>
+      <input type="hidden" name="part_amount[]" class="pa-inp" value="${amtVal}">
+    </td>
+    <td style="padding:10px 14px;text-align:center">
+      <button type="button" onclick="removePartRow(this)"
+              style="background:#dc2626;color:#fff;border:none;border-radius:5px;
+                     padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">
+        Remove
+      </button>
+    </td>`;
+  tbody.appendChild(tr);
+}
+
+/* ── Calc single row when qty/rate edited inline ── */
+function calcPartRow(inp) {
+  const tr   = inp.closest('tr');
+  const qty  = parseFloat(tr.querySelector('.pq')?.value)  || 0;
+  const rate = parseFloat(tr.querySelector('.pr')?.value)  || 0;
+  const amt  = (qty * rate).toFixed(3);
+  const span = tr.querySelector('.pa');
+  const hid  = tr.querySelector('.pa-inp');
+  if (span) span.textContent = amt;
+  if (hid)  hid.value        = amt;
+  calcPartsTotal();
+}
+
+/* ── Remove row ── */
+function removePartRow(btn) {
+  btn.closest('tr').remove();
+  const tbody   = document.getElementById('partsBody');
+  const emptyEl = document.getElementById('partsEmpty');
+  if (emptyEl) emptyEl.style.display = tbody.rows.length === 0 ? 'block' : 'none';
+  calcPartsTotal();
+}
+
+/* ── Parts total ── */
+function calcPartsTotal() {
+  let total = 0;
+  document.querySelectorAll('#partsBody .pa-inp').forEach(i => {
+    total += parseFloat(i.value) || 0;
+  });
+  const el = document.getElementById('partsTotal');
+  if (el) el.textContent = total.toFixed(3);
+  calcTotals && calcTotals();
+}
+/* ── Add Labour ── */
+function addLabour() {
+  const techOpts = `{% for s in technicians %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}`;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><select name="labour_technician[]"><option value="">----------</option>${techOpts}</select></td>
+    <td><input type="text" name="labour_description[]" placeholder="Labour description..."></td>
+    <td><input type="number" name="labour_hours[]" value="1" min="0" step="0.5" class="lab-hrs" oninput="calcLabourRow(this)"></td>
+    <td><input type="number" name="labour_rate[]" value="0" min="0" step="0.01" class="lab-rate" oninput="calcLabourRow(this)"></td>
+    <td><input type="number" name="labour_amount[]" value="0" readonly class="lab-amount" style="background:#f9fafb"></td>
+    <td><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕ Remove</button></td>`;
+  document.getElementById('labourBody').appendChild(tr);
+}
+
+/* ── Calculations ── */
+function calcPartRow(inp) {
+  const tr  = inp.closest('tr');
+  const qty = parseFloat(tr.querySelector('.part-qty').value) || 0;
+  const rate= parseFloat(tr.querySelector('.part-rate').value) || 0;
+  const amt = tr.querySelector('.part-amount');
+  if (amt) amt.value = (qty * rate).toFixed(3);
+  calcTotals();
+}
+
+function calcLabourRow(inp) {
+  const tr   = inp.closest('tr');
+  const hrs  = parseFloat(tr.querySelector('.lab-hrs').value) || 0;
+  const rate = parseFloat(tr.querySelector('.lab-rate').value) || 0;
+  const amt  = tr.querySelector('.lab-amount');
+  if (amt) amt.value = (hrs * rate).toFixed(3);
+  calcTotals();
+}
+
+function calcTotals() {
+  let parts = 0, labour = 0;
+  document.querySelectorAll('.part-amount').forEach(i => parts += parseFloat(i.value) || 0);
+  document.querySelectorAll('.lab-amount').forEach(i => labour += parseFloat(i.value) || 0);
+  const grand = parts + labour;
+  document.getElementById('partsTotal').textContent  = parts.toFixed(3);
+  document.getElementById('labourTotal').textContent = labour.toFixed(3) ;
+  document.getElementById('gtParts').textContent     = parts.toFixed(3);
+  document.getElementById('gtLabour').textContent    = labour.toFixed(3) ;
+  document.getElementById('gtGrand').textContent     = grand.toFixed(3);
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', calcTotals);
+document.addEventListener('DOMContentLoaded', function () {
+  const customerSelect = document.getElementById('custSel');
+  const vehicleSelect = document.getElementById('vehicleSel');
+  const inspectionVehicleId = vehicleSelect && vehicleSelect.value ? vehicleSelect.value : '';
+  if (customerSelect && customerSelect.value) {
+    loadVehicles(customerSelect.value, inspectionVehicleId || '');
+  }
+});
+</script>
+{% endblock %}

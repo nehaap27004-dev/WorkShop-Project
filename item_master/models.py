@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator
 from django.forms import ValidationError
 from django.db.models import Max
 import re
+import fleet_app
 
 
 
@@ -310,7 +311,7 @@ class PurchaseMaster(models.Model):
     
     auto_no = models.IntegerField(unique=True, blank=True, null=True)  # Auto-increment field
     voucher_no = models.CharField(max_length=100, unique=True, blank=False)
-    voucherType = models.ForeignKey(Vouchers, on_delete=models.PROTECT, default=1)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=13)
     transaction_date = models.DateField()
     ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, default=1)
     payment_mode = models.CharField(max_length=10, choices=PAYMENT_MODE_CHOICES, default='Cash')
@@ -397,7 +398,7 @@ class PurchaseReturnMaster(models.Model):
     
     auto_no = models.IntegerField(unique=True, blank=True, null=True)  # Auto-increment field
     voucher_no = models.CharField(max_length=100, unique=True, blank=False)
-    voucherType = models.ForeignKey(Vouchers, on_delete=models.PROTECT, default=1)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=1)
     transaction_date = models.DateField()
     ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, default=1)
     payment_mode = models.CharField(max_length=10, choices=PAYMENT_MODE_CHOICES, default='Cash')
@@ -518,7 +519,7 @@ class SalesMaster(models.Model):
     
     auto_no = models.IntegerField(unique=True, blank=True, null=True)  # Auto-increment field
     voucher_no = models.CharField(max_length=20, unique=True)
-    voucherType = models.ForeignKey(Vouchers, on_delete=models.PROTECT, default=2)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=14)
     transaction_date = models.DateField(default=datetime.now)
     ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, default=1)
     payment_mode = models.CharField(max_length=10, choices=VOUCHER_PAYMENT_MODE_CHOICES, default='cash')
@@ -528,7 +529,7 @@ class SalesMaster(models.Model):
     DO_number = models.CharField(max_length=50, null=True, blank=True)  # Delivery Order number
     mobile = models.CharField(max_length=15, null=True, blank=True)
     customer_TRN = models.CharField(max_length=20, null=True, blank=True)  # Tax Registration Number
-    vehicle_number = models.CharField(max_length=50, null=True, blank=True)
+    vehicle_number = models.ForeignKey('fleet_app.Vehicle', on_delete=models.PROTECT, null=True, blank=True)
     location = models.CharField(max_length=255, null=True, blank=True)
     terms_and_conditions = models.TextField(null=True, blank=True)
     remarks = models.TextField(null=True, blank=True)
@@ -591,7 +592,7 @@ class SalesReturnMaster(models.Model):
     
     auto_no = models.IntegerField(unique=True, blank=True, null=True)  # Auto-increment field
     voucher_no = models.CharField(max_length=20, unique=True)
-    voucherType = models.ForeignKey(Vouchers, on_delete=models.PROTECT, default=2)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=2)
     transaction_date = models.DateField(default=datetime.now)
     ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, default=1)
     payment_mode = models.CharField(max_length=10, choices=VOUCHER_PAYMENT_MODE_CHOICES, default='cash')
@@ -658,7 +659,7 @@ class SalesReturnDetail(models.Model):
     
 class Stock(models.Model):
     voucherDate = models.DateField()
-    voucherType = models.ForeignKey(Vouchers, on_delete=models.PROTECT)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT)
     voucherNo = models.BigIntegerField()  
     item = models.ForeignKey('Item', on_delete=models.PROTECT)  # Adjust 'Item' to your actual model name
     batch = models.ForeignKey('Batch', on_delete=models.PROTECT, null=True, blank=True)  # Adjust 'Batch' accordingly

@@ -1,0 +1,1320 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% block content %}
+<style>
+/* ══════════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+body,input,select,textarea,button{font-family:'Segoe UI',sans-serif}
+body{background:#f0f2f5;font-family:'Segoe UI',sans-serif;font-size:13px}
+
+/* ══════════════════════════════════════════════
+   TOP DARK HEADER
+══════════════════════════════════════════════ */
+.top-header{
+  background:#ffffff;
+  display:flex;align-items:center;justify-content:space-between;
+  align-items:center;
+  width:55%;          /* reduce horizontal length */
+  margin:5px auto; 
+  justify-content:space-between;
+  padding: 12px 24px;
+  position:sticky;top: 10px;z-index:200;
+  border-bottom:1px solid rgb(255, 252, 252);
+}
+.th-left .th-brand{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.1px}
+.th-left .th-title{font-size:16px;font-weight:700;color:#000000}
+.th-right{display:flex;gap:8px;align-items:center}
+.th-btn{
+  background:rgba(255,255,255,.1);color:#e5e7eb;
+  border:1px solid rgba(255,255,255,.15);border-radius:5px;
+  padding:5px 14px;font-size:12px;font-weight:600;
+  cursor:pointer;display:inline-flex;align-items:center;gap:5px;
+  text-decoration:none;transition:all .15s;
+}
+.th-btn:hover{background:rgba(255,255,255,.18);color:#fff}
+
+/* ══════════════════════════════════════════════
+   DARK TAB STRIP
+══════════════════════════════════════════════ */
+.tab-strip{
+  background:#1a1a2e;
+  border-top:1px solid rgba(255,255,255,.07);
+  display:flex;
+  padding:0 24px;
+  position:sticky;
+  top:114px;
+  z-index:199;
+}
+.ts-btn{
+  padding:10px 16px;font-size:12px;font-weight:600;color:#6b7280;
+  border:none;background:none;cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:all .15s;white-space:nowrap;
+}
+.ts-btn.active{color:#93c5fd;border-bottom-color:#93c5fd}
+.ts-btn:hover:not(.active){color:#9ca3af}
+
+/* ══════════════════════════════════════════════
+   PAGE WRAPPER
+══════════════════════════════════════════════ */
+.pw{max-width:840px;margin:0 auto;padding:50px 16px 100px}
+
+/* ══════════════════════════════════════════════
+   WHITE SECTION CARDS
+══════════════════════════════════════════════ */
+.sc{
+  background:#fff;border-radius:10px;
+  margin-bottom:16px;overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.07);
+}
+.sc-hdr{
+  padding:13px 20px;
+  display:flex;align-items:center;gap:9px;
+  border-bottom:1px solid #f3f4f6;
+}
+.sc-icon{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;
+}
+.sci-orange{background:#fff7ed;color:#ea580c}
+.sci-blue  {background:#eff6ff;color:#2563eb}
+.sci-purple{background:#f5f3ff;color:#7c3aed}
+.sci-green {background:#f0fdf4;color:#16a34a}
+.sci-pink  {background:#fdf4ff;color:#a21caf}
+.sci-teal  {background:#f0fdfa;color:#0d9488}
+.sc-title{font-size:13px;font-weight:700;color:#111827}
+.sc-body{padding:20px}
+
+/* ══════════════════════════════════════════════
+   FIELD LABELS
+══════════════════════════════════════════════ */
+.lbl{
+  display:block;font-size:10px;font-weight:700;
+  color:#9ca3af;text-transform:uppercase;
+  letter-spacing:.6px;margin-bottom:5px;
+}
+.req{color:#ef4444}
+
+/* ══════════════════════════════════════════════
+   INPUTS
+══════════════════════════════════════════════ */
+.fi{
+  width:100%;border:1px solid #e5e7eb;border-radius:6px;
+  padding:9px 12px;font-size:13px;color:#111827;
+  background:#fff;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+.fi:focus{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.1)}
+.fi::placeholder{color:#d1d5db}
+.fi[readonly]{background:#f9fafb;color:#6b7280;cursor:default}
+select.fi{cursor:pointer}
+textarea.fi{resize:vertical}
+
+/* ══════════════════════════════════════════════
+   GRIDS
+══════════════════════════════════════════════ */
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mb{margin-bottom:14px}
+@media(max-width:640px){.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+
+/* ══════════════════════════════════════════════
+   OVERALL STATUS RADIO PILLS
+══════════════════════════════════════════════ */
+.status-pill-group{display:flex;gap:10px;margin-top:4px;flex-wrap:wrap}
+.spill{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 16px;
+  border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;
+  border:1.5px solid #e5e7eb;background:#f9fafb;color:#6b7280;
+  transition:all .15s;user-select:none;
+}
+.spill input[type=radio]{display:none}
+.spill.sp-pass.active{background:#f0fdf4;border-color:#22c55e;color:#15803d}
+.spill.sp-attention.active{background:#fffbe6;border-color:#f59e0b;color:#b45309}
+.spill.sp-fail.active{background:#fef2f2;border-color:#ef4444;color:#b91c1c}
+
+/* ══════════════════════════════════════════════
+   FUEL GAUGE  (exactly like screenshot)
+══════════════════════════════════════════════ */
+.fuel-gauge{
+  border:1px solid #e5e7eb;border-radius:6px;
+  padding:8px 12px;background:#f9fafb;
+  
+}
+.fuel-bar-wrap{display:flex;align-items:center;gap:4px;margin-bottom:4px}
+.fuel-seg{
+  flex:1;height:10px;border-radius:3px;
+  background:#e5e7eb;transition:background .3s;
+}
+.fuel-seg.filled{background:#f97316}
+.fuel-labels{display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;font-weight:600;padding:0 1px}
+
+/* ══════════════════════════════════════════════
+   DAMAGE TYPE PILLS  (exactly like screenshot)
+══════════════════════════════════════════════ */
+.dmg-label{font-size:10px;font-weight:700;color:#374151;
+           text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px}
+.pills-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.pill{
+  padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;
+  cursor:pointer;border:1.5px solid #e5e7eb;background:#f9fafb;
+  color:#6b7280;transition:all .15s;user-select:none;
+  display:inline-flex;align-items:center;gap:5px;
+}
+/* active states matching screenshot orange/blue/purple/red/grey */
+.pill.p-dent   {background:#f97316;border-color:#f97316;color:#fff}
+.pill.p-scratch{background:#fff;border-color:#6b7280;color:#374151}
+.pill.p-paint  {background:#fff;border-color:#6b7280;color:#374151}
+.pill.p-crack  {background:#fff;border-color:#6b7280;color:#374151}
+.pill.p-missing{background:#fff;border-color:#6b7280;color:#374151}
+/* pill dot */
+.pd{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
+.pd-dent   {background:#f97316}
+.pd-scratch{background:#374151}
+.pd-paint  {background:#8b5cf6}
+.pd-crack  {background:#ef4444}
+.pd-missing{background:#9ca3af}
+
+/* ══════════════════════════════════════════════
+   VIEW TOGGLE (Top View / Side View)
+══════════════════════════════════════════════ */
+.view-toggle{display:flex;gap:0;margin-bottom:14px;border:1px solid #e5e7eb;
+             border-radius:6px;overflow:hidden;width:fit-content}
+.vt-btn{
+  padding:6px 16px;font-size:12px;font-weight:600;
+  border:none;background:#fff;color:#6b7280;cursor:pointer;
+  transition:all .15s;
+}
+.vt-btn.active{background:#111827;color:#fff}
+.vt-btn:not(.active):hover{background:#f9fafb}
+
+/* ══════════════════════════════════════════════
+   CAR DIAGRAM  (exactly like screenshot - light colours)
+══════════════════════════════════════════════ */
+.diag-area{
+  background:#f9fafb;border:1px solid #e5e7eb;
+  border-radius:8px;text-align:center;padding:10px;
+  position:relative;
+}
+.diag-area svg{max-width:280px;width:100%;height:auto}
+/* car zones - light blue/grey matching screenshot */
+.cz{
+  fill:#dde3ed;stroke:#b0bac9;stroke-width:1.5;
+  cursor:pointer;transition:fill .2s,stroke .2s;
+}
+.cz:hover{fill:#bfdbfe;stroke:#3b82f6}
+/* damage zone states */
+.cz.m-dent   {fill:#fed7aa;stroke:#f97316}
+.cz.m-scratch{fill:#e5e7eb;stroke:#374151}
+.cz.m-paint  {fill:#ddd6fe;stroke:#7c3aed}
+.cz.m-crack  {fill:#fecaca;stroke:#ef4444}
+.cz.m-missing{fill:#f3f4f6;stroke:#9ca3af}
+/* diagram direction labels */
+.d-lbl{font-size:12px;font-weight:700;fill:#94a3b8;pointer-events:none}
+/* hint text */
+.diag-hint{font-size:11px;color:#9ca3af;text-align:center;margin-top:6px}
+
+/* marked zone tags below diagram */
+.mzone-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;min-height:10px}
+.mz-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 10px;border-radius:20px;font-size:11px;
+  font-weight:600;cursor:pointer;
+}
+.mzt-dent   {background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.mzt-scratch{background:#f9fafb;color:#374151;border:1px solid #e5e7eb}
+.mzt-paint  {background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe}
+.mzt-crack  {background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+.mzt-missing{background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb}
+
+/* ══════════════════════════════════════════════
+   INTERIOR / MECHANICAL RATING ROWS
+   Exactly like screenshot: label left, buttons right
+══════════════════════════════════════════════ */
+.r-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 0;border-bottom:1px solid #f9fafb;
+}
+.r-row:last-child{border-bottom:none}
+.r-label{font-size:13px;color:#374151;font-weight:400}
+.r-btns{display:flex;gap:4px}
+.rb{
+  padding:5px 14px;border-radius:5px;font-size:12px;font-weight:600;
+  cursor:pointer;border:1.5px solid #e5e7eb;background:#f9fafb;
+  color:#6b7280;transition:all .12s;white-space:nowrap;
+}
+.rb:hover{border-color:#d1d5db;background:#f3f4f6}
+/* active states — matching screenshot exactly */
+.rb.a-good  {background:#22c55e;border-color:#22c55e;color:#fff}
+.rb.a-fair  {background:#f59e0b;border-color:#f59e0b;color:#fff}
+.rb.a-poor  {background:#ef4444;border-color:#ef4444;color:#fff}
+.rb.a-na    {background:#9ca3af;border-color:#9ca3af;color:#fff}
+
+/* ══════════════════════════════════════════════
+   ACCESSORIES CHECKLIST
+   Exactly like screenshot
+══════════════════════════════════════════════ */
+.acc-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.acc-stat{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 12px;border-radius:20px;
+  font-size:12px;font-weight:600;
+  border:1px solid transparent;
+}
+.as-av{background:#f0fdf4;color:#16a34a;border-color:#bbf7d0}
+.as-ms{background:#fef2f2;color:#dc2626;border-color:#fecaca}
+.as-dm{background:#fefce8;color:#ca8a04;border-color:#fef08a}
+.adot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.adg{background:#22c55e}
+.adr{background:#ef4444}
+.ady{background:#eab308}
+
+/* accessory grid 3 col */
+.acc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:580px){.acc-grid{grid-template-columns:1fr 1fr}}
+
+.acc-item{
+  border:1px solid #f3f4f6;border-radius:6px;
+  padding:10px 12px;background:#fff;
+}
+.acc-name{
+  font-size:12px;font-weight:700;color:#374151;
+  margin-bottom:8px;display:flex;align-items:center;gap:6px;
+}
+.acc-name .adot{flex-shrink:0}
+.acc-btns{display:flex;gap:4px}
+.ab{
+  flex:1;padding:4px 6px;border-radius:5px;
+  font-size:11px;font-weight:600;text-align:center;
+  cursor:pointer;border:1.5px solid #e5e7eb;
+  background:#f9fafb;color:#6b7280;transition:all .12s;
+}
+.ab:hover{border-color:#d1d5db}
+.ab.ab-av{background:#22c55e;border-color:#22c55e;color:#fff}
+.ab.ab-ms{background:#ef4444;border-color:#ef4444;color:#fff}
+.ab.ab-dm{background:#f59e0b;border-color:#f59e0b;color:#fff}
+
+/* ══════════════════════════════════════════════
+   MECHANICAL — 2 col grid
+══════════════════════════════════════════════ */
+.mech2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:580px){.mech2{grid-template-columns:1fr}}
+.mgrp-lbl{
+  font-size:12px;font-weight:700;color:#374151;
+  margin-bottom:8px;padding-bottom:6px;
+  border-bottom:1px solid #f3f4f6;
+}
+
+/* ══════════════════════════════════════════════
+   FINDINGS — 2 col, blue left / amber right
+══════════════════════════════════════════════ */
+.find2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.find2{grid-template-columns:1fr}}
+
+.fbox{border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+.fbox-hdr{
+  padding:10px 14px;background:#f9fafb;
+  border-bottom:1px solid #e5e7eb;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.fbox-title{font-size:12px;font-weight:700;color:#374151}
+.f-cnt{
+  background:#e5e7eb;color:#6b7280;
+  border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;
+}
+.fbox-body{padding:12px}
+.f-inp-row{display:flex;gap:6px;margin-bottom:8px}
+.f-inp{
+  flex:1;border:1px solid #e5e7eb;border-radius:6px;
+  padding:8px 10px;font-size:12px;color:#374151;
+  background:#f9fafb;outline:none;
+}
+.f-inp:focus{border-color:#6366f1;background:#fff}
+.f-inp::placeholder{color:#d1d5db}
+/* add button — blue for complaints, amber for findings */
+.f-add-c{background:#2563eb;color:#fff;border:none;border-radius:6px;
+          width:28px;height:28px;font-size:16px;font-weight:700;
+          cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.f-add-t{background:#f59e0b;color:#fff;border:none;border-radius:6px;
+          width:28px;height:28px;font-size:16px;font-weight:700;
+          cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* finding list items */
+.f-item{
+  display:flex;align-items:flex-start;gap:7px;
+  padding:7px 0;border-top:1px solid #f3f4f6;
+}
+.fn-c{background:#eff6ff;color:#2563eb;border-radius:4px;
+      padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0}
+.fn-t{background:#fefce8;color:#ca8a04;border-radius:4px;
+      padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0}
+.f-txt{font-size:12px;color:#374151;flex:1;line-height:1.5}
+.f-del{background:none;border:none;color:#d1d5db;cursor:pointer;font-size:13px;flex-shrink:0}
+.f-del:hover{color:#ef4444}
+
+/* ══════════════════════════════════════════════
+   CUSTOMER SIGNATURE
+══════════════════════════════════════════════ */
+.sig-box{
+  background:#f9fafb;border:1px solid #e5e7eb;
+  border-radius:7px;padding:14px 16px;margin-top:14px;
+}
+.sig-chk-row{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.sig-chk-row input[type=checkbox]{width:16px;height:16px;accent-color:#2563eb;cursor:pointer}
+.sig-chk-row label{font-size:13px;color:#374151;cursor:pointer}
+
+/* ══════════════════════════════════════════════
+   BOTTOM SAVE BAR
+══════════════════════════════════════════════ */
+.save-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#fff;border-top:1px solid #e5e7eb;
+  padding:10px 24px;
+  display:flex;justify-content:space-between;align-items:center;
+  z-index:300;box-shadow:0 -2px 16px rgba(0,0,0,.06);
+}
+.sb-note{font-size:12px;color:#9ca3af}
+.sb-note span{font-family:monospace;color:#6366f1;font-weight:700}
+.btn-save-insp{
+  background:#1a1a2e;color:#fff;border:none;
+  border-radius:7px;padding:10px 22px;font-size:13px;
+  font-weight:700;cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+}
+.btn-save-insp:hover{background:#2d2d4e}
+
+/* flash messages */
+.flash{padding:10px 16px;border-radius:7px;margin-bottom:12px;font-size:13px}
+.flash-ok {background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+.flash-err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
+</style>
+
+<!-- ══════════ DARK HEADER ══════════ -->
+<div class="top-header">
+  <div class="th-left">
+    <div class="th-title">Vehicle Inspection</div>
+  </div>
+  <div class="th-right">
+    <a href="{% url 'jobcard_app:inspection_list' %}" class="th-btn">← Back</a>
+  </div>
+</div>        
+
+<!-- ══════════ PAGE BODY ══════════ -->
+<div class="pw">
+
+  {% if messages %}{% for m in messages %}
+  <div class="flash {% if 'error' in m.tags %}flash-err{% else %}flash-ok{% endif %}">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <form method="post" enctype="multipart/form-data" id="inspForm">{% csrf_token %}
+
+  <!-- ═══════════════════════════════════════
+       SECTION 1: GENERAL INFORMATION
+  ═══════════════════════════════════════ -->
+  <div class="sc" id="s-general">
+    <div class="sc-hdr">
+      <div class="sc-title">General Information</div>
+    </div>
+    <div class="sc-body">
+
+      <!-- Row 1: Inspection Number | Inspection Date | Inspector -->
+      <div class="g3 mb">
+        <div>
+            <label class="lbl">Inspection Number</label>
+            <input
+                type="text"
+                class="fi"
+                name="inspection_number"
+                value="{% if edit_mode %}{{ insp.inspection_number }}{% else %}{{ next_insp_no }}{% endif %}"
+                placeholder="Enter Inspection Number">
+        </div>
+
+        <div>
+          <label class="lbl">Inspection Date <span class="req">*</span></label>
+          <input type="date" name="inspection_date" class="fi" required
+            value="{% if edit_mode %}{{ insp.inspection_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
+        </div>
+        <!-- Inspector — technicians + advisors only -->
+        <div >
+          <label class="lbl">Inspector</label>
+          <select name="inspector" class="fi">
+            <option value="">— Select —</option>
+            {% for s in inspectors %}
+            <option value="{{ s.id }}"{% if edit_mode and insp.inspector_id == s.id %}selected{% endif %}>{{ s.full_name }} ({{ s.get_role_display }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <!-- Row 2: Customer Name | Vehicle -->
+      <div class="g2 mb">
+        <div>
+          <label class="lbl">Customer Name <span class="req">*</span></label>
+          <select name="customer" class="fi" required id="custSel"
+            {% if edit_mode %}disabled{% endif %}
+            onchange="loadVehicles(this.value)">
+            <option value="">— Select Customer —</option>
+            {% for c in customers %}
+            <option value="{{ c.id }}"
+              {% if edit_mode and insp.customer_id == c.id %}selected{% endif %}
+              {% if preselected_customer and preselected_customer.id == c.id %}selected{% endif %}>
+              {{ c.ledger_name }}
+            </option>
+            {% endfor %}
+          </select>
+          {% if edit_mode %}
+          <input type="hidden" name="customer" value="{{ insp.customer_id }}">
+          {% endif %}
+        </div>
+        <div>
+          <label class="lbl">Vehicle (Make · Model · Year · Plate)</label>
+          <select name="vehicle" class="fi" required id="vehicleSel"
+            {% if edit_mode %}disabled{% endif %}
+            onchange="onVehicleChange(this)">
+            <option value="">— Select Vehicle —</option>
+            {% if edit_mode %}
+            <option value="{{ insp.vehicle_id }}" selected>
+              {{ insp.vehicle.make }} {{ insp.vehicle.model }}
+              {% if insp.vehicle.year %} {{ insp.vehicle.year }}{% endif %}
+              · {{ insp.vehicle.registration_number }}
+            </option>
+            {% elif preselected_vehicle %}
+            <option value="{{ preselected_vehicle.id }}" selected
+              data-odo="{{ preselected_vehicle.odometer|default:'' }}"
+              data-fuel="{{ preselected_vehicle.fuel_type|default:'' }}">
+              {{ preselected_vehicle.make }} {{ preselected_vehicle.model }}
+              {% if preselected_vehicle.year %} {{ preselected_vehicle.year }}{% endif %}
+              · {{ preselected_vehicle.registration_number }}
+            </option>
+            {% endif %}
+          </select>
+          {% if edit_mode %}
+          <input type="hidden" name="vehicle" value="{{ insp.vehicle_id }}">
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Row 3: Odometer | Fuel Level | Fuel Gauge -->
+      <div class="g3 mb">
+        <div>
+          <label class="lbl">Odometer (KM)</label>
+          <input type="number" name="odometer" id="odoInp" class="fi"
+            min="0" placeholder="52,310"
+            value="{% if edit_mode %}{{ insp.odometer|default:'' }}{% elif preselected_vehicle %}{{ preselected_vehicle.odometer|default:'' }}{% endif %}">
+        </div>
+        <div>
+          <label class="lbl">Fuel Level</label>
+          <select name="fuel_level" id="fuelSel" class="fi"
+            onchange="updateFuelGauge(this.value)">
+            <option value="empty" {% if edit_mode and insp.fuel_level == 'empty' %}selected{% endif %}>E (Empty)</option>
+            <option value="1/4"   {% if edit_mode and insp.fuel_level == '1/4' %}selected{% endif %}>1/4</option>
+            <option value="1/2"   {% if not edit_mode or insp.fuel_level == '1/2' %}selected{% endif %}>1/2</option>
+            <option value="3/4"   {% if edit_mode and insp.fuel_level == '3/4' %}selected{% endif %}>3/4</option>
+            <option value="full"  {% if edit_mode and insp.fuel_level == 'full' %}selected{% endif %}>F (Full)</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Fuel Gauge</label>
+          <div class="fuel-gauge">
+            <div class="fuel-bar-wrap" id="fuelBar">
+              <div class="fuel-seg" id="fs1"></div>
+              <div class="fuel-seg" id="fs2"></div>
+              <div class="fuel-seg" id="fs3"></div>
+              <div class="fuel-seg" id="fs4"></div>
+              <div class="fuel-seg" id="fs5"></div>
+            </div>
+            <div class="fuel-labels">
+              <span>E</span><span>¼</span><span>½</span><span>¾</span><span>F</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 4: Driver / User Name | Overall Inspection Status -->
+      <div class="g2 mb">
+        
+        <div>
+          <label class="lbl">Overall Inspection Status <span class="req">*</span></label>
+          <div class="status-pill-group">
+            <label class="spill sp-pass {% if not edit_mode or insp.overall_status == 'pass' %}active{% endif %}">
+              <input type="radio" name="overall_status" value="pass" {% if not edit_mode or insp.overall_status == 'pass' %}checked{% endif %} onchange="updateStatusPills(this)">
+              ✅ Pass / Safe
+            </label>
+            <label class="spill sp-attention {% if edit_mode and insp.overall_status == 'attention' %}active{% endif %}">
+              <input type="radio" name="overall_status" value="attention" {% if edit_mode and insp.overall_status == 'attention' %}checked{% endif %} onchange="updateStatusPills(this)">
+              ⚠️ Needs Attention
+            </label>
+            <label class="spill sp-fail {% if edit_mode and insp.overall_status == 'fail' %}active{% endif %}">
+              <input type="radio" name="overall_status" value="fail" {% if edit_mode and insp.overall_status == 'fail' %}checked{% endif %} onchange="updateStatusPills(this)">
+              🚫 Failed / Unsafe
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SECTION 2: EXTERIOR INSPECTION
+  ═══════════════════════════════════════ -->
+  <div class="sc" id="s-exterior">
+    <div class="sc-hdr">
+      <div class="sc-title">Exterior Inspection</div>
+    </div>
+    <div class="sc-body">
+
+      <!-- Damage type pills -->
+      <div class="dmg-label">Damage Type to Mark</div>
+      <div class="pills-row">
+        <div class="pill p-dent"    id="pill-dent"    onclick="selDmg('dent',this)">
+          <span class="pd pd-dent"></span> Dent
+        </div>
+        <div class="pill"           id="pill-scratch" onclick="selDmg('scratch',this)">
+          <span class="pd pd-scratch"></span> Scratch
+        </div>
+        <div class="pill"           id="pill-paint"   onclick="selDmg('paint',this)">
+          <span class="pd pd-paint"></span> Paint Damage
+        </div>
+        <div class="pill"           id="pill-crack"   onclick="selDmg('crack',this)">
+          <span class="pd pd-crack"></span> Crack
+        </div>
+        <div class="pill"           id="pill-missing" onclick="selDmg('missing',this)">
+          <span class="pd pd-missing"></span> Missing Part
+        </div>
+      </div>
+
+      <!-- View toggle -->
+      <div class="view-toggle">
+        <button type="button" class="vt-btn active" onclick="showView('top',this)">Top View</button>
+        <button type="button" class="vt-btn"        onclick="showView('side',this)">Side View</button>
+      </div>
+
+      <!-- TOP VIEW SVG (matching screenshot exactly) -->
+      <div class="diag-area" id="topDiag">
+        <svg viewBox="0 0 300 440" xmlns="http://www.w3.org/2000/svg">
+          <!-- Direction labels -->
+          <text x="150" y="16" text-anchor="middle" class="d-lbl" font-size="13" font-weight="700">FRONT</text>
+          <text x="150" y="436" text-anchor="middle" class="d-lbl" font-size="13" font-weight="700">REAR</text>
+          <text x="14"  y="225" text-anchor="middle" class="d-lbl" font-size="12" transform="rotate(-90,14,225)">LEFT</text>
+          <text x="286" y="225" text-anchor="middle" class="d-lbl" font-size="12" transform="rotate(90,286,225)">RIGHT</text>
+
+          <!-- Car body outline -->
+          <rect x="72" y="26" width="156" height="386" rx="40" fill="#d1d9e6" stroke="#a0aec0" stroke-width="2"/>
+
+          <!-- Front windscreen (blue tint) -->
+          <rect x="88" y="54" width="124" height="72" rx="10" fill="#93c5fd" stroke="#60a5fa" stroke-width="1.5" opacity=".6"/>
+
+          <!-- Rear windscreen (blue tint) -->
+          <rect x="88" y="312" width="124" height="72" rx="10" fill="#93c5fd" stroke="#60a5fa" stroke-width="1.5" opacity=".6"/>
+
+          <!-- Cabin/roof (slightly darker) -->
+          <rect x="88" y="146" width="124" height="148" rx="6" fill="#b8c4d6" stroke="#94a3b8" stroke-width="1"/>
+
+          <!-- Wheels (dark) -->
+          <rect x="48" y="80" width="28" height="56" rx="10" fill="#334155"/>
+          <rect x="224" y="80" width="28" height="56" rx="10" fill="#334155"/>
+          <rect x="48" y="302" width="28" height="56" rx="10" fill="#334155"/>
+          <rect x="224" y="302" width="28" height="56" rx="10" fill="#334155"/>
+
+          <!-- ═══ CLICKABLE ZONES ═══ -->
+          <!-- Front bumper -->
+          <rect class="cz" id="z-front"
+            x="82" y="28" width="136" height="38" rx="7"
+            onclick="markZone('front','Front Bumper',this)"/>
+          <text x="150" y="52" text-anchor="middle" font-size="9" fill="#64748b" pointer-events="none">Front Bumper</text>
+
+          <!-- Bonnet -->
+          <rect class="cz" id="z-bonnet"
+            x="82" y="70" width="136" height="70" rx="4"
+            onclick="markZone('bonnet','Bonnet',this)"/>
+          <text x="150" y="110" text-anchor="middle" font-size="9" fill="#64748b" pointer-events="none">Bonnet</text>
+
+          <!-- Front Left -->
+          <rect class="cz" id="z-fl"
+            x="50" y="142" width="42" height="70" rx="4"
+            onclick="markZone('front_left','Front Left',this)"/>
+          <text x="71" y="181" text-anchor="middle" font-size="8" fill="#64748b" pointer-events="none">F-Left</text>
+
+          <!-- Front Right -->
+          <rect class="cz" id="z-fr"
+            x="208" y="142" width="42" height="70" rx="4"
+            onclick="markZone('front_right','Front Right',this)"/>
+          <text x="229" y="181" text-anchor="middle" font-size="8" fill="#64748b" pointer-events="none">F-Right</text>
+
+          <!-- Roof centre -->
+          <rect class="cz" id="z-roof"
+            x="94" y="150" width="112" height="140" rx="4"
+            onclick="markZone('roof','Roof',this)"/>
+          <text x="150" y="225" text-anchor="middle" font-size="9" fill="#64748b" pointer-events="none">Roof</text>
+
+          <!-- Rear Left -->
+          <rect class="cz" id="z-rl"
+            x="50" y="216" width="42" height="70" rx="4"
+            onclick="markZone('rear_left','Rear Left',this)"/>
+          <text x="71" y="255" text-anchor="middle" font-size="8" fill="#64748b" pointer-events="none">R-Left</text>
+
+          <!-- Rear Right -->
+          <rect class="cz" id="z-rr"
+            x="208" y="216" width="42" height="70" rx="4"
+            onclick="markZone('rear_right','Rear Right',this)"/>
+          <text x="229" y="255" text-anchor="middle" font-size="8" fill="#64748b" pointer-events="none">R-Right</text>
+
+          <!-- Boot/Trunk -->
+          <rect class="cz" id="z-boot"
+            x="82" y="298" width="136" height="78" rx="4"
+            onclick="markZone('boot','Boot/Trunk',this)"/>
+          <text x="150" y="341" text-anchor="middle" font-size="9" fill="#64748b" pointer-events="none">Boot / Trunk</text>
+
+          <!-- Rear Bumper -->
+          <rect class="cz" id="z-rear"
+            x="82" y="378" width="136" height="36" rx="7"
+            onclick="markZone('rear','Rear Bumper',this)"/>
+          <text x="150" y="400" text-anchor="middle" font-size="9" fill="#64748b" pointer-events="none">Rear Bumper</text>
+        </svg>
+        <div id="zoneInputs"></div>
+      </div>
+
+      <!-- SIDE VIEW SVG -->
+      <div class="diag-area" id="sideDiag" style="display:none">
+        <svg viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg">
+          <rect x="32" y="68" width="336" height="80" rx="12" fill="#d1d9e6" stroke="#a0aec0" stroke-width="2"/>
+          <rect x="88" y="28" width="192" height="46" rx="14" fill="#d1d9e6" stroke="#a0aec0" stroke-width="2"/>
+          <rect x="98" y="32" width="172" height="36" rx="9" fill="#93c5fd" stroke="#60a5fa" stroke-width="1.5" opacity=".6"/>
+          <circle cx="96"  cy="148" r="26" fill="#334155"/>
+          <circle cx="96"  cy="148" r="14" fill="#64748b"/>
+          <circle cx="304" cy="148" r="26" fill="#334155"/>
+          <circle cx="304" cy="148" r="14" fill="#64748b"/>
+          <rect class="cz" onclick="markZone('front_left','Front Panel',this)" x="34" y="70" width="64" height="76" rx="4"/>
+          <text x="66" y="113" text-anchor="middle" font-size="9" fill="#64748b" pointer-events="none">Front</text>
+          <rect class="cz" onclick="markZone('door_left','Door Panel',this)" x="136" y="70" width="128" height="76" rx="4"/>
+          <text x="200" y="113" text-anchor="middle" font-size="9" fill="#64748b" pointer-events="none">Door Panel</text>
+          <rect class="cz" onclick="markZone('rear_left','Rear Panel',this)" x="302" y="70" width="64" height="76" rx="4"/>
+          <text x="334" y="113" text-anchor="middle" font-size="9" fill="#64748b" pointer-events="none">Rear</text>
+        </svg>
+      </div>
+
+      <div class="mzone-row" id="markedList"></div>
+      <div class="diag-hint">Click diagram to add a marker · Click a marker to remove it</div>
+
+      <div style="margin-top:14px">
+        <label class="lbl">Damage Remarks</label>
+        <textarea name="exterior_remarks" class="fi" rows="2"
+          placeholder="Describe exterior damage in detail...">{% if edit_mode %}{{ insp.exterior_remarks }}{% endif %}</textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SECTION 3: INTERIOR INSPECTION
+  ═══════════════════════════════════════ -->
+  <div class="sc" id="s-interior">
+    <div class="sc-hdr">
+      <div class="sc-title">Interior Inspection</div>
+    </div>
+    <div class="sc-body">
+      {% for field,label in interior_items %}
+      <div class="r-row">
+        <div class="r-label">{{ label }}</div>
+        <div class="r-btns" data-field="{{ field }}">
+          <button type="button" class="rb a-good" data-val="good" onclick="setRat(this,'good')">Good</button>
+          <button type="button" class="rb"         data-val="fair" onclick="setRat(this,'fair')">Fair</button>
+          <button type="button" class="rb"         data-val="poor" onclick="setRat(this,'poor')">Poor</button>
+          <button type="button" class="rb"         data-val="na"   onclick="setRat(this,'na')">N/A</button>
+        </div>
+        <input type="hidden" name="{{ field }}" value="good">
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SECTION 4: ACCESSORIES CHECKLIST
+  ═══════════════════════════════════════ -->
+  <div class="sc" id="s-acc">
+    <div class="sc-hdr">
+      <div class="sc-title">Accessories Checklist</div>
+    </div>
+    <div class="sc-body">
+
+      <!-- Summary counts -->
+      <div class="acc-summary">
+        <div class="acc-stat as-av"><span class="adot adg"></span><span id="cnt-av">0</span> Available</div>
+        <div class="acc-stat as-ms"><span class="adot adr"></span><span id="cnt-ms">0</span> Missing</div>
+        <div class="acc-stat as-dm"><span class="adot ady"></span><span id="cnt-dm">0</span> Damaged</div>
+      </div>
+
+      <div class="acc-grid">
+        {% for field,label in accessory_items %}
+        <div class="acc-item">
+          <div class="acc-name">
+            <span class="adot adg" id="adot-{{ field }}"></span>
+            {{ label }}
+          </div>
+          <div class="acc-btns" data-acc="{{ field }}">
+            <div class="ab ab-av" data-val="available" onclick="setAcc('{{ field }}',this,'available')">Available</div>
+            <div class="ab"       data-val="missing"   onclick="setAcc('{{ field }}',this,'missing')">Missing</div>
+            <div class="ab"       data-val="damaged"   onclick="setAcc('{{ field }}',this,'damaged')">Damaged</div>
+          </div>
+          <input type="hidden" name="{{ field }}" id="ainp-{{ field }}" value="available">
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SECTION 5: MECHANICAL, TYRES & FLUIDS
+  ═══════════════════════════════════════ -->
+  <div class="sc" id="s-mech">
+    <div class="sc-hdr">
+      <div class="sc-icon sci-pink">🔧</div>
+      <div class="sc-title">Mechanical, Tyres & Under-Hood Fluid Inspection</div>
+    </div>
+    <div class="sc-body">
+      <div class="mech2">
+
+        <!-- LEFT column: Engine + Tyres + Suspension -->
+        <div>
+          <div class="mgrp-lbl">Engine</div>
+          {% for field,label in engine_items %}
+          <div class="r-row">
+            <div class="r-label">{{ label }}</div>
+            <div class="r-btns">
+              <button type="button" class="rb a-good" data-val="good" onclick="setRat(this,'good')">Good</button>
+              <button type="button" class="rb" data-val="fair" onclick="setRat(this,'fair')">Fair</button>
+              <button type="button" class="rb" data-val="poor" onclick="setRat(this,'poor')">Poor</button>
+              <button type="button" class="rb" data-val="na"   onclick="setRat(this,'na')">N/A</button>
+            </div>
+            <input type="hidden" name="{{ field }}" value="good">
+          </div>
+          {% endfor %}
+
+          <div style="height:16px"></div>
+          <div class="mgrp-lbl"> Tyres & Wheel Health</div>
+          {% for field,label in tyre_items %}
+          <div class="r-row">
+            <div class="r-label">{{ label }}</div>
+            <div class="r-btns">
+              <button type="button" class="rb a-good" data-val="good" onclick="setRat(this,'good')">Good</button>
+              <button type="button" class="rb" data-val="fair" onclick="setRat(this,'fair')">Fair</button>
+              <button type="button" class="rb" data-val="poor" onclick="setRat(this,'poor')">Poor</button>
+              <button type="button" class="rb" data-val="na"   onclick="setRat(this,'na')">N/A</button>
+            </div>
+            <input type="hidden" name="{{ field }}" value="good">
+          </div>
+          {% endfor %}
+
+          <div style="height:16px"></div>
+          <div class="mgrp-lbl">Suspension</div>
+          {% for field,label in suspension_items %}
+          <div class="r-row">
+            <div class="r-label">{{ label }}</div>
+            <div class="r-btns">
+              <button type="button" class="rb a-good" data-val="good" onclick="setRat(this,'good')">Good</button>
+              <button type="button" class="rb" data-val="fair" onclick="setRat(this,'fair')">Fair</button>
+              <button type="button" class="rb" data-val="poor" onclick="setRat(this,'poor')">Poor</button>
+              <button type="button" class="rb" data-val="na"   onclick="setRat(this,'na')">N/A</button>
+            </div>
+            <input type="hidden" name="{{ field }}" value="good">
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- RIGHT column: Under-Hood Fluids + Brakes + Electrical -->
+        <div>
+          <div class="mgrp-lbl">Under-Hood Fluids & Exhaust</div>
+          {% for field,label in fluid_items %}
+          <div class="r-row">
+            <div class="r-label">{{ label }}</div>
+            <div class="r-btns">
+              <button type="button" class="rb a-good" data-val="good" onclick="setRat(this,'good')">Good</button>
+              <button type="button" class="rb" data-val="fair" onclick="setRat(this,'fair')">Fair</button>
+              <button type="button" class="rb" data-val="poor" onclick="setRat(this,'poor')">Poor</button>
+              <button type="button" class="rb" data-val="na"   onclick="setRat(this,'na')">N/A</button>
+            </div>
+            <input type="hidden" name="{{ field }}" value="good">
+          </div>
+          {% endfor %}
+
+          <div style="height:16px"></div>
+          <div class="mgrp-lbl">Brakes</div>
+          {% for field,label in brake_items %}
+          <div class="r-row">
+            <div class="r-label">{{ label }}</div>
+            <div class="r-btns">
+              <button type="button" class="rb a-good" data-val="good" onclick="setRat(this,'good')">Good</button>
+              <button type="button" class="rb" data-val="fair" onclick="setRat(this,'fair')">Fair</button>
+              <button type="button" class="rb" data-val="poor" onclick="setRat(this,'poor')">Poor</button>
+              <button type="button" class="rb" data-val="na"   onclick="setRat(this,'na')">N/A</button>
+            </div>
+            <input type="hidden" name="{{ field }}" value="good">
+          </div>
+          {% endfor %}
+
+          <div style="height:16px"></div>
+          <div class="mgrp-lbl">Electrical</div>
+          {% for field,label in electrical_items %}
+          <div class="r-row">
+            <div class="r-label">{{ label }}</div>
+            <div class="r-btns">
+              <button type="button" class="rb a-good" data-val="good" onclick="setRat(this,'good')">Good</button>
+              <button type="button" class="rb" data-val="fair" onclick="setRat(this,'fair')">Fair</button>
+              <button type="button" class="rb" data-val="poor" onclick="setRat(this,'poor')">Poor</button>
+              <button type="button" class="rb" data-val="na"   onclick="setRat(this,'na')">N/A</button>
+            </div>
+            <input type="hidden" name="{{ field }}" value="good">
+          </div>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SECTION 6: INSPECTION FINDINGS
+  ═══════════════════════════════════════ -->
+  <div class="sc" id="s-findings">
+    <div class="sc-hdr">
+      <div class="sc-title">Inspection Findings</div>
+    </div>
+    <div class="sc-body">
+
+      <div class="find2">
+
+        <!-- Customer Complaints (blue) -->
+        <div>
+          <div class="fbox">
+            <div class="fbox-hdr">
+              <span class="fbox-title">Customer Complaints</span>
+              <span class="f-cnt" id="cmp-cnt">0</span>
+            </div>
+            <div class="fbox-body">
+              <div class="f-inp-row">
+                <input class="f-inp" id="cmpInp"
+                  placeholder="e.g. AC not cooling"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addFinding('cmp')}">
+                <button type="button" class="f-add-c" onclick="addFinding('cmp')">+</button>
+              </div>
+              <div id="cmp-list"></div>
+              <div id="cmp-inputs"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Technician Findings (amber) -->
+        <div>
+          <div class="fbox">
+            <div class="fbox-hdr">
+              <span class="fbox-title">Technician Findings</span>
+              <span class="f-cnt" id="fnd-cnt">0</span>
+            </div>
+            <div class="fbox-body">
+              <div class="f-inp-row">
+                <input class="f-inp" id="fndInp"
+                  placeholder="e.g. Brake pad worn out"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addFinding('fnd')}">
+                <button type="button" class="f-add-t" onclick="addFinding('fnd')">+</button>
+              </div>
+              <div id="fnd-list"></div>
+              <div id="fnd-inputs"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Customer signature -->
+      <div class="sig-box">
+        <div class="sig-chk-row">
+          <input type="checkbox" name="customer_signed" id="sigChk"
+            {% if edit_mode and insp.customer_signed %}checked{% endif %}>
+          <label for="sigChk">Customer has viewed and agreed to this inspection report</label>
+        </div>
+        <label class="lbl" style="margin-bottom:5px">Acknowledgement Note</label>
+        <input type="text" name="customer_signature_note" class="fi"
+          placeholder="e.g. Customer agreed verbally — John, 03/07/2026"
+          value="{% if edit_mode %}{{ insp.customer_signature_note }}{% endif %}">
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════ SAVE BAR ══════════ -->
+  <div class="save-bar">
+    <div class="sb-note">
+      All sections are saved together ·
+      <span>{% if edit_mode %}{{ insp.inspection_number }}{% else %}{{ next_insp_no }}{% endif %}</span>
+    </div>
+    <button type="submit" class="btn-save-insp">💾 Save Inspection</button>
+  </div>
+
+  </form>
+</div>
+
+<script>
+const VEH_URL = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
+
+/* ── Tab scroll ─────────────────────────────────── */
+function scrollTo(id, btn) {
+  document.querySelectorAll('.ts-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateStatusPills(radio) {
+  document.querySelectorAll('.spill').forEach(p => p.classList.remove('active'));
+  if (radio && radio.closest('.spill')) {
+    radio.closest('.spill').classList.add('active');
+  }
+}
+
+/* ── Fuel gauge (5 segments matching screenshot) ── */
+function updateFuelGauge(val) {
+  const levels = { empty: 0, '1/4': 1, '1/2': 2, '3/4': 3, full: 5 };
+  const fill   = levels[val] ?? 2;
+  for (let i = 1; i <= 5; i++) {
+    const seg = document.getElementById('fs' + i);
+    if (seg) seg.classList.toggle('filled', i <= fill);
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const fs = document.getElementById('fuelSel');
+  if (fs) updateFuelGauge(fs.value);
+  updateAccCounts();
+
+  {% if edit_mode %}
+  // Load saved interior ratings
+  const savedInterior = {
+    dashboard: "{{ interior.dashboard|default:'good' }}",
+    seats: "{{ interior.seats|default:'good' }}",
+    steering_wheel: "{{ interior.steering_wheel|default:'good' }}",
+    ac_system: "{{ interior.ac_system|default:'good' }}",
+    audio_system: "{{ interior.audio_system|default:'good' }}",
+    windows: "{{ interior.windows|default:'good' }}",
+    seat_belts: "{{ interior.seat_belts|default:'good' }}",
+    floor_carpet: "{{ interior.floor_carpet|default:'good' }}",
+    headliner: "{{ interior.headliner|default:'good' }}",
+    door_panels: "{{ interior.door_panels|default:'good' }}"
+  };
+  Object.entries(savedInterior).forEach(([f, val]) => {
+    const input = document.querySelector(`input[name="${f}"]`);
+    if (input) {
+      input.value = val;
+      const g = input.previousElementSibling;
+      if (g) {
+        const btn = g.querySelector(`[data-val="${val}"]`);
+        if (btn) setRat(btn, val);
+      }
+    }
+  });
+
+  // Load saved mechanical ratings
+  const savedMechanical = {
+    oil_leak: "{{ mechanical.oil_leak|default:'good' }}",
+    coolant_leak: "{{ mechanical.coolant_leak|default:'good' }}",
+    abnormal_noise: "{{ mechanical.abnormal_noise|default:'good' }}",
+    brake_pad: "{{ mechanical.brake_pad|default:'good' }}",
+    brake_disc: "{{ mechanical.brake_disc|default:'good' }}",
+    shock_absorbers: "{{ mechanical.shock_absorbers|default:'good' }}",
+    bushes: "{{ mechanical.bushes|default:'good' }}",
+    battery: "{{ mechanical.battery|default:'good' }}",
+    starter: "{{ mechanical.starter|default:'good' }}",
+    lights: "{{ mechanical.lights|default:'good' }}",
+    tyre_fl: "{{ mechanical.tyre_fl|default:'good' }}",
+    tyre_fr: "{{ mechanical.tyre_fr|default:'good' }}",
+    tyre_rl: "{{ mechanical.tyre_rl|default:'good' }}",
+    tyre_rr: "{{ mechanical.tyre_rr|default:'good' }}",
+    tyre_spare: "{{ mechanical.tyre_spare|default:'good' }}",
+    brake_fluid: "{{ mechanical.brake_fluid|default:'good' }}",
+    steering_fluid: "{{ mechanical.steering_fluid|default:'good' }}",
+    washer_fluid: "{{ mechanical.washer_fluid|default:'good' }}",
+    exhaust_system: "{{ mechanical.exhaust_system|default:'good' }}"
+  };
+  Object.entries(savedMechanical).forEach(([f, val]) => {
+    const input = document.querySelector(`input[name="${f}"]`);
+    if (input) {
+      input.value = val;
+      const g = input.previousElementSibling;
+      if (g) {
+        const btn = g.querySelector(`[data-val="${val}"]`);
+        if (btn) setRat(btn, val);
+      }
+    }
+  });
+
+  // Load saved accessories
+  const savedAccessories = {
+    spare_wheel: "{{ accessories.spare_wheel|default:'available' }}",
+    tool_kit: "{{ accessories.tool_kit|default:'available' }}",
+    service_book: "{{ accessories.service_book|default:'available' }}",
+    remote_key: "{{ accessories.remote_key|default:'available' }}",
+    safety_triangle: "{{ accessories.safety_triangle|default:'available' }}",
+    floor_mat: "{{ accessories.floor_mat|default:'available' }}",
+    jack: "{{ accessories.jack|default:'available' }}",
+    fire_extinguisher: "{{ accessories.fire_extinguisher|default:'available' }}",
+    first_aid_kit: "{{ accessories.first_aid_kit|default:'available' }}"
+  };
+  Object.entries(savedAccessories).forEach(([f, val]) => {
+    const group = document.querySelector(`[data-acc="${f}"]`);
+    if (group) {
+      const btn = group.querySelector(`[data-val="${val}"]`);
+      if (btn) setAcc(f, btn, val);
+    }
+  });
+
+  // Load saved damages
+  const savedDamages = [
+    {% for d in insp.exterior_damages.all %}
+    { zone: "{{ d.zone }}", type: "{{ d.damage_type }}" },
+    {% endfor %}
+  ];
+  const idMap = {
+    front:'z-front', bonnet:'z-bonnet',
+    front_left:'z-fl', front_right:'z-fr',
+    roof:'z-roof', rear_left:'z-rl',
+    rear_right:'z-rr', boot:'z-boot', rear:'z-rear'
+  };
+  savedDamages.forEach(d => {
+    zones[d.zone] = d.type;
+    const el = document.getElementById(idMap[d.zone]);
+    if (el) el.className = 'cz ' + zoneClass[d.type];
+  });
+  renderMarked();
+  renderZoneInputs();
+
+  // Load saved complaints and findings
+  {% for c in complaints %}
+  fdata.cmp.push("{{ c.description|escapejs }}");
+  {% endfor %}
+  renderFindings('cmp');
+
+  {% for f in findings %}
+  fdata.fnd.push("{{ f.description|escapejs }}");
+  {% endfor %}
+  renderFindings('fnd');
+
+  {% endif %}
+});
+
+/* ── Load vehicles by customer ───────────────────── */
+function loadVehicles(cid) {
+  const sel = document.getElementById('vehicleSel');
+  sel.innerHTML = '<option value="">— Loading... —</option>';
+  if (!cid) { sel.innerHTML = '<option value="">— Select Vehicle —</option>'; return; }
+  fetch(VEH_URL + '?customer_id=' + cid)
+    .then(r => r.json())
+    .then(d => {
+      sel.innerHTML = '<option value="">— Select Vehicle —</option>';
+      d.vehicles.forEach(v => {
+        const o = new Option(v.label, v.id);
+        o.dataset.odo  = v.odometer || '';
+        o.dataset.fuel = v.fuel || '';
+        sel.add(o);
+      });
+    });
+}
+
+function onVehicleChange(sel) {
+  const o = sel.options[sel.selectedIndex];
+  if (!o) return;
+  if (o.dataset.odo)  document.getElementById('odoInp').value = o.dataset.odo;
+  if (o.dataset.fuel) {
+    const fs = document.getElementById('fuelSel');
+    [...fs.options].forEach(fo => fo.selected = fo.value === o.dataset.fuel);
+    updateFuelGauge(o.dataset.fuel);
+  }
+}
+
+/* ── Damage type selection ───────────────────────── */
+let dmgType = 'dent';
+const pillAct = {
+  dent: 'p-dent', scratch: 'p-scratch',
+  paint: 'p-paint', crack: 'p-crack', missing: 'p-missing'
+};
+const zoneClass = {
+  dent:'m-dent', scratch:'m-scratch',
+  paint:'m-paint', crack:'m-crack', missing:'m-missing'
+};
+const tagClass = {
+  dent:'mzt-dent', scratch:'mzt-scratch',
+  paint:'mzt-paint', crack:'mzt-crack', missing:'mzt-missing'
+};
+const zoneNames = {
+  front:'Front Bumper', bonnet:'Bonnet',
+  front_left:'Front Left', front_right:'Front Right',
+  roof:'Roof', door_left:'Door Panel',
+  rear_left:'Rear Left', rear_right:'Rear Right',
+  boot:'Boot/Trunk', rear:'Rear Bumper'
+};
+
+function selDmg(type, el) {
+  dmgType = type;
+  document.querySelectorAll('.pill').forEach(p => {
+    Object.values(pillAct).forEach(c => p.classList.remove(c));
+  });
+  el.classList.add(pillAct[type]);
+}
+
+/* ── Zone marking ────────────────────────────────── */
+const zones = {};
+
+function markZone(zone, label, el) {
+  if (zones[zone] === dmgType) {
+    delete zones[zone];
+    el.className = 'cz';
+  } else {
+    zones[zone] = dmgType;
+    el.className = 'cz ' + zoneClass[dmgType];
+  }
+  renderMarked();
+  renderZoneInputs();
+}
+
+function renderMarked() {
+  document.getElementById('markedList').innerHTML =
+    Object.entries(zones).map(([z, t]) =>
+      `<div class="mz-tag ${tagClass[t]}" onclick="removeZone('${z}')">
+         ${zoneNames[z] || z} — ${t.charAt(0).toUpperCase()+t.slice(1)} ✕
+       </div>`
+    ).join('');
+}
+
+function removeZone(zone) {
+  const idMap = {
+    front:'z-front', bonnet:'z-bonnet',
+    front_left:'z-fl', front_right:'z-fr',
+    roof:'z-roof', rear_left:'z-rl',
+    rear_right:'z-rr', boot:'z-boot', rear:'z-rear'
+  };
+  const el = document.getElementById(idMap[zone]);
+  if (el) el.className = 'cz';
+  delete zones[zone];
+  renderMarked();
+  renderZoneInputs();
+}
+
+function renderZoneInputs() {
+  document.getElementById('zoneInputs').innerHTML =
+    Object.entries(zones).map(([z, t]) =>
+      `<input type="hidden" name="damage_zone[]" value="${z}">
+       <input type="hidden" name="damage_type[]" value="${t}">`
+    ).join('');
+}
+
+function showView(v, btn) {
+  document.querySelectorAll('.vt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('topDiag').style.display  = v === 'top'  ? '' : 'none';
+  document.getElementById('sideDiag').style.display = v === 'side' ? '' : 'none';
+}
+
+/* ── Rating buttons ──────────────────────────────── */
+function setRat(btn, val) {
+  const g = btn.closest('.r-btns');
+  const h = g.nextElementSibling;
+  g.querySelectorAll('.rb').forEach(b =>
+    b.classList.remove('a-good','a-fair','a-poor','a-na'));
+  btn.classList.add('a-' + val);
+  if (h) h.value = val;
+}
+
+/* ── Accessories ─────────────────────────────────── */
+function setAcc(field, btn, val) {
+  btn.closest('.acc-btns').querySelectorAll('.ab')
+     .forEach(b => b.classList.remove('ab-av','ab-ms','ab-dm'));
+  btn.classList.add(val === 'available' ? 'ab-av' : val === 'missing' ? 'ab-ms' : 'ab-dm');
+  document.getElementById('ainp-' + field).value = val;
+  const dot = document.getElementById('adot-' + field);
+  if (dot) {
+    dot.className = 'adot ' +
+      (val === 'available' ? 'adg' : val === 'missing' ? 'adr' : 'ady');
+  }
+  updateAccCounts();
+}
+
+function updateAccCounts() {
+  let av = 0, ms = 0, dm = 0;
+  document.querySelectorAll('[id^="ainp-"]').forEach(i => {
+    if (i.value === 'available') av++;
+    else if (i.value === 'missing') ms++;
+    else dm++;
+  });
+  document.getElementById('cnt-av').textContent = av;
+  document.getElementById('cnt-ms').textContent = ms;
+  document.getElementById('cnt-dm').textContent = dm;
+}
+
+/* ── Findings ────────────────────────────────────── */
+const fdata = { cmp: [], fnd: [] };
+
+function addFinding(type) {
+  const inp = document.getElementById(type === 'cmp' ? 'cmpInp' : 'fndInp');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  fdata[type].push(txt);
+  inp.value = '';
+  renderFindings(type);
+}
+
+function removeFinding(type, idx) {
+  fdata[type].splice(idx, 1);
+  renderFindings(type);
+}
+
+function renderFindings(type) {
+  const listEl  = document.getElementById(type + '-list');
+  const inputEl = document.getElementById(type + '-inputs');
+  const cntEl   = document.getElementById(type + '-cnt');
+  cntEl.textContent = fdata[type].length;
+
+  listEl.innerHTML = fdata[type].map((f, i) => `
+    <div class="f-item">
+      <span class="${type === 'cmp' ? 'fn-c' : 'fn-t'}">${String(i+1).padStart(2,'0')}</span>
+      <span class="f-txt">${f}</span>
+      <button type="button" class="f-del" onclick="removeFinding('${type}',${i})">✕</button>
+    </div>`).join('');
+
+  const name = type === 'cmp' ? 'customer_complaints[]' : 'technician_findings[]';
+  inputEl.innerHTML = fdata[type].map(f =>
+    `<input type="hidden" name="${name}" value="${f}">`).join('');
+}
+
+/* ── Reset ───────────────────────────────────────── */
+function resetForm() {
+  if (!confirm('Reset all inspection data?')) return;
+  // ratings
+  document.querySelectorAll('.r-btns').forEach(g => {
+    g.querySelectorAll('.rb').forEach(b =>
+      b.classList.remove('a-good','a-fair','a-poor','a-na'));
+    g.querySelector('[data-val=good]').classList.add('a-good');
+    const h = g.nextElementSibling;
+    if (h) h.value = 'good';
+  });
+  // accessories
+  document.querySelectorAll('.acc-btns').forEach(g => {
+    g.querySelectorAll('.ab').forEach(b =>
+      b.classList.remove('ab-av','ab-ms','ab-dm'));
+    g.querySelector('[data-val=available]').classList.add('ab-av');
+  });
+  document.querySelectorAll('[id^="ainp-"]').forEach(i => i.value = 'available');
+  document.querySelectorAll('[id^="adot-"]').forEach(d => d.className = 'adot adg');
+  // zones
+  Object.keys(zones).forEach(k => delete zones[k]);
+  document.querySelectorAll('.cz').forEach(z => z.className = 'cz');
+  renderMarked(); renderZoneInputs();
+  // findings
+  fdata.cmp = []; fdata.fnd = [];
+  renderFindings('cmp'); renderFindings('fnd');
+  // fuel
+  document.getElementById('fuelSel').value = '1/2';
+  updateFuelGauge('1/2');
+  updateAccCounts();
+}
+</script>
+{% endblock %}

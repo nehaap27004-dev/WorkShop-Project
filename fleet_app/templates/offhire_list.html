@@ -1,0 +1,309 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load privilege_tags %}
+{% load i18n %}
+
+{% block content %}
+<style>
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .action-buttons {
+        white-space: nowrap;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 fw-bold text-primary">{% trans "OffHire Records" %}</h4>
+            
+            {% has_priv request.user 13 "can_add" as can_add_offhire %}
+            {% if can_add_offhire %}
+            <a href="{% url 'fleet_app:create_offhire' %}" class="btn btn-success btn-sm">
+                <i class="fas fa-plus"></i> {% trans "Create OffHire" %}
+            </a>
+            {% endif %}
+        </div>
+        
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle" id="offhireTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 5%">#</th>
+                            <th style="width: 10%">{% trans "Voucher No" %}</th>
+                            <th style="width: 10%">{% trans "Date" %}</th>
+                            <th style="width: 15%">{% trans "Delivery Contract" %}</th>
+                            <th style="width: 15%">{% trans "Customer" %}</th>
+                            <th style="width: 10%">{% trans "Vehicles" %}</th>
+                            <th style="width: 12%">{% trans "OffHire Date & Time" %}</th>
+                            <th style="width: 13%">{% trans "Remarks" %}</th>
+                            <th style="width: 10%">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if offhires %}
+                            {% for offhire in offhires %}
+                            <tr>
+                                <td class="text-center">{{ forloop.counter }}</td>
+                                <td>{{ offhire.voucher_no }}</td>
+                                <td>{{ offhire.date|date:"d-M-Y" }}</td>
+                                <td>
+                                    {{ offhire.delivery_contract.voucher_no }}
+                                    {% if offhire.delivery_contract.invoice_no %}
+                                        ({{ offhire.delivery_contract.invoice_no }})
+                                    {% endif %}
+                                </td>
+                                <td>{{ offhire.customer.ledger_name|default:"-" }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-info">
+                                        {{ offhire.details.count }} {% trans "vehicle(s)" %}
+                                    </span>
+                                </td>
+                                <td>{{ offhire.offhire_date_time|date:"d-M-Y H:i" }}</td>
+                                <td>{{ offhire.remarks|truncatewords:5|default:"-" }}</td>
+                                <td class="text-center action-buttons">
+                                    {% has_priv request.user 13 "can_edit" as can_edit_offhire %}
+                                    {% if can_edit_offhire %}
+                                    <a href="{% url 'fleet_app:edit_offhire' offhire.id %}" 
+                                       class="btn btn-sm btn-primary" 
+                                       title="{% trans 'Edit' %}">
+                                        Edit
+                                    </a>
+                                    {% endif %}
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    {% has_priv request.user 13 "can_delete" as can_delete_offhire %}
+                                    {% if can_delete_offhire %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger" 
+                                            onclick="deleteOffhire({{ offhire.id }}, '{{ offhire.voucher_no }}')"
+                                            title="{% trans 'Delete' %}">
+                                        Delete
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">
+                                    {% trans "No offhire records found" %}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans "OffHire Details" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalDetailsContent">
+                {% trans "Loading..." %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize DataTable
+    $(document).ready(function() {
+        $('#offhireTable').DataTable({
+            "order": [[2, "desc"]], // Sort by date descending
+            "pageLength": 25,
+            "language": {
+                "search": "{% trans 'Search' %}:",
+                "lengthMenu": "{% trans 'Show' %} _MENU_ {% trans 'entries' %}",
+                "info": "{% trans 'Showing' %} _START_ {% trans 'to' %} _END_ {% trans 'of' %} _TOTAL_ {% trans 'entries' %}",
+                "paginate": {
+                    "first": "{% trans 'First' %}",
+                    "last": "{% trans 'Last' %}",
+                    "next": "{% trans 'Next' %}",
+                    "previous": "{% trans 'Previous' %}"
+                }
+            }
+        });
+    });
+    
+    function viewDetails(offhireId) {
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+        modal.show();
+        
+        // Fetch details via AJAX
+        fetch(`/get-offhire-details/?offhire_id=${offhireId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let html = '<div class="table-responsive"><table class="table table-bordered table-sm">';
+                    html += '<thead class="table-light">';
+                    html += '<tr>';
+                    html += '<th>#</th>';
+                    html += '<th>{% trans "Vehicle" %}</th>';
+                    html += '<th>{% trans "Location" %}</th>';
+                    html += '<th>{% trans "Period" %}</th>';
+                    html += '<th>{% trans "Qty" %}</th>';
+                    html += '<th>{% trans "Rate" %}</th>';
+                    html += '<th>{% trans "Amount" %}</th>';
+                    html += '<th>{% trans "Meter" %}</th>';
+                    html += '<th>{% trans "Fuel" %}</th>';
+                    html += '<th>{% trans "Condition" %}</th>';
+                    html += '</tr>';
+                    html += '</thead><tbody>';
+                    
+                    data.details.forEach((detail, index) => {
+                        html += '<tr>';
+                        html += `<td>${index + 1}</td>`;
+                        html += `<td>${detail.vehicle_name}</td>`;
+                        html += `<td>${detail.location}</td>`;
+                        html += `<td>${detail.period || '-'}</td>`;
+                        html += `<td class="text-end">${detail.quantity || '-'}</td>`;
+                        html += `<td class="text-end">${detail.unit_rate ? parseFloat(detail.unit_rate).toFixed(3) : '-'}</td>`;
+                        html += `<td class="text-end">${parseFloat(detail.total_amount).toFixed(3)}</td>`;
+                        html += `<td class="text-end">${detail.meter_reading ? parseFloat(detail.meter_reading).toFixed(2) : '-'}</td>`;
+                        html += `<td>${detail.fuel_level || '-'}</td>`;
+                        html += `<td>${detail.vehicle_condition || '-'}</td>`;
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table></div>';
+                    document.getElementById('modalDetailsContent').innerHTML = html;
+                } else {
+                    document.getElementById('modalDetailsContent').innerHTML = 
+                        '<div class="alert alert-danger">' + data.message + '</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('modalDetailsContent').innerHTML = 
+                    '<div class="alert alert-danger">{% trans "Error loading details" %}</div>';
+            });
+    }
+    
+    function deleteOffhire(offhireId, voucherNo) {
+        if (confirm(`Are you sure you want to delete OffHire "${voucherNo}"?\n\nThis will restore the vehicles back to "Hired" status.`)) {
+            
+            window.pendingDeleteUrl = `/offhire/delete/${offhireId}/`;
+            
+            $.ajax({
+                url: window.pendingDeleteUrl,
+                type: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    if (response.admin_required) {
+                        $("#admin_error").text(response.message || "");
+                        $("#adminOverrideModal").modal("show");
+                        return;
+                    }
+                    
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Error deleting offhire');
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                        $("#admin_error").text(xhr.responseJSON.message || "");
+                        $("#adminOverrideModal").modal("show");
+                    } else {
+                        const errorMsg = xhr.responseJSON?.message || 'Error deleting offhire';
+                        alert(errorMsg);
+                    }
+                }
+            });
+        }
+    }
+</script>
+
+<!-- Admin Override Modal (should already exist in your base template) -->
+<!-- If not, add this: -->
+{% comment %}
+<div class="modal fade" id="adminOverrideModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Admin Override Required</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="admin_error" class="text-danger"></p>
+                <div class="form-group">
+                    <label>Admin Username:</label>
+                    <input type="text" id="admin_username" class="form-control">
+                </div>
+                <div class="form-group mt-2">
+                    <label>Admin Password:</label>
+                    <input type="password" id="admin_password" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="submitWithAdminOverride()">Authorize & Proceed</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function submitWithAdminOverride() {
+    const username = $("#admin_username").val();
+    const password = $("#admin_password").val();
+    
+    $.ajax({
+        url: window.pendingDeleteUrl,
+        type: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        data: {
+            admin_override: 'true',
+            admin_username: username,
+            admin_password: password
+        },
+        success: function(response) {
+            if (response.success) {
+                $("#adminOverrideModal").modal("hide");
+                alert(response.message);
+                location.reload();
+            } else {
+                alert(response.message || 'Admin override failed');
+            }
+        },
+        error: function(xhr) {
+            const errorMsg = xhr.responseJSON?.message || 'Error with admin override';
+            alert(errorMsg);
+        }
+    });
+}
+</script>
+{% endcomment %}
+
+{% endblock %}

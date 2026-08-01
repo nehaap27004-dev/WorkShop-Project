@@ -9,8 +9,12 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 import os
 from decimal import Decimal
-from accounts_app.models import BillClearance, Groups, LedgerCreation, LedgerPosting
-from fleet_app.models import Vouchers
+from accounts_app.models import BillClearance, Groups, LedgerCreation, LedgerPosting , PaymentMaster
+from fleet_app.models import Vouchers, VehicleProfitLoss, Vehicle
+from django.db import transaction
+from datetime import datetime, date
+from django.conf import settings
+
 
 
 def draw_header(canvas, doc, logo_path=None):
@@ -21,7 +25,7 @@ def draw_header(canvas, doc, logo_path=None):
     canvas.saveState()
     if logo_path and os.path.exists(logo_path):
         page_width, page_height = A4
-        header_height = 180
+        header_height = 100
         try:
             canvas.drawImage(
                 logo_path,
@@ -72,6 +76,10 @@ def draw_footer(canvas, doc, footer_func=None, footer_image_path=None, only_last
             message = "This is a Computer Generated Invoice"
         elif doc_type.lower() == "quotation":
             message = "This is a Computer Generated Quotation"
+        elif doc_type.lower() == "delivery_contract":
+            message = "This is a Computer Generated Delivery Contract"   
+        elif doc_type.lower() == "purchase_order":
+            message = "This is a Computer Generated Purchase Order"   
         else:
             message = "This is a Computer Generated Timesheet"
 
@@ -90,6 +98,8 @@ def draw_footer(canvas, doc, footer_func=None, footer_image_path=None, only_last
     canvas.restoreState()
 
 
+import copy
+
 def build_pdf(
     filename,
     story,
@@ -99,11 +109,9 @@ def build_pdf(
     footer_func=None,
     footer_on_last_page=False,
     footer_image_path=None,
-    doc_type="timesheet",  # ✅ Added parameter for document type
+    doc_type="timesheet",
 ):
-    """Reusable PDF builder with correct header/footer behavior and dynamic doc_type."""
-
-    # === Step 1: Create doc and frame for pre-pass ===
+    # === Step 1: Pre-pass to count total pages ===
     doc = BaseDocTemplate(filename, pagesize=A4)
 
     frame = Frame(
@@ -113,9 +121,6 @@ def build_pdf(
         doc.height - 3 * cm,
         id="normal",
     )
-
-    # === Step 2: Pre-pass to count total pages ===
-    temp_story = list(story)
 
     class PageCounterCanvas:
         def __init__(self):
@@ -126,12 +131,14 @@ def build_pdf(
 
     counter = PageCounterCanvas()
     doc.addPageTemplates([PageTemplate(id="count", frames=frame, onPage=counter)])
-    doc.build(temp_story)
+
+    # ✅ Deep copy so pre-pass doesn't corrupt the original story objects
+    doc.build(copy.deepcopy(story))
     total_pages = counter.page_count
 
-    # === Step 3: Actual PDF generation ===
+    # === Step 2: Actual PDF generation ===
     doc = BaseDocTemplate(filename, pagesize=A4)
-    doc._page_count = total_pages  # ✅ store total pages for footer logic
+    doc._page_count = total_pages
 
     frame = Frame(
         doc.leftMargin,
@@ -142,11 +149,9 @@ def build_pdf(
     )
 
     def on_page(canvas, doc):
-        # Header (only on first page)
         if include_header and logo_path and canvas.getPageNumber() == 1:
             draw_header(canvas, doc, logo_path)
 
-        # Footer (on all pages for image, and on last page for message)
         if include_footer:
             draw_footer(
                 canvas,
@@ -154,14 +159,16 @@ def build_pdf(
                 footer_func=footer_func,
                 only_last_page=footer_on_last_page,
                 footer_image_path=footer_image_path,
-                doc_type=doc_type,  # ✅ Pass document type dynamically
+                doc_type=doc_type,
             )
 
     template = PageTemplate(id="main", frames=frame, onPage=on_page)
     doc.addPageTemplates([template])
-    doc.build(story)
+    doc.build(story)  # ✅ Original story, untouched
 
     return filename
+
+
 
 def get_all_subgroup_ids(*group_ids):
 
@@ -189,28 +196,21 @@ def filter_voucher_types(form, allowed_ids):
     form.fields['voucherType'].queryset = Vouchers.objects.filter(id__in=allowed_ids)
     
 def create_ledger_postings_for_invoice(invoice):
-    """
-    Creates LedgerPosting entries for an Invoice.
-    - Debit: Customer ledger (invoice.customer)
-    - Credit: Invoice Ledger (LedgerCreation id=1001)
-    VoucherType id = 2
-    """
     try:
         # ✅ Ensure we have a proper Vouchers instance
         voucher_type = Vouchers.objects.get(pk=2)
 
         # ✅ Ledger for invoice posting (fixed one)
         invoice_ledger = LedgerCreation.objects.get(pk=1002)
-
-        # ✅ Customer ledger from invoice
-        customer_ledger = invoice.customer
+        # selected Cash and Bank Ledger
+        ledger = invoice.ledger
 
         # --- Debit Entry (Customer Ledger)
         LedgerPosting.objects.create(
             date=invoice.date,
             VoucherType=voucher_type,  # must be instance, not string
             VoucherNo=invoice.id,
-            ledger=customer_ledger,
+            ledger=ledger,
             debit=invoice.grand_total,
             credit=None,
         )
@@ -244,6 +244,8 @@ def create_ledger_postings_for_hire(fleet_hire):
         # ✅ LedgerCreation id=1001 (Hire Ledger)
         hire_ledger = LedgerCreation.objects.get(pk=1001)
 
+        ledger = fleet_hire.ledger
+
         # ✅ Supplier Ledger from hire
         supplier_ledger = fleet_hire.supplier
         
@@ -252,7 +254,7 @@ def create_ledger_postings_for_hire(fleet_hire):
             date=fleet_hire.date,
             VoucherType=voucher_type,
             VoucherNo=fleet_hire.id,
-            ledger=supplier_ledger,
+            ledger=ledger,
             debit=None,
             credit=fleet_hire.grand_total,
         )
@@ -285,7 +287,7 @@ def create_ledger_postings_for_receiptbillclr(receipt_master):
 
     🔹 VoucherType ID = 5 (Receipt Bill Clearance)
     🔹 Debit: Customer Ledger
-    🔹 Credit: Receipt Bill Clearance Ledger (LedgerCreation ID = 1006)
+    🔹 Credit: Receipt Bill Clearance Ledger (LedgerCreation ID = 1003)
     """
     try:
         # Ensure we have the correct voucher type
@@ -305,7 +307,7 @@ def create_ledger_postings_for_receiptbillclr(receipt_master):
             VoucherNo=receipt_master.id,
             ledger=ledger,
             debit=receipt_master.TotalAmount or Decimal('0.00'),
-            credit=None,
+            credit=Decimal('0.00'),
         )
 
         # ✅ Credit Entry (Receipt Bill Clearance Ledger)
@@ -314,7 +316,7 @@ def create_ledger_postings_for_receiptbillclr(receipt_master):
             VoucherType=voucher_type,
             VoucherNo=receipt_master.id,
             ledger=customer_ledger,
-            debit=None,
+            debit=Decimal('0.00'),
             credit=receipt_master.TotalAmount or Decimal('0.00'),
         )
 
@@ -326,6 +328,26 @@ def create_ledger_postings_for_receiptbillclr(receipt_master):
         print("LedgerCreation with ID 1002 (Receipt Bill Clearance Ledger) not found.")
     except Exception as e:
         print(f"Ledger posting failed for Receipt Bill Clearance #{receipt_master.id}: {e}")
+
+def delete_ledger_postings_for_receiptbillclr(receipt_master):
+    """
+    Delete LedgerPosting entries for Receipt Bill Clearance.
+    """
+
+    try:
+        voucher_type = Vouchers.objects.get(pk=5)
+
+        deleted_count, _ = LedgerPosting.objects.filter(
+            VoucherType=voucher_type,
+            VoucherNo=receipt_master.id
+        ).delete()
+
+        print(f"🗑️ Deleted {deleted_count} ledger posting(s) for Receipt Bill Clearance #{receipt_master.id}")
+
+    except Vouchers.DoesNotExist:
+        print("❌ VoucherType with ID 5 not found.")
+    except Exception as e:
+        print(f"❌ Failed to delete ledger postings for Receipt Bill Clearance #{receipt_master.id}: {e}")        
         
 def create_ledger_postings_for_paymentbillclr(payment_master):
     """
@@ -333,7 +355,7 @@ def create_ledger_postings_for_paymentbillclr(payment_master):
 
     🔹 VoucherType ID = 6 (payment Bill Clearance)
     🔹 Debit: Customer Ledger
-    🔹 Credit: payment Bill Clearance Ledger (LedgerCreation ID = 1007)
+    🔹 Credit: payment Bill Clearance Ledger (LedgerCreation ID = 1004)
     """
     try:
         # Ensure we have the correct voucher type
@@ -375,6 +397,25 @@ def create_ledger_postings_for_paymentbillclr(payment_master):
     except Exception as e:
         print(f"Ledger posting failed for payment Bill Clearance #{payment_master.id}: {e}")        
 
+def delete_ledger_postings_for_paymentbillclr(payment_master):
+    """
+    Delete LedgerPosting entries for Payment Bill Clearance.
+    """
+
+    try:
+        voucher_type = Vouchers.objects.get(pk=6)
+
+        deleted_count, _ = LedgerPosting.objects.filter(
+            VoucherType=voucher_type,
+            VoucherNo=payment_master.id
+        ).delete()
+
+        print(f"🗑️ Deleted {deleted_count} ledger posting(s) for Payment Bill Clearance #{payment_master.id}")
+
+    except Vouchers.DoesNotExist:
+        print("❌ VoucherType with ID 6 not found.")
+    except Exception as e:
+        print(f"❌ Failed to delete ledger postings for Payment Bill Clearance #{payment_master.id}: {e}")
 
 def create_ledger_postings_for_payment(payment_master):
     """
@@ -420,38 +461,112 @@ def create_ledger_postings_for_payment(payment_master):
         print(f"❌ Ledger posting failed for Payment #{payment_master.id}: {e}")
         
 def create_ledger_postings_for_receipt(receipt_master):
-    
+    """
+    Creates ledger postings for a Receipt voucher
+    """
     try:
-        voucher_type = Vouchers.objects.get(pk=4)
+        voucher_type = Vouchers.objects.get(pk=4)  # Receipt
 
-        # -------- MASTER CREDIT ENTRY --------
+        # 🔹 MASTER ENTRY (Cash / Bank - Debit)
         LedgerPosting.objects.create(
             date=receipt_master.Date,
             VoucherType=voucher_type,
-            VoucherNo=receipt_master.id,          # <-- Master VoucherNo
-            ledger=receipt_master.Ledger,         # <-- Ledger selected in PaymentMaster
-            debit=receipt_master.TotalAmount or Decimal('0.00'),
+            VoucherNo=receipt_master.id,     # ✅ ALWAYS master id
+            ledger=receipt_master.Ledger,
+            debit=receipt_master.TotalAmount or Decimal("0.00"),
             credit=None,
-            
         )
 
-        # -------- DETAIL DEBIT ENTRIES --------
+        # 🔹 DETAIL ENTRIES (Income / Expense - Credit)
         for det in receipt_master.details.all():
             LedgerPosting.objects.create(
                 date=receipt_master.Date,
                 VoucherType=voucher_type,
-                VoucherNo=det.id,                 # <-- detail row voucher ref
-                ledger=det.Ledger,                # <-- ledger from PaymentDetails
+                VoucherNo=receipt_master.id,  # ✅ SAME VoucherNo
+                ledger=det.Ledger,
                 debit=None,
-                credit=det.Amount or Decimal('0.00'),
-                
+                credit=det.Amount or Decimal("0.00"),
             )
 
-        print(f"Ledger postings created for Payment #{receipt_master.id}")
+        print(f"✅ Ledger postings created for Receipt #{receipt_master.id}")
 
     except Exception as e:
-        print(f"❌ Ledger posting failed for Payment #{receipt_master.id}: {e}")  
+        print(f"❌ Ledger posting failed for Receipt #{receipt_master.id}: {e}")
+        raise
 
+def delete_ledger_postings_for_receipt(receipt_master):
+    """
+    Delete all LedgerPosting entries related to a Receipt voucher.
+    VoucherType ID = 4
+    VoucherNo = receipt_master.id
+    """
+    try:
+        deleted_count, _ = LedgerPosting.objects.filter(
+            VoucherType_id=4,
+            VoucherNo=receipt_master.id
+        ).delete()
+
+        print(f"🗑️ Deleted {deleted_count} ledger postings for Receipt #{receipt_master.id}")
+
+    except Exception as e:
+        print(f"❌ Failed to delete ledger postings for Receipt #{receipt_master.id}: {e}")
+        raise
+
+def create_ledger_postings_for_local_payment(local_payment):
+    """
+    Create LedgerPosting entries for Local Payment.
+
+    Rules:
+    - VoucherType = LocalPayment.voucherType (default = 11)
+    - MASTER ENTRY:
+        Credit payment_mode ledger with net_amount
+    - DETAIL ENTRIES:
+        Debit each LocalPaymentItems.ledger with item.amount
+    - Skip ledger posting if PDC and not cleared
+    """
+
+    try:
+        # ⛔ Skip ledger posting if PDC and not cleared
+        if local_payment.IsPDC and local_payment.Cleared != "Cleared":
+            print(f"⏸️ LocalPayment #{local_payment.id} skipped (PDC Not Cleared)")
+            return
+
+        voucher_type = local_payment.voucherType
+
+        # -------- MASTER CREDIT ENTRY --------
+        LedgerPosting.objects.create(
+            date=local_payment.date,
+            VoucherType=voucher_type,
+            VoucherNo=local_payment.id,                 # Master voucher reference
+            ledger=local_payment.payment_mode,          # Cash / Bank / Cheque ledger
+            debit=None,
+            credit=local_payment.net_amount or Decimal('0.00'),
+            RefVoucherNo=None,
+            RefVoucherType=None,
+            FY=local_payment.date.year,
+            IsDeleted=False,
+        )
+
+        # -------- DETAIL DEBIT ENTRIES --------
+        for item in local_payment.items.all():
+            LedgerPosting.objects.create(
+                date=local_payment.date,
+                VoucherType=voucher_type,
+                VoucherNo=item.id,                       # Detail row reference
+                ledger=item.ledger,                      # Expense / Party ledger
+                debit=item.amount or Decimal('0.00'),
+                credit=None,
+                RefVoucherNo=local_payment.id,
+                RefVoucherType=voucher_type,
+                FY=local_payment.date.year,
+                IsDeleted=False,
+            )
+
+        print(f"✅ Ledger postings created for Local Payment #{local_payment.id}")
+
+    except Exception as e:
+        print(f"❌ Ledger posting failed for Local Payment #{local_payment.id}: {e}")
+    
 
 def delete_ledger_postings_for_invoice(invoice):
     """
@@ -692,3 +807,269 @@ def create_bounce_charge_ledger_posting_paymentbill(payment_bill_master):
         print(f"❌ Bounce charge ledger posting failed for Payment Bill #{payment_bill_master.id}: {e}")
         import traceback
         traceback.print_exc()           
+
+
+
+
+
+
+def update_vehicle_profit_loss_for_invoice(invoice):
+    """
+    Create/Update VehicleProfitLoss entries for an Invoice.
+    Income entries: Amount is positive (total_amount from InvoiceDetails)
+    """
+    with transaction.atomic():
+        # Delete old entries for this invoice
+        VehicleProfitLoss.objects.filter(
+            InvNo=f"INV-{invoice.voucher_no}"
+        ).delete()
+        
+        # Create new entries for each vehicle in invoice details
+        for detail in invoice.details.all():
+            vehicle = detail.vehicle
+            
+            VehicleProfitLoss.objects.create(
+                Vehicle=vehicle,
+                Date=invoice.date,
+                Details=f"Invoice #{invoice.voucher_no} - {detail.location}",
+                Amount=detail.total_amount,  # Positive (Income)
+                InvNo=f"INV-{invoice.voucher_no}",
+                InvAmount=invoice.grand_total,
+                Balance=0  # Will be calculated in recalculate_balance
+            )
+        
+        # Recalculate balances for all affected vehicles
+        affected_vehicles = set(detail.vehicle for detail in invoice.details.all())
+        for vehicle in affected_vehicles:
+            recalculate_vehicle_balance(vehicle)
+
+
+def update_vehicle_profit_loss_for_hire(fleet_hire):
+    """
+    Create/Update VehicleProfitLoss entries for FleetHire.
+    Expense entries: Amount is negative (rate_per_period * no_of_unit)
+    """
+    with transaction.atomic():
+        # Delete old entries for this hire
+        VehicleProfitLoss.objects.filter(
+            InvNo=f"HIRE-{fleet_hire.voucher_no}"
+        ).delete()
+        
+        # Create new entries for each vehicle in hire details
+        for detail in fleet_hire.details.all():
+            vehicle = detail.vehicle
+            expense_amount = detail.rate_per_period * detail.no_of_unit
+            
+            VehicleProfitLoss.objects.create(
+                Vehicle=vehicle,
+                Date=fleet_hire.date,
+                Details=f"Hire #{fleet_hire.voucher_no} - {detail.unit} ({detail.start_date} to {detail.end_date})",
+                Amount=-expense_amount,  # Negative (Expense)
+                InvNo=f"HIRE-{fleet_hire.voucher_no}",
+                InvAmount=fleet_hire.grand_total,
+                Balance=0  # Will be calculated in recalculate_balance
+            )
+        
+        # Recalculate balances for all affected vehicles
+        affected_vehicles = set(detail.vehicle for detail in fleet_hire.details.all())
+        for vehicle in affected_vehicles:
+            recalculate_vehicle_balance(vehicle)
+
+
+def update_vehicle_profit_loss_for_payment(payment_master):
+    """
+    Create/Update VehicleProfitLoss entries for PaymentMaster.
+    Only creates entries for payment details that have a Vehicle assigned.
+    Expense entries: Amount is negative
+    """
+    with transaction.atomic():
+        # Delete old entries for this payment
+        VehicleProfitLoss.objects.filter(
+            InvNo=f"PAY-{payment_master.voucher_no}"
+        ).delete()
+        
+        # Create new entries only for details with vehicles
+        affected_vehicles = set()
+        for detail in payment_master.details.all():
+            if detail.Vehicle:  # Only process if vehicle is assigned
+                vehicle = detail.Vehicle
+                affected_vehicles.add(vehicle)
+                
+                desc = f"Payment #{payment_master.voucher_no} - {payment_master.PaidTo}"
+                if detail.Desc:
+                    desc += f" ({detail.Desc})"
+                
+                VehicleProfitLoss.objects.create(
+                    Vehicle=vehicle,
+                    Date=payment_master.Date,
+                    Details=desc,
+                    Amount=-detail.Amount,  # Negative (Expense)
+                    InvNo=f"PAY-{payment_master.voucher_no}",
+                    InvAmount=payment_master.TotalAmount,
+                    Balance=0  # Will be calculated in recalculate_balance
+                )
+        
+        # Recalculate balances for all affected vehicles
+        for vehicle in affected_vehicles:
+            recalculate_vehicle_balance(vehicle)
+
+
+def delete_vehicle_profit_loss_for_invoice(invoice):
+    """Delete VehicleProfitLoss entries when an invoice is deleted"""
+    with transaction.atomic():
+        affected_vehicles = set(detail.vehicle for detail in invoice.details.all())
+        
+        VehicleProfitLoss.objects.filter(
+            InvNo=f"INV-{invoice.voucher_no}"
+        ).delete()
+        
+        # Recalculate balances for affected vehicles
+        for vehicle in affected_vehicles:
+            recalculate_vehicle_balance(vehicle)
+
+
+def delete_vehicle_profit_loss_for_hire(fleet_hire):
+    """Delete VehicleProfitLoss entries when a hire is deleted"""
+    with transaction.atomic():
+        affected_vehicles = set(detail.vehicle for detail in fleet_hire.details.all())
+        
+        VehicleProfitLoss.objects.filter(
+            InvNo=f"HIRE-{fleet_hire.voucher_no}"
+        ).delete()
+        
+        # Recalculate balances for affected vehicles
+        for vehicle in affected_vehicles:
+            recalculate_vehicle_balance(vehicle)
+
+
+def delete_vehicle_profit_loss_for_payment(payment_master):
+    """Delete VehicleProfitLoss entries when a payment is deleted"""
+    with transaction.atomic():
+        affected_vehicles = set(
+            detail.Vehicle for detail in payment_master.details.all() 
+            if detail.Vehicle
+        )
+        
+        VehicleProfitLoss.objects.filter(
+            InvNo=f"PAY-{payment_master.voucher_no}"
+        ).delete()
+        
+        # Recalculate balances for affected vehicles
+        for vehicle in affected_vehicles:
+            recalculate_vehicle_balance(vehicle)
+
+
+def recalculate_vehicle_balance(vehicle):
+    """
+    Recalculate running balance for all entries of a specific vehicle.
+    Orders by Date and ID, then updates Balance field with cumulative sum.
+    """
+    entries = VehicleProfitLoss.objects.filter(
+        Vehicle=vehicle
+    ).order_by('Date', 'id')
+    
+    running_balance = Decimal('0')
+    for entry in entries:
+        running_balance += entry.Amount
+        entry.Balance = running_balance
+        entry.save(update_fields=['Balance'])
+
+
+def get_vehicle_profit_loss_summary(vehicle, start_date=None, end_date=None):
+    """
+    Get profit/loss summary for a vehicle within date range.
+    Returns dict with income, expense, and profit.
+    """
+    queryset = VehicleProfitLoss.objects.filter(Vehicle=vehicle)
+    
+    if start_date:
+        queryset = queryset.filter(Date__gte=start_date)
+    if end_date:
+        queryset = queryset.filter(Date__lte=end_date)
+    
+    income = Decimal('0')
+    expense = Decimal('0')
+    
+    for entry in queryset:
+        if entry.Amount > 0:
+            income += entry.Amount
+        else:
+            expense += abs(entry.Amount)
+    
+    profit = income - expense
+    
+    return {
+        'vehicle': vehicle,
+        'income': income,
+        'expense': expense,
+        'profit': profit,
+        'profit_percentage': (profit / income * 100) if income > 0 else 0
+    }
+
+
+
+OPENING_VOUCHER_ID = 16
+OPENING_VOUCHER_NO = 0
+@transaction.atomic
+def handle_opening_balance_ledger_posting(ledger, action="create"):
+    """
+    Handles Opening Balance LedgerPosting
+    action: create | update | delete
+    """
+
+    # 🔹 Financial Year logic (adjust if FY stored elsewhere)
+    fy_year = date.today().year
+    fy_start_date = datetime.strptime(settings.FINYEAR, "%Y-%m-%d").date()
+
+
+    opening_voucher = Vouchers.objects.get(pk=OPENING_VOUCHER_ID)
+
+    posting = LedgerPosting.objects.filter(
+        ledger=ledger,
+        VoucherType=opening_voucher,
+        VoucherNo=OPENING_VOUCHER_NO,
+        IsDeleted=False
+    ).first()
+
+    # ================= DELETE =================
+    if action == "delete":
+        if posting:
+            posting.delete()
+        return
+
+    opening_amount = Decimal(str(ledger.opening_balance or 0))
+
+    # ❌ No opening balance → remove posting
+    if opening_amount <= 0 or not ledger.types:
+        if posting:
+            posting.delete()
+        return
+
+    debit = credit = None
+
+    if ledger.types == 'DR':
+        debit = opening_amount
+        credit = None
+    elif ledger.types == 'CR':
+        credit = opening_amount
+        debit = None
+
+    # 🔁 Update existing posting
+    if posting:
+        posting.date = fy_start_date
+        posting.debit = debit
+        posting.credit = credit
+        posting.FY = fy_year
+        posting.save()
+
+    # ➕ Create new posting
+    else:
+        LedgerPosting.objects.create(
+            date=fy_start_date,
+            VoucherType=opening_voucher,
+            VoucherNo=OPENING_VOUCHER_NO,
+            ledger=ledger,
+            debit=debit,
+            credit=credit,
+            FY=fy_year
+        )    

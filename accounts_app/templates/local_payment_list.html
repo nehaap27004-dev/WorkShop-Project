@@ -1,61 +1,27 @@
 {% extends 'fleet_base1.html' %}
+{% load privilege_tags %}
 
 {% block content %}
 <style>
-    
-    
+    h2 { text-align: center; color: #333; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #fff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+    thead tr { background-color: #4CAF50; color: #fff; }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { font-weight: bold; }
+    tbody tr:nth-child(even) { background-color: #f9f9f9; }
+    tbody tr:hover { background-color: #f1f1f1; }
 
-    h2 {
-        text-align: center;
-        color: #333;
-    }
-
-    /* Table styling */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 20px 0;
-        background-color: #fff;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    thead tr {
-        background-color: #4CAF50;
-        color: #fff;
-    }
-
-    th, td {
-        padding: 12px 15px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-    }
-
-    th {
-        font-weight: bold;
-    }
-
-    tbody tr:nth-child(even) {
-        background-color: #f9f9f9;
-    }
-
-    tbody tr:hover {
-        background-color: #f1f1f1;
-    }
-
-    /* Link styling */
-    a {
-        color: #4CAF50;
-        text-decoration: none;
-        
-    }
-
-    a:hover {
-        text-decoration: none;
-    }
+    /* Button Styles */
+    .btn { padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.9em; cursor: pointer; border: none; display: inline-block; }
+    .btn-warning { background-color: #ffc107; color: #000; margin-right: 5px; }
+    .btn-danger { background-color: #dc3545; color: #fff; }
+    .btn-danger:hover { background-color: #c82333; }
 </style>
-</head>
-<body>
+
 <h2>Voucher List</h2>
+
+{% csrf_token %}
+
 <table>
     <thead>
         <tr>
@@ -69,13 +35,26 @@
     </thead>
     <tbody>
         {% for payment in local_payments %}
-        <tr>
+        <tr id="row-{{ payment.id }}">
             <td>{{ payment.voucher_no }}</td>
             <td>{{ payment.date }}</td>
             <td>{{ payment.payment_mode }}</td>
             <td>{{ payment.party }}</td>
             <td>{{ payment.net_amount }}</td>
-            <td><a href="{% url 'accounts_app:local_payment_detail' payment.pk %}">View Details</a></td>
+            <td>
+                
+                <a href="{% url 'accounts_app:local_payment_edit' payment.id %}" 
+                class="btn btn-warning">
+                    Edit
+                </a>
+             
+                <button onclick="deleteLocalPayment({{ payment.id }}, '{{ payment.voucher_no }}')" 
+        class="btn btn-sm btn-danger">
+    Delete
+</button>
+
+
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -83,4 +62,55 @@
 
 <p><a href="{% url 'accounts_app:create_local_payment' %}">Create new Local Payment</a></p>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+function deleteLocalPayment(id, voucherNo) {
+    
+    if (!confirm(`Delete Local Payment ${voucherNo}?`)) {
+        return;
+    }
+
+    // ✅ STORE DELETE URL
+    window.pendingDeleteId = "{% url 'accounts_app:delete_local_payment' 0 %}".replace('/0/', `/${id}/`);
+
+    $.ajax({
+        url: window.pendingDeleteId,
+        type: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        dataType: 'json',
+
+        success: function (response) {
+            console.log("DELETE SUCCESS:", response);
+
+            if (response.admin_required) {
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+                location.reload();
+            } else {
+                alert(response.message || "Delete failed");
+            }
+        },
+
+        error: function (xhr) {
+            console.log("DELETE ERROR:", xhr.status, xhr.responseJSON);
+
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+            } else {
+                alert(xhr.responseJSON?.message || "Delete failed");
+            }
+        }
+    });
+}
+</script>
 {% endblock %}

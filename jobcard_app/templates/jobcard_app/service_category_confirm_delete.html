@@ -1,0 +1,101 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% block content %}
+<style>
+*{box-sizing:border-box}
+.wrap{max-width:520px;margin:40px auto;padding:0 4px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
+.card-hdr{background:#fef2f2;border-bottom:1px solid #fecaca;padding:14px 18px;display:flex;align-items:center;gap:8px}
+.card-hdr-icon{font-size:20px}
+.card-hdr-title{font-size:14px;font-weight:700;color:#b91c1c}
+.card-body{padding:22px}
+.warn-text{font-size:14px;color:#1e293b;line-height:1.7;margin-bottom:18px}
+.detail-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;margin-bottom:18px}
+.detail-row{display:flex;gap:12px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
+.detail-row:last-child{border-bottom:none}
+.dl{color:#64748b;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.5px;min-width:110px;margin-top:1px}
+.dv{color:#1e293b;font-weight:500}
+.badge-active  {background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px}
+.badge-inactive{background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px}
+.blocked-warn{background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:11px 14px;margin-bottom:16px;font-size:13px;color:#854d0e;display:flex;gap:8px;align-items:flex-start;line-height:1.6}
+.actions-row{display:flex;justify-content:flex-end;gap:10px}
+.btn-cancel{background:#f1f5f9;color:#64748b;border:1px solid #d1d5db;border-radius:7px;padding:9px 20px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn-cancel:hover{background:#e2e8f0}
+.btn-delete{background:#dc2626;color:#fff;border:none;border-radius:7px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-delete:hover{background:#b91c1c}
+</style>
+
+<div class="wrap">
+<div class="card">
+  <div class="card-hdr">
+    <span class="card-hdr-icon">🗑</span>
+    <span class="card-hdr-title">Delete Service Category</span>
+  </div>
+  <div class="card-body">
+    <p class="warn-text">
+      Are you sure you want to permanently delete
+      <strong>{{ cat.name }}</strong>?
+      This action cannot be undone.
+    </p>
+
+    <div class="detail-box">
+      <div class="detail-row">
+        <span class="dl">Name</span>
+        <span class="dv">{{ cat.name }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="dl">Status</span>
+        <span class="dv">
+          {% if cat.is_active %}
+            <span class="badge-active">Active</span>
+          {% else %}
+            <span class="badge-inactive">Inactive</span>
+          {% endif %}
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="dl">Description</span>
+        <span class="dv">{% if cat.description %}{{ cat.description }}{% else %}—{% endif %}</span>
+      </div>
+      <div class="detail-row">
+        <span class="dl">Services linked</span>
+        <span class="dv"
+          {% if cat.service_count > 0 %}style="color:#b91c1c;font-weight:700"{% endif %}>
+          {{ cat.service_count }}
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="dl">Created on</span>
+        <span class="dv">{{ cat.created_on|date:"d M Y, H:i" }}</span>
+      </div>
+    </div>
+
+    {% if cat.service_count > 0 %}
+    <div class="blocked-warn">
+      ⚠ <span>
+        <strong>Cannot delete</strong> — this category is linked to
+        <strong>{{ cat.service_count }} service(s)</strong>.
+        Please go to Service Master and remove or reassign
+        those services before deleting this category.
+      </span>
+    </div>
+    <div class="actions-row">
+      <a href="{% url 'jobcard_app:service_category_list' %}" class="btn-cancel">Go Back</a>
+    </div>
+
+    {% else %}
+    <div class="actions-row">
+      <a href="{% url 'jobcard_app:service_category_list' %}" class="btn-cancel">Cancel</a>
+      <form method="post" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="btn-delete">
+          🗑 Yes, Delete Permanently
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+</div>
+{% endblock %}

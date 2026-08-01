@@ -1,4 +1,5 @@
-{% extends 'item_base.html' %}
+{% extends 'fleet_base1.html' %}
+{% load i18n %}
 {% block content %}
 
 <style>
@@ -1927,36 +1928,45 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Get Next Voucher Number (for create mode only)
-{% if not is_edit %}
-function updateVoucherNumber() {
-    var select = document.getElementById('id_voucherType');
-    var input = document.getElementById('id_voucher_no');
-    
-    if (select && input && select.value) {
-        input.value = 'Loading...';
-        
-        fetch('/get-voucher-number/?voucher_type_id=' + select.value)
-            .then(response => response.json())
-            .then(data => {
-                input.value = data.voucher_number || 'Error';
-            })
-            .catch(error => {
-                input.value = 'Error';
-            });
-    }
-}
 
-// Auto-update voucher number on page load
-window.addEventListener('DOMContentLoaded', function() {
-    const voucherTypeSelect = document.getElementById('id_voucherType');
-    if (voucherTypeSelect) {
-        voucherTypeSelect.addEventListener('change', updateVoucherNumber);
-        updateVoucherNumber();
-    }
-});
-{% endif %}
 </script>
+<!-- Get Next Voucher_no -->
+{% if not is_edit_mode %}
+<script>
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
+
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = data.voucher_number;
+                    } else {
+                        input.value = "{% trans 'Error' %}";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching voucher number:', error);
+                    input.value = "{% trans 'Error' %}";
+                });
+        } else if (input) {
+            input.value = '';
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
 <script>
             document.addEventListener("DOMContentLoaded", function () {
                 const itemNameSelect = document.getElementById("id_item_name");

@@ -1,6 +1,7 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
-
+{% load i18n %}
+{% load privilege_tags %}
 {% block content %}
 <!-- Custom CSS -->
 <style>
@@ -53,19 +54,52 @@
     .alert {
         border-radius: 8px;
     }
+
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .form-check-inline {
+        margin-right: 20px;
+    }
+
+    .form-check-input {
+        width: auto !important;
+        margin-right: 5px;
+    }
+
+    .badge-hire {
+        background-color: #007bff;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+    .badge-opening {
+        background-color: #28a745;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
 </style>
 
 <div class="container mt-4 mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary mb-0">
-            {% if edit_mode %}Edit{% else %}Create{% endif %} Payment Bill Clearance
+            {% if edit_mode %}{% trans "Edit" %}{% else %}{% trans "Create" %}{% endif %} {% trans "Payment Bill Clearance" %}
         </h2>
+        {% has_priv request.user 12 "can_read" as can_read_paymentbill %}
+        {% if can_read_paymentbill %}
         <a href="{% url 'accounts_app:list_paymentbill' %}" class="btn btn-primary">
-            <i class="bi bi-list-ul"></i> View List
+            <i class="bi bi-list-ul"></i> {% trans "View List" %}
         </a>
+        {% endif %}
     </div>
-
-    
 
     <form method="POST" id="paymentForm" class="needs-validation">
         {% csrf_token %}
@@ -73,67 +107,103 @@
         <!-- Payment Information -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Payment Information</h5>
+                <h5 class="mb-0 fw-bold text-secondary">
+                    {% trans "Payment Information" %}
+                </h5>
             </div>
+
             <div class="card-body">
                 <div class="row g-3">
                     <!-- Row 1 -->
                     <div class="col-md-2">
-                        {{ master_form.Date.label_tag }}
+                        <label class="form-label">{% trans "Date" %}</label>
                         {{ master_form.Date }}
                     </div>
+
                     <div class="col-md-2">
-                        {{ master_form.Supplier.label_tag }}
+                        <label class="form-label">{% trans "Supplier" %}</label><span class="text-danger">*</span>
                         {{ master_form.Supplier }}
                     </div>
+
                     <div class="col-md-2">
-                        {{ master_form.Ledger.label_tag }}
+                        <label class="form-label">{% trans "Ledger" %}</label><span class="text-danger">*</span>
                         {{ master_form.Ledger }}
                     </div>
+
                     <div class="col-md-2">
-                        {{ master_form.Remark.label_tag }}
+                        <label class="form-label">{% trans "Remark" %}</label>
                         {{ master_form.Remark }}
                     </div>
+
                     <div class="col-md-2">
-                        {{ master_form.TrnNo.label_tag }}
+                        <label class="form-label">{% trans "TR No" %}</label>
                         {{ master_form.TrnNo }}
                     </div>
                     <div class="col-md-2">
-                        {{ master_form.ChequeNo.label_tag }}
+                        <label class="form-label">{% trans "PDC" %}</label>
+                        <div class="form-check mt-2">
+                            {{ master_form.IsPDC }}
+                            <label class="form-check-label ms-2" for="id_IsPDC">
+                                
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Cheque No" %}</label>
                         {{ master_form.ChequeNo }}
                     </div>
 
                     <!-- Row 2 -->
                     <div class="col-md-2">
-                        {{ master_form.ChequeDate.label_tag }}
+                        <label class="form-label">{% trans "Cheque Date" %}</label>
                         {{ master_form.ChequeDate }}
                     </div>
+
                     <div class="col-md-2">
-                        {{ master_form.ChequeStatus.label_tag }}
+                        <label class="form-label">{% trans "Cheque Status" %}</label>
                         {{ master_form.ChequeStatus }}
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Pending Purchase Bills -->
+        <!-- Filter Section -->
+        <div class="filter-section" id="filterSection" style="display: none;">
+            <label class="form-label fw-bold">{% trans "Filter by Type:" %}</label>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showHires" checked>
+                <label class="form-check-label" for="showHires">
+                    <span class="badge-hire">{% trans "Hires" %}</span>
+                </label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showOpenings" checked>
+                <label class="form-check-label" for="showOpenings">
+                    <span class="badge-opening">{% trans "Openings" %}</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Pending Purchase Bills & Openings -->
         <div class="card shadow-sm mb-4" id="hireTableContainer" style="display: none;">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Pending Purchase Bills</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Pending Purchase Bills & Openings" %}</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-bordered align-middle text-center" id="billTable">
                         <thead class="table-light">
                             <tr>
-                                <th>Supplier</th>
-                                <th>Bill Date</th>
-                                <th>Bill #</th>
-                                <th>Amount</th>
-                                <th>Amount Paid</th>
-                                <th>Payable Balance</th>
-                                <th>Amount (to pay)</th>
-                                <th>Balance</th>
+                                <th>{% trans "Type" %}</th>
+                                <th>{% trans "Supplier" %}</th>
+                                <th>{% trans "Date" %}</th>
+                                <th>{% trans "Voucher #" %}</th>
+                                <th>{% trans "Current Amount" %}</th>
+                                <th>{% trans "Amount Cleared" %}</th>
+                                <th>{% trans "Payable Balance" %}</th>
+                                <th>{% trans "Amount (to clear)" %}</th>
+                                <th>{% trans "Balance" %}</th>
                             </tr>
                         </thead>
                         <tbody id="hireTableBody"></tbody>
@@ -146,97 +216,208 @@
         <div id="formsetManagement"></div>
 
         <div class="text-end mt-4">
-            <button type="submit" class="btn btn-success px-4 py-2">Save</button>
+            <button type="submit" class="btn btn-success px-4 py-2">
+                {% if edit_mode %}
+                    <i class="bi bi-check-circle"></i> {% trans "Update" %}
+                {% else %}
+                    <i class="bi bi-save"></i> {% trans "Save" %}
+                {% endif %}
+            </button>
+            <a href="{% url 'accounts_app:list_paymentbill' %}" class="btn btn-secondary px-4 py-2">
+                <i class="bi bi-x-circle"></i> {% trans "Cancel" %}
+            </a>
         </div>
     </form>
 </div>
 
 <script>
+// Translation strings for JavaScript
+const translations = {
+    errorLoadingBills: "{% trans 'Error loading bills. Please try again.' %}",
+    amountExceedBalance: "{% trans 'Amount cannot exceed payable balance!' %}",
+    enterAmount: "{% trans 'Please enter at least one amount to clear.' %}"
+};
+
 $(document).ready(function() {
-    let hireData = [];
+    let allData = [];  // Combined hires and openings
+
+    console.log("Document ready - Payment Bill Clearance");
+
     {% if edit_mode and payment_bill_instance %}
+    // ✅ If in edit mode, load existing payment bill details
     var editMode = true;
     var existingDetails = [
         {% for detail in payment_bill_instance.paymentbilldetails_set.all %}
         {
-            hire_id: {{ detail.VoucherNo }},
+            voucher_no: {{ detail.VoucherNo }},
             voucher_type: {{ detail.voucherType.id }},
             current_amount: {{ detail.CurrentAmount }},
             amount: {{ detail.Amount }}
         }{% if not forloop.last %},{% endif %}
         {% endfor %}
     ];
+
+    // Fetch full data for existing details
+    if (existingDetails.length > 0) {
+        var supplierId = {{ payment_bill_instance.Supplier.id }};
+        $.ajax({
+            url: "{% url 'accounts_app:get_supplier_hires_and_openings' %}",
+            data: { supplier_id: supplierId },
+            success: function(response) {
+                // Combine hires and openings
+                allData = [...response.hires, ...response.openings];
+
+                // Merge existing amounts into data
+                allData.forEach(function(item) {
+                    var existingDetail = existingDetails.find(function(detail) {
+                        if (item.type === 'hire') {
+                            return detail.voucher_no === item.hire_id && detail.voucher_type === 1;
+                        } else {
+                            return detail.voucher_no === item.opening_id && detail.voucher_type === 12;
+                        }
+                    });
+                    if (existingDetail) {
+                        item.existing_amount = existingDetail.amount;
+                    } else {
+                        item.existing_amount = 0;
+                    }
+                });
+
+                renderData();
+                $("#hireTableContainer").show();
+                $("#filterSection").show();
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching data:", error);
+                alert(translations.errorLoadingBills);
+            }
+        });
+    }
     {% else %}
     var editMode = false;
-    var existingDetails = [];
     {% endif %}
 
-    $("#id_supplier").change(function() {
-        if (editMode) {
-            return; // Don't reload data if editing
-        }
+    // Log what Supplier field ID we're looking for
+    console.log("Looking for Supplier field...");
+    console.log("Field #id_Supplier exists:", $("#id_Supplier").length > 0);
+    console.log("Field #id_supplier exists:", $("#id_supplier").length > 0);
+    
+    // Try both variations of the field name
+    var supplierField = $("#id_Supplier").length > 0 ? $("#id_Supplier") : $("#id_supplier");
+    console.log("Using field:", supplierField.attr('id'));
+
+    supplierField.change(function() {
         var supplier_id = $(this).val();
+        console.log("Supplier changed:", supplier_id);
+        
         if (!supplier_id) {
             $("#hireTableContainer").hide();
+            $("#filterSection").hide();
             return;
         }
 
+        // Don't reload if in edit mode and we already have data
+        if (editMode && allData.length > 0) {
+            console.log("Edit mode - using existing data");
+            return;
+        }
+
+        console.log("Fetching hires and openings for supplier:", supplier_id);
+        
         $.ajax({
-            url: "{% url 'accounts_app:get_supplier_fleethires' %}",
+            url: "{% url 'accounts_app:get_supplier_hires_and_openings' %}",
             data: { supplier_id: supplier_id },
             success: function(response) {
-                hireData = response.hires;
-                renderHires();
-                $("#hireTableContainer").show();
+                console.log("AJAX Response:", response);
+                console.log("Hires:", response.hires);
+                console.log("Openings:", response.openings);
+                
+                // Combine hires and openings
+                allData = [...response.hires, ...response.openings];
+                console.log("Combined data:", allData);
+                
+                if (allData.length === 0) {
+                    alert("No pending hires or openings found for this supplier.");
+                    $("#hireTableContainer").hide();
+                    $("#filterSection").hide();
+                } else {
+                    renderData();
+                    $("#hireTableContainer").show();
+                    $("#filterSection").show();
+                }
             },
             error: function(xhr, status, error) {
-                console.error("Error fetching hires:", error);
-                alert("Error loading hire bills. Please try again.");
+                console.error("AJAX Error:", error);
+                console.error("Status:", status);
+                console.error("Response:", xhr.responseText);
+                alert(translations.errorLoadingBills);
             }
         });
     });
 
-    function renderHires() {
+    // Filter checkboxes
+    $("#showHires, #showOpenings").change(function() {
+        renderData();
+    });
+
+    function renderData() {
         var tbody = $("#hireTableBody");
         var formsetDiv = $("#formsetManagement");
-
+        
         tbody.empty();
         formsetDiv.empty();
 
+        // Apply filters
+        var showHires = $("#showHires").is(":checked");
+        var showOpenings = $("#showOpenings").is(":checked");
+        
+        var filteredData = allData.filter(function(item) {
+            if (item.type === 'hire' && !showHires) return false;
+            if (item.type === 'opening' && !showOpenings) return false;
+            return true;
+        });
+
         // Add formset management fields
         formsetDiv.append(`
-            <input type="hidden" name="form-TOTAL_FORMS" value="${hireData.length}">
+            <input type="hidden" name="form-TOTAL_FORMS" value="${filteredData.length}">
             <input type="hidden" name="form-INITIAL_FORMS" value="0">
             <input type="hidden" name="form-MIN_NUM_FORMS" value="0">
             <input type="hidden" name="form-MAX_NUM_FORMS" value="1000">
         `);
 
-        hireData.forEach(function(hire, index) {
-            // Check if this hire has existing data (for edit mode)
-            var existingDetail = existingDetails.find(function(detail) {
-                return detail.hire_id === hire.hire_id;
-            });
-            var existingAmount = existingDetail ? existingDetail.amount : 0;
+        filteredData.forEach(function(item, index) {
+            var isHire = item.type === 'hire';
+            var voucherTypeId = isHire ? 1 : 12;  // 1=Hire, 12=BillWiseOpening
+            var voucherNo = isHire ? item.hire_id : item.opening_id;
+            var typeBadge = isHire 
+                ? '<span class="badge-hire">Hire</span>' 
+                : '<span class="badge-opening">Opening</span>';
+            
+            // Use existing amount if available (edit mode), otherwise 0
+            var amountValue = item.existing_amount ? parseFloat(item.existing_amount).toFixed(2) : "0";
+            var balanceValue = parseFloat(item.payable_balance) - (item.existing_amount || 0);
 
             var row = `
-                <tr>
-                    <td>${hire.supplier}</td>
-                    <td>${hire.date}</td>
-                    <td>${hire.voucher_no}</td>
-                    <td class="text-end">${parseFloat(hire.grand_total).toFixed(2)}</td>
-                    <td class="text-end">${parseFloat(hire.amount_cleared).toFixed(2)}</td>
-                    <td class="text-end payable">${parseFloat(hire.payable_balance).toFixed(2)}</td>
+                <tr data-type="${item.type}">
+                    <td>${typeBadge}</td>
+                    <td>${item.supplier}</td>
+                    <td>${item.date}</td>
+                    <td>${item.voucher_no}</td>
+                    <td class="text-end">${parseFloat(item.grand_total).toFixed(2)}</td>
+                    <td class="text-end">${parseFloat(item.amount_cleared).toFixed(2)}</td>
+                    <td class="text-end payable">${parseFloat(item.payable_balance).toFixed(2)}</td>
                     <td>
-                        <input type="hidden" name="form-${index}-voucherType" value="6">
-                        <input type="hidden" name="form-${index}-VoucherNo" value="${hire.hire_id}">
+                        <input type="hidden" name="form-${index}-voucherType" value="${voucherTypeId}">
+                        <input type="hidden" name="form-${index}-VoucherNo" value="${voucherNo}">
+                        <input type="hidden" name="form-${index}-CurrentAmount" value="${parseFloat(item.grand_total).toFixed(2)}">
                         <input type="number" step="0.01" name="form-${index}-Amount"
                                class="form-control form-control-sm amount-input"
                                min="0"
-                               max="${hire.payable_balance}"
-                               data-max="${hire.payable_balance}"
-                               value="${existingAmount}">
+                               max="${item.payable_balance}"
+                               data-max="${item.payable_balance}"
+                               value="${amountValue}">
                     </td>
-                    <td class="text-end balance">${parseFloat(hire.payable_balance - existingAmount).toFixed(2)}</td>
+                    <td class="text-end balance">${balanceValue.toFixed(2)}</td>
                 </tr>`;
             tbody.append(row);
         });
@@ -249,7 +430,7 @@ $(document).ready(function() {
         var entered = parseFloat($(this).val()) || 0;
         
         if (entered > payable) {
-            alert("Amount cannot exceed payable balance!");
+            alert(translations.amountExceedBalance);
             $(this).val(payable.toFixed(2));
             entered = payable;
         }
@@ -270,36 +451,79 @@ $(document).ready(function() {
 
         if (!hasAmount) {
             e.preventDefault();
-            alert("Please enter at least one amount to clear.");
+            alert(translations.enterAmount);
             return false;
         }
     });
-
-    // Load existing data in edit mode
-    {% if edit_mode and payment_bill_instance %}
-    $.ajax({
-        url: "{% url 'accounts_app:get_supplier_fleethires' %}",
-        data: { supplier_id: {{ payment_bill_instance.Supplier.id }} },
-        success: function(response) {
-            hireData = response.hires;
-            // Merge existing amounts with hire data
-            hireData.forEach(function(hire) {
-                var existingDetail = existingDetails.find(function(detail) {
-                    return detail.hire_id === hire.hire_id;
-                });
-                if (existingDetail) {
-                    hire.existing_amount = existingDetail.amount;
-                }
-            });
-            renderHires();
-            $("#hireTableContainer").show();
-        },
-        error: function(xhr, status, error) {
-            console.error("Error loading hires in edit mode:", error);
-        }
-    });
-    {% endif %}
 });
 </script>
 
+<!-- Admin Override Script -->
+<script>
+$(document).on("submit", "#paymentForm", function (e) {
+    e.preventDefault();
+
+    console.log("PAYMENT BILL FORM SUBMIT");
+
+    window.pendingFormId = "paymentForm";
+    window.pendingFormAction = this.action || window.location.pathname;
+    window.afterSuccessRedirect = "{% url 'accounts_app:list_paymentbill' %}";
+
+    let formData = new FormData(this);
+
+    $.ajax({
+        url: window.pendingFormAction,
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+
+        success: function (response) {
+            console.log("PAYMENT BILL SUCCESS:", response);
+
+            if (response.admin_required) {
+                console.log("Admin required - showing modal");
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+                window.location.href = window.afterSuccessRedirect;
+            } else {
+                alert(response.message || "Operation failed");
+            }
+        },
+
+        error: function (xhr) {
+            console.log("PAYMENT BILL ERROR:", xhr.status, xhr.responseJSON);
+            console.log("Response Text:", xhr.responseText);
+
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                console.log("403 with admin_required - showing modal");
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (xhr.status === 400 && xhr.responseJSON) {
+                console.log("400 validation error");
+                alert(xhr.responseJSON?.message || "Validation error");
+                return;
+            }
+
+            if (xhr.status === 500) {
+                console.log("500 server error");
+                alert(xhr.responseJSON?.message || "Server error - check console");
+                return;
+            }
+
+            alert(xhr.responseJSON?.message || "Something went wrong");
+        }
+    });
+});
+</script>
 {% endblock %}

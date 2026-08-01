@@ -1,7 +1,8 @@
 from __future__ import annotations
 from accounts_app.models import *
-from item_master.models import *
-
+from django.db import models
+from item_master.models import PurchaseMaster, SalesMaster, PurchaseReturnMaster, SalesReturnMaster, Item, Stock, ItemAlterUnit, PurchaseDetail, SalesDetail, PurchaseReturnDetail, SalesReturnDetail
+from fleet_app.models import Vouchers
 import datetime, json
 from dataclasses import dataclass
 from decimal import Decimal
@@ -485,7 +486,7 @@ def create_ledger_postings_for_sale(sale):
     try:
         # --- Common Data ---
         transaction_date = sale.transaction_date
-        voucher_type = Vouchers.objects.get(id=2)  # Sales VoucherType
+        voucher_type = Vouchers.objects.get(id=14)  # Sales VoucherType
         voucher_no = sale.id
         cost_center = sale.cost_center
         fy = None  # future FK (optional)
@@ -563,64 +564,81 @@ def create_ledger_postings_for_sale(sale):
         
         
 #LedgerPosting for Purchase
+import traceback
+
 def create_ledger_postings_for_purchase(purchase):
-    """
-    Creates LedgerPosting entries for a given PurchaseMaster instance.
-    """
-    voucher_type = Vouchers.objects.get(id=1)  # 1 = Purchase Voucher
+    try:
+        print("DEBUG: Entered ledger posting function")
 
-    # ----- CREDIT ENTRY -----
-    # Credit Vendor/Supplier Ledger
-    LedgerPosting.objects.create(
-        date=purchase.transaction_date,
-        VoucherType=voucher_type,
-        VoucherNo=purchase.id,
-        ledger=purchase.ledger,
-        debit=None,
-        credit=purchase.grand_total_amount,
-        CostCenter=purchase.cost_center,
-        FY=None,
-        IsDeleted=False
-    )
+        print("DEBUG: Fetching Purchase voucher type...")
+        voucher_type = Vouchers.objects.get(id=13)
+        print("DEBUG: Voucher type found:", voucher_type)
 
-    # Credit Discount Received (if discount > 0)
-    if purchase.discount > 0:
+        print("DEBUG: Creating Supplier Credit entry...")
         LedgerPosting.objects.create(
             date=purchase.transaction_date,
             VoucherType=voucher_type,
             VoucherNo=purchase.id,
-            ledger=LedgerCreation.objects.get(id=20),  # Discount Received Ledger
+            ledger=purchase.ledger,
             debit=None,
-            credit=purchase.discount,
+            credit=purchase.grand_total_amount,
             CostCenter=purchase.cost_center,
             FY=None,
             IsDeleted=False
         )
 
-    # ----- DEBIT ENTRY -----
-    # Debit Purchase Ledger (id=6)
-    LedgerPosting.objects.create(
-        date=purchase.transaction_date,
-        VoucherType=voucher_type,
-        VoucherNo=purchase.id,
-        ledger=LedgerCreation.objects.get(id=6),  # Purchase Ledger
-        debit=purchase.total_net_value,
-        credit=None,
-        CostCenter=purchase.cost_center,
-        FY=None,
-        IsDeleted=False
-    )
+        print("DEBUG: Checking discount...")
+        if purchase.discount > 0:
+            print("DEBUG: Fetching Discount Ledger (id=20)...")
+            discount_ledger = LedgerCreation.objects.get(id=20)
 
-    # Debit Tax Refundable Ledger (id=3) if tax > 0
-    if purchase.total_tax_amount > 0:
+            LedgerPosting.objects.create(
+                date=purchase.transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=purchase.id,
+                ledger=discount_ledger,
+                debit=None,
+                credit=purchase.discount,
+                CostCenter=purchase.cost_center,
+                FY=None,
+                IsDeleted=False
+            )
+
+        print("DEBUG: Fetching Purchase Ledger (id=6)...")
+        purchase_ledger = LedgerCreation.objects.get(id=6)
+
         LedgerPosting.objects.create(
             date=purchase.transaction_date,
             VoucherType=voucher_type,
             VoucherNo=purchase.id,
-            ledger=LedgerCreation.objects.get(id=3),  # Tax Refundable Ledger
-            debit=purchase.total_tax_amount,
+            ledger=purchase_ledger,
+            debit=purchase.total_net_value,
             credit=None,
             CostCenter=purchase.cost_center,
             FY=None,
             IsDeleted=False
-        )        
+        )
+
+        print("DEBUG: Checking Tax...")
+        if purchase.total_tax_amount > 0:
+            print("DEBUG: Fetching Tax Ledger (id=3)...")
+            tax_ledger = LedgerCreation.objects.get(id=3)
+
+            LedgerPosting.objects.create(
+                date=purchase.transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=purchase.id,
+                ledger=tax_ledger,
+                debit=purchase.total_tax_amount,
+                credit=None,
+                CostCenter=purchase.cost_center,
+                FY=None,
+                IsDeleted=False
+            )
+
+        print("DEBUG: Ledger posting completed successfully")
+
+    except Exception as e:
+        print("ERROR OCCURRED:")
+        traceback.print_exc()
+        raise e

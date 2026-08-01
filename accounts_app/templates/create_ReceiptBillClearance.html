@@ -1,6 +1,7 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
-
+{% load i18n %}
+{% load privilege_tags %}
 {% block content %}
 <!-- Custom CSS -->
 <style>
@@ -53,26 +54,54 @@
     .alert {
         border-radius: 8px;
     }
+
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .form-check-inline {
+        margin-right: 20px;
+    }
+
+    .form-check-input {
+        width: auto !important;
+        margin-right: 5px;
+    }
+
+    .badge-invoice {
+        background-color: #007bff;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+    .badge-opening {
+        background-color: #28a745;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
 </style>
 
 <div class="container mt-4 mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary mb-0">
-            {% if edit_mode %}Edit{% else %}Create{% endif %} Receipt Bill Clearance
+            {% if edit_mode %}{% trans "Edit" %}{% else %}{% trans "Create" %}{% endif %} {% trans "Receipt Bill Clearance" %}
         </h2>
+        {% has_priv request.user 11 "can_read" as can_view_receiptbill %}
+        {% if can_view_receiptbill %}
         <a href="{% url 'accounts_app:list_receiptbill' %}" class="btn btn-primary">
-            <i class="bi bi-list-ul"></i> View List
+            <i class="bi bi-list-ul"></i> {% trans "View List" %}
         </a>
+        {% endif %}
     </div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
+    
     
     <form method="POST" id="receiptForm" class="needs-validation">
         {% csrf_token %}
@@ -80,67 +109,106 @@
         <!-- Receipt Information -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Receipt Information</h5>
+                <h5 class="mb-0 fw-bold text-secondary">
+                    {% trans "Receipt Information" %}
+                </h5>
             </div>
+
             <div class="card-body">
                 <div class="row g-3">
+
                     <!-- Row 1 -->
                     <div class="col-md-2">
-                        {{ master_form.Date.label_tag }}
+                        <label class="form-label">{% trans "Date" %}</label>
                         {{ master_form.Date }}
                     </div>
+
                     <div class="col-md-2">
-                        {{ master_form.Customer.label_tag }}
+                        <label class="form-label">{% trans "Client" %}</label><span class="text-danger">*</span>
                         {{ master_form.Customer }}
                     </div>
+
                     <div class="col-md-2">
-                        {{ master_form.Ledger.label_tag }}
+                        <label class="form-label">{% trans "Ledger" %}</label><span class="text-danger">*</span>
                         {{ master_form.Ledger }}
                     </div>
+
                     <div class="col-md-2">
-                        {{ master_form.Remark.label_tag }}
+                        <label class="form-label">{% trans "Remark" %}</label>
                         {{ master_form.Remark }}
                     </div>
+
                     <div class="col-md-2">
-                        {{ master_form.TrnNo.label_tag }}
+                        <label class="form-label">{% trans "TR No" %}</label>
                         {{ master_form.TrnNo }}
                     </div>
+
                     <div class="col-md-2">
-                        {{ master_form.ChequeNo.label_tag }}
+                        <label class="form-label">{% trans "PDC" %}</label>
+                        <div class="form-check mt-2">
+                            {{ master_form.IsPDC }}
+                            <label class="form-check-label ms-2" for="id_IsPDC">
+                                
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Cheque No" %}</label>
                         {{ master_form.ChequeNo }}
                     </div>
 
                     <!-- Row 2 -->
                     <div class="col-md-2">
-                        {{ master_form.ChequeDate.label_tag }}
+                        <label class="form-label">{% trans "Cheque Date" %}</label>
                         {{ master_form.ChequeDate }}
                     </div>
+
                     <div class="col-md-2">
-                        {{ master_form.ChequeStatus.label_tag }}
+                        <label class="form-label">{% trans "Cheque Status" %}</label>
                         {{ master_form.ChequeStatus }}
                     </div>
+
                 </div>
             </div>
         </div>
 
-        <!-- Pending Invoices -->
+        <!-- Filter Section -->
+        <div class="filter-section" id="filterSection" style="display: none;">
+            <label class="form-label fw-bold">{% trans "Filter by Type:" %}</label>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showInvoices" checked>
+                <label class="form-check-label" for="showInvoices">
+                    <span class="badge-invoice">{% trans "Invoices" %}</span>
+                </label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showOpenings" checked>
+                <label class="form-check-label" for="showOpenings">
+                    <span class="badge-opening">{% trans "Openings" %}</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Pending Invoices & Openings -->
         <div class="card shadow-sm mb-4" id="invoiceTableContainer" style="display: none;">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Pending Invoices</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Pending Invoices & Openings" %}</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-bordered align-middle text-center" id="invoiceTable">
                         <thead class="table-light">
                             <tr>
-                                <th>Customer</th>
-                                <th>Invoice Date</th>
-                                <th>Invoice #</th>
-                                <th>Current Amount</th>
-                                <th>Amount Cleared</th>
-                                <th>Receivable Balance</th>
-                                <th>Amount (to clear)</th>
-                                <th>Balance</th>
+                                <th>{% trans "Type" %}</th>
+                                <th>{% trans "Customer" %}</th>
+                                <th>{% trans "Date" %}</th>
+                                <th>{% trans "Voucher #" %}</th>
+                                <th>{% trans "Current Amount" %}</th>
+                                <th>{% trans "Amount Cleared" %}</th>
+                                <th>{% trans "Receivable Balance" %}</th>
+                                <th>{% trans "Amount (to clear)" %}</th>
+                                <th>{% trans "Balance" %}</th>
                             </tr>
                         </thead>
                         <tbody id="invoiceTableBody"></tbody>
@@ -154,18 +222,31 @@
 
         <div class="text-end mt-4">
             <button type="submit" class="btn btn-success px-4 py-2">
-                {% if edit_mode %}<i class="bi bi-check-circle"></i> Update{% else %}<i class="bi bi-save"></i> Save{% endif %}
+                {% if edit_mode %}
+                    <i class="bi bi-check-circle"></i> {% trans "Update" %}
+                {% else %}
+                    <i class="bi bi-save"></i> {% trans "Save" %}
+                {% endif %}
             </button>
             <a href="{% url 'accounts_app:list_receiptbill' %}" class="btn btn-secondary px-4 py-2">
-                <i class="bi bi-x-circle"></i> Cancel
+                <i class="bi bi-x-circle"></i> {% trans "Cancel" %}
             </a>
         </div>
     </form>
 </div>
 
 <script>
+// Translation strings for JavaScript
+const translations = {
+    errorLoadingInvoices: "{% trans 'Error loading invoices. Please try again.' %}",
+    amountExceedBalance: "{% trans 'Amount cannot exceed receivable balance!' %}",
+    enterAmount: "{% trans 'Please enter at least one amount to clear.' %}"
+};
+
 $(document).ready(function() {
-    let invoiceData = [];
+    let allData = [];  // Combined invoices and openings
+
+    console.log("Document ready - Receipt Bill Clearance");
 
     {% if edit_mode and receipt_bill_instance %}
     // ✅ If in edit mode, load existing receipt bill details
@@ -173,118 +254,204 @@ $(document).ready(function() {
     var existingDetails = [
         {% for detail in receipt_bill_instance.receiptbilldetails_set.all %}
         {
-            invoice_id: {{ detail.VoucherNo }},
+            voucher_no: {{ detail.VoucherNo }},
             voucher_type: {{ detail.voucherType.id }},
-            current_amount: {{ detail.CurrentAmount }},
-            amount: {{ detail.Amount }}
+            current_amount: parseFloat("{{ detail.CurrentAmount }}"),
+            amount: parseFloat("{{ detail.Amount }}")
         }{% if not forloop.last %},{% endif %}
         {% endfor %}
     ];
 
-    // Fetch full invoice data for existing details
+    console.log("=== EDIT MODE DEBUG ===");
+    console.log("Existing details from database:", existingDetails);
+
+    // Fetch full data for existing details
     if (existingDetails.length > 0) {
         var customerId = {{ receipt_bill_instance.Customer.id }};
+        console.log("Fetching data for customer ID:", customerId);
+        
         $.ajax({
-            url: "{% url 'accounts_app:get_customer_invoices' %}",
+            url: "{% url 'accounts_app:get_customer_invoices_and_openings' %}",
             data: { customer_id: customerId },
             success: function(response) {
-                invoiceData = response.invoices;
+                console.log("=== AJAX RESPONSE ===");
+                console.log("Invoices from API:", response.invoices);
+                console.log("Openings from API:", response.openings);
+                
+                // Combine invoices and openings
+                allData = [...response.invoices, ...response.openings];
+                console.log("Combined data count:", allData.length);
 
-                // Merge existing amounts into invoice data
-                invoiceData.forEach(function(inv) {
+                // Merge existing amounts into data
+                allData.forEach(function(item) {
+                    console.log("\n--- Checking item ---");
+                    console.log("Type:", item.type);
+                    console.log("Item ID:", item.type === 'invoice' ? item.invoice_id : item.opening_id);
+                    console.log("Voucher No:", item.voucher_no);
+                    
                     var existingDetail = existingDetails.find(function(detail) {
-                        return detail.invoice_id === inv.invoice_id;
+                        console.log("  Comparing with detail - VoucherNo:", detail.voucher_no, "Type:", detail.voucher_type);
+                        
+                        if (item.type === 'invoice') {
+                            var match = detail.voucher_no === item.invoice_id && detail.voucher_type === 2;
+                            console.log("  Invoice match:", match);
+                            return match;
+                        } else {
+                            var match = detail.voucher_no === item.opening_id && detail.voucher_type === 12;
+                            console.log("  Opening match:", match, "(checking voucher_no:", detail.voucher_no, "=== opening_id:", item.opening_id, "AND voucher_type:", detail.voucher_type, "=== 12)");
+                            return match;
+                        }
                     });
+                    
                     if (existingDetail) {
-                        inv.existing_amount = existingDetail.amount;
+                        console.log("✅ MATCH FOUND! Amount:", existingDetail.amount);
+                        item.existing_amount = existingDetail.amount;
                     } else {
-                        inv.existing_amount = 0;
+                        console.log("❌ NO MATCH - setting to 0");
+                        item.existing_amount = 0;
                     }
                 });
 
-                renderInvoices();
+                console.log("\n=== FINAL MERGED DATA ===");
+                console.log(allData);
+                
+                renderData();
                 $("#invoiceTableContainer").show();
+                $("#filterSection").show();
             },
             error: function(xhr, status, error) {
-                console.error("Error fetching invoices:", error);
-                alert("Error loading invoices. Please try again.");
+                console.error("Error fetching data:", error);
+                alert(translations.errorLoadingInvoices);
             }
         });
     }
     {% else %}
     var editMode = false;
+    console.log("Create mode - no existing details");
     {% endif %}
 
-    $("#id_customer").change(function() {
+    // Customer field change handler
+    var customerField = $("#id_Customer").length > 0 ? $("#id_Customer") : $("#id_customer");
+    console.log("Using customer field:", customerField.attr('id'));
+
+    customerField.change(function() {
         var customer_id = $(this).val();
+        console.log("Customer changed:", customer_id);
+        
         if (!customer_id) {
             $("#invoiceTableContainer").hide();
+            $("#filterSection").hide();
             return;
         }
 
         // Don't reload if in edit mode and we already have data
-        if (editMode && invoiceData.length > 0) {
+        if (editMode && allData.length > 0) {
+            console.log("Edit mode - using existing data");
             return;
         }
 
+        console.log("Fetching invoices and openings for customer:", customer_id);
+        
         $.ajax({
-            url: "{% url 'accounts_app:get_customer_invoices' %}",
+            url: "{% url 'accounts_app:get_customer_invoices_and_openings' %}",
             data: { customer_id: customer_id },
             success: function(response) {
-                invoiceData = response.invoices;
-                renderInvoices();
-                $("#invoiceTableContainer").show();
+                console.log("AJAX Response:", response);
+                
+                // Combine invoices and openings
+                allData = [...response.invoices, ...response.openings];
+                console.log("Combined data:", allData);
+                
+                if (allData.length === 0) {
+                    alert("No pending invoices or openings found for this customer.");
+                    $("#invoiceTableContainer").hide();
+                    $("#filterSection").hide();
+                } else {
+                    renderData();
+                    $("#invoiceTableContainer").show();
+                    $("#filterSection").show();
+                }
             },
             error: function(xhr, status, error) {
-                console.error("Error fetching invoices:", error);
-                alert("Error loading invoices. Please try again.");
+                console.error("AJAX Error:", error);
+                alert(translations.errorLoadingInvoices);
             }
         });
     });
 
-    function renderInvoices() {
+    // Filter checkboxes
+    $("#showInvoices, #showOpenings").change(function() {
+        renderData();
+    });
+
+    function renderData() {
+        console.log("\n=== RENDER DATA START ===");
         var tbody = $("#invoiceTableBody");
         var formsetDiv = $("#formsetManagement");
         
         tbody.empty();
         formsetDiv.empty();
 
+        // Apply filters
+        var showInvoices = $("#showInvoices").is(":checked");
+        var showOpenings = $("#showOpenings").is(":checked");
+        
+        var filteredData = allData.filter(function(item) {
+            if (item.type === 'invoice' && !showInvoices) return false;
+            if (item.type === 'opening' && !showOpenings) return false;
+            return true;
+        });
+
+        console.log("Filtered data count:", filteredData.length);
+
         // Add formset management fields
         formsetDiv.append(`
-            <input type="hidden" name="form-TOTAL_FORMS" value="${invoiceData.length}">
+            <input type="hidden" name="form-TOTAL_FORMS" value="${filteredData.length}">
             <input type="hidden" name="form-INITIAL_FORMS" value="0">
             <input type="hidden" name="form-MIN_NUM_FORMS" value="0">
             <input type="hidden" name="form-MAX_NUM_FORMS" value="1000">
         `);
 
-        invoiceData.forEach(function(inv, index) {
+        filteredData.forEach(function(item, index) {
+            var isInvoice = item.type === 'invoice';
+            var voucherTypeId = isInvoice ? 2 : 12;  // 2=Invoice, 12=Opening
+            var voucherNo = isInvoice ? item.invoice_id : item.opening_id;
+            var typeBadge = isInvoice 
+                ? '<span class="badge-invoice">Invoice</span>' 
+                : '<span class="badge-opening">Opening</span>';
+            
             // Use existing amount if available (edit mode), otherwise 0
-            var amountValue = inv.existing_amount ? parseFloat(inv.existing_amount).toFixed(2) : "0";
-            var balanceValue = parseFloat(inv.receivable_balance) - (inv.existing_amount || 0);
+            var amountValue = item.existing_amount ? parseFloat(item.existing_amount).toFixed(2) : "0";
+            var balanceValue = parseFloat(item.receivable_balance) - (item.existing_amount || 0);
+
+            console.log(`Row ${index}: Type=${item.type}, VoucherNo=${voucherNo}, ExistingAmount=${item.existing_amount}, AmountValue=${amountValue}`);
 
             var row = `
-                <tr>
-                    <td>${inv.customer}</td>
-                    <td>${inv.date}</td>
-                    <td>${inv.voucher_no}</td>
-                    <td class="text-end">${parseFloat(inv.grand_total).toFixed(2)}</td>
-                    <td class="text-end">${parseFloat(inv.amount_cleared).toFixed(2)}</td>
-                    <td class="text-end receivable">${parseFloat(inv.receivable_balance).toFixed(2)}</td>
+                <tr data-type="${item.type}">
+                    <td>${typeBadge}</td>
+                    <td>${item.customer}</td>
+                    <td>${item.date}</td>
+                    <td>${item.voucher_no}</td>
+                    <td class="text-end">${parseFloat(item.grand_total).toFixed(2)}</td>
+                    <td class="text-end">${parseFloat(item.amount_cleared).toFixed(2)}</td>
+                    <td class="text-end receivable">${parseFloat(item.receivable_balance).toFixed(2)}</td>
                     <td>
-                        <input type="hidden" name="form-${index}-voucherType" value="5">
-                        <input type="hidden" name="form-${index}-VoucherNo" value="${inv.invoice_id}">
-                        <input type="hidden" name="form-${index}-CurrentAmount" value="${parseFloat(inv.grand_total).toFixed(2)}">
+                        <input type="hidden" name="form-${index}-voucherType" value="${voucherTypeId}">
+                        <input type="hidden" name="form-${index}-VoucherNo" value="${voucherNo}">
+                        <input type="hidden" name="form-${index}-CurrentAmount" value="${parseFloat(item.grand_total).toFixed(2)}">
                         <input type="number" step="0.01" name="form-${index}-Amount"
                                class="form-control form-control-sm amount-input"
                                min="0"
-                               max="${inv.receivable_balance}"
-                               data-max="${inv.receivable_balance}"
+                               max="${item.receivable_balance}"
+                               data-max="${item.receivable_balance}"
                                value="${amountValue}">
                     </td>
                     <td class="text-end balance">${balanceValue.toFixed(2)}</td>
                 </tr>`;
             tbody.append(row);
         });
+        
+        console.log("=== RENDER DATA END ===\n");
     }
 
     // Dynamic Balance calculation
@@ -294,7 +461,7 @@ $(document).ready(function() {
         var entered = parseFloat($(this).val()) || 0;
         
         if (entered > receivable) {
-            alert("Amount cannot exceed receivable balance!");
+            alert(translations.amountExceedBalance);
             $(this).val(receivable.toFixed(2));
             entered = receivable;
         }
@@ -315,8 +482,77 @@ $(document).ready(function() {
 
         if (!hasAmount) {
             e.preventDefault();
-            alert("Please enter at least one amount to clear.");
+            alert(translations.enterAmount);
             return false;
+        }
+    });
+});
+</script>
+
+<!-- Admin Override -->
+<script>
+$(document).on("submit", "#receiptForm", function (e) {
+    e.preventDefault();
+
+    console.log("RECEIPT BILL FORM SUBMIT");
+
+    window.pendingFormId = "receiptForm";
+    window.pendingFormAction = this.action;
+    window.afterSuccessRedirect = "{% url 'accounts_app:list_receiptbill' %}";
+
+    let formData = new FormData(this);
+
+    $.ajax({
+        url: window.pendingFormAction,
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+
+        success: function (response) {
+            console.log("RECEIPT BILL SUCCESS:", response);
+
+            if (response.admin_required) {
+                console.log("Admin required - showing modal");
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+                window.location.href = window.afterSuccessRedirect;
+            } else {
+                alert(response.message || "Operation failed");
+            }
+        },
+
+        error: function (xhr) {
+            console.log("RECEIPT BILL ERROR:", xhr.status, xhr.responseJSON);
+            console.log("Response Text:", xhr.responseText);
+
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                console.log("403 with admin_required - showing modal");
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (xhr.status === 400 && xhr.responseJSON) {
+                console.log("400 validation error");
+                alert(xhr.responseJSON?.message || "Validation error");
+                return;
+            }
+
+            if (xhr.status === 500) {
+                console.log("500 server error");
+                alert(xhr.responseJSON?.message || "Server error - check console");
+                return;
+            }
+
+            alert(xhr.responseJSON?.message || "Something went wrong");
         }
     });
 });

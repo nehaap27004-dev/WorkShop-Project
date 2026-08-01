@@ -1,5 +1,6 @@
 {% extends 'fleet_base1.html' %}
-{% block title %}Create Client{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Create Client" %}{% endblock %}
 
 {% block content %}
 <!-- Custom CSS -->
@@ -74,9 +75,9 @@
 <div class="container mt-4 mb-5">
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-primary">Create New Client</h2>
+        <h2 class="fw-bold text-primary">{% trans "Create New Client" %}</h2>
         {% if edit_mode %}
-            <a href="{% url 'accounts_app:manage_customers' %}" class="btn btn-secondary">Add New</a>
+            <a href="{% url 'accounts_app:manage_customers' %}" class="btn btn-secondary">{% trans "Add New" %}</a>
         {% endif %}
     </div>
 
@@ -93,11 +94,11 @@
     <!-- Add/Edit Form -->
     <form method="POST" class="needs-validation">
         {% csrf_token %}
-        
+
         <!-- Client Information -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Client Information</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Client Information" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -107,16 +108,16 @@
                         {{ form.ledger_name }}
                     </div>
                     <div class="col-md-2">
-                        {{ form.opening_balance.label_tag }}
-                        {{ form.opening_balance }}
-                    </div>
-                    <div class="col-md-2">
                         {{ form.remark.label_tag }}
                         {{ form.remark }}
                     </div>
                     <div class="col-md-2">
                         {{ form.trn_number.label_tag }}
                         {{ form.trn_number }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.cr_no.label_tag }}
+                        {{ form.cr_no }}
                     </div>
                     <div class="col-md-2">
                         {{ form.email.label_tag }}
@@ -165,9 +166,9 @@
 
         <div class="text-end mt-4">
             {% if edit_mode %}
-                <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">Update</button>
+                <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">{% trans "Update" %}</button>
             {% else %}
-                <button type="submit" class="btn btn-success px-4 py-2">Save</button>
+                <button type="submit" class="btn btn-success px-4 py-2">{% trans "Save" %}</button>
             {% endif %}
         </div>
     </form>
@@ -175,7 +176,7 @@
     <!-- Client List -->
     <div class="card shadow-sm mt-5">
         <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">Client List</h5>
+            <h5 class="mb-0 fw-bold text-secondary">{% trans "Client List" %}</h5>
         </div>
         <div class="card-body">
             {% if customers %}
@@ -184,13 +185,13 @@
                     <thead class="table-dark">
                         <tr>
                             <th>#</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Mobile</th>
-                            <th>City</th>
-                            <th>Country</th>
-                            <th>Opening Balance</th>
-                            <th>Actions</th>
+                            <th>{% trans "Name" %}</th>
+                            <th>{% trans "Email" %}</th>
+                            <th>{% trans "Mobile" %}</th>
+                            <th>{% trans "City" %}</th>
+                            <th>{% trans "Country" %}</th>
+                            <th>{% trans "Opening Balance" %}</th>
+                            <th>{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -204,11 +205,11 @@
                             <td>{{ customer.country|default:"-" }}</td>
                             <td>{{ customer.opening_balance }}</td>
                             <td>
-                                <a href="{% url 'accounts_app:edit_customer' customer.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                <a href="{% url 'accounts_app:edit_customer' customer.pk %}" class="btn btn-sm btn-primary">{% trans "Edit" %}</a>
                                 <form method="POST" style="display:inline;">
                                     {% csrf_token %}
                                     <input type="hidden" name="delete_id" value="{{ customer.id }}">
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this customer?');">Delete</button>
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('{% trans 'Delete this customer?' %}');">{% trans "Delete" %}</button>
                                 </form>
                             </td>
                         </tr>
@@ -217,7 +218,7 @@
                 </table>
             </div>
             {% else %}
-                <p class="text-muted text-center">No customers found.</p>
+                <p class="text-muted text-center">{% trans "No customers found." %}</p>
             {% endif %}
         </div>
     </div>

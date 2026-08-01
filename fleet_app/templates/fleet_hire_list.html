@@ -1,58 +1,117 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
 {% load privilege_tags %}
+{% load i18n %}
 
 {% block content %}
 
 <div class="container mt-4">
-  <h2>Fleet Hire List</h2>
-  <a href="{% url 'fleet_app:fleet_hire_create' %}" class="btn btn-success mb-3">Add New Fleet Hire</a>
+  <h2>{% trans "Fleet Hire List" %}</h2>
+
+  {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+  <a href="{% url 'fleet_app:fleet_hire_create' %}" class="btn btn-success mb-3">{% trans "Add New Fleet Hire" %}</a>
 
   <table class="table table-bordered table-striped">
     <thead>
       <tr>
-        <th>Voucher No</th>
-        <th>Supplier</th>
-        <th>Invoice No</th>
-        <th>Invoice Date</th>
-        <th>Grand Total</th>
-        <th>Action</th>
+        <th>{% trans "Voucher No" %}</th>
+        <th>{% trans "Supplier" %}</th>
+        <th>{% trans "Invoice No" %}</th>
+        <th>{% trans "Invoice Date" %}</th>
+        <th>{% trans "Grand Total" %}</th>
+        <th>{% trans "Payment" %}</th>
+        <th>{% trans "Cleared" %}</th>
+        <th>{% trans "Action" %}</th>
       </tr>
     </thead>
     <tbody>
       {% for hire in hires %}
-        <tr>
-          <td>{{ hire.voucher_no }}</td>
-          <td>{{ hire.supplier }}</td>
-          <td>{{ hire.invoice_no }}</td>
-          <td>{{ hire.invoice_date }}</td>
-          <td>{{ hire.grand_total }}</td>
-          <td>
-            {% has_priv request.user 6 "can_edit" as can_edit_hire %}
-            {% if can_edit_hire %}
-            <a href="{% url 'fleet_app:fleet_hire_edit' hire.id %}" 
-              class="btn btn-sm btn-warning">
-                <i class="fas fa-edit"></i> Edit
-            </a>
-            {% endif %}
+      <tr>
+        <td>{{ hire.voucher_no }}</td>
+        <td>{{ hire.supplier }}</td>
+        <td>{{ hire.invoice_no }}</td>
+        <td>{{ hire.invoice_date }}</td>
+        <td>{{ hire.grand_total }}</td>
+        <td>{{ hire.payment_mode }}</td>
+        <td>{{ hire.IsCleared }}</td>
+        <td>
+          
+          <a href="{% url 'fleet_app:fleet_hire_edit' hire.id %}" class="btn btn-sm btn-warning">
+            <i class="fas fa-edit"></i> {% trans "Edit" %}
+          </a>
+          
 
-            {% has_priv request.user 6 "can_delete" as can_delete_hire %}
-            {% if can_delete_hire %}
-            <button onclick="deleteHire({{ hire.id }}, '{{ hire.voucher_no }}')"
-                    class="btn btn-sm btn-danger">
-                Delete
-            </button>
-            {% endif %}
+          <button onclick="deleteHire({{ hire.id }}, '{{ hire.voucher_no }}')" 
+                  class="btn btn-sm btn-danger">
+              {% trans "Delete" %}
+          </button>
 
 
-          </td>
-        </tr>
+
+        </td>
+      </tr>
       {% empty %}
-        <tr>
-          <td colspan="6" class="text-center">No fleet hire records found.</td>
-        </tr>
+      <tr>
+        <td colspan="6" class="text-center">{% trans "No fleet hire records found." %}</td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+
+<script>
+function deleteHire(id, voucherNo) {
+
+    if (!confirm(`Delete Fleet Hire ${voucherNo}?`)) {
+        return;
+    }
+
+    // 🔐 REGISTER DELETE URL
+    window.pendingDeleteId = `/fleet-hire/delete/${id}/`;
+
+    $.ajax({
+        url: window.pendingDeleteId,
+        type: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "X-Requested-With": "XMLHttpRequest"
+        },
+
+        success: function (response) {
+
+            if (response.admin_required) {
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+                location.reload();
+            }
+        },
+
+        error: function (xhr) {
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+            } else {
+                alert("Error deleting fleet hire");
+            }
+        }
+    });
+}
+</script>
+
+
 {% endblock %}

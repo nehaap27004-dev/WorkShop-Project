@@ -1,0 +1,1410 @@
+{% extends 'fleet_base1.html' %}
+{% load custom_filters %}
+{% block content %}
+<style>
+*{box-sizing:border-box}
+body,input,select,textarea,button{font-family:'Segoe UI',system-ui,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:0 4px 100px}
+
+/* ── Page title (matches invoice pg-title/pg-meta) ── */
+.pg-title{font-size:18px;font-weight:700;color:#1e293b;margin-bottom:2px}
+.pg-meta{font-size:11px;color:#94a3b8;margin-bottom:16px;display:flex;align-items:center;gap:14px}
+.pg-meta span{display:flex;align-items:center;gap:4px}
+
+/* ── Section cards (matches .card) ── */
+.sec{background:#fff;border:1px solid #e8edf2;border-radius:10px;margin-bottom:12px;overflow:hidden}
+.sec-hdr{padding:11px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f4f8;flex-wrap:wrap;gap:8px}
+.sec-hdr-left{display:flex;align-items:center;gap:8px}
+.sec-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.si-blue  {background:#eff6ff}
+.si-purple{background:#faf5ff}
+.si-teal  {background:#f0fdfa}
+.si-orange{background:#fff7ed}
+.si-green {background:#f0fdf4}
+.sec-title{font-size:13px;font-weight:700;color:#1e293b;text-transform:none;letter-spacing:0}
+.sec-body{padding:16px}
+
+/* ── Fields (matches .fl / .fc) ── */
+.fl{display:block;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px}
+.req{color:#ef4444}
+.fi{width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:8px 11px;font-size:13px;color:#1e293b;background:#fff;outline:none;transition:border-color .15s;font-family:inherit}
+.fi:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.08)}
+.fi::placeholder{color:#cbd5e1}
+select.fi{cursor:pointer;color:#1e293b;background:#fff}
+select.fi option{color:#1e293b;background:#fff}
+textarea.fi{resize:vertical}
+.fi[readonly]{background:#f8fafc;color:#3b82f6;font-family:monospace;font-weight:700;cursor:not-allowed}
+
+/* ── Grids ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.mb{margin-bottom:12px}
+@media(max-width:768px){.g4,.g5,.g6{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.g2,.g3,.g4,.g5,.g6{grid-template-columns:1fr}}
+
+/* ── Tables (matches .inv-tbl) ── */
+.dn-tbl{width:100%;border-collapse:collapse}
+.dn-tbl thead tr{background:#f8fafc;border-bottom:1.5px solid #e8edf2}
+.dn-tbl thead th{padding:8px 8px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;text-align:left;white-space:nowrap}
+.dn-tbl thead th.num{text-align:right}
+.dn-tbl tbody td{padding:5px 5px;border-bottom:1px solid #f8fafc;vertical-align:middle}
+.dn-tbl tbody tr:last-child td{border-bottom:none}
+.dn-tbl tbody tr:hover{background:#fafbfd}
+.dn-tbl input,.dn-tbl select{width:100%;border:1px solid transparent;border-radius:5px;padding:6px 8px;font-size:12px;color:#1e293b;background:transparent;outline:none;font-family:inherit}
+.dn-tbl input:focus,.dn-tbl select:focus{border-color:#3b82f6;background:#fff;box-shadow:0 0 0 2px rgba(59,130,246,.08)}
+.dn-tbl input::placeholder{color:#cbd5e1}
+.dn-tbl tbody tr:hover input,.dn-tbl tbody tr:hover select{background:#fff;border-color:#e2e8f0}
+.dn-tbl input[readonly]{background:#f8fafc;color:#64748b}
+
+/* sl no col */
+.sl{width:24px;text-align:center;font-size:11px;color:#94a3b8;font-weight:600}
+
+/* status badge inside table */
+.status-sel{border:1px solid #e2e8f0;border-radius:5px;padding:6px 8px;font-size:12px;background:#fff;color:#1e293b;outline:none;cursor:pointer;font-family:inherit}
+.status-sel:focus{border-color:#3b82f6}
+
+/* remove button */
+.btn-rm{background:none;border:none;color:#d1d5db;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;display:flex;align-items:center;justify-content:center}
+.btn-rm:hover{color:#ef4444}
+
+/* add row button */
+.btn-add-row{background:#eff6ff;border:none;color:#2563eb;font-size:12px;font-weight:600;cursor:pointer;padding:7px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-family:inherit}
+.btn-add-row:hover{background:#dbeafe;color:#1d4ed8}
+
+/* subtotal row */
+.subtotal-row{display:flex;justify-content:flex-end;align-items:center;gap:16px;padding:8px 10px;background:#f8fafc;border-top:1px solid #e8edf2;font-size:12px;color:#64748b;border-radius:6px}
+.subtotal-row span{color:#1e293b;font-family:monospace;font-size:14px;font-weight:700}
+
+/* ── Vehicle condition ── */
+.cond-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+@media(max-width:600px){.cond-grid{grid-template-columns:1fr 1fr}}
+
+/* ── Checklist ── */
+.checklist{display:flex;flex-wrap:wrap;gap:10px}
+.chk-item{display:flex;align-items:center;gap:7px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 14px;cursor:pointer;transition:all .15s;min-width:140px}
+.chk-item:hover{background:#dcfce7}
+.chk-item input[type=checkbox]{width:16px;height:16px;accent-color:#16a34a;cursor:pointer;flex-shrink:0}
+.chk-item label{font-size:12px;font-weight:700;color:#15803d;cursor:pointer;user-select:none}
+.chk-item.checked{background:#dcfce7;border-color:#86efac}
+.chk-item.unchecked{background:#f8fafc;border-color:#e2e8f0}
+.chk-item.unchecked label{color:#94a3b8}
+
+/* ── Summary ── */
+.summary-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start}
+@media(max-width:700px){.summary-grid{grid-template-columns:1fr}}
+.summary-box{background:#fff;border:1px solid #e8edf2;border-radius:10px;overflow:hidden;padding:14px 16px}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px}
+.sum-lbl{color:#64748b}
+.sum-val{font-weight:600;color:#1e293b;font-family:monospace}
+.sum-row.grand{background:#2563eb;border-radius:8px;margin:10px 0;padding:13px 16px}
+.sum-row.grand .sum-lbl{color:rgba(255,255,255,.8);font-weight:700;font-size:12px}
+.sum-row.grand .sum-val{color:#fff;font-size:20px}
+.sum-row.balance{background:#fef9c3;border:1px solid #fde047;border-radius:8px;margin:0 0 4px;padding:11px 14px}
+.sum-row.balance .sum-lbl{color:#854d0e;font-weight:700;font-size:12px}
+.sum-row.balance .sum-val{color:#854d0e;font-size:16px}
+
+/* signature area */
+.sig-area{border:1px dashed #e2e8f0;border-radius:8px;height:80px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;margin-top:8px;background:#f8fafc;cursor:pointer}
+.sig-area:hover{border-color:#3b82f6;color:#3b82f6}
+
+/* ── Bottom bar ── */
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8edf2;padding:11px 20px;display:flex;justify-content:flex-end;gap:8px;z-index:200;box-shadow:0 -4px 12px rgba(0,0,0,.05)}
+.btn-print{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:7px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-print:hover{background:#e2e8f0}
+.btn-submit{background:#2563eb;color:#fff;border:none;border-radius:7px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+.btn-submit:hover{background:#1d4ed8}
+
+/* disclaimer */
+.disclaimer{font-size:11px;color:#94a3b8;padding:12px 0 4px;line-height:1.5}
+
+/* flash */
+.flash{padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px}
+.flash-ok {background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+.flash-err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
+</style>
+
+<div class="wrap">
+
+<!-- Page header -->
+<div class="pg-title">{% if edit_mode %}Edit Delivery Note — {{ dn.delivery_number }}{% else %}Create Delivery Note{% endif %}</div>
+
+
+{% if messages %}{% for m in messages %}
+<div class="flash {% if 'error' in m.tags %}flash-err{% else %}flash-ok{% endif %}">{{ m }}</div>
+{% endfor %}{% endif %}
+
+<form method="post" id="dnForm">{% csrf_token %}
+<!-- ── Load banner ── -->
+<div id="jcLoadBanner" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;
+     border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:13px;
+     color:#15803d;align-items:center;justify-content:space-between;gap:10px">
+  <span id="jcLoadBannerText"></span>
+  <button type="button" onclick="this.parentElement.style.display='none'"
+          style="background:none;border:none;color:#16a34a;cursor:pointer;font-size:14px">✕</button>
+</div>
+
+<!-- ── Load from Job Card / Quotation button ── -->
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;
+            padding:14px 16px;margin-bottom:14px;
+            display:flex;align-items:center;justify-content:space-between;
+            flex-wrap:wrap;gap:10px">
+  <div>
+    <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:2px">
+      Load from Job Card / Quotation
+    </div>
+    <div style="font-size:11px;color:#6b7280">
+    </div>
+  </div>
+  <div style="position:relative" id="dnJcPickerWrap">
+    <button type="button" onclick="toggleDnJcPicker()"
+            style="background:#2563eb;color:#fff;border:none;border-radius:6px;
+                   padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;
+                   display:inline-flergb(109, 111, 114)-items:center;gap:6px;white-space:nowrap">
+      📥 Load Document ▾
+    </button>
+
+    <!-- Picker panel -->
+    <div id="dnJcPickerPanel"
+         style="display:none;position:absolute;right:0;top:110%;
+                background:#fff;border:1.5px solid #2563eb;border-radius:8px;
+                min-width:440px;z-index:400;
+                box-shadow:0 8px 24px rgba(0,0,0,.13);overflow:hidden">
+
+      <div style="background:#eff6ff;padding:10px 14px;
+                  border-bottom:1px solid #bfdbfe;
+                  display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:700;color:#1d4ed8">
+           Select Job Card or Quotation to Load
+        </span>
+        <button type="button" onclick="closeDnJcPicker()"
+                style="background:none;border:none;color:#9ca3af;
+                       font-size:16px;cursor:pointer;line-height:1">✕</button>
+      </div>
+
+      <div id="dnJcNoCustomer"
+           style="padding:16px;font-size:12px;color:#9ca3af;text-align:center">
+        Please select a customer first
+      </div>
+      <div id="dnJcList"
+           style="max-height:380px;overflow-y:auto;display:none"></div>
+      <div id="dnJcEmpty"
+           style="display:none;padding:16px;font-size:12px;
+                  color:#9ca3af;text-align:center">
+        No job cards or quotations found for this customer / vehicle
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- hidden refs -->
+<input type="hidden" name="loaded_jobcard"   id="ldJC"  value="{% if edit_mode and dn.jobcard %}{{ dn.jobcard_id }}{% elif prefill_jc %}{{ prefill_jc.pk }}{% endif %}">
+<input type="hidden" name="loaded_quotation" id="ldQT"  value="{% if edit_mode and dn.quotation %}{{ dn.quotation_id }}{% elif prefill_quotation %}{{ prefill_quotation.pk }}{% endif %}">
+<input type="hidden" name="loaded_estimate"  id="ldEST" value="{% if edit_mode and dn.estimate %}{{ dn.estimate_id }}{% endif %}">
+
+<!-- ════════════════════════════════════
+     SECTION 1 — HEADER INFO
+════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-hdr">
+    <div class="sec-hdr-left">
+      
+      <span class="sec-title">Delivery Note Info</span>
+    </div>
+  </div>
+  <div class="sec-body">
+    <!-- Row 1: Document & Date Details -->
+    <div class="g4 mb">
+      <div>
+        <label class="fl">Delivery Note No.</label>
+        <input type="text" class="fi" readonly
+          value="{% if edit_mode %}{{ dn.delivery_number }}{% else %}Auto-Generated{% endif %}">
+      </div>
+      <div>
+        <label class="fl">Job Card / Ref No.</label>
+        <input type="text" class="fi" id="jcDisplay"
+          placeholder="JC-XXXXX or QT-XXXXX" 
+          value="{% if edit_mode and dn.jobcard %}{{ dn.jobcard.job_number }}{% elif edit_mode and dn.quotation %}{{ dn.quotation.quotation_number }}{% elif prefill_jc %}{{ prefill_jc.job_number }}{% elif prefill_quotation %}{{ prefill_quotation.quotation_number }}{% endif %}">
+      </div>
+      <div>
+        <label class="fl">Delivery Date *</label>
+        <input type="date" name="date" class="fi" required
+          value="{% if edit_mode %}{{ dn.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
+      </div>
+      <div>
+        <label class="fl">Delivery Time</label>
+        <input type="time" name="delivery_time" class="fi"
+          value="{% if edit_mode %}{{ dn.delivery_time|default:'' }}{% endif %}">
+      </div>
+    </div>
+
+    <!-- Row 2: Customer & Vehicle Main Info -->
+    <div class="g4 mb">
+      <div>
+        <label class="fl">Customer Name *</label>
+        <select name="customer" class="fi" required id="custSel" onchange="loadVehicles(this.value)">
+          <option value="">Select Customer</option>
+          {% for c in customers %}
+          <option value="{{ c.id }}"
+            {% if edit_mode and dn.customer_id == c.id %}selected{% endif %}
+            {% if prefill_jc and prefill_jc.customer_id == c.id %}selected{% endif %}
+            {% if prefill_quotation and prefill_quotation.customer_id == c.id %}selected{% endif %}>
+            {{ c.ledger_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="fl">Contact Number</label>
+        <input type="text" name="contact_number" class="fi"
+          placeholder="+00 XXXXX XXXXX"
+          value="{% if edit_mode %}{{ dn.contact_number|default:'' }}{% endif %}">
+      </div>
+      <div>
+        <label class="fl">Vehicle Name / Model *</label>
+        <select name="vehicle" class="fi" id="vehSel">
+          <option value="">— Select Vehicle —</option>
+          {% if edit_mode and dn.vehicle %}
+          <option value="{{ dn.vehicle_id }}" selected>{{ dn.vehicle }}</option>
+          {% elif prefill_jc and prefill_jc.workshop_vehicle %}
+          <option value="{{ prefill_jc.workshop_vehicle_id }}" selected>{{ prefill_jc.workshop_vehicle }}</option>
+          {% elif prefill_quotation and prefill_quotation.vehicle %}
+          <option value="{{ prefill_quotation.vehicle_id }}" selected>{{ prefill_quotation.vehicle }}</option>
+          {% endif %}
+        </select>
+      </div>
+      <div>
+        <label class="fl">Reg. Number</label>
+        <input type="text" name="reg_number" class="fi" id="regNum"
+          placeholder="XX-XX-000-000"
+          value="{% if edit_mode %}{{ dn.reg_number|default:'' }}{% elif prefill_jc and prefill_jc.workshop_vehicle %}{{ prefill_jc.workshop_vehicle.registration_number }}{% elif prefill_quotation and prefill_quotation.vehicle %}{{ prefill_quotation.vehicle.registration_number }}{% endif %}">
+      </div>
+    </div>
+
+    <!-- Row 3: Transaction Status & Vehicle Type -->
+    <div class="g4 mb">
+      <div>
+        <label class="fl">Status *</label>
+        <select name="status" class="fi">
+          <option value="draft"     {% if not edit_mode or dn.status == 'draft'     %}selected{% endif %}>Draft</option>
+          <option value="delivered" {% if edit_mode and dn.status == 'delivered'    %}selected{% endif %}>Delivered</option>
+          <option value="cancelled" {% if edit_mode and dn.status == 'cancelled'    %}selected{% endif %}>Cancelled</option>
+        </select>
+      </div>
+      <div>
+        <label class="fl">Payment Mode</label>
+        <select name="payment_mode" class="fi">
+          <option value="">— Select —</option>
+          <option value="cash"   {% if edit_mode and dn.payment_mode == 'cash'   %}selected{% endif %}>Cash</option>
+          <option value="card"   {% if edit_mode and dn.payment_mode == 'card'   %}selected{% endif %}>Card</option>
+          <option value="bank"   {% if edit_mode and dn.payment_mode == 'bank'   %}selected{% endif %}>Bank Transfer</option>
+          <option value="credit" {% if edit_mode and dn.payment_mode == 'credit' %}selected{% endif %}>Credit</option>
+          <option value="online" {% if edit_mode and dn.payment_mode == 'online' %}selected{% endif %}>Online</option>
+        </select>
+      </div>
+      <div>
+        <label class="fl">Vehicle Type</label>
+        <input type="text" name="vehicle_type" class="fi"
+          placeholder="e.g. Sedan, SUV"
+          value="{% if edit_mode %}{{ dn.vehicle_type|default:'' }}{% endif %}">
+      </div>
+      <div>
+        <label class="fl">Delivered By</label>
+        <input type="text" name="driver_name" class="fi"
+          placeholder="Staff name"
+          value="{% if edit_mode %}{{ dn.driver_name|default:'' }}{% endif %}">
+      </div>
+    </div>
+
+    <!-- Row 4: Staff Assignments & Remarks -->
+    <div class="g4">
+      <div>
+        <label class="fl">Service Advisor</label>
+        <select name="advisor" class="fi">
+          <option value="">Name</option>
+          {% for s in advisors %}
+          <option value="{{ s.id }}"
+            {% if edit_mode and dn.advisor_id == s.id %}selected{% endif %}
+            {% if prefill_jc and prefill_jc.advisor_id == s.id %}selected{% endif %}
+            {% if prefill_quotation and prefill_quotation.advisor_id == s.id %}selected{% endif %}>
+            {{ s.full_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="fl">Technician</label>
+        <select name="technician" class="fi">
+          <option value="">Name</option>
+          {% for s in technicians %}
+          <option value="{{ s.id }}" {% if edit_mode and dn.technician_id == s.id %}selected{% endif %}>
+            {{ s.full_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="grid-column:span 2">
+        <label class="fl">Remarks</label>
+        <input type="text" name="header_remarks" class="fi"
+          placeholder="Optional notes or remarks"
+          value="{% if edit_mode %}{{ dn.header_remarks|default:'' }}{% endif %}">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SECTION 2 — COMPLETED SERVICES
+════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-hdr">
+    <div class="sec-hdr-left">
+      
+      <span class="sec-title">Delivery Note Details</span>
+
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="dn-tbl">
+      <thead>
+        <tr>
+          <th>SERVICE</th>
+          <th style="width:70px">QTY</th>
+          <th style="width:130px">STATUS</th>
+          <th>REMARKS</th>
+          <th style="width:36px"></th>
+        </tr>
+      </thead>
+      <tbody id="serviceBody">
+        {% if edit_mode and services %}
+          {% for s in services %}
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td><input type="text" name="svc_description[]" value="{{ s.description }}" placeholder="e.g. Engine Oil Change" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+            <td><input type="number" name="svc_qty[]" value="{{ s.quantity }}" min="0" step="0.01" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
+            <td>
+              <select name="svc_status[]" class="status-sel" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;cursor:pointer">
+                <option value="Completed" {% if s.status == 'Completed' %}selected{% endif %}>Completed</option>
+                <option value="In Progress" {% if s.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                <option value="Pending" {% if s.status == 'Pending' %}selected{% endif %}>Pending</option>
+              </select>
+            </td>
+            <td><input type="text" name="svc_remarks[]" value="{{ s.remarks|default:'' }}" placeholder="—" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+            <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this)">✕</button></td>
+          </tr>
+          {% endfor %}
+        {% elif prefill_jc and prefill_jc.complaints.all %}
+          {% for c in prefill_jc.complaints.all %}
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td><input type="text" name="svc_description[]" value="{{ c.description }}" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+            <td><input type="number" name="svc_qty[]" value="1" min="0" step="0.01" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
+            <td>
+              <select name="svc_status[]" class="status-sel" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;cursor:pointer">
+                <option value="Completed" selected>Completed</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </td>
+            <td><input type="text" name="svc_remarks[]" placeholder="—" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+            <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this)">✕</button></td>
+          </tr>
+          {% endfor %}
+        {% elif prefill_quotation and prefill_quotation.complaints.all %}
+          {% for c in prefill_quotation.complaints.all %}
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td><input type="text" name="svc_description[]" value="{{ c.description }}" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+            <td><input type="number" name="svc_qty[]" value="1" min="0" step="0.01" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
+            <td>
+              <select name="svc_status[]" class="status-sel" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;cursor:pointer">
+                <option value="Completed" selected>Completed</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </td>
+            <td><input type="text" name="svc_remarks[]" placeholder="—" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+            <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this)">✕</button></td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td><input type="text" name="svc_description[]" placeholder="e.g. Engine Oil Change" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+            <td><input type="number" name="svc_qty[]" value="1" min="0" step="0.01" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
+            <td>
+              <select name="svc_status[]" class="status-sel" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;cursor:pointer">
+                <option value="Completed" selected>Completed</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </td>
+            <td><input type="text" name="svc_remarks[]" placeholder="—" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+            <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this)">✕</button></td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  <div style="padding:8px 10px">
+    <button type="button" class="btn-add-row" onclick="addService()">+ Add Service Row</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SECTION 3 — SPARE PARTS USED
+════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-hdr">
+    <div class="sec-hdr-left">
+      
+      <span class="sec-title">Spare Parts Used</span>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto">
+    <table class="dn-tbl">
+      <thead>
+        <tr>
+          <th style="width:36px;text-align:center">SL</th>
+          <th>ITEM / SPARE PART</th>
+          <th style="width:130px">PART NUMBER</th>
+          <th style="width:90px" class="num">QTY</th>
+          <th style="width:90px">UNIT</th>
+          <th style="width:120px" class="num">RATE </th>
+          <th style="width:36px"></th>
+        </tr>
+      </thead>
+      <tbody id="dnPartsBody">
+        <!-- rendered by JS after items load -->
+      </tbody>
+    </table>
+  </div>
+
+  <div style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-top:1px solid #e8edf2">
+    <button type="button" class="btn-add-row" onclick="addDnPart()">+ Add Part Row</button>
+    <div class="subtotal-row">Parts Sub-Total <span id="partsSub">0.000</span></div>
+    <input type="hidden" name="parts_total" id="dnPartsTotal" value="0.000">
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SECTION 4 — LABOUR CHARGES
+════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-hdr">
+    <div class="sec-hdr-left">
+    
+      <span class="sec-title">Labour Charges</span>
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="dn-tbl">
+      <thead>
+        <tr>
+          <th>LABOUR DESCRIPTION</th>
+          <th style="width:140px">TECHNICIAN</th>
+          <th style="width:70px">HRS</th>
+          <th style="width:110px">RATE/HR </th>
+          <th style="width:120px" class="num">AMOUNT</th>
+          <th style="width:36px"></th>
+        </tr>
+      </thead>
+      <tbody id="labourBody">
+        {% if edit_mode and labour %}
+          {% for l in labour %}
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td><input type="text" name="labour_desc[]" value="{{ l.description }}" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+            <td>
+              <select name="labour_technician[]" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;background:#fff">
+                <option value="">— Select —</option>
+                {% for s in technicians %}
+                <option value="{{ s.id }}" {% if l.technician_id == s.id %}selected{% endif %}>{{ s.full_name }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td><input type="number" name="labour_hrs[]" class="lh" value="{{ l.hours }}" min="0" step="0.5" oninput="calcLabourRow(this)" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
+            <td><input type="number" name="labour_rate[]" class="lr" value="{{ l.rate|floatformat:3 }}" min="0" step="0.001" oninput="calcLabourRow(this)" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:right"></td>
+            <td><input type="number" name="labour_amount[]" class="la" value="{{ l.amount|floatformat:3 }}" readonly style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;text-align:right;background:#f9fafb;font-weight:700"></td>
+            <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>
+          </tr>
+          {% endfor %}
+        {% elif prefill_jc and prefill_jc.labours.all %}
+          {% for l in prefill_jc.labours.all %}
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td><input type="text" name="labour_desc[]" value="{{ l.description }}" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+            <td>
+              <select name="labour_technician[]" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;background:#fff">
+                <option value="">— Select —</option>
+                {% for s in technicians %}
+                <option value="{{ s.id }}" {% if l.technician_id == s.id %}selected{% endif %}>{{ s.full_name }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td><input type="number" name="labour_hrs[]" class="lh" value="{{ l.hours }}" min="0" step="0.5" oninput="calcLabourRow(this)" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
+            <td><input type="number" name="labour_rate[]" class="lr" value="{{ l.rate|floatformat:3 }}" min="0" step="0.001" oninput="calcLabourRow(this)" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:right"></td>
+            <td><input type="number" name="labour_amount[]" class="la" value="{{ l.amount|floatformat:3 }}" readonly style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;text-align:right;background:#f9fafb;font-weight:700"></td>
+            <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>
+          </tr>
+          {% endfor %}
+        {% elif prefill_quotation %}
+          {% for l in prefill_quotation.items.all %}
+            {% if l.item_type == 'labour' %}
+            <tr style="border-bottom:1px solid #f3f4f6">
+              <td><input type="text" name="labour_desc[]" value="{{ l.description }}" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+              <td>
+                <select name="labour_technician[]" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;background:#fff">
+                  <option value="">— Select —</option>
+                  {% for s in technicians %}
+                  <option value="{{ s.id }}" {% if l.technician_id == s.id %}selected{% endif %}>{{ s.full_name }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input type="number" name="labour_hrs[]" class="lh" value="{{ l.hours }}" min="0" step="0.5" oninput="calcLabourRow(this)" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
+              <td><input type="number" name="labour_rate[]" class="lr" value="{{ l.unit_price|floatformat:3 }}" min="0" step="0.001" oninput="calcLabourRow(this)" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:right"></td>
+              <td><input type="number" name="labour_amount[]" class="la" value="{{ l.total_price|floatformat:3 }}" readonly style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;text-align:right;background:#f9fafb;font-weight:700"></td>
+              <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>
+            </tr>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td><input type="text" name="labour_desc[]" placeholder="e.g. Engine Oil Change — Labour" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+            <td>
+              <select name="labour_technician[]" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;background:#fff">
+                <option value="">— Select —</option>
+                {% for s in technicians %}
+                <option value="{{ s.id }}">{{ s.full_name }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td><input type="number" name="labour_hrs[]" class="lh" value="1" min="0" step="0.5" oninput="calcLabourRow(this)" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
+            <td><input type="number" name="labour_rate[]" class="lr" value="0.000" min="0" step="0.001" oninput="calcLabourRow(this)" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:right"></td>
+            <td><input type="number" name="labour_amount[]" class="la" value="0.000" readonly style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;text-align:right;background:#f9fafb;font-weight:700"></td>
+            <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  <div style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <button type="button" class="btn-add-row" onclick="addLabour()">+ Add Labour Row</button>
+    <div class="subtotal-row">Labour Sub-Total <span id="labourSub">0.000</span></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SECTION 5 — VEHICLE CONDITION
+════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-hdr">
+    <div class="sec-hdr-left">
+  
+      <span class="sec-title">Vehicle Condition at Delivery</span>
+    </div>
+  </div>
+  <div class="sec-body">
+    <div class="cond-grid mb">
+      <div>
+        <label class="fl">Exterior Condition</label>
+        <select name="exterior_condition" class="fi">
+          <option value="">— Select —</option>
+          <option value="Excellent" {% if edit_mode and dn.exterior_condition == 'Excellent' %}selected{% endif %}>Excellent</option>
+          <option value="Good"      {% if edit_mode and dn.exterior_condition == 'Good'      %}selected{% endif %}>Good</option>
+          <option value="Fair"      {% if edit_mode and dn.exterior_condition == 'Fair'      %}selected{% endif %}>Fair</option>
+          <option value="Poor"      {% if edit_mode and dn.exterior_condition == 'Poor'      %}selected{% endif %}>Poor</option>
+        </select>
+      </div>
+      <div>
+        <label class="fl">Interior Condition</label>
+        <select name="interior_condition" class="fi">
+          <option value="">— Select —</option>
+          <option value="Excellent" {% if edit_mode and dn.interior_condition == 'Excellent' %}selected{% endif %}>Excellent</option>
+          <option value="Good"      {% if edit_mode and dn.interior_condition == 'Good'      %}selected{% endif %}>Good</option>
+          <option value="Fair"      {% if edit_mode and dn.interior_condition == 'Fair'      %}selected{% endif %}>Fair</option>
+          <option value="Poor"      {% if edit_mode and dn.interior_condition == 'Poor'      %}selected{% endif %}>Poor</option>
+        </select>
+      </div>
+      <div>
+        <label class="fl">Fuel Level Out</label>
+        <select name="fuel_level_out" class="fi">
+          <option value="">— Select —</option>
+          <option value="Empty" {% if edit_mode and dn.fuel_level_out == 'Empty' %}selected{% endif %}>Empty</option>
+          <option value="1/4"   {% if edit_mode and dn.fuel_level_out == '1/4'   %}selected{% endif %}>1/4</option>
+          <option value="1/2"   {% if edit_mode and dn.fuel_level_out == '1/2'   %}selected{% endif %}>1/2</option>
+          <option value="3/4"   {% if edit_mode and dn.fuel_level_out == '3/4'   %}selected{% endif %}>3/4</option>
+          <option value="Full"  {% if edit_mode and dn.fuel_level_out == 'Full'  %}selected{% endif %}>Full</option>
+        </select>
+      </div>
+    </div>
+    <div class="g3 mb">
+      <div>
+        <label class="fl">Accessories Returned</label>
+        <input type="text" name="accessories_returns" class="fi"
+          placeholder="e.g. Key, Spare Wheel"
+          value="{% if edit_mode %}{{ dn.accessories_returns|default:'' }}{% endif %}">
+      </div>
+      <div>
+        <label class="fl">Vehicle Cleanliness</label>
+        <input type="text" name="vehicle_cleanliness" class="fi"
+          placeholder="e.g. Washed & Cleaned"
+          value="{% if edit_mode %}{{ dn.vehicle_cleanliness|default:'' }}{% endif %}">
+      </div>
+      <div>
+        <label class="fl">Odometer Out (km)</label>
+        <input type="number" name="odometer_out" class="fi"
+          placeholder="e.g. 45200"
+          value="{% if edit_mode %}{{ dn.odometer_out|default:'' }}{% endif %}">
+      </div>
+    </div>
+    <div>
+      <label class="fl">Condition Remarks</label>
+      <textarea name="condition_remarks" class="fi" rows="2"
+        placeholder="Any scratches, damages or notes upon delivery...">{% if edit_mode %}{{ dn.condition_remarks|default:'' }}{% endif %}</textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SECTION 6 — CHECKLIST & SUMMARY
+════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-hdr">
+    <div class="sec-hdr-left">
+      <div class="sec-icon si-green">✅</div>
+      <span class="sec-title">Quality Checklist & Signatures</span>
+    </div>
+  </div>
+  <div class="sec-body">
+
+    <div class="summary-grid mb">
+      <div>
+        <div class="fl mb">Pre-Delivery Quality Checks</div>
+        <div class="checklist mb">
+          {% for field, label in checklist_items %}
+          <div class="chk-item {% if edit_mode and getattr_dn|default:False %}checked{% else %}unchecked{% endif %}"
+               id="chk-wrap-{{ field }}">
+            <input type="checkbox" name="{{ field }}" id="chk-{{ field }}"
+              {% if edit_mode %}{% if field == 'work_completed' and dn.work_completed %}checked{% endif %}{% if field == 'quality_checked' and dn.quality_checked %}checked{% endif %}{% if field == 'road_test' and dn.road_test %}checked{% endif %}{% if field == 'vehicle_washed' and dn.vehicle_washed %}checked{% endif %}{% if field == 'spare_wheel' and dn.spare_wheel %}checked{% endif %}{% if field == 'tool_kit' and dn.tool_kit %}checked{% endif %}{% if field == 'documents_returned' and dn.documents_returned %}checked{% endif %}{% endif %}
+              onchange="toggleChk(this,'chk-wrap-{{ field }}')">
+            <label for="chk-{{ field }}">{{ label }}</label>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div style="margin-top:14px">
+          <label class="fl">Delivery Notes / Special Instructions</label>
+          <textarea name="notes" class="fi" rows="3"
+            placeholder="Special instructions or notes for customer...">{% if edit_mode %}{{ dn.notes|default:'' }}{% endif %}</textarea>
+        </div>
+
+        <div style="margin-top:14px">
+          <label class="chk-item" style="width:auto;display:inline-flex" id="chk-wrap-sig">
+            <input type="checkbox" name="customer_signed" id="sigChk"
+              {% if edit_mode and dn.customer_signed %}checked{% endif %}
+              onchange="toggleChk(this,'chk-wrap-sig')">
+            <label for="sigChk">Customer Has Signed & Accepted Delivery</label>
+          </label>
+        </div>
+      </div>
+
+      <!-- Totals -->
+      <div>
+        <div class="summary-box">
+          <div class="sum-row">
+            <span class="sum-lbl">Total Parts </span>
+            <span class="sum-val" id="sumParts">0.000 </span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-lbl">Total Labour</span>
+            <span class="sum-val" id="sumLabour">0.000 </span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-lbl">Discount </span>
+            <span class="sum-val" style="display:flex;align-items:center;gap:6px">
+              <input type="number" name="discount" id="discInp" min="0" step="0.001"
+                value="{% if edit_mode %}{{ dn.discount|default:0 }}{% else %}0{% endif %}"
+                style="border:1px solid #e2e8f0;border-radius:5px;padding:4px 8px;font-size:12px;width:100px;text-align:right;outline:none;font-family:monospace"
+                oninput="calcTotals()">
+            </span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-lbl">Tax / GST @ <input type="number" name="tax_percent" id="taxInp" min="0" max="100" step="0.01"
+              value="{% if edit_mode %}{{ dn.tax_percent|default:0 }}{% else %}0{% endif %}"
+              style="border:1px solid #e2e8f0;border-radius:5px;padding:3px 6px;font-size:11px;width:50px;text-align:center;outline:none"
+              oninput="calcTotals()"> % </span>
+            <span class="sum-val" id="sumTax">0.000 </span>
+          </div>
+          <div class="sum-row grand">
+            <span class="sum-lbl">Grand Total</span>
+            <span class="sum-val" id="sumGrand">0.000 </span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-lbl">Advance Received </span>
+            <span class="sum-val" style="display:flex;align-items:center;gap:6px">
+              <input type="number" name="advance_received" id="advInp" min="0" step="0.001"
+                value="{% if edit_mode %}{{ dn.advance_received|default:0 }}{% else %}0{% endif %}"
+                style="border:1px solid #e2e8f0;border-radius:5px;padding:4px 8px;font-size:12px;width:100px;text-align:right;outline:none;font-family:monospace"
+                oninput="calcTotals()">
+            </span>
+          </div>
+          <div class="sum-row balance">
+            <span class="sum-lbl">Balance Amount</span>
+            <span class="sum-val" id="sumBalance">0.000</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    
+
+  </div>
+</div>
+
+<!-- ── Bottom bar ── -->
+<div class="bottom-bar">
+  <a href="{% url 'jobcard_app:delivery_list' %}" class="btn-print" style="text-decoration:none">Discard</a>
+  <button type="submit" class="btn-submit">
+    💾 {% if edit_mode %}Update Delivery Note{% else %}Save Delivery Note{% endif %}
+  </button>
+</div>
+
+</form>
+</div>
+
+<script>
+const VEH_URL          = "{% url 'jobcard_app:jc_get_vehicles' %}";
+const DN_JC_URL        = "{% url 'jobcard_app:ajax_get_jobcard_for_delivery' %}";
+const DN_ALL_ITEMS_URL = "{% url 'jobcard_app:ajax_get_all_items' %}";
+
+let dnAllItems = [];
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Init checklist toggle states
+  document.querySelectorAll('.chk-item input[type=checkbox]').forEach(chk => {
+    const wrapId = 'chk-wrap-' + chk.id.replace('chk-', '');
+    const wrap   = document.getElementById(wrapId);
+    if (wrap) {
+      wrap.classList.toggle('checked',   chk.checked);
+      wrap.classList.toggle('unchecked', !chk.checked);
+    }
+  });
+
+  // Load Item Master items for dropdown
+  fetch(DN_ALL_ITEMS_URL)
+    .then(r => r.json())
+    .then(data => {
+      dnAllItems = data.items || [];
+      renderDnExistingParts();
+      calcTotals();
+    })
+    .catch(e => {
+      console.error('Items load failed:', e);
+      renderDnExistingParts();
+      calcTotals();
+    });
+});
+
+/* ── Item master dropdown options ── */
+function buildDnItemOptions(selectedId = '') {
+  let opts = '<option value="">— Select Item —</option>';
+  dnAllItems.forEach(item => {
+    const sel = selectedId && String(selectedId) === String(item.id) ? 'selected' : '';
+    opts += `<option value="${item.id}"
+                     data-name="${(item.name || '').replace(/"/g,'&quot;')}"
+                     data-code="${(item.code || '').replace(/"/g,'&quot;')}"
+                     data-unit="${(item.unit || 'No').replace(/"/g,'&quot;')}"
+                     data-rate="${item.unit_price || 0}"
+                     ${sel}>
+               ${item.name}
+             </option>`;
+  });
+  return opts;
+}
+
+/* ── Unit dropdown options ── */
+function buildUnitOptions(selected = 'No') {
+  return ['No','Ltr','Kg','Pkt','Set'].map(u =>
+    `<option value="${u}" ${u.toLowerCase() === String(selected).toLowerCase() ? 'selected' : ''}>${u}</option>`
+  ).join('');
+}
+
+/* ── Add a part row ── */
+function addDnPart(itemId='', partNo='', qty=1, unit='No', rate='0.000', name='') {
+  const tbody = document.getElementById('dnPartsBody');
+  if (!tbody) return;
+  const sl = tbody.rows.length + 1;
+  const tr = document.createElement('tr');
+  tr.style.borderBottom = '1px solid #f3f4f6';
+
+  const inpBase = `width:100%;border:1px solid #e5e7eb;border-radius:4px;
+                   padding:6px 8px;font-size:12px;color:#1e293b;
+                   background:#fff;outline:none;font-family:inherit`;
+
+  tr.innerHTML = `
+    <td style="padding:6px 8px;text-align:center;font-size:12px;color:#94a3b8;font-weight:600">${sl}</td>
+    <td style="padding:4px 5px">
+      <select name="part_item_id[]" style="${inpBase};cursor:pointer" onchange="onDnItemSelect(this)">
+        ${buildDnItemOptions(itemId)}
+      </select>
+      <input type="hidden" name="part_name[]" class="dn-pname" value="${String(name || '').replace(/"/g,'&quot;')}">
+    </td>
+    <td style="padding:4px 5px">
+      <input type="text" name="part_number[]" class="dn-pno" placeholder="Part No." value="${partNo}" style="${inpBase}">
+    </td>
+    <td style="padding:4px 5px">
+      <input type="number" name="part_qty[]" class="dn-pq" value="${qty}" min="0" step="0.001" style="${inpBase};text-align:center" oninput="calcDnParts()">
+    </td>
+    <td style="padding:4px 5px">
+      <select name="part_unit[]" style="${inpBase};cursor:pointer">
+        ${buildUnitOptions(unit)}
+      </select>
+    </td>
+    <td style="padding:4px 5px">
+      <input type="number" name="part_rate[]" class="dn-pr" value="${fmtN3(rate)}" min="0" step="0.001" style="${inpBase};text-align:right" oninput="calcDnParts()">
+    </td>
+    <td style="padding:4px 5px;text-align:center">
+      <button type="button" class="btn-rm" onclick="removeDnPart(this)">✕</button>
+    </td>`;
+
+  tbody.appendChild(tr);
+
+  const selectEl = tr.querySelector('select[name="part_item_id[]"]');
+  const nameInp   = tr.querySelector('.dn-pname');
+  const partNoInp = tr.querySelector('.dn-pno');
+
+  if (itemId) {
+    const found = dnAllItems.find(i => String(i.id) === String(itemId));
+    if (found) {
+      nameInp.value = found.name;
+      if (!partNo) partNoInp.value = found.code || '';
+    } else if (name) {
+      nameInp.value = name;
+    }
+  } else if (name) {
+    const found = dnAllItems.find(i => (i.name || '').toLowerCase().trim() === String(name).toLowerCase().trim());
+    if (found) {
+      if (selectEl) selectEl.value = String(found.id);
+      nameInp.value = found.name;
+      if (!partNo) partNoInp.value = found.code || '';
+      if (!rate || parseFloat(rate) === 0) {
+        const rateInp = tr.querySelector('.dn-pr');
+        if (rateInp) rateInp.value = parseFloat(found.unit_price || 0).toFixed(3);
+      }
+    } else {
+      nameInp.value = name;
+    }
+  }
+
+  calcDnParts();
+}
+
+/* ── Item select handler ── */
+function onDnItemSelect(sel) {
+  const tr  = sel.closest('tr');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+
+  const name = opt.dataset.name || '';
+  const code = opt.dataset.code || '';
+  const unit = opt.dataset.unit || 'No';
+  const rate = parseFloat(opt.dataset.rate || 0).toFixed(3);
+
+  tr.querySelector('.dn-pname').value = name;
+  const partNoInp = tr.querySelector('.dn-pno');
+  if (partNoInp && !partNoInp.value) partNoInp.value = code;
+
+  const unitSel = tr.querySelector('select[name="part_unit[]"]');
+  if (unitSel) {
+    [...unitSel.options].forEach(o => o.selected = o.value.toLowerCase() === unit.toLowerCase());
+  }
+
+  const rateInp = tr.querySelector('.dn-pr');
+  if (rateInp) rateInp.value = rate;
+
+  calcDnParts();
+}
+
+/* ── Remove part row ── */
+function removeDnPart(btn) {
+  const tbody = document.getElementById('dnPartsBody');
+  const tr    = btn.closest('tr');
+  if (tbody.rows.length > 1) {
+    tr.remove();
+  } else {
+    tr.querySelector('select[name="part_item_id[]"]').value = '';
+    tr.querySelector('.dn-pname').value = '';
+    tr.querySelector('.dn-pno').value   = '';
+    tr.querySelector('.dn-pq').value    = 1;
+    tr.querySelector('.dn-pr').value    = '0.000';
+  }
+  calcDnParts();
+  renumberDnParts();
+}
+
+function renumberDnParts() {
+  document.querySelectorAll('#dnPartsBody tr').forEach((tr, i) => {
+    const first = tr.querySelector('td:first-child');
+    if (first) first.textContent = i + 1;
+  });
+}
+
+function calcDnParts() {
+  let total = 0;
+  document.querySelectorAll('#dnPartsBody tr').forEach(tr => {
+    const qty  = parseFloat(tr.querySelector('.dn-pq')?.value) || 0;
+    const rate = parseFloat(tr.querySelector('.dn-pr')?.value) || 0;
+    total += qty * rate;
+  });
+
+  const display = document.getElementById('dnPartsTotalDisplay');
+  const hidden  = document.getElementById('dnPartsTotal');
+  const partsSub = document.getElementById('partsSub');
+
+  if (display)  display.textContent  = total.toFixed(3);
+  if (hidden)   hidden.value         = total.toFixed(3);
+  if (partsSub) partsSub.textContent = total.toFixed(3) ;
+
+  calcTotals();
+}
+
+function renderDnExistingParts() {
+  const tbody = document.getElementById('dnPartsBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  {% if edit_mode and dn.parts.exists %}
+    {% for p in dn.parts.all %}
+    addDnPart(
+      '{{ p.item_id|default:"" }}',
+      '{{ p.item_code|default:"" }}',
+      {{ p.quantity }},
+      '{{ p.unit|default:"No" }}',
+      '{{ p.rate|floatformat:3 }}',
+      '{{ p.name|escapejs }}'
+    );
+    {% endfor %}
+  {% elif prefill_jc and prefill_jc.parts.all %}
+    {% for p in prefill_jc.parts.all %}
+    addDnPart(
+      '',
+      '{{ p.part_number|default:"" }}',
+      {{ p.quantity }},
+      'No',
+      '{{ p.unit_price|floatformat:3 }}',
+      '{{ p.description|escapejs }}'
+    );
+    {% endfor %}
+  {% elif prefill_quotation %}
+    {% for p in prefill_quotation.items.all %}
+      {% if p.item_type == 'part' %}
+      addDnPart(
+        '{{ p.item_ref|default:"" }}',
+        '{{ p.item_code|default:"" }}',
+        {{ p.quantity }},
+        '{{ p.unit|default:"No" }}',
+        '{{ p.unit_price|floatformat:3 }}',
+        '{{ p.description|escapejs }}'
+      );
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    addDnPart();
+  {% endif %}
+}
+
+/* ── Customer → Vehicles AJAX ── */
+function loadVehicles(cid) {
+  const sel = document.getElementById('vehSel');
+  sel.innerHTML = '<option value="">— Loading... —</option>';
+  if (!cid) { sel.innerHTML = '<option value="">— Select Vehicle —</option>'; return; }
+  fetch(VEH_URL + '?customer_id=' + cid)
+    .then(r => r.json())
+    .then(d => {
+      sel.innerHTML = '<option value="">— Select Vehicle —</option>';
+      (d.vehicles || []).forEach(v => {
+        const vName = v.label || v.name || v.vehicle_model || (v.make ? (v.make + ' ' + (v.model || '')).trim() : 'Vehicle');
+        const vReg = v.registration_number || v.reg || '';
+        const o = new Option(vName, v.id);
+        o.dataset.reg = vReg;
+        sel.add(o);
+      });
+      sel.onchange = function() {
+        const opt = this.options[this.selectedIndex];
+        if (opt && opt.dataset.reg)
+          document.getElementById('regNum').value = opt.dataset.reg;
+      };
+    });
+}
+
+/* ── Add Service Row ── */
+function addService(desc = '', qty = 1, status = 'Completed', remarks = '') {
+  const tbody = document.getElementById('serviceBody');
+  if (!tbody) return;
+  const tr = document.createElement('tr');
+  tr.style.cssText = 'border-bottom:1px solid #f3f4f6';
+  tr.innerHTML = `
+    <td><input type="text" name="svc_description[]" value="${String(desc).replace(/"/g,'&quot;')}" placeholder="e.g. Engine Oil Change" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+    <td><input type="number" name="svc_qty[]" value="${qty}" min="0" step="0.01" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
+    <td>
+      <select name="svc_status[]" class="status-sel" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;cursor:pointer">
+        <option value="Completed" ${status === 'Completed' ? 'selected' : ''}>Completed</option>
+        <option value="In Progress" ${status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+        <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
+      </select>
+    </td>
+    <td><input type="text" name="svc_remarks[]" value="${String(remarks).replace(/"/g,'&quot;')}" placeholder="—" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+    <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this)">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+/* ── Technicians list (for dynamic labour rows) ── */
+const DN_TECHNICIANS = [
+  {% for s in technicians %}
+  { id: {{ s.id }}, name: "{{ s.full_name|escapejs }}" },
+  {% endfor %}
+];
+
+/* ── Add Labour Row ── */
+function addLabour(desc = '', hrs = 1, rate = 0, techId = '') {
+  const tbody = document.getElementById('labourBody');
+  if (!tbody) return;
+  const tr = document.createElement('tr');
+  tr.style.cssText = 'border-bottom:1px solid #f3f4f6';
+  const fmtRate = fmtN3(rate);
+  const fmtAmt  = fmtN3(hrs * rate);
+  // Build technician options from embedded list
+  let techOpts = '<option value="">— Select —</option>';
+  if (window.DN_TECHNICIANS) {
+    DN_TECHNICIANS.forEach(t => {
+      const sel = String(t.id) === String(techId) ? ' selected' : '';
+      techOpts += `<option value="${t.id}"${sel}>${t.name}</option>`;
+    });
+  }
+  tr.innerHTML = `
+    <td><input type="text" name="labour_desc[]" value="${String(desc).replace(/"/g,'&quot;')}" placeholder="e.g. Engine Oil Change — Labour" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
+    <td><select name="labour_technician[]" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;background:#fff">${techOpts}</select></td>
+    <td><input type="number" name="labour_hrs[]" class="lh" value="${hrs}" min="0" step="0.5" oninput="calcLabourRow(this)" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
+    <td><input type="number" name="labour_rate[]" class="lr" value="${fmtRate}" min="0" step="0.001" oninput="calcLabourRow(this)" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:right"></td>
+    <td><input type="number" name="labour_amount[]" class="la" value="${fmtAmt}" readonly style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;text-align:right;background:#f9fafb;font-weight:700"></td>
+    <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  calcLabourRow(tr.querySelector('.lh'));
+}
+
+function removeRow(btn) {
+  const tbody = btn.closest('tbody');
+  const tr    = btn.closest('tr');
+  if (tbody.rows.length > 1) tr.remove();
+  else {
+    tr.querySelectorAll('input[type=text],input[type=number]').forEach(i => {
+      i.value = i.classList.contains('la') ? '0.000' : '';
+    });
+  }
+  calcTotals();
+}
+
+function fmtN3(n) {
+  return parseFloat(n || 0).toFixed(3);
+}
+
+function calcLabourRow(inp) {
+  const tr  = inp.closest('tr');
+  const hrs = parseFloat(tr.querySelector('.lh')?.value) || 0;
+  const rt  = parseFloat(tr.querySelector('.lr')?.value) || 0;
+  const la  = tr.querySelector('.la');
+  if (la) la.value = (hrs * rt).toFixed(3);
+  calcTotals();
+}
+
+function calcTotals() {
+  let partsSub = 0;
+  document.querySelectorAll('#dnPartsBody tr').forEach(tr => {
+    const qty  = parseFloat(tr.querySelector('.dn-pq')?.value) || 0;
+    const rate = parseFloat(tr.querySelector('.dn-pr')?.value) || 0;
+    partsSub += qty * rate;
+  });
+
+  let labourSub = 0;
+  document.querySelectorAll('#labourBody .la').forEach(el => {
+    labourSub += parseFloat(el.value || 0);
+  });
+
+  const subtotal = partsSub + labourSub;
+  const disc     = parseFloat(document.getElementById('discInp')?.value || 0);
+  const taxPct   = parseFloat(document.getElementById('taxInp')?.value || 0);
+  const tax      = subtotal * taxPct / 100;
+  const grand    = subtotal - disc + tax;
+  const adv      = parseFloat(document.getElementById('advInp')?.value || 0);
+  const balance  = grand - adv;
+
+  if (document.getElementById('partsSub'))   document.getElementById('partsSub').textContent   = fmtN3(partsSub) ;
+  if (document.getElementById('labourSub'))  document.getElementById('labourSub').textContent  = fmtN3(labourSub) ;
+  if (document.getElementById('sumParts'))   document.getElementById('sumParts').textContent   = fmtN3(partsSub)  ;
+  if (document.getElementById('sumLabour'))  document.getElementById('sumLabour').textContent  = fmtN3(labourSub) ;
+  if (document.getElementById('sumTax'))     document.getElementById('sumTax').textContent     = fmtN3(tax) ;
+  if (document.getElementById('sumGrand'))   document.getElementById('sumGrand').textContent   = fmtN3(grand) ;
+  if (document.getElementById('sumBalance')) document.getElementById('sumBalance').textContent = fmtN3(balance) ;
+}
+
+function toggleChk(chk, wrapId) {
+  const wrap = document.getElementById(wrapId);
+  if (wrap) {
+    wrap.classList.toggle('checked',   chk.checked);
+    wrap.classList.toggle('unchecked', !chk.checked);
+  }
+}
+
+/* ── Document Picker Functions ── */
+function toggleDnJcPicker() {
+  const p = document.getElementById('dnJcPickerPanel');
+  p.style.display === 'none' ? openDnJcPicker() : closeDnJcPicker();
+}
+
+function closeDnJcPicker() {
+  document.getElementById('dnJcPickerPanel').style.display = 'none';
+}
+
+function openDnJcPicker() {
+  document.getElementById('dnJcPickerPanel').style.display = 'block';
+
+  const custId = document.getElementById('custSel')?.value;
+  const vehId  = document.getElementById('vehSel')?.value;
+
+  const noCustomer = document.getElementById('dnJcNoCustomer');
+  const list       = document.getElementById('dnJcList');
+  const empty      = document.getElementById('dnJcEmpty');
+
+  if (!custId) {
+    noCustomer.style.display = 'block';
+    list.style.display       = 'none';
+    empty.style.display      = 'none';
+    return;
+  }
+
+  noCustomer.style.display = 'none';
+  empty.style.display      = 'none';
+  list.style.display       = 'block';
+  list.innerHTML = `
+    <div style="padding:14px;text-align:center;font-size:12px;color:#9ca3af">
+      Loading job cards and quotations...
+    </div>`;
+
+  let url = DN_JC_URL + '?customer_id=' + custId;
+  if (vehId) url += '&vehicle_id=' + vehId;
+
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      const hasJc = data.jobcards && data.jobcards.length > 0;
+      const hasQt = data.quotations && data.quotations.length > 0;
+
+      if (!hasJc && !hasQt) {
+        list.style.display  = 'none';
+        empty.style.display = 'block';
+        return;
+      }
+
+      let html = '';
+
+      if (hasJc) {
+        html += `<div style="padding:6px 12px;background:#f1f5f9;font-size:10px;font-weight:700;color:#475569;letter-spacing:.5px;text-transform:uppercase">Job Cards</div>`;
+        data.jobcards.forEach(jc => {
+          html += `
+            <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer"
+                 onmouseover="this.style.background='#eff6ff'"
+                 onmouseout="this.style.background=''"
+                 onclick='loadJcToDelivery(${JSON.stringify(jc).replace(/'/g,"&#39;")})'>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <span style="font-size:13px;font-weight:700;color:#2563eb;font-family:monospace">🔧 ${jc.job_number}</span>
+                <span style="font-size:10px;font-weight:700;background:#f3f4f6;color:#374151;border-radius:10px;padding:2px 8px">${jc.status}</span>
+              </div>
+              <div style="font-size:11px;color:#6b7280;margin-bottom:4px">📅 ${jc.date} ${jc.vehicle ? ' · 🚗 ' + jc.vehicle : ''}</div>
+              <div style="display:flex;gap:6px">
+                <span style="font-size:10px;font-weight:700;background:#dbeafe;color:#1d4ed8;border-radius:20px;padding:2px 8px">${jc.s_count} services</span>
+                <span style="font-size:10px;font-weight:700;background:#fae8ff;color:#7c3aed;border-radius:20px;padding:2px 8px">${jc.p_count} parts</span>
+                <span style="font-size:10px;font-weight:700;background:#fef3c7;color:#ca8a04;border-radius:20px;padding:2px 8px">${jc.l_count} labour</span>
+              </div>
+            </div>`;
+        });
+      }
+
+      if (hasQt) {
+        html += `<div style="padding:6px 12px;background:#f1f5f9;font-size:10px;font-weight:700;color:#475569;letter-spacing:.5px;text-transform:uppercase">Quotations</div>`;
+        data.quotations.forEach(q => {
+          html += `
+            <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer"
+                 onmouseover="this.style.background='#f0fdf4'"
+                 onmouseout="this.style.background=''"
+                 onclick='loadQuotationToDelivery(${JSON.stringify(q).replace(/'/g,"&#39;")})'>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <span style="font-size:13px;font-weight:700;color:#16a34a;font-family:monospace">📄 ${q.quotation_number}</span>
+                <span style="font-size:10px;font-weight:700;background:#f3f4f6;color:#374151;border-radius:10px;padding:2px 8px">${q.status}</span>
+              </div>
+              <div style="font-size:11px;color:#6b7280;margin-bottom:4px">📅 ${q.date} ${q.vehicle ? ' · 🚗 ' + q.vehicle : ''}</div>
+              <div style="display:flex;gap:6px">
+                <span style="font-size:10px;font-weight:700;background:#dbeafe;color:#1d4ed8;border-radius:20px;padding:2px 8px">${q.s_count} services</span>
+                <span style="font-size:10px;font-weight:700;background:#fae8ff;color:#7c3aed;border-radius:20px;padding:2px 8px">${q.p_count} parts</span>
+                <span style="font-size:10px;font-weight:700;background:#fef3c7;color:#ca8a04;border-radius:20px;padding:2px 8px">${q.l_count} labour</span>
+              </div>
+            </div>`;
+        });
+      }
+
+      list.innerHTML = html;
+    })
+    .catch(err => {
+      list.innerHTML = `
+        <div style="padding:14px;font-size:12px;color:#ef4444;text-align:center">
+          Failed to load documents. Try again.
+        </div>`;
+      console.error('Import load error:', err);
+    });
+}
+
+/* ── Load Job Card into form ── */
+function loadJcToDelivery(jc) {
+  closeDnJcPicker();
+  if (!confirm('Load items from Job Card ' + jc.job_number + '?')) return;
+
+  const serviceBody = document.getElementById('serviceBody');
+  const partsBody   = document.getElementById('dnPartsBody');
+  const labourBody  = document.getElementById('labourBody');
+
+  if (serviceBody) serviceBody.innerHTML = '';
+  if (partsBody)   partsBody.innerHTML   = '';
+  if (labourBody)  labourBody.innerHTML  = '';
+
+  if (jc.services && jc.services.length) {
+    jc.services.forEach(s => {
+      addService(s.description || '', 1, 'Completed', s.remarks || '');
+    });
+  } else {
+    addService();
+  }
+
+  if (jc.parts && jc.parts.length) {
+    jc.parts.forEach(p => {
+      addDnPart(p.item_id || '', p.item_code || '', p.quantity || 1, p.unit || 'No', (p.rate || 0).toFixed(3), p.name || p.description || '');
+    });
+  } else {
+    addDnPart();
+  }
+
+  if (jc.labours && jc.labours.length) {
+    jc.labours.forEach(l => {
+      addLabour(l.description || '', l.hours || 1, l.rate || 0, l.technician_id || '');
+    });
+  } else {
+    addLabour();
+  }
+
+  if (jc.mileage) {
+    const odo = document.querySelector('[name="odometer_out"]');
+    if (odo && !odo.value) odo.value = jc.mileage;
+  }
+  if (jc.fuel_level) {
+    const fuel = document.querySelector('[name="fuel_level_out"]');
+    if (fuel) {
+      [...fuel.options].forEach(o => o.selected = o.value.toLowerCase() === jc.fuel_level.toLowerCase());
+    }
+  }
+  if (jc.advisor_id) {
+    const adv = document.querySelector('[name="advisor"]');
+    if (adv) {
+      [...adv.options].forEach(o => o.selected = o.value == jc.advisor_id);
+    }
+  }
+
+  document.getElementById('ldJC').value = jc.id;
+  document.getElementById('jcDisplay').value = jc.job_number;
+
+  const banner = document.getElementById('jcLoadBanner');
+  if (banner) {
+    document.getElementById('jcLoadBannerText').innerHTML =
+      `🔧 Loaded from Job Card <strong>${jc.job_number}</strong> (${jc.date})`;
+    banner.style.display = 'flex';
+  }
+
+  calcDnParts();
+  calcTotals();
+}
+
+/* ── Load Quotation into form ── */
+function loadQuotationToDelivery(q) {
+  closeDnJcPicker();
+  if (!confirm('Load items from Quotation ' + q.quotation_number + '?')) return;
+
+  const serviceBody = document.getElementById('serviceBody');
+  const partsBody   = document.getElementById('dnPartsBody');
+  const labourBody  = document.getElementById('labourBody');
+
+  if (serviceBody) serviceBody.innerHTML = '';
+  if (partsBody)   partsBody.innerHTML   = '';
+  if (labourBody)  labourBody.innerHTML  = '';
+
+  if (q.services && q.services.length) {
+    q.services.forEach(s => {
+      addService(s.description || '', 1, 'Completed', s.remarks || '');
+    });
+  } else {
+    addService();
+  }
+
+  if (q.parts && q.parts.length) {
+    q.parts.forEach(p => {
+      addDnPart(p.item_id || '', p.item_code || '', p.quantity || 1, p.unit || 'No', (p.rate || 0).toFixed(3), p.name || p.description || '');
+    });
+  } else {
+    addDnPart();
+  }
+
+  if (q.labours && q.labours.length) {
+    q.labours.forEach(l => {
+      addLabour(l.description || '', l.hours || 1, l.rate || 0);
+    });
+  } else {
+    addLabour();
+  }
+
+  if (q.advisor_id) {
+    const adv = document.querySelector('[name="advisor"]');
+    if (adv) {
+      [...adv.options].forEach(o => o.selected = o.value == q.advisor_id);
+    }
+  }
+
+  document.getElementById('ldQT').value = q.id;
+  document.getElementById('jcDisplay').value = q.quotation_number;
+
+  const banner = document.getElementById('jcLoadBanner');
+  if (banner) {
+    document.getElementById('jcLoadBannerText').innerHTML =
+      `📄 Loaded from Quotation <strong>${q.quotation_number}</strong> (${q.date})`;
+    banner.style.display = 'flex';
+  }
+
+  calcDnParts();
+  calcTotals();
+}
+
+/* ── Close picker on outside click ── */
+document.addEventListener('click', e => {
+  const dnJc = document.getElementById('dnJcPickerWrap');
+  if (dnJc && !dnJc.contains(e.target)) closeDnJcPicker();
+});
+
+/* ── Reset picker when customer/vehicle changes ── */
+['custSel', 'vehSel'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    const list = document.getElementById('dnJcList');
+    const empty = document.getElementById('dnJcEmpty');
+    const noCustomer = document.getElementById('dnJcNoCustomer');
+    if (list) list.style.display = 'none';
+    if (empty) empty.style.display = 'none';
+    if (noCustomer) noCustomer.style.display = 'block';
+  });
+});
+</script>
+{% endblock %}

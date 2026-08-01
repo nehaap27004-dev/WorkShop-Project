@@ -1,4 +1,5 @@
 {% extends 'fleet_base1.html' %}
+{% load i18n %}
 
 {% block content %}
 <!-- Custom CSS -->
@@ -63,7 +64,7 @@
 
 <div class="container mt-4 mb-5">
     <h2 class="mb-4 text-center fw-bold text-primary">
-        {% if edit_id %}Update{% else %}Add{% endif %} Staff
+        {% if edit_id %}{% trans "Update" %}{% else %}{% trans "Add" %}{% endif %} {% trans "Staff" %}
     </h2>
 
     <!-- Add/Edit Form -->
@@ -73,7 +74,7 @@
         <!-- Personal Information -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Personal Information</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Personal Information" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -135,7 +136,7 @@
         <!-- Employment Information -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Employment Information</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Employment Information" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -171,7 +172,7 @@
         <!-- Bank & Emergency Contact -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Bank & Emergency Contact</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Bank & Emergency Contact" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -198,7 +199,7 @@
         <!-- Documents & Licenses -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Documents & Licenses</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Documents & Licenses" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -252,33 +253,33 @@
         <div class="d-flex justify-content-between align-items-center mt-4">
             <div>
                 <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-                    {% if edit_id %}Update{% else %}Save{% endif %}
+                    {% if edit_id %}{% trans "Update" %}{% else %}{% trans "Save" %}{% endif %}
                 </button>
                 {% if edit_id %}
-                    <a href="{% url 'fleet_app:staff_manage' %}" class="btn btn-secondary px-4 py-2">Cancel</a>
+                    <a href="{% url 'fleet_app:staff_manage' %}" class="btn btn-secondary px-4 py-2">{% trans "Cancel" %}</a>
                 {% endif %}
             </div>
-            <a href="{% url 'fleet_app:document_crud' %}" class="btn btn-secondary px-4 py-2">Add Staff Documents</a>
+            <a href="{% url 'fleet_app:document_crud' %}" class="btn btn-secondary px-4 py-2">{% trans "Add Staff Documents" %}</a>
         </div>
     </form>
 
     <!-- Staff List -->
     <div class="card shadow-sm mt-5">
         <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">Staff List</h5>
+            <h5 class="mb-0 fw-bold text-secondary">{% trans "Staff List" %}</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered table-hover align-middle text-center">
                     <thead class="table-dark">
                         <tr>
-                            <th>ID</th>
-                            <th>Staff ID</th>
-                            <th>Name</th>
-                            <th>Category</th>
-                            <th>Department</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th>{% trans "ID" %}</th>
+                            <th>{% trans "Staff ID" %}</th>
+                            <th>{% trans "Name" %}</th>
+                            <th>{% trans "Category" %}</th>
+                            <th>{% trans "Department" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -291,16 +292,16 @@
                                 <td>{{ staff.department }}</td>
                                 <td>{{ staff.status }}</td>
                                 <td>
-                                    <a href="{% url 'fleet_app:staff_edit' staff.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                    <a href="{% url 'fleet_app:staff_edit' staff.pk %}" class="btn btn-sm btn-primary">{% trans "Edit" %}</a>
                                     <form method="post" style="display:inline;">
                                         {% csrf_token %}
                                         <input type="hidden" name="delete" value="{{ staff.pk }}">
-                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure to delete?')">Delete</button>
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('{% trans 'Are you sure to delete?' %}')">{% trans "Delete" %}</button>
                                     </form>
                                 </td>
                             </tr>
                         {% empty %}
-                            <tr><td colspan="7" class="text-center text-muted">No staff found.</td></tr>
+                            <tr><td colspan="7" class="text-center text-muted">{% trans "No staff found." %}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

@@ -1,0 +1,399 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% block content %}
+<style>
+/* ══════════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f4f6f9;font-family:'Segoe UI',sans-serif;color:#111827;font-size:13px}
+
+.wrap{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
+
+/* ══════════════════════════════════════════════
+   TOP ACTION BAR
+══════════════════════════════════════════════ */
+.top-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:20px;flex-wrap:wrap;gap:12px;
+}
+.page-title-wrap{display:flex;align-items:center;gap:10px}
+.page-title{font-size:20px;font-weight:700;color:#111827}
+.insp-badge{
+  background:#1e293b;color:#93c5fd;font-family:monospace;
+  padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;
+}
+.action-btns{display:flex;gap:8px;align-items:center}
+.btn-act{
+  padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;
+  text-decoration:none;display:inline-flex;align-items:center;gap:5px;
+  cursor:pointer;border:1px solid transparent;transition:all .15s;
+}
+.btn-back{background:#ffffff;color:#4b5563;border-color:#d1d5db}
+.btn-back:hover{background:#f3f4f6}
+.btn-print{background:#059669;color:#ffffff}
+.btn-print:hover{background:#047857}
+.btn-edit{background:#2563eb;color:#ffffff}
+.btn-edit:hover{background:#1d4ed8}
+.btn-jobcard{background:#7c3aed;color:#ffffff}
+.btn-jobcard:hover{background:#6d28d9}
+
+/* ══════════════════════════════════════════════
+   CARD STYLES
+══════════════════════════════════════════════ */
+.card{
+  background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;
+  margin-bottom:20px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);
+}
+.card-hdr{
+  padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e5e7eb;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-title{font-size:14px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:8px}
+.card-body{padding:20px}
+
+/* ══════════════════════════════════════════════
+   GRID & DETAILS
+══════════════════════════════════════════════ */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.g4,.g3,.g2{grid-template-columns:1fr}}
+
+.d-group{margin-bottom:8px}
+.d-lbl{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.d-val{font-size:13px;font-weight:600;color:#111827}
+.d-val-mono{font-family:monospace;font-size:13px;font-weight:700}
+
+/* Status Pill */
+.rat-pill{
+  display:inline-block;padding:3px 10px;border-radius:12px;
+  font-size:11px;font-weight:700;text-transform:uppercase;
+}
+.rat-good{background:#dcfce7;color:#15803d}
+.rat-fair{background:#fef3c7;color:#b45309}
+.rat-poor{background:#fee2e2;color:#b91c1c}
+.rat-na{background:#f3f4f6;color:#6b7280}
+
+.acc-avail{background:#dcfce7;color:#15803d}
+.acc-miss{background:#fee2e2;color:#b91c1c}
+.acc-damg{background:#fef3c7;color:#b45309}
+
+/* Damage tag */
+.dtag{
+  display:inline-flex;align-items:center;gap:4px;padding:4px 10px;
+  border-radius:20px;font-size:11px;font-weight:600;margin-right:6px;margin-bottom:6px;
+}
+.dtag-dent{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.dtag-scratch{background:#f9fafb;color:#374151;border:1px solid #e5e7eb}
+.dtag-paint{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe}
+.dtag-crack{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+.dtag-missing{background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb}
+
+/* Table layout */
+.rating-tbl{width:100%;border-collapse:collapse}
+.rating-tbl th{padding:10px 14px;background:#f8fafc;font-size:11px;font-weight:700;color:#4b5563;text-align:left;border-bottom:1px solid #e5e7eb;text-transform:uppercase}
+.rating-tbl td{padding:11px 14px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#334155}
+.rating-tbl tr:last-child td{border-bottom:none}
+
+/* Print styling */
+@media print {
+  .top-bar, .fleet-header, .sidebar, footer {display:none !important}
+  body,.wrap {background:#fff !important;padding:0 !important;margin:0 !important;max-width:100% !important}
+  .card {border:1px solid #ccc !important;box-shadow:none !important;page-break-inside:avoid}
+}
+</style>
+
+<div class="wrap">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="page-title-wrap">
+      <div class="page-title">Vehicle Inspection</div>
+      <div class="insp-badge">{{ insp.inspection_number }}</div>
+    </div>
+    <div class="action-btns">
+      <a href="{% url 'jobcard_app:inspection_list' %}" class="btn-act btn-back">← Back to List</a>
+      <button type="button" onclick="window.print()" class="btn-act btn-print">🖨️ Print Report</button>
+      <a href="{% url 'jobcard_app:inspection_edit' insp.pk %}" class="btn-act btn-edit">✏️ Edit</a>
+      {% if not insp.jobcard %}
+      <a href="{% url 'jobcard_app:jobcard_create' %}?from_inspection={{ insp.pk }}" class="btn-act btn-jobcard">🔧 Create Job Card</a>
+      {% else %}
+      <a href="{% url 'jobcard_app:jobcard_edit' insp.jobcard.pk %}" class="btn-act btn-jobcard">📋 Linked Job Card: {{ insp.jobcard.job_number }}</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if messages %}{% for m in messages %}
+  <div style="padding:10px 16px;border-radius:7px;margin-bottom:14px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-size:13px">
+    {{ m }}
+  </div>
+  {% endfor %}{% endif %}
+
+  <!-- Section 1: Overview & Header Details -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">📋 Overview & Vehicle Details</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        {% if insp.overall_status == 'pass' %}
+        <span style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">✅ Pass / Safe</span>
+        {% elif insp.overall_status == 'attention' %}
+        <span style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">⚠️ Needs Attention</span>
+        {% else %}
+        <span style="background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">🚫 Failed / Unsafe</span>
+        {% endif %}
+        <div style="font-size:12px;color:#6b7280;font-weight:600">Date: {{ insp.inspection_date|date:"d M Y" }}</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="g4">
+        <div class="d-group">
+          <div class="d-lbl">Customer</div>
+          <div class="d-val">{{ insp.customer.ledger_name }}</div>
+          {% if insp.customer.mobile_no %}<div style="font-size:11px;color:#6b7280">📞 {{ insp.customer.mobile_no }}</div>{% endif %}
+        </div>
+        <div class="d-group">
+          <div class="d-lbl">Vehicle Plate / Registration</div>
+          <div class="d-val-mono">{{ insp.vehicle.registration_number }}</div>
+          <div style="font-size:12px;color:#4b5563">{{ insp.vehicle.make }} {{ insp.vehicle.model }} {% if insp.vehicle.year %}({{ insp.vehicle.year }}){% endif %}</div>
+        </div>
+        <div class="d-group">
+          <div class="d-lbl">Inspector / Driver</div>
+          <div class="d-val">Inspector: {{ insp.inspector.full_name|default:"—" }}</div>
+          {% if insp.driver_name %}<div style="font-size:11px;color:#6b7280">Driver: <strong>{{ insp.driver_name }}</strong></div>{% endif %}
+        </div>
+        <div class="d-group">
+          <div class="d-lbl">Odometer / Fuel</div>
+          <div class="d-val">{% if insp.odometer %}{{ insp.odometer|floatformat:0 }} km{% else %}—{% endif %}</div>
+          <div style="font-size:11px;color:#6b7280;font-weight:600;margin-top:2px">
+            Fuel Level: <span style="color:#111827;text-transform:uppercase;font-weight:700">{{ insp.fuel_level }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Exterior Damage & Diagram -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">🚗 Exterior Damage Inspection</div>
+    </div>
+    <div class="card-body">
+      {% if insp.exterior_damages.all %}
+      <div style="margin-bottom:14px">
+        <div class="d-lbl" style="margin-bottom:6px">Marked Damage Zones</div>
+        <div>
+          {% for d in insp.exterior_damages.all %}
+          <span class="dtag dtag-{{ d.damage_type }}">
+            📍 {{ d.get_zone_display }}: <strong>{{ d.get_damage_type_display }}</strong>
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <div style="padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;border-radius:6px;font-weight:600;font-size:12px;margin-bottom:14px">
+        ✅ No exterior damages recorded.
+      </div>
+      {% endif %}
+
+      {% if insp.exterior_remarks %}
+      <div class="d-group" style="margin-top:10px">
+        <div class="d-lbl">Exterior Damage Remarks</div>
+        <div style="background:#f8fafc;padding:10px 14px;border-radius:6px;border:1px solid #e2e8f0;font-size:13px;color:#334155;white-space:pre-line">{{ insp.exterior_remarks }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Section 3: Interior, Mechanical, Tyres & Fluids Rating Tables -->
+  <div class="g2">
+    <!-- Interior -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">🛋️ Interior Condition</div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="rating-tbl">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th style="width:120px;text-align:right">Rating</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Dashboard</td><td style="text-align:right"><span class="rat-pill rat-{{ interior.dashboard|default:'good' }}">{{ interior.dashboard|default:'Good' }}</span></td></tr>
+            <tr><td>Seats & Upholstery</td><td style="text-align:right"><span class="rat-pill rat-{{ interior.seats|default:'good' }}">{{ interior.seats|default:'Good' }}</span></td></tr>
+            <tr><td>Steering Wheel</td><td style="text-align:right"><span class="rat-pill rat-{{ interior.steering_wheel|default:'good' }}">{{ interior.steering_wheel|default:'Good' }}</span></td></tr>
+            <tr><td>AC / Climate System</td><td style="text-align:right"><span class="rat-pill rat-{{ interior.ac_system|default:'good' }}">{{ interior.ac_system|default:'Good' }}</span></td></tr>
+            <tr><td>Audio / Info System</td><td style="text-align:right"><span class="rat-pill rat-{{ interior.audio_system|default:'good' }}">{{ interior.audio_system|default:'Good' }}</span></td></tr>
+            <tr><td>Power Windows / Mirrors</td><td style="text-align:right"><span class="rat-pill rat-{{ interior.windows|default:'good' }}">{{ interior.windows|default:'Good' }}</span></td></tr>
+            <tr><td>Seat Belts</td><td style="text-align:right"><span class="rat-pill rat-{{ interior.seat_belts|default:'good' }}">{{ interior.seat_belts|default:'Good' }}</span></td></tr>
+            <tr><td>Floor Carpet & Mats</td><td style="text-align:right"><span class="rat-pill rat-{{ interior.floor_carpet|default:'good' }}">{{ interior.floor_carpet|default:'Good' }}</span></td></tr>
+            <tr><td>Headliner & Roof Lining</td><td style="text-align:right"><span class="rat-pill rat-{{ interior.headliner|default:'good' }}">{{ interior.headliner|default:'Good' }}</span></td></tr>
+            <tr><td>Door Trim Panels</td><td style="text-align:right"><span class="rat-pill rat-{{ interior.door_panels|default:'good' }}">{{ interior.door_panels|default:'Good' }}</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Mechanical, Tyres & Fluids -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">🔧 Mechanical, Tyres & Fluid Health</div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="rating-tbl">
+          <thead>
+            <tr>
+              <th>System / Component</th>
+              <th style="width:120px;text-align:right">Rating</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Engine Oil Leak</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.oil_leak|default:'good' }}">{{ mechanical.oil_leak|default:'Good' }}</span></td></tr>
+            <tr><td>Coolant Leak</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.coolant_leak|default:'good' }}">{{ mechanical.coolant_leak|default:'Good' }}</span></td></tr>
+            <tr><td>Abnormal Engine Noise</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.abnormal_noise|default:'good' }}">{{ mechanical.abnormal_noise|default:'Good' }}</span></td></tr>
+            <tr><td>Brake Pads</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.brake_pad|default:'good' }}">{{ mechanical.brake_pad|default:'Good' }}</span></td></tr>
+            <tr><td>Brake Discs / Drums</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.brake_disc|default:'good' }}">{{ mechanical.brake_disc|default:'Good' }}</span></td></tr>
+            <tr><td>Shock Absorbers</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.shock_absorbers|default:'good' }}">{{ mechanical.shock_absorbers|default:'Good' }}</span></td></tr>
+            <tr><td>Suspension Bushes</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.bushes|default:'good' }}">{{ mechanical.bushes|default:'Good' }}</span></td></tr>
+            <tr><td>Battery Condition</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.battery|default:'good' }}">{{ mechanical.battery|default:'Good' }}</span></td></tr>
+            <tr><td>Starter Motor</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.starter|default:'good' }}">{{ mechanical.starter|default:'Good' }}</span></td></tr>
+            <tr><td>Exterior Lights & Indicators</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.lights|default:'good' }}">{{ mechanical.lights|default:'Good' }}</span></td></tr>
+            <!-- Tyres & Fluids -->
+            <tr style="background:#f8fafc"><td colspan="2" style="font-weight:700;color:#64748b;font-size:11px;text-transform:uppercase">🛞 Tyres & Wheels</td></tr>
+            <tr><td>Front Left Tyre</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.tyre_fl|default:'good' }}">{{ mechanical.tyre_fl|default:'Good' }}</span></td></tr>
+            <tr><td>Front Right Tyre</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.tyre_fr|default:'good' }}">{{ mechanical.tyre_fr|default:'Good' }}</span></td></tr>
+            <tr><td>Rear Left Tyre</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.tyre_rl|default:'good' }}">{{ mechanical.tyre_rl|default:'Good' }}</span></td></tr>
+            <tr><td>Rear Right Tyre</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.tyre_rr|default:'good' }}">{{ mechanical.tyre_rr|default:'Good' }}</span></td></tr>
+            <tr><td>Spare Tyre</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.tyre_spare|default:'good' }}">{{ mechanical.tyre_spare|default:'Good' }}</span></td></tr>
+            <tr style="background:#f8fafc"><td colspan="2" style="font-weight:700;color:#64748b;font-size:11px;text-transform:uppercase">💧 Under-Hood Fluid Levels & Exhaust</td></tr>
+            <tr><td>Brake Fluid Level</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.brake_fluid|default:'good' }}">{{ mechanical.brake_fluid|default:'Good' }}</span></td></tr>
+            <tr><td>Power Steering Fluid</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.steering_fluid|default:'good' }}">{{ mechanical.steering_fluid|default:'Good' }}</span></td></tr>
+            <tr><td>Washer Fluid Level</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.washer_fluid|default:'good' }}">{{ mechanical.washer_fluid|default:'Good' }}</span></td></tr>
+            <tr><td>Exhaust System</td><td style="text-align:right"><span class="rat-pill rat-{{ mechanical.exhaust_system|default:'good' }}">{{ mechanical.exhaust_system|default:'Good' }}</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Accessories Checklist -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">🎒 Accessories Checklist</div>
+    </div>
+    <div class="card-body">
+      <div class="g3">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e5e7eb;border-radius:6px;background:#f8fafc">
+          <span style="font-weight:600">Spare Wheel</span>
+          <span class="rat-pill acc-{{ accessories.spare_wheel|slice:':4'|default:'avail' }}">{{ accessories.spare_wheel|default:'Available' }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e5e7eb;border-radius:6px;background:#f8fafc">
+          <span style="font-weight:600">Tool Kit</span>
+          <span class="rat-pill acc-{{ accessories.tool_kit|slice:':4'|default:'avail' }}">{{ accessories.tool_kit|default:'Available' }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e5e7eb;border-radius:6px;background:#f8fafc">
+          <span style="font-weight:600">Service Book</span>
+          <span class="rat-pill acc-{{ accessories.service_book|slice:':4'|default:'avail' }}">{{ accessories.service_book|default:'Available' }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e5e7eb;border-radius:6px;background:#f8fafc">
+          <span style="font-weight:600">Remote Key / FOB</span>
+          <span class="rat-pill acc-{{ accessories.remote_key|slice:':4'|default:'avail' }}">{{ accessories.remote_key|default:'Available' }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e5e7eb;border-radius:6px;background:#f8fafc">
+          <span style="font-weight:600">Safety Triangle</span>
+          <span class="rat-pill acc-{{ accessories.safety_triangle|slice:':4'|default:'avail' }}">{{ accessories.safety_triangle|default:'Available' }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e5e7eb;border-radius:6px;background:#f8fafc">
+          <span style="font-weight:600">Floor Mats</span>
+          <span class="rat-pill acc-{{ accessories.floor_mat|slice:':4'|default:'avail' }}">{{ accessories.floor_mat|default:'Available' }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e5e7eb;border-radius:6px;background:#f8fafc">
+          <span style="font-weight:600">Jack & Handle</span>
+          <span class="rat-pill acc-{{ accessories.jack|slice:':4'|default:'avail' }}">{{ accessories.jack|default:'Available' }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e5e7eb;border-radius:6px;background:#f8fafc">
+          <span style="font-weight:600">Fire Extinguisher</span>
+          <span class="rat-pill acc-{{ accessories.fire_extinguisher|slice:':4'|default:'avail' }}">{{ accessories.fire_extinguisher|default:'Available' }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e5e7eb;border-radius:6px;background:#f8fafc">
+          <span style="font-weight:600">First Aid Kit</span>
+          <span class="rat-pill acc-{{ accessories.first_aid_kit|slice:':4'|default:'avail' }}">{{ accessories.first_aid_kit|default:'Available' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Complaints & Findings -->
+  <div class="g2">
+    <!-- Customer Complaints -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">🗣️ Customer Reported Complaints</div>
+      </div>
+      <div class="card-body">
+        {% if complaints %}
+        <ul style="list-style:none">
+          {% for c in complaints %}
+          <li style="padding:8px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:10px;align-items:flex-start">
+            <span style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:11px;padding:2px 6px;border-radius:4px">{{ forloop.counter }}</span>
+            <span style="font-size:13px;color:#1e293b">{{ c.description }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div style="font-size:12px;color:#9ca3af">No customer complaints specified.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Technician Findings -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">🔍 Inspector / Technician Findings</div>
+      </div>
+      <div class="card-body">
+        {% if findings %}
+        <ul style="list-style:none">
+          {% for f in findings %}
+          <li style="padding:8px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:10px;align-items:flex-start">
+            <span style="background:#fefce8;color:#ca8a04;font-weight:700;font-size:11px;padding:2px 6px;border-radius:4px">{{ forloop.counter }}</span>
+            <span style="font-size:13px;color:#1e293b">{{ f.description }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div style="font-size:12px;color:#9ca3af">No technician findings specified.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Customer Signature & Acknowledgement -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">✍️ Customer Acknowledgement</div>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;align-items:center;gap:12px">
+        {% if insp.customer_signed %}
+        <span style="background:#dcfce7;color:#15803d;font-weight:700;padding:6px 14px;border-radius:20px;font-size:13px">
+          ✅ Signed & Approved by Customer
+        </span>
+        {% else %}
+        <span style="background:#f3f4f6;color:#6b7280;font-weight:600;padding:6px 14px;border-radius:20px;font-size:13px">
+          ⚠️ Customer Signature Pending
+        </span>
+        {% endif %}
+
+        {% if insp.customer_signature_note %}
+        <div style="font-size:13px;color:#4b5563">
+          <strong>Note:</strong> {{ insp.customer_signature_note }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

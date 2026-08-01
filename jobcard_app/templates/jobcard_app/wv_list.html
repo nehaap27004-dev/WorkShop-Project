@@ -1,0 +1,208 @@
+{% extends 'fleet_base1.html' %}
+{% block content %}
+<style>
+*{box-sizing:border-box}
+body{background:#f5f6fa}
+.wrap{max-width:1400px;margin:0 auto;padding:24px 28px}
+
+/* Top bar */
+.top-bar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.page-title{font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:2px}
+.page-sub{font-size:13px;color:#6b7280}
+.btn-new{background:#2563eb;color:#fff;border:none;border-radius:7px;
+         padding:10px 20px;font-size:13px;font-weight:600;
+         text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+         white-space:nowrap}
+.btn-new:hover{background:#1d4ed8;color:#fff}
+
+/* Search + filter bar */
+.search-bar{display:flex;gap:10px;margin-bottom:20px;align-items:center}
+.search-wrap{flex:1;position:relative}
+.search-wrap input{width:100%;border:1px solid #e5e7eb;border-radius:7px;
+                   padding:9px 12px 9px 36px;font-size:13px;color:#374151;
+                   background:#fff;outline:none}
+.search-wrap input:focus{border-color:#2563eb}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);
+             color:#9ca3af;font-size:14px}
+.filter-sel{border:1px solid #e5e7eb;border-radius:7px;padding:9px 12px;
+            font-size:13px;color:#374151;background:#fff;outline:none;cursor:pointer;
+            min-width:140px}
+.filter-sel:focus{border-color:#2563eb}
+
+/* Table */
+.tbl-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{padding:11px 16px;font-size:11px;font-weight:700;color:#6b7280;
+         text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid #e5e7eb;
+         text-align:left;background:#fff;white-space:nowrap}
+tbody tr{border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .12s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8faff}
+tbody td{padding:13px 16px;vertical-align:middle}
+
+/* Vehicle / reg no cell */
+.reg-no{font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:2px}
+.veh-no{font-size:11px;color:#2563eb;font-family:monospace;font-weight:600}
+
+/* Make & model cell */
+.make{font-size:13px;font-weight:600;color:#1a1a2e;margin-bottom:2px}
+.model-color{font-size:11px;color:#6b7280}
+
+/* Customer cell */
+.cust-name{font-size:13px;font-weight:600;color:#1a1a2e;margin-bottom:2px}
+.cust-phone{font-size:11px;color:#6b7280}
+
+/* Year */
+.year-val{font-size:13px;font-weight:600;color:#374151}
+
+/* Fuel badge */
+.fuel-badge{display:inline-block;border-radius:4px;padding:3px 10px;
+            font-size:12px;font-weight:600}
+.fuel-petrol  {background:#dbeafe;color:#1d4ed8}
+.fuel-diesel  {background:#fef3c7;color:#92400e}
+.fuel-electric{background:#d1fae5;color:#065f46}
+.fuel-hybrid  {background:#ede9fe;color:#5b21b6}
+.fuel-cng     {background:#e0f2fe;color:#0369a1}
+.fuel-lpg     {background:#fce7f3;color:#9d174d}
+.fuel-other   {background:#f3f4f6;color:#6b7280}
+
+/* Insurance dot */
+.ins-cell{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600}
+.ins-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ins-expired {color:#dc2626}.ins-dot-expired {background:#dc2626}
+.ins-expiring{color:#d97706}.ins-dot-expiring{background:#f59e0b}
+.ins-ok      {color:#374151}.ins-dot-ok      {background:#d1d5db}
+.ins-unknown {color:#9ca3af}.ins-dot-unknown {background:#e5e7eb}
+
+/* Empty state */
+.empty{text-align:center;padding:60px 20px;color:#9ca3af}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-text{font-size:14px;margin-bottom:16px}
+
+@media(max-width:768px){
+  .wrap{padding:16px}
+  .search-bar{flex-wrap:wrap}
+  thead th:nth-child(n+4){display:none}
+  tbody td:nth-child(n+4){display:none}
+}
+</style>
+
+<div class="wrap">
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div>
+      <div class="page-title">Vehicle Master</div>
+      <div class="page-sub">{{ counts.total }} vehicle{{ counts.total|pluralize }} registered</div>
+    </div>
+    <a href="{% url 'jobcard_app:wv_create' %}" class="btn-new">+ New Vehicle</a>
+  </div>
+
+  {% if messages %}{% for m in messages %}
+  <div style="padding:10px 16px;border-radius:7px;margin-bottom:14px;
+    background:{% if 'error' in m.tags %}#fef2f2{% else %}#f0fdf4{% endif %};
+    border:1px solid {% if 'error' in m.tags %}#fca5a5{% else %}#86efac{% endif %};
+    color:{% if 'error' in m.tags %}#b91c1c{% else %}#15803d{% endif %};font-size:13px">
+    {{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <!-- Search + filter -->
+  <form method="get" class="search-bar" id="filterForm">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" name="q" value="{{ q }}"
+             placeholder="Search by reg no., make, model, customer..."
+             id="searchInp" autocomplete="off">
+    </div>
+    <select name="fuel" class="filter-sel" onchange="this.form.submit()">
+      <option value="">All Fuel Types</option>
+      {% for val,lbl in fuel_choices %}
+      <option value="{{ val }}" {% if fuel_filter == val %}selected{% endif %}>{{ lbl }}</option>
+      {% endfor %}
+    </select>
+    <input type="hidden" name="customer" value="{{ customer_id }}">
+  </form>
+
+  <!-- Table -->
+  <div class="tbl-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Vehicle / Reg No.</th>
+          <th>Make &amp; Model</th>
+          <th>Customer</th>
+          <th>Year</th>
+          <th>Fuel</th>
+          <th>Insurance</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in vehicles %}
+        <tr onclick="window.location='{% url 'jobcard_app:wv_list'%}'">
+          <td>
+            <div class="reg-no">{{ v.registration_number }}</div>
+            <div class="veh-no">{{ v.vehicle_number }}</div>
+          </td>
+          <td>
+            <div class="make">{{ v.make }}</div>
+            <div class="model-color">
+              {{ v.model }}{% if v.color %} · {{ v.color }}{% endif %}
+            </div>
+          </td>
+          <td>
+            <div class="cust-name">{{ v.customer.ledger_name }}</div>
+            <div class="cust-phone">
+              {{ v.customer.mobile|default:v.customer.phone_no |default:"" }}
+            </div>
+          </td>
+          <td><span class="year-val">{{ v.year|default:"—" }}</span></td>
+          <td>
+            {% if v.fuel_type %}
+            <span class="fuel-badge fuel-{{ v.fuel_type }}">
+              {{ v.get_fuel_type_display }}
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% with s=v.get_insurance_status %}
+            <div class="ins-cell ins-{{ s }}">
+              <span class="ins-dot ins-dot-{{ s }}"></span>
+              {% if s == 'expired' %}{{ v.insurance_expiry_date|date:"d M Y" }}
+              {% elif s == 'expiring' %}{{ v.insurance_expiry_date|date:"d M Y" }}
+              {% elif s == 'ok' %}{{ v.insurance_expiry_date|date:"d M Y" }}
+              {% else %}Not set{% endif %}
+            </div>
+            {% endwith %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty">
+              <div class="empty-icon">🚗</div>
+              <div class="empty-text">No vehicles registered yet</div>
+              <a href="{% url 'jobcard_app:wv_create' %}"
+                 style="background:#2563eb;color:#fff;border-radius:7px;
+                        padding:9px 20px;text-decoration:none;
+                        font-size:13px;font-weight:600">
+                Register First Vehicle
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+// Live search on type
+let timer;
+document.getElementById('searchInp').addEventListener('input', function() {
+  clearTimeout(timer);
+  timer = setTimeout(() => document.getElementById('filterForm').submit(), 400);
+});
+</script>
+{% endblock %}

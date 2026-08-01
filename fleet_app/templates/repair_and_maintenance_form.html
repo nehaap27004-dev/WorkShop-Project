@@ -1,5 +1,6 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
 <!-- Custom CSS -->
@@ -61,7 +62,7 @@
 </style>
 <div class="container mt-4 mb-5">
 
-    <h2 class="mb-4 text-center fw-bold text-primary">Repair & Maintenance</h2>
+    <h2 class="mb-4 text-center fw-bold text-primary">{% trans "Repair & Maintenance" %}</h2>
 
     <form method="post" enctype="multipart/form-data" class="needs-validation">
         {% csrf_token %}
@@ -69,7 +70,7 @@
         <!-- Repair & Maintenance Details -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Repair & Maintenance Details</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Repair & Maintenance Details" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -78,7 +79,7 @@
                         {{ maintenance_form.voucher_no.label_tag }}
                         {{ maintenance_form.voucher_no }}
                     </div>
-                    <div class="col-md-2" style="display: none">>
+                    <div class="col-md-2" style="display: none">
                         {{ maintenance_form.voucherType.label_tag }}
                         {{ maintenance_form.voucherType }}
                     </div>
@@ -123,7 +124,7 @@
                     <div class="col-md-2 d-flex align-items-end">
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" id="vat-checkbox">
-                            <label for="vat-checkbox" class="form-check-label">Enable VAT</label>
+                            <label for="vat-checkbox" class="form-check-label">{% trans "Enable VAT" %}</label>
                         </div>
                     </div>
                 </div>
@@ -133,7 +134,7 @@
         <!-- Maintenance Items -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Maintenance Items</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Maintenance Items" %}</h5>
             </div>
             <div class="card-body">
 
@@ -161,11 +162,11 @@
                     <table id="quotation-items-table" class="table table-bordered align-middle text-center">
                         <thead class="table-light">
                             <tr>
-                                <th>Narration</th>
-                                <th>Bill Amount</th>
-                                <th>VAT Amount</th>
-                                <th>Total Amount</th>
-                                <th>Actions</th>
+                                <th>{% trans "Narration" %}</th>
+                                <th>{% trans "Bill Amount" %}</th>
+                                <th>{% trans "VAT Amount" %}</th>
+                                <th>{% trans "Total Amount" %}</th>
+                                <th>{% trans "Actions" %}</th>
                             </tr>
                         </thead>
                         <tbody id="items-table-body"></tbody>
@@ -173,7 +174,7 @@
                 </div>
 
                 <button type="button" class="btn text-white mt-2" id="add-item-button" style="background-color:#5A8DEE;">
-                    Add Item
+                    {% trans "Add Item" %}
                 </button>
             </div>
         </div>
@@ -181,22 +182,28 @@
         <!-- Grand Total -->
         <div class="row mt-4 justify-content-end">
             <div class="col-md-4">
-                <label for="grand-total-amount" class="form-label fw-semibold">
-                    {{ maintenance_form.grand_total_amount.label_tag }}
-                </label>
+                {{ maintenance_form.grand_total_amount.label_tag }}
                 {{ maintenance_form.grand_total_amount }}
             </div>
         </div>
 
         <div class="text-end mt-4">
             <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-                Save
+                {% trans "Save" %}
             </button>
         </div>
 
     </form>
 </div>
 <script>
+    // Translation strings for JavaScript
+    const translations = {
+        fillRequired: "{% trans 'Please fill in at least the Narration and Bill Amount fields' %}",
+        remove: "{% trans 'Remove' %}",
+        loading: "{% trans 'Loading...' %}",
+        error: "{% trans 'Error' %}"
+    };
+
     document.addEventListener('DOMContentLoaded', function () {
         const vatCheckbox = document.getElementById('vat-checkbox');
         const addButton = document.getElementById('add-item-button');
@@ -267,7 +274,7 @@
 
             // Validate required fields
             if (!narrationTextarea.value || !billAmountInput.value) {
-                alert('Please fill in at least the Narration and Bill Amount fields');
+                alert(translations.fillRequired);
                 return;
             }
 
@@ -286,7 +293,7 @@
                 <td>${VATAmount}</td>
                 <td>${totalAmount}</td>
                 <td>
-                    <button type="button" class="btn btn-danger remove-item-button">Remove</button>
+                    <button type="button" class="btn btn-danger remove-item-button">${translations.remove}</button>
                     <input type="hidden" name="form-${formCount}-narration" value="${narration}">
                     <input type="hidden" name="form-${formCount}-bill_amount" value="${billAmount}">
                     <input type="hidden" name="form-${formCount}-VAT_amount" value="${VATAmount}">
@@ -352,12 +359,11 @@
 <script>
     $(document).ready(function () {
         $.ajax({
-            url: "{% url 'fleet_app:get_next_voucher_no' %}",  // Replace with your URL pattern name
+            url: "{% url 'fleet_app:get_next_voucher_no' %}",
             type: "GET",
             dataType: "json",
             success: function (data) {
-                console.log("Next Voucher No:", data.next_voucher_no);  // Debugging
-                // Ensure the correct field is targeted
+                console.log("Next Voucher No:", data.next_voucher_no);
                 $('input[name="voucher_no"]').val(data.next_voucher_no);
             },
             error: function (error) {
@@ -368,39 +374,41 @@
 </script>
 
 <!-- Get Next Voucher_no -->
+{% if not is_edit_mode %}
 <script>
-function updateVoucherNumber() {
-    const select = document.getElementById('id_voucherType');
-    const input = document.getElementById('id_voucher_no');
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
 
-    if (select && input && select.value) {
-        input.value = 'Loading...';
-        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    input.value = data.voucher_number;
-                } else {
-                    input.value = 'Error';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching voucher number:', error);
-                input.value = 'Error';
-            });
-    } else if (input) {
-        input.value = '';
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = data.voucher_number;
+                    } else {
+                        input.value = "{% trans 'Error' %}";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching voucher number:', error);
+                    input.value = "{% trans 'Error' %}";
+                });
+        } else if (input) {
+            input.value = '';
+        }
     }
-}
 
-window.addEventListener('DOMContentLoaded', function() {
-    const voucherSelect = document.getElementById('id_voucherType');
-    if (voucherSelect) {
-        voucherSelect.addEventListener('change', updateVoucherNumber);
-        updateVoucherNumber(); // also run once on load
-    }
-});
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
 </script>
+{% endif %}
 
 
 {% endblock %}

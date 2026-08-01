@@ -1,6 +1,7 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
 {% load privilege_tags %}
+{% load i18n %}
 
 {% block content %}
 <div class="container mt-4">
@@ -11,7 +12,7 @@
         {% if can_read_contract %}
         <a href="{% url 'fleet_app:fleet_contract_list' %}" 
         class="btn btn-outline-primary btn-sm">
-            View
+            {% trans "View" %}
         </a>
         {% endif %}
 
@@ -20,15 +21,21 @@
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white">
             <h4 class="mb-0">
-                {% if edit_mode %} Edit Fleet Contract 
-                {% else %} Create Fleet Contract 
+                {% if edit_mode %}
+                    {% trans "Edit Fleet Contract" %}
+                {% else %}
+                    {% trans "Create Fleet Contract" %}
                 {% endif %}
             </h4>
         </div>
 
 
         <div class="card-body">
-            <form method="POST">
+            <form method="POST" id="contract-form" action="{% if edit_mode %}
+                 {% url 'fleet_app:edit_fleet_contract' pk=form.instance.pk %}
+              {% else %}
+                 {% url 'fleet_app:create_fleet_contract' %}
+              {% endif %}">
                 {% csrf_token %}
                 
                 <div class="row">
@@ -36,27 +43,27 @@
                     <div class="col-md-6">
 
                         <div class="mb-3" >
-                            <label>{{ form.voucher_no.label }}</label>
+                            {{ form.voucher_no.label_tag }}
                             {{ form.voucher_no }}
                         </div>
 
                         <div class="mb-3">
-                            <label>{{ form.contract_no.label }}</label>
+                            {{ form.contract_no.label_tag }}
                             {{ form.contract_no }}
                         </div>
 
                         <div class="mb-3">
-                            <label>{{ form.vehicle.label }}</label>
+                            {{ form.vehicle.label_tag }}
                             {{ form.vehicle }}
                         </div>
 
                         <div class="mb-3">
-                            <label>{{ form.date.label }}</label>
+                            {{ form.date.label_tag }}
                             {{ form.date }}
                         </div>
 
                         <div class="mb-3">
-                            <label>{{ form.end_date.label }}</label>
+                            {{ form.end_date.label_tag }}
                             {{ form.end_date }}
                         </div>
 
@@ -66,27 +73,27 @@
                     <div class="col-md-6">
 
                         <div class="mb-3">
-                            <label>{{ form.operator_1.label }}</label>
+                            {{ form.operator_1.label_tag }}
                             {{ form.operator_1 }}
                         </div>
 
                         <div class="mb-3">
-                            <label>{{ form.customer.label }}</label>
+                            {{ form.customer.label_tag }}
                             {{ form.customer }}
                         </div>
 
                         <div class="mb-3" style="display: none;">
-                            <label>{{ form.voucherType.label }}</label>
+                            {{ form.voucherType.label_tag }}
                             {{ form.voucherType }}
                         </div>
 
                         <div class="mb-3">
-                            <label>{{ form.note.label }}</label>
+                            {{ form.note.label_tag }}
                             {{ form.note }}
                         </div>
 
                         <div class="mb-3">
-                            <label>{{ form.remark.label }}</label>
+                            {{ form.remark.label_tag }}
                             {{ form.remark }}
                         </div>
 
@@ -95,9 +102,12 @@
 
                 <div class="text-end">
                     <button class="btn btn-success px-4">
-    {% if edit_mode %} Update Contract {% else %} Save Contract {% endif %}
-</button>
-
+                        {% if edit_mode %}
+                            {% trans "Update Contract" %}
+                        {% else %}
+                            {% trans "Save Contract" %}
+                        {% endif %}
+                    </button>
                 </div>
 
             </form>
@@ -106,37 +116,87 @@
 </div>
 
 <!-- Get Next Voucher_no -->
+{% if not is_edit_mode %}
 <script>
-function updateVoucherNumber() {
-    const select = document.getElementById('id_voucherType');
-    const input = document.getElementById('id_voucher_no');
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
 
-    if (select && input && select.value) {
-        input.value = 'Loading...';
-        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    input.value = data.voucher_number;
-                } else {
-                    input.value = 'Error';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching voucher number:', error);
-                input.value = 'Error';
-            });
-    } else if (input) {
-        input.value = '';
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = data.voucher_number;
+                    } else {
+                        input.value = "{% trans 'Error' %}";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching voucher number:', error);
+                    input.value = "{% trans 'Error' %}";
+                });
+        } else if (input) {
+            input.value = '';
+        }
     }
-}
 
-window.addEventListener('DOMContentLoaded', function() {
-    const voucherSelect = document.getElementById('id_voucherType');
-    if (voucherSelect) {
-        voucherSelect.addEventListener('change', updateVoucherNumber);
-        updateVoucherNumber(); // also run once on load
-    }
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
+
+<script>
+$(document).on("submit", "#contract-form", function (e) {
+    e.preventDefault();
+
+    window.pendingFormId = "contract-form";
+    window.pendingFormAction = this.action;
+    window.afterSuccessRedirect = "{% url 'fleet_app:fleet_contract_list' %}";
+
+    let formData = new FormData(this);
+
+    $.ajax({
+        url: window.pendingFormAction,
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+
+        success: function (response) {
+
+            if (response.admin_required) {
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+                window.location.href = window.afterSuccessRedirect;
+            }
+        },
+
+        error: function (xhr) {
+
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            console.error("Contract error:", xhr.responseText);
+            alert("Something went wrong");
+        }
+    });
 });
 </script>
 

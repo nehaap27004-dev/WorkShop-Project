@@ -1,0 +1,2632 @@
+# Arabic translations for RABWA Accounting System.
+# Copyright (C) 2025
+# This file is distributed under the same license as the RABWA package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: RABWA 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-12-14 06:18+0000\n"
+"PO-Revision-Date: 2025-12-09 15:37+0000\n"
+"Last-Translator: RABWA Team\n"
+"Language-Team: Arabic\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
+"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+#: accounts_app/forms.py:70 accounts_app/templates/ledger.html:130
+msgid "Ledger Name"
+msgstr "اسم دفتر الأستاذ"
+
+#: accounts_app/forms.py:71
+msgid "Groups"
+msgstr "المجموعات"
+
+#: accounts_app/forms.py:72
+msgid "Sub Group"
+msgstr "المجموعة الفرعية"
+
+#: accounts_app/forms.py:73 accounts_app/forms.py:105 accounts_app/forms.py:154
+#: accounts_app/templates/create_customer.html:193
+#: accounts_app/templates/create_vendor.html:192
+#: accounts_app/templates/ledger.html:132
+msgid "Opening Balance"
+msgstr "الرصيد الافتتاحي"
+
+#: accounts_app/forms.py:74
+msgid "Type"
+msgstr "النوع"
+
+#: accounts_app/forms.py:75 accounts_app/forms.py:106 accounts_app/forms.py:155
+#: accounts_app/templates/create_PaymentBillClearance.html:102
+#: accounts_app/templates/local_payment_form.html:319
+msgid "Remark"
+msgstr "ملاحظة"
+
+#: accounts_app/forms.py:76
+msgid "TRN No"
+msgstr ""
+
+#: accounts_app/forms.py:104
+msgid "Client Name"
+msgstr "اسم العميل"
+
+#: accounts_app/forms.py:107 accounts_app/forms.py:156
+msgid "TR No"
+msgstr "رقم المعاملة"
+
+
+#: accounts_app/forms.py:108 accounts_app/forms.py:157
+#: accounts_app/templates/create_customer.html:189
+#: accounts_app/templates/create_vendor.html:188 fleet_app/forms.py:1010
+#: fleet_app/forms.py:1240
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+#: accounts_app/forms.py:109 accounts_app/forms.py:158
+#: accounts_app/templates/create_customer.html:190
+#: accounts_app/templates/create_vendor.html:189
+msgid "Mobile"
+msgstr "الجوال"
+
+#: accounts_app/forms.py:110 accounts_app/forms.py:159
+msgid "Phone No"
+msgstr "رقم الهاتف"
+
+#: accounts_app/forms.py:111 accounts_app/forms.py:160 fleet_app/forms.py:1011
+msgid "Address"
+msgstr "العنوان"
+
+#: accounts_app/forms.py:112 accounts_app/forms.py:161
+#: accounts_app/templates/create_customer.html:192
+#: accounts_app/templates/create_vendor.html:191
+msgid "Country"
+msgstr "الدولة"
+
+#: accounts_app/forms.py:113 accounts_app/forms.py:162
+msgid "State"
+msgstr "الولاية"
+
+#: accounts_app/forms.py:114 accounts_app/forms.py:163
+#: accounts_app/templates/create_customer.html:191
+#: accounts_app/templates/create_vendor.html:190
+msgid "City"
+msgstr "المدينة"
+
+#: accounts_app/forms.py:115 accounts_app/forms.py:164
+msgid "Zipcode"
+msgstr "الرمز البريدي"
+
+#: accounts_app/forms.py:116 accounts_app/forms.py:165
+#: accounts_app/forms.py:657 accounts_app/forms.py:722
+#: accounts_app/templates/local_payment_form.html:259
+#: accounts_app/templates/local_payment_form.html:273
+#: accounts_app/templates/payment_create.html:112
+#: accounts_app/templates/payment_create.html:132
+#: accounts_app/templates/receipt_create.html:226
+#: accounts_app/templates/receipt_create.html:246 fleet_app/forms.py:585
+#: fleet_app/forms.py:1054 fleet_app/forms.py:1128
+#: fleet_app/templates/create_simple_quotation.html:165
+#: fleet_app/templates/create_simple_quotation.html:194
+#: fleet_app/templates/vehicle_form.html:565
+msgid "Description"
+msgstr "الوصف"
+
+#: accounts_app/forms.py:153
+msgid "Supplier Name"
+msgstr "اسم المورد"
+
+#: accounts_app/forms.py:619 accounts_app/forms.py:683 fleet_app/forms.py:787
+#: fleet_app/forms.py:1295
+msgid "Voucher Number"
+msgstr "رقم القسيمة"
+
+#: accounts_app/forms.py:620 accounts_app/forms.py:684
+#: accounts_app/templates/cheque_clearance.html:100
+#: accounts_app/templates/cheque_clearance.html:118
+#: accounts_app/templates/create_PaymentBillClearance.html:90
+#: accounts_app/templates/ledger_posting_list.html:61
+#: accounts_app/templates/local_payment_form.html:162 fleet_app/forms.py:584
+#: fleet_app/forms.py:644 fleet_app/forms.py:790 fleet_app/forms.py:1091
+#: fleet_app/forms.py:1292 fleet_app/templates/contract_list.html:26
+#: fleet_app/templates/invoice_list.html:12
+#: fleet_app/templates/simple_quotation_list.html:20
+#: fleet_app/templates/timesheet_form.html:223
+#: fleet_app/templates/timesheet_report.html:19
+msgid "Date"
+msgstr "التاريخ"
+
+#: accounts_app/forms.py:621 accounts_app/forms.py:685
+msgid "Cash/Bank"
+msgstr "نقد/بنك"
+
+#: accounts_app/forms.py:622
+msgid "Paid To"
+msgstr "مدفوع إلى"
+
+#: accounts_app/forms.py:623 accounts_app/forms.py:687
+#: accounts_app/templates/local_payment_form.html:196
+msgid "PDC"
+msgstr "شيك مؤجل الدفع"
+
+#: accounts_app/forms.py:624 accounts_app/forms.py:688
+#: accounts_app/templates/create_PaymentBillClearance.html:116
+#: accounts_app/templates/local_payment_form.html:204
+#: accounts_app/templates/local_payment_form.html:294
+msgid "Cheque Date"
+msgstr "تاريخ الشيك"
+
+#: accounts_app/forms.py:625 accounts_app/forms.py:689
+msgid "Cheque Number"
+msgstr "رقم الشيك"
+
+#: accounts_app/forms.py:626 accounts_app/forms.py:690
+#: accounts_app/templates/payment_create.html:152
+#: accounts_app/templates/receipt_create.html:267 fleet_app/forms.py:828
+#: fleet_app/forms.py:1213
+#: fleet_app/templates/repair_and_maintenance_form.html:168
+msgid "Total Amount"
+msgstr "المبلغ الإجمالي"
+
+#: accounts_app/forms.py:655 accounts_app/forms.py:720
+#: accounts_app/templates/payment_create.html:96
+#: accounts_app/templates/receipt_create.html:210
+msgid "Ledger Account"
+msgstr "حساب الدفتر"
+
+#: accounts_app/forms.py:656 accounts_app/forms.py:721
+#: accounts_app/templates/create_PaymentBillClearance.html:140
+#: accounts_app/templates/local_payment_form.html:243
+#: accounts_app/templates/local_payment_form.html:274
+#: accounts_app/templates/payment_create.html:107
+#: accounts_app/templates/payment_create.html:131
+#: accounts_app/templates/receipt_create.html:221
+#: accounts_app/templates/receipt_create.html:245 fleet_app/forms.py:1210
+#: fleet_app/templates/create_invoice.html:229
+#: fleet_app/templates/create_invoice.html:250
+msgid "Amount"
+msgstr "المبلغ"
+
+#: accounts_app/forms.py:686
+msgid "Received From"
+msgstr "مستلم من"
+
+#: accounts_app/templates/cheque_clearance.html:44
+#: fleet_app/templates/fleet_base1.html:403
+msgid "Cheque Clearance"
+msgstr "تصفية شيك"
+
+#: accounts_app/templates/cheque_clearance.html:51
+msgid "Cleared"
+msgstr "تمت التصفية"
+
+#: accounts_app/templates/cheque_clearance.html:54
+msgid "Bounced"
+msgstr "مرتجع"
+
+#: accounts_app/templates/cheque_clearance.html:57
+msgid "Un Cleared"
+msgstr "غير مصفى"
+
+#: accounts_app/templates/cheque_clearance.html:60
+msgid "Exit"
+msgstr "خروج"
+
+#: accounts_app/templates/cheque_clearance.html:73
+msgid "Payable"
+msgstr "مستحق الدفع"
+
+#: accounts_app/templates/cheque_clearance.html:80
+msgid "Receivable"
+msgstr "مستحق القبض"
+
+#: accounts_app/templates/cheque_clearance.html:87
+#: fleet_app/templates/fleet_base1.html:414
+msgid "Payment-Bill"
+msgstr "إيصال صرف فاتورة"
+
+#: accounts_app/templates/cheque_clearance.html:94
+#: fleet_app/templates/fleet_base1.html:410
+msgid "Receipt-Bill"
+msgstr "إيصال استلام فاتورة"
+
+#: accounts_app/templates/cheque_clearance.html:114
+msgid "Select All"
+msgstr "تحديد الكل"
+
+#: accounts_app/templates/cheque_clearance.html:117
+msgid "VoucherNo"
+msgstr "رقم السند"
+
+#: accounts_app/templates/cheque_clearance.html:119
+msgid "NetTotal"
+msgstr "الإجمالي الصافي"
+
+#: accounts_app/templates/cheque_clearance.html:120
+msgid "LedgerName"
+msgstr "اسم الحساب"
+
+#: accounts_app/templates/cheque_clearance.html:121
+msgid "CheckDate"
+msgstr "تاريخ الشيك"
+
+#: accounts_app/templates/cheque_clearance.html:122
+msgid "ChequeNo"
+msgstr "رقم الشيك"
+
+#: accounts_app/templates/cheque_clearance.html:123
+#: accounts_app/templates/local_payment_form.html:304 fleet_app/forms.py:1030
+#: fleet_app/forms.py:1058 fleet_app/templates/document_crud.html:218
+#: fleet_app/templates/staff_manage.html:281
+msgid "Status"
+msgstr "الحالة"
+
+#: accounts_app/templates/cheque_clearance.html:129
+#: accounts_app/templates/cheque_clearance.html:215
+#: accounts_app/templates/local_payment_form.html:510
+#: accounts_app/templates/payment_create.html:455
+#: accounts_app/templates/receipt_create.html:448
+#: fleet_app/templates/contract_form.html:118
+#: fleet_app/templates/create_invoice.html:306
+#: fleet_app/templates/create_simple_quotation.html:230
+#: fleet_app/templates/fleet_hire_form.html:264
+#: fleet_app/templates/repair_and_maintenance_form.html:203
+#: fleet_app/templates/timesheet_form.html:265
+msgid "Loading..."
+msgstr "جاري التحميل..."
+
+#: accounts_app/templates/cheque_clearance.html:143
+msgid "Enter Bounce Charge"
+msgstr "إدخال رسوم الارتجاع"
+
+#: accounts_app/templates/cheque_clearance.html:148
+msgid "Bounce Charge Amount:"
+msgstr "مبلغ رسوم الارتجاع:"
+
+#: accounts_app/templates/cheque_clearance.html:150
+msgid "Enter bounce charge"
+msgstr "أدخل رسوم الارتجاع"
+
+#: accounts_app/templates/cheque_clearance.html:161
+msgid "Confirm Bounce"
+msgstr "تأكيد الارتجاع"
+
+#: accounts_app/templates/cheque_clearance.html:212
+msgid "Please select at least one bill"
+msgstr "يرجى تحديد فاتورة واحدة على الأقل"
+
+#: accounts_app/templates/cheque_clearance.html:213
+#, fuzzy
+#| msgid "No staff found."
+msgid "No bills found"
+msgstr "لم يتم العثور على موظفين."
+
+#: accounts_app/templates/cheque_clearance.html:214
+#: accounts_app/templates/local_payment_form.html:517
+#: accounts_app/templates/local_payment_form.html:522
+#: accounts_app/templates/payment_create.html:462
+#: accounts_app/templates/payment_create.html:467
+#: accounts_app/templates/receipt_create.html:455
+#: accounts_app/templates/receipt_create.html:460
+#: fleet_app/templates/contract_form.html:119
+#: fleet_app/templates/create_invoice.html:307
+#: fleet_app/templates/create_simple_quotation.html:231
+#: fleet_app/templates/fleet_hire_form.html:265
+#: fleet_app/templates/repair_and_maintenance_form.html:204
+#: fleet_app/templates/simple_quotation_list.html:76
+#: fleet_app/templates/timesheet_form.html:266
+#: fleet_app/templates/timesheet_report.html:69
+msgid "Error"
+msgstr "خطأ"
+
+#: accounts_app/templates/cheque_clearance.html:216
+#: fleet_app/templates/fleet_hire_form.html:181
+msgid "Select"
+msgstr "اختر"
+
+#: accounts_app/templates/cheque_clearance.html:217
+msgid "Bounce charge cannot be negative"
+msgstr "لا يمكن أن تكون رسوم الارتجاع سالبة"
+
+#: accounts_app/templates/cheque_clearance.html:218
+msgid "bill(s) updated successfully!"
+msgstr "تم تحديث الفاتورة (الفواتير) بنجاح!"
+
+#: accounts_app/templates/cheque_clearance.html:219
+msgid "Error updating bills"
+msgstr "خطأ في تحديث الفواتير"
+
+#: accounts_app/templates/cheque_clearance.html:220
+msgid "Are you sure you want to mark"
+msgstr "هل أنت متأكد أنك تريد تحديد"
+
+#: accounts_app/templates/cheque_clearance.html:221
+msgid "as"
+msgstr "كـ"
+
+#: accounts_app/templates/cheque_clearance.html:222
+msgid "with bounce charge"
+msgstr "مع رسوم ارتجاع"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:69
+#: accounts_app/templates/create_ReceiptBillClearance.html:62
+#: accounts_app/templates/create_customer.html:208
+#: accounts_app/templates/create_vendor.html:207
+#: fleet_app/templates/contract_list.html:46
+#: fleet_app/templates/document_crud.html:258
+#: fleet_app/templates/fleet_hire_list.html:35
+#: fleet_app/templates/invoice_list.html:28
+#: fleet_app/templates/manufacturer_list.html:175
+#: fleet_app/templates/simple_quotation_list.html:50
+#: fleet_app/templates/staff_category_manage.html:122
+#: fleet_app/templates/staff_manage.html:295
+#: fleet_app/templates/timesheet_report.html:21
+#: fleet_app/templates/timesheet_report.html:39
+#: fleet_app/templates/vehicle_category_list.html:189
+#: fleet_app/templates/vehicle_list.html:410
+#: fleet_app/templates/vehicle_model_list.html:123
+msgid "Edit"
+msgstr "تعديل"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:69
+#: accounts_app/templates/create_ReceiptBillClearance.html:62
+#: fleet_app/templates/document_crud.html:197
+msgid "Create"
+msgstr "تم الإنشاء"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:69
+msgid "Payment Bill Clearance"
+msgstr "تسوية فواتير الدفع"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:72
+#: accounts_app/templates/create_ReceiptBillClearance.html:65
+msgid "View List"
+msgstr "عرض القائمة"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:84
+msgid "Payment Information"
+msgstr "معلومات الدفع"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:94
+#: accounts_app/templates/create_PaymentBillClearance.html:137
+#: fleet_app/forms.py:221 fleet_app/forms.py:1296
+#: fleet_app/templates/fleet_base1.html:317
+#: fleet_app/templates/fleet_hire_list.html:16
+#: fleet_app/templates/vehicle_form.html:164
+#: fleet_app/templates/vehicle_list.html:328
+msgid "Supplier"
+msgstr "المورد"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:98
+#: accounts_app/templates/ledger_posting_list.html:38
+#: accounts_app/templates/ledger_posting_list.html:63
+#: accounts_app/templates/local_payment_form.html:272
+#: accounts_app/templates/payment_create.html:130
+#: accounts_app/templates/receipt_create.html:244
+msgid "Ledger"
+msgstr "الحساب"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:106
+msgid "Trn No"
+msgstr "رقم التسجيل الضريبي"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:110
+#: accounts_app/templates/local_payment_form.html:200
+#: accounts_app/templates/local_payment_form.html:290
+msgid "Cheque No"
+msgstr "رقم الشيك"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:120
+msgid "Cheque Status"
+msgstr "حالة الشيك"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:130
+msgid "Pending Purchase Bills"
+msgstr "فواتير الشراء المعلقة"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:138
+msgid "Bill Date"
+msgstr "تاريخ الفاتورة"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:139
+msgid "Bill #"
+msgstr "رقم الفاتورة"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:141
+msgid "Amount Paid"
+msgstr "المبلغ المدفوع"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:142
+msgid "Payable Balance"
+msgstr "الرصيد المستحق"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:143
+msgid "Amount (to pay)"
+msgstr "المبلغ (للدفع)"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:144
+#: accounts_app/templates/create_ReceiptBillClearance.html:152
+msgid "Balance"
+msgstr "الرصيد"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:157
+#: accounts_app/templates/create_ReceiptBillClearance.html:169
+#: accounts_app/templates/create_customer.html:171
+#: accounts_app/templates/create_vendor.html:170
+#: fleet_app/templates/repair_and_maintenance_form.html:192
+#: fleet_app/templates/staff_manage.html:256
+#: fleet_app/templates/vehicle_category_list.html:164
+#: fleet_app/templates/vehicle_form.html:416
+#: fleet_app/templates/vehicle_model_form.html:172
+#: fleet_app/templates/vehicle_model_form.html:209
+#: fleet_app/templates/vehicle_model_form.html:237
+msgid "Save"
+msgstr "حفظ"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:183
+msgid "Error loading hire bills. Please try again."
+msgstr "خطأ في تحميل فواتير التأجير. يرجى المحاولة مرة أخرى."
+
+#: accounts_app/templates/create_PaymentBillClearance.html:184
+msgid "Amount cannot exceed payable balance!"
+msgstr "لا يمكن أن يتجاوز المبلغ الرصيد المستحق!"
+
+#: accounts_app/templates/create_PaymentBillClearance.html:185
+#: accounts_app/templates/create_ReceiptBillClearance.html:184
+msgid "Please enter at least one amount to clear."
+msgstr "يرجى إدخال مبلغ واحد على الأقل للتسوية."
+
+# Receipt Bill Clearance Template
+#: accounts_app/templates/create_ReceiptBillClearance.html:62
+msgid "Receipt Bill Clearance"
+msgstr "تسوية فواتير الاستلام"
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:84
+msgid "Receipt Information"
+msgstr "معلومات الاستلام"
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:138
+msgid "Pending Invoices"
+msgstr "الفواتير المعلقة"
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:145
+#: fleet_app/templates/contract_list.html:25
+#: fleet_app/templates/simple_quotation_list.html:21
+msgid "Customer"
+msgstr "العميل"
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:146
+#: accounts_app/templates/local_payment_form.html:270 fleet_app/forms.py:1154
+#: fleet_app/forms.py:1291 fleet_app/templates/fleet_hire_list.html:18
+msgid "Invoice Date"
+msgstr "تاريخ الفاتورة"
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:147
+msgid "Invoice #"
+msgstr "رقم الفاتورة"
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:148
+msgid "Current Amount"
+msgstr "المبلغ الحالي"
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:149
+msgid "Amount Cleared"
+msgstr "المبلغ المسوى"
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:150
+msgid "Receivable Balance"
+msgstr "الرصيد المستحق"
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:151
+msgid "Amount (to clear)"
+msgstr "المبلغ (للتسوية)"
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:167
+#: accounts_app/templates/create_customer.html:169
+#: accounts_app/templates/create_vendor.html:168
+#: fleet_app/templates/document_crud.html:197
+#: fleet_app/templates/staff_category_manage.html:67
+#: fleet_app/templates/staff_category_manage.html:91
+#: fleet_app/templates/staff_manage.html:67
+#: fleet_app/templates/staff_manage.html:256
+#: fleet_app/templates/vehicle_category_list.html:164
+#: fleet_app/templates/vehicle_form.html:416
+msgid "Update"
+msgstr "تحديث"
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:173
+#: accounts_app/templates/payment_create.html:169
+#: accounts_app/templates/receipt_create.html:279
+#: fleet_app/templates/manufacturer_create.html:96
+#: fleet_app/templates/staff_category_manage.html:95
+#: fleet_app/templates/staff_manage.html:259
+#: fleet_app/templates/vehicle_category_list.html:169
+#: fleet_app/templates/vehicle_form.html:418
+#: fleet_app/templates/vehicle_form.html:442
+#: fleet_app/templates/vehicle_form.html:539
+#: fleet_app/templates/vehicle_form.html:571
+#: fleet_app/templates/vehicle_model_form.html:175
+#: fleet_app/templates/vehicle_model_form.html:208
+#: fleet_app/templates/vehicle_model_form.html:236
+msgid "Cancel"
+msgstr "إلغاء"
+
+# JavaScript Alert Messages
+#: accounts_app/templates/create_ReceiptBillClearance.html:182
+msgid "Error loading invoices. Please try again."
+msgstr "خطأ في تحميل الفواتير. يرجى المحاولة مرة أخرى."
+
+#: accounts_app/templates/create_ReceiptBillClearance.html:183
+msgid "Amount cannot exceed receivable balance!"
+msgstr "لا يمكن أن يتجاوز المبلغ الرصيد المستحق!"
+
+#: accounts_app/templates/create_customer.html:3
+msgid "Create Client"
+msgstr "إنشاء عميل"
+
+#: accounts_app/templates/create_customer.html:78
+msgid "Create New Client"
+msgstr "إنشاء عميل جديد"
+
+#: accounts_app/templates/create_customer.html:80
+#: accounts_app/templates/create_vendor.html:80
+msgid "Add New"
+msgstr "إضافة جديد"
+
+#: accounts_app/templates/create_customer.html:101
+msgid "Client Information"
+msgstr "معلومات العميل"
+
+#: accounts_app/templates/create_customer.html:179
+msgid "Client List"
+msgstr "قائمة العملاء"
+
+#: accounts_app/templates/create_customer.html:188
+#: fleet_app/templates/staff_category_manage.html:111
+#: fleet_app/templates/staff_manage.html:278
+msgid "Name"
+msgstr "الاسم"
+
+#: accounts_app/templates/create_customer.html:194
+#: accounts_app/templates/create_vendor.html:193
+#: accounts_app/templates/ledger.html:133
+#: fleet_app/templates/contract_list.html:28
+#: fleet_app/templates/document_crud.html:222
+#: fleet_app/templates/invoice_list.html:15
+#: fleet_app/templates/repair_and_maintenance_form.html:169
+#: fleet_app/templates/simple_quotation_list.html:23
+#: fleet_app/templates/staff_category_manage.html:112
+#: fleet_app/templates/staff_manage.html:282
+#: fleet_app/templates/vehicle_model_list.html:109
+msgid "Actions"
+msgstr "الإجراءات"
+
+#: accounts_app/templates/create_customer.html:212
+msgid "Delete this customer?"
+msgstr "حذف هذا العميل؟"
+
+#: accounts_app/templates/create_customer.html:212
+#: accounts_app/templates/create_vendor.html:212
+#: accounts_app/templates/local_payment_form.html:365
+#: fleet_app/templates/contract_list.html:54
+#: fleet_app/templates/document_crud.html:201
+#: fleet_app/templates/fleet_hire_list.html:42
+#: fleet_app/templates/invoice_list.html:34
+#: fleet_app/templates/manufacturer_list.html:184
+#: fleet_app/templates/simple_quotation_list.html:58
+#: fleet_app/templates/staff_category_manage.html:128
+#: fleet_app/templates/staff_manage.html:299
+#: fleet_app/templates/timesheet_report.html:48
+#: fleet_app/templates/vehicle_category_list.html:198
+#: fleet_app/templates/vehicle_list.html:419
+#: fleet_app/templates/vehicle_model_list.html:133
+msgid "Delete"
+msgstr "حذف"
+
+#: accounts_app/templates/create_customer.html:221
+msgid "No customers found."
+msgstr "لم يتم العثور على عملاء."
+
+#: accounts_app/templates/create_vendor.html:3
+msgid "Create Supplier"
+msgstr "إنشاء مورد"
+
+#: accounts_app/templates/create_vendor.html:78
+msgid "Create New Vendor"
+msgstr "إنشاء مورد جديد"
+
+#: accounts_app/templates/create_vendor.html:101
+msgid "Supplier Information"
+msgstr "معلومات المورد"
+
+#: accounts_app/templates/create_vendor.html:178
+msgid "Suppliers List"
+msgstr "قائمة الموردين"
+
+#: accounts_app/templates/create_vendor.html:187
+msgid "Vendor Name"
+msgstr "اسم المورد"
+
+#: accounts_app/templates/create_vendor.html:212
+msgid "Delete this vendor?"
+msgstr "حذف هذا المورد؟"
+
+#: accounts_app/templates/create_vendor.html:221
+msgid "No vendors found."
+msgstr "لم يتم العثور على موردين."
+
+#: accounts_app/templates/ledger.html:73
+msgid "Ledger Creation"
+msgstr "إنشاء دفتر الأستاذ"
+
+#: accounts_app/templates/ledger.html:78
+msgid "Create or Update Ledger"
+msgstr "إنشاء أو تحديث دفتر الأستاذ"
+
+#: accounts_app/templates/ledger.html:109
+msgid "SAVE"
+msgstr "حفظ"
+
+#: accounts_app/templates/ledger.html:112
+msgid "CLEAR"
+msgstr "مسح"
+
+#: accounts_app/templates/ledger.html:122
+msgid "Ledger List"
+msgstr "قائمة دفتر الأستاذ"
+
+#: accounts_app/templates/ledger.html:129
+#: fleet_app/templates/staff_manage.html:276
+msgid "ID"
+msgstr "الرقم"
+
+#: accounts_app/templates/ledger.html:131
+msgid "Group"
+msgstr "المجموعة"
+
+#: accounts_app/templates/ledger.html:147
+msgid "EDIT"
+msgstr "تعديل"
+
+#: accounts_app/templates/ledger.html:152
+msgid "DELETE"
+msgstr "حذف"
+
+#: accounts_app/templates/ledger.html:161
+msgid "No ledgers found. Create your first ledger using the form."
+msgstr "لم يتم العثور على دفاتر. قم بإنشاء أول دفتر لك باستخدام النموذج."
+
+#: accounts_app/templates/ledger_posting_list.html:6
+msgid "Ledger Postings"
+msgstr "ترحيل دفتر الأستاذ"
+
+#: accounts_app/templates/ledger_posting_list.html:13
+msgid "From Date"
+msgstr "من التاريخ"
+
+#: accounts_app/templates/ledger_posting_list.html:18
+msgid "To Date"
+msgstr "إلى التاريخ"
+
+#: accounts_app/templates/ledger_posting_list.html:23
+msgid "Single Date"
+msgstr "تاريخ واحد"
+
+#: accounts_app/templates/ledger_posting_list.html:28
+#: accounts_app/templates/ledger_posting_list.html:62 fleet_app/forms.py:583
+#: fleet_app/forms.py:788 fleet_app/forms.py:1090 fleet_app/forms.py:1155
+#: fleet_app/forms.py:1293
+msgid "Voucher Type"
+msgstr "نوع القيد"
+
+#: accounts_app/templates/ledger_posting_list.html:30
+#: accounts_app/templates/ledger_posting_list.html:40
+msgid "All"
+msgstr "الكل"
+
+#: accounts_app/templates/ledger_posting_list.html:48
+msgid "Clear"
+msgstr "مسح"
+
+#: accounts_app/templates/ledger_posting_list.html:64
+msgid "Debit"
+msgstr "مدين"
+
+#: accounts_app/templates/ledger_posting_list.html:65
+msgid "Credit"
+msgstr "دائن"
+
+#: accounts_app/templates/ledger_posting_list.html:100
+msgid "No records found"
+msgstr "لا توجد سجلات"
+
+#: accounts_app/templates/local_payment_form.html:159
+#, fuzzy
+#| msgid "Local Payment"
+msgid " Local Payment "
+msgstr "دفعة محلية"
+
+#: accounts_app/templates/local_payment_form.html:166
+#: accounts_app/templates/local_payment_form.html:170 fleet_app/forms.py:582
+#: fleet_app/forms.py:846 fleet_app/forms.py:1089
+#: fleet_app/templates/contract_list.html:22
+#: fleet_app/templates/fleet_hire_list.html:15
+msgid "Voucher No"
+msgstr "رقم القسيمة"
+
+#: accounts_app/templates/local_payment_form.html:174 fleet_app/forms.py:791
+#: fleet_app/forms.py:1294
+msgid "Payment Mode"
+msgstr "طريقة الدفع"
+
+#: accounts_app/templates/local_payment_form.html:180
+msgid "Party"
+msgstr "الطرف"
+
+#: accounts_app/templates/local_payment_form.html:184
+#: accounts_app/templates/local_payment_form.html:308
+msgid "Reference No"
+msgstr "رقم المرجع"
+
+#: accounts_app/templates/local_payment_form.html:188
+msgid "Party VAT No"
+msgstr "الرقم الضريبي للطرف"
+
+#: accounts_app/templates/local_payment_form.html:213
+msgid "Local Payment Details"
+msgstr "تفاصيل الدفع المحلي"
+
+#: accounts_app/templates/local_payment_form.html:223
+#: accounts_app/templates/local_payment_form.html:271
+#: fleet_app/templates/fleet_hire_list.html:17
+#: fleet_app/templates/invoice_list.html:11
+msgid "Invoice No"
+msgstr "رقم الفاتورة"
+
+#: accounts_app/templates/local_payment_form.html:227
+msgid "Select Ledger"
+msgstr "اختر دفتر الحسابات"
+
+#: accounts_app/templates/local_payment_form.html:236
+#: accounts_app/templates/local_payment_form.html:366
+msgid "No VAT"
+msgstr "بدون ضريبة"
+
+#: accounts_app/templates/local_payment_form.html:237
+#: accounts_app/templates/local_payment_form.html:367
+#, fuzzy, python-format
+#| msgid "Inclusive VAT (5%)"
+msgid "Inclusive VAT (5%%)"
+msgstr "شامل الضريبة (5%)"
+
+#: accounts_app/templates/local_payment_form.html:238
+#: accounts_app/templates/local_payment_form.html:368
+#, fuzzy, python-format
+#| msgid "Exclusive VAT (5%)"
+msgid "Exclusive VAT (5%%)"
+msgstr "غير شامل الضريبة (5%)"
+
+#: accounts_app/templates/local_payment_form.html:249
+#: accounts_app/templates/local_payment_form.html:275
+msgid "Taxable"
+msgstr "خاضع للضريبة"
+
+#: accounts_app/templates/local_payment_form.html:253
+#: accounts_app/templates/local_payment_form.html:276 fleet_app/forms.py:1300
+msgid "VAT"
+msgstr "ضريبة القيمة المضافة"
+
+#: accounts_app/templates/local_payment_form.html:262
+#: fleet_app/templates/repair_and_maintenance_form.html:177
+msgid "Add Item"
+msgstr "إضافة عنصر"
+
+#: accounts_app/templates/local_payment_form.html:277
+msgid "VAT Type"
+msgstr "نوع ضريبة القيمة المضافة"
+
+#: accounts_app/templates/local_payment_form.html:278
+#: accounts_app/templates/payment_create.html:133
+#: accounts_app/templates/receipt_create.html:247
+#: fleet_app/templates/create_invoice.html:254
+#: fleet_app/templates/create_simple_quotation.html:198
+#: fleet_app/templates/fleet_hire_form.html:211
+#: fleet_app/templates/fleet_hire_list.html:20
+msgid "Action"
+msgstr "الإجراء"
+
+#: accounts_app/templates/local_payment_form.html:287
+#, fuzzy
+#| msgid "Cheque Status"
+msgid "Cheque Details"
+msgstr "حالة الشيك"
+
+#: accounts_app/templates/local_payment_form.html:298 fleet_app/forms.py:1019
+msgid "Bank Name"
+msgstr "اسم البنك"
+
+#: accounts_app/templates/local_payment_form.html:316
+msgid "Additional Information"
+msgstr "معلومات إضافية"
+
+#: accounts_app/templates/local_payment_form.html:323
+msgid "Note"
+msgstr "ملاحظة"
+
+#: accounts_app/templates/local_payment_form.html:331
+#: fleet_app/templates/fleet_hire_form.html:224
+msgid "Totals"
+msgstr "الإجماليات"
+
+#: accounts_app/templates/local_payment_form.html:334
+msgid "Taxable Amount"
+msgstr "المبلغ الخاضع للضريبة"
+
+#: accounts_app/templates/local_payment_form.html:338 fleet_app/forms.py:827
+#: fleet_app/templates/repair_and_maintenance_form.html:167
+msgid "VAT Amount"
+msgstr "مبلغ الضريبة"
+
+#: accounts_app/templates/local_payment_form.html:342
+msgid "Net Amount"
+msgstr "المبلغ الصافي"
+
+#: accounts_app/templates/local_payment_form.html:348
+#: accounts_app/templates/payment_create.html:171
+msgid "Save Payment"
+msgstr "حفظ الدفعة"
+
+#: accounts_app/templates/local_payment_form.html:364
+msgid "Please fill all required fields"
+msgstr "يرجى تعبئة جميع الحقول المطلوبة"
+
+#: accounts_app/templates/payment_create.html:20
+msgid "Create Payment"
+msgstr "إنشاء دفعة"
+
+#: accounts_app/templates/payment_create.html:89
+msgid "Payment Details"
+msgstr "تفاصيل الدفع"
+
+#: accounts_app/templates/payment_create.html:114
+#: accounts_app/templates/receipt_create.html:228
+msgid "Enter description"
+msgstr "أدخل الوصف"
+
+#: accounts_app/templates/payment_create.html:118
+#: accounts_app/templates/receipt_create.html:232
+#: fleet_app/templates/create_invoice.html:237
+#: fleet_app/templates/create_simple_quotation.html:186
+#: fleet_app/templates/fleet_hire_form.html:197
+#: fleet_app/templates/staff_category_manage.html:67
+#: fleet_app/templates/staff_category_manage.html:91
+#: fleet_app/templates/staff_manage.html:67
+#: fleet_app/templates/vehicle_form.html:572
+msgid "Add"
+msgstr "إضافة"
+
+#: accounts_app/templates/payment_create.html:140
+#: accounts_app/templates/receipt_create.html:255
+msgid "Total Amount:"
+msgstr "المبلغ الإجمالي:"
+
+#: accounts_app/templates/payment_create.html:280
+msgid "Please add at least one payment detail."
+msgstr "يرجى إضافة تفصيل دفع واحد على الأقل."
+
+#: accounts_app/templates/payment_create.html:281
+#, fuzzy
+#| msgid "Please select a Ledger"
+msgid "Please select a Ledger."
+msgstr "يرجى اختيار حساب دفتر"
+
+#: accounts_app/templates/payment_create.html:282
+msgid "Please enter a valid Amount."
+msgstr "يرجى إدخال مبلغ صحيح."
+
+#: accounts_app/templates/receipt_create.html:117
+msgid "Create Receipt"
+msgstr "إنشاء إيصال"
+
+#: accounts_app/templates/receipt_create.html:203
+msgid "Receipt Details"
+msgstr "تفاصيل الإيصال"
+
+#: accounts_app/templates/receipt_create.html:281
+msgid "Save Receipt"
+msgstr "حفظ الإيصال"
+
+#: accounts_app/templates/receipt_create.html:292
+msgid "Please add at least one receipt detail."
+msgstr "يرجى إضافة تفصيل إيصال واحد على الأقل."
+
+#: accounts_app/templates/receipt_create.html:293
+msgid "Please select a Ledger"
+msgstr "يرجى اختيار حساب دفتر"
+
+#: accounts_app/templates/receipt_create.html:294
+#, fuzzy
+#| msgid "Please enter a valid Amount."
+msgid "Please enter a valid Amount"
+msgstr "يرجى إدخال مبلغ صحيح."
+
+#: fleet_app/forms.py:17 fleet_app/templates/vehicle_model_form.html:195
+msgid "Manufacturer Name"
+msgstr "اسم المصنع"
+
+#: fleet_app/forms.py:18 fleet_app/templates/vehicle_model_form.html:200
+msgid "Manufacturer Logo"
+msgstr "شعار المصنع"
+
+#: fleet_app/forms.py:28 fleet_app/forms.py:987
+#: fleet_app/templates/vehicle_form.html:436
+#: fleet_app/templates/vehicle_model_form.html:229
+msgid "Category Name"
+msgstr "اسم الفئة"
+
+#: fleet_app/forms.py:51 fleet_app/templates/vehicle_form.html:464
+#: fleet_app/templates/vehicle_model_list.html:107
+msgid "Model Name"
+msgstr "اسم الموديل"
+
+#: fleet_app/forms.py:52 fleet_app/templates/vehicle_form.html:468
+#: fleet_app/templates/vehicle_model_list.html:106
+msgid "Manufacturer"
+msgstr "المصنع"
+
+#: fleet_app/forms.py:53 fleet_app/templates/vehicle_form.html:171
+msgid "Vehicle Type"
+msgstr "نوع المركبة"
+
+#: fleet_app/forms.py:54
+msgid "Number of Seats"
+msgstr "عدد المقاعد"
+
+#: fleet_app/forms.py:55
+msgid "Number of Doors"
+msgstr "عدد الأبواب"
+
+#: fleet_app/forms.py:56 fleet_app/templates/vehicle_form.html:492
+msgid "Model Colour"
+msgstr "لون الموديل"
+
+#: fleet_app/forms.py:57
+msgid "Range"
+msgstr "المدى"
+
+#: fleet_app/forms.py:58 fleet_app/templates/vehicle_form.html:500
+msgid "Model Year"
+msgstr "سنة الموديل"
+
+#: fleet_app/forms.py:59 fleet_app/templates/vehicle_form.html:504
+msgid "Fuel Type"
+msgstr "نوع الوقود"
+
+#: fleet_app/forms.py:60 fleet_app/templates/vehicle_form.html:512
+msgid "CO2 Emission"
+msgstr "انبعاثات ثاني أكسيد الكربون"
+
+#: fleet_app/forms.py:61 fleet_app/templates/vehicle_form.html:516
+msgid "CO2 Standard"
+msgstr "معيار ثاني أكسيد الكربون"
+
+#: fleet_app/forms.py:62
+msgid "Transmission Type"
+msgstr "نوع ناقل الحركة"
+
+#: fleet_app/forms.py:63
+msgid "Power"
+msgstr "القوة"
+
+#: fleet_app/forms.py:64
+msgid "Horsepower"
+msgstr "القوة الحصانية"
+
+#: fleet_app/forms.py:200
+msgid "Vehicle Category"
+msgstr "فئة المركبة"
+
+#: fleet_app/forms.py:201 fleet_app/forms.py:587 fleet_app/forms.py:796
+#: fleet_app/templates/vehicle_form.html:180
+msgid "Fleet No"
+msgstr "رقم الأسطول"
+
+#: fleet_app/forms.py:202 fleet_app/templates/vehicle_form.html:184
+msgid "Vehicle Model"
+msgstr "موديل المركبة"
+
+#: fleet_app/forms.py:203 fleet_app/templates/vehicle_form.html:193
+msgid "Fleet Image"
+msgstr "صورة الأسطول"
+
+#: fleet_app/forms.py:204 fleet_app/templates/vehicle_form.html:207
+msgid "Reg-Plate Code"
+msgstr "كود لوحة التسجيل"
+
+#: fleet_app/forms.py:205 fleet_app/templates/vehicle_form.html:216
+msgid "Reg-Plate No"
+msgstr "رقم لوحة التسجيل"
+
+#: fleet_app/forms.py:206 fleet_app/templates/vehicle_form.html:341
+msgid "Assigned Driver"
+msgstr "السائق المعين"
+
+#: fleet_app/forms.py:207 fleet_app/templates/vehicle_form.html:345
+msgid "Second Driver"
+msgstr "السائق الثاني"
+
+#: fleet_app/forms.py:208 fleet_app/templates/vehicle_form.html:349
+msgid "Assignment Date"
+msgstr "تاريخ التعيين"
+
+#: fleet_app/forms.py:209 fleet_app/templates/vehicle_form.html:365
+msgid "Registration Date"
+msgstr "تاريخ التسجيل"
+
+#: fleet_app/forms.py:210 fleet_app/templates/vehicle_form.html:369
+msgid "Cancellation Date"
+msgstr "تاريخ الإلغاء"
+
+#: fleet_app/forms.py:211 fleet_app/templates/vehicle_form.html:373
+msgid "Mulki Number"
+msgstr "رقم الملكي"
+
+#: fleet_app/forms.py:212 fleet_app/templates/vehicle_form.html:377
+msgid "RC File"
+msgstr "ملف RC"
+
+#: fleet_app/forms.py:213 fleet_app/templates/vehicle_form.html:381
+msgid "Mulki Expiry Date"
+msgstr "تاريخ انتهاء الملكي"
+
+#: fleet_app/forms.py:214 fleet_app/templates/vehicle_form.html:385
+msgid "Chassis Number"
+msgstr "رقم الشاسيه"
+
+#: fleet_app/forms.py:215 fleet_app/templates/vehicle_form.html:391
+msgid "Engine Number"
+msgstr "رقم المحرك"
+
+#: fleet_app/forms.py:216 fleet_app/templates/vehicle_form.html:395
+msgid "Last Odometer"
+msgstr "آخر قراءة عداد"
+
+#: fleet_app/forms.py:217 fleet_app/templates/vehicle_form.html:399
+msgid "Rate Per Hour"
+msgstr "السعر بالساعة"
+
+#: fleet_app/forms.py:218 fleet_app/templates/vehicle_form.html:403
+msgid "Rate Per Day"
+msgstr "السعر باليوم"
+
+#: fleet_app/forms.py:219 fleet_app/templates/vehicle_form.html:407
+msgid "Rate Per Month"
+msgstr "السعر بالشهر"
+
+#: fleet_app/forms.py:220 fleet_app/templates/vehicle_form.html:160
+msgid "Owned Vehicle"
+msgstr "مركبة مملوكة"
+
+#: fleet_app/forms.py:586
+msgid "Vehicle reg No"
+msgstr "رقم تسجيل المركبة"
+
+#: fleet_app/forms.py:588
+msgid "Project Location"
+msgstr "موقع المشروع"
+
+#: fleet_app/forms.py:589 fleet_app/forms.py:852 fleet_app/forms.py:1092
+#: fleet_app/forms.py:1156 fleet_app/templates/fleet_base1.html:320
+#: fleet_app/templates/invoice_list.html:13
+#: fleet_app/templates/timesheet_report.html:18
+msgid "Client"
+msgstr "العميل"
+
+#: fleet_app/forms.py:590 fleet_app/templates/timesheet_report.html:20
+msgid "Duration"
+msgstr "المدة"
+
+#: fleet_app/forms.py:591
+msgid "PO ref No"
+msgstr "رقم مرجع أمر الشراء"
+
+#: fleet_app/forms.py:592
+msgid "Driver Name"
+msgstr "اسم السائق"
+
+#: fleet_app/forms.py:593
+msgid "Operator Name"
+msgstr "اسم المشغل"
+
+#: fleet_app/forms.py:594 fleet_app/forms.py:1093 fleet_app/forms.py:1162
+msgid "Enable Header"
+msgstr "تفعيل الرأسية"
+
+#: fleet_app/forms.py:595 fleet_app/forms.py:1094 fleet_app/forms.py:1163
+msgid "Enable Footer"
+msgstr "تفعيل التذييل"
+
+#: fleet_app/forms.py:596 fleet_app/forms.py:1095 fleet_app/forms.py:1164
+msgid "Enable Signature"
+msgstr "تفعيل التوقيع"
+
+#: fleet_app/forms.py:645 fleet_app/templates/timesheet_form.html:224
+msgid "Start Time"
+msgstr "وقت البدء"
+
+#: fleet_app/forms.py:646 fleet_app/templates/timesheet_form.html:225
+msgid "End Time"
+msgstr "وقت الانتهاء"
+
+#: fleet_app/forms.py:647
+#, fuzzy
+#| msgid "Break (Hrs)"
+msgid "Break Hours"
+msgstr "استراحة (ساعات)"
+
+#: fleet_app/forms.py:648
+#, fuzzy
+#| msgid "Total Hire"
+msgid "Total Hours Worked"
+msgstr "إجمالي التأجير"
+
+#: fleet_app/forms.py:649
+#, fuzzy
+#| msgid ""
+#| "O\n"
+#| "T"
+msgid "OT"
+msgstr ""
+"ساعات\n"
+"إضافية"
+
+#: fleet_app/forms.py:650 fleet_app/templates/timesheet_form.html:229
+msgid "Job Location"
+msgstr "موقع العمل"
+
+#: fleet_app/forms.py:651
+#, fuzzy
+#| msgid "Enable Signature"
+msgid "Signature"
+msgstr "تفعيل التوقيع"
+
+#: fleet_app/forms.py:789
+msgid "Bill Number"
+msgstr "رقم الفاتورة"
+
+#: fleet_app/forms.py:792
+msgid "Party Name"
+msgstr "اسم الجهة"
+
+#: fleet_app/forms.py:793
+msgid "Reference Number"
+msgstr "رقم المرجع"
+
+#: fleet_app/forms.py:794
+msgid "VAT Number"
+msgstr "رقم الضريبة"
+
+#: fleet_app/forms.py:795
+msgid "Date on Bill"
+msgstr "تاريخ الفاتورة"
+
+#: fleet_app/forms.py:797
+msgid "Vehicle Driver"
+msgstr "سائق المركبة"
+
+#: fleet_app/forms.py:798
+msgid "Grand Total Amount"
+msgstr "إجمالي المبلغ الكلي"
+
+#: fleet_app/forms.py:825
+#: fleet_app/templates/repair_and_maintenance_form.html:165
+msgid "Narration"
+msgstr "البيان"
+
+#: fleet_app/forms.py:826
+#: fleet_app/templates/repair_and_maintenance_form.html:166
+msgid "Bill Amount"
+msgstr "مبلغ الفاتورة"
+
+#: fleet_app/forms.py:847
+msgid "Contract Number"
+msgstr "رقم العقد"
+
+#: fleet_app/forms.py:848
+msgid "Fleet"
+msgstr "الأسطول"
+
+#: fleet_app/forms.py:849
+msgid "Contract Date"
+msgstr "تاريخ العقد"
+
+#: fleet_app/forms.py:850 fleet_app/templates/contract_list.html:27
+#: fleet_app/templates/fleet_hire_form.html:175
+msgid "End Date"
+msgstr "تاريخ الانتهاء"
+
+#: fleet_app/forms.py:851
+msgid "Primary Operator"
+msgstr "المشغل الرئيسي"
+
+#: fleet_app/forms.py:853
+msgid "Additional Notes"
+msgstr "ملاحظات إضافية"
+
+#: fleet_app/forms.py:854 fleet_app/forms.py:1031
+#: fleet_app/templates/timesheet_form.html:230
+#: fleet_app/templates/timesheet_form.html:260
+msgid "Remarks"
+msgstr "ملاحظات"
+
+#: fleet_app/forms.py:1000 fleet_app/templates/fleet_base1.html:323
+#: fleet_app/templates/staff_category_manage.html:67
+msgid "Staff Category"
+msgstr "فئة الموظفين"
+
+#: fleet_app/forms.py:1001 fleet_app/templates/staff_manage.html:277
+msgid "Staff ID"
+msgstr "رقم الموظف"
+
+#: fleet_app/forms.py:1002
+msgid "Full Name"
+msgstr "الاسم الكامل"
+
+#: fleet_app/forms.py:1003
+msgid "Staff Image"
+msgstr "صورة الموظف"
+
+#: fleet_app/forms.py:1004
+msgid "Gender"
+msgstr "الجنس"
+
+#: fleet_app/forms.py:1005
+msgid "Date of Birth"
+msgstr "تاريخ الميلاد"
+
+#: fleet_app/forms.py:1006
+msgid "Nationality"
+msgstr "الجنسية"
+
+#: fleet_app/forms.py:1007
+msgid "Civil ID / Passport No"
+msgstr "رقم الهوية المدنية / جواز السفر"
+
+#: fleet_app/forms.py:1008
+msgid "Marital Status"
+msgstr "الحالة الاجتماعية"
+
+#: fleet_app/forms.py:1009
+msgid "Contact Number"
+msgstr "رقم الاتصال"
+
+#: fleet_app/forms.py:1012 fleet_app/templates/staff_manage.html:280
+msgid "Department"
+msgstr "القسم"
+
+#: fleet_app/forms.py:1013
+msgid "Job Title"
+msgstr "المسمى الوظيفي"
+
+#: fleet_app/forms.py:1014
+msgid "Joining Date"
+msgstr "تاريخ الانضمام"
+
+#: fleet_app/forms.py:1015
+msgid "Employment Type"
+msgstr "نوع التوظيف"
+
+#: fleet_app/forms.py:1016
+msgid "Basic Salary"
+msgstr "الراتب الأساسي"
+
+#: fleet_app/forms.py:1017
+msgid "Allowances"
+msgstr "البدلات"
+
+#: fleet_app/forms.py:1018
+msgid "Bank Account No"
+msgstr "رقم الحساب البنكي"
+
+#: fleet_app/forms.py:1020
+msgid "Emergency Contact Name"
+msgstr "اسم جهة الاتصال للطوارئ"
+
+#: fleet_app/forms.py:1021
+msgid "Emergency Contact Number"
+msgstr "رقم الاتصال للطوارئ"
+
+#: fleet_app/forms.py:1022
+msgid "Visa Expiry Date"
+msgstr "تاريخ انتهاء التأشيرة"
+
+#: fleet_app/forms.py:1023
+msgid "Contract End Date"
+msgstr "تاريخ انتهاء العقد"
+
+#: fleet_app/forms.py:1024
+msgid "Passport Expiry Date"
+msgstr "تاريخ انتهاء جواز السفر"
+
+#: fleet_app/forms.py:1025
+msgid "Resident ID Number"
+msgstr "رقم الإقامة"
+
+#: fleet_app/forms.py:1026
+msgid "Resident ID Expiry Date"
+msgstr "تاريخ انتهاء الإقامة"
+
+#: fleet_app/forms.py:1027
+msgid "License Type"
+msgstr "نوع الرخصة"
+
+#: fleet_app/forms.py:1028
+msgid "License Number"
+msgstr "رقم الرخصة"
+
+#: fleet_app/forms.py:1029
+msgid "License Expiry Date"
+msgstr "تاريخ انتهاء الرخصة"
+
+#: fleet_app/forms.py:1053 fleet_app/templates/document_crud.html:217
+msgid "Title"
+msgstr "العنوان"
+
+#: fleet_app/forms.py:1055 fleet_app/templates/document_crud.html:220
+msgid "File"
+msgstr "الملف"
+
+#: fleet_app/forms.py:1056 fleet_app/templates/document_crud.html:135
+#: fleet_app/templates/document_crud.html:237
+#: fleet_app/templates/staff_manage.html:67
+msgid "Staff"
+msgstr "الموظفين"
+
+#: fleet_app/forms.py:1057 fleet_app/forms.py:1208
+#: fleet_app/templates/contract_list.html:24
+#: fleet_app/templates/create_invoice.html:215
+#: fleet_app/templates/create_invoice.html:248
+#: fleet_app/templates/document_crud.html:139
+#: fleet_app/templates/document_crud.html:241
+#: fleet_app/templates/fleet_hire_form.html:155
+#: fleet_app/templates/fleet_hire_form.html:204
+#: fleet_app/templates/timesheet_report.html:16
+msgid "Vehicle"
+msgstr "المركبة"
+
+#: fleet_app/forms.py:1059 fleet_app/templates/vehicle_form.html:237
+#: fleet_app/templates/vehicle_form.html:254
+#: fleet_app/templates/vehicle_form.html:271
+#: fleet_app/templates/vehicle_form.html:288
+#: fleet_app/templates/vehicle_form.html:305
+#: fleet_app/templates/vehicle_form.html:322
+msgid "Expiry Date"
+msgstr "تاريخ انتهاء الصلاحية"
+
+#: fleet_app/forms.py:1060
+msgid "Reminder Date"
+msgstr "تاريخ التذكير"
+
+#: fleet_app/forms.py:1129 fleet_app/templates/create_simple_quotation.html:169
+#: fleet_app/templates/create_simple_quotation.html:195
+msgid "Quantity"
+msgstr "الكمية"
+
+#: fleet_app/forms.py:1130 fleet_app/templates/create_simple_quotation.html:173
+#: fleet_app/templates/create_simple_quotation.html:196
+msgid "Rent"
+msgstr "الإيجار"
+
+#: fleet_app/forms.py:1131 fleet_app/templates/create_simple_quotation.html:177
+#: fleet_app/templates/create_simple_quotation.html:197
+msgid "Period"
+msgstr "المدة"
+
+#: fleet_app/forms.py:1153 fleet_app/forms.py:1297
+msgid "Invoice Number"
+msgstr "رقم الفاتورة"
+
+#: fleet_app/forms.py:1157
+msgid "Mode of Payment"
+msgstr "طريقة الدفع"
+
+#: fleet_app/forms.py:1158
+msgid "Supplier Reference"
+msgstr "مرجع المورد"
+
+#: fleet_app/forms.py:1159
+msgid "Other Reference"
+msgstr "مرجع آخر"
+
+#: fleet_app/forms.py:1160
+msgid "PO"
+msgstr "أمر الشراء"
+
+#: fleet_app/forms.py:1161
+msgid "Is Taxable"
+msgstr "خاضع للضريبة"
+
+#: fleet_app/forms.py:1209 fleet_app/templates/create_invoice.html:224
+#: fleet_app/templates/create_invoice.html:225
+#: fleet_app/templates/create_invoice.html:249
+msgid "Details"
+msgstr "تفاصيل"
+
+#: fleet_app/forms.py:1211
+msgid "Tax (%)"
+msgstr "الضريبة (%)"
+
+#: fleet_app/forms.py:1212 fleet_app/templates/create_invoice.html:252
+msgid "Tax Amount"
+msgstr "مبلغ الضريبة"
+
+#: fleet_app/forms.py:1238
+msgid "Company Name"
+msgstr "اسم الشركة"
+
+#: fleet_app/forms.py:1239
+msgid "Website"
+msgstr "الموقع الإلكتروني"
+
+#: fleet_app/forms.py:1241
+msgid "Phone"
+msgstr "الهاتف"
+
+#: fleet_app/forms.py:1298
+msgid "Hire Contract No"
+msgstr "رقم عقد التأجير"
+
+#: fleet_app/forms.py:1299
+msgid "Subtotal"
+msgstr "المجموع الفرعي"
+
+#: fleet_app/forms.py:1301
+msgid "Other Charges"
+msgstr "رسوم أخرى"
+
+#: fleet_app/forms.py:1302 fleet_app/templates/create_invoice.html:264
+#: fleet_app/templates/create_invoice.html:265
+#: fleet_app/templates/fleet_hire_list.html:19
+msgid "Grand Total"
+msgstr "المجموع الكلي"
+
+#: fleet_app/templates/company_setup.html:56
+msgid "Company Setup"
+msgstr "إعداد الشركة"
+
+#: fleet_app/templates/company_setup.html:61
+msgid "Company Information"
+msgstr "معلومات الشركة"
+
+#: fleet_app/templates/company_setup.html:80
+msgid "Save Company"
+msgstr "حفظ الشركة"
+
+#: fleet_app/templates/company_setup.html:90
+msgid "Manage Documents"
+msgstr "إدارة المستندات"
+
+#: fleet_app/templates/contract_form.html:15
+#: fleet_app/templates/create_invoice.html:101
+#: fleet_app/templates/create_simple_quotation.html:85
+#: fleet_app/templates/document_crud.html:247
+#: fleet_app/templates/fleet_hire_form.html:92
+#: fleet_app/templates/timesheet_form.html:120
+msgid "View"
+msgstr "عرض"
+
+#: fleet_app/templates/contract_form.html:25
+msgid "Edit Fleet Contract"
+msgstr "تعديل عقد الأسطول"
+
+#: fleet_app/templates/contract_form.html:27
+msgid "Create Fleet Contract"
+msgstr "إنشاء عقد الأسطول"
+
+#: fleet_app/templates/contract_form.html:102
+msgid "Update Contract"
+msgstr "تحديث العقد"
+
+#: fleet_app/templates/contract_form.html:104
+msgid "Save Contract"
+msgstr "حفظ العقد"
+
+#: fleet_app/templates/contract_list.html:10
+msgid "Fleet Contracts"
+msgstr "عقود الأسطول"
+
+#: fleet_app/templates/contract_list.html:12
+msgid "New Contract"
+msgstr "عقد جديد"
+
+#: fleet_app/templates/contract_list.html:23
+msgid "Contract No"
+msgstr "رقم العقد"
+
+#: fleet_app/templates/contract_list.html:62
+#, fuzzy
+#| msgid "No records found"
+msgid "No contracts found."
+msgstr "لا توجد سجلات"
+
+#: fleet_app/templates/contract_list.html:76
+#, fuzzy
+#| msgid "Update Contract"
+msgid "Delete Contract"
+msgstr "تحديث العقد"
+
+#: fleet_app/templates/contract_list.html:77
+#, fuzzy
+#| msgid "Error deleting quotation"
+msgid "Error deleting contract"
+msgstr "خطأ في حذف عرض السعر"
+
+#: fleet_app/templates/create_invoice.html:92
+msgid "Edit Invoice"
+msgstr "تعديل الفاتورة"
+
+#: fleet_app/templates/create_invoice.html:94
+msgid "Create Invoice"
+msgstr "إنشاء فاتورة"
+
+#: fleet_app/templates/create_invoice.html:112
+msgid "Invoice Information"
+msgstr "معلومات الفاتورة"
+
+#: fleet_app/templates/create_invoice.html:163
+msgid "Tax Invoice"
+msgstr "فاتورة ضريبية"
+
+#: fleet_app/templates/create_invoice.html:210
+msgid "Add Invoice Details"
+msgstr "إضافة تفاصيل الفاتورة"
+
+#: fleet_app/templates/create_invoice.html:217
+msgid "Select vehicle"
+msgstr "اختر مركبة"
+
+#: fleet_app/templates/create_invoice.html:228
+msgid "Amount (OMR)"
+msgstr "المبلغ (ر.ع)"
+
+#: fleet_app/templates/create_invoice.html:232
+#: fleet_app/templates/create_invoice.html:233
+#: fleet_app/templates/create_invoice.html:251
+#, python-format
+msgid "Tax %%"
+msgstr "نسبة الضريبة"
+
+#: fleet_app/templates/create_invoice.html:253
+msgid "Total"
+msgstr "المجموع"
+
+#: fleet_app/templates/create_invoice.html:259
+msgid "No details added yet"
+msgstr "لم تضاف تفاصيل بعد"
+
+#: fleet_app/templates/create_invoice.html:284
+msgid "Update & Generate PDF"
+msgstr "تحديث وإنشاء ملف PDF"
+
+#: fleet_app/templates/create_invoice.html:286
+msgid "Save & Generate PDF"
+msgstr "حفظ وإنشاء ملف PDF"
+
+#: fleet_app/templates/create_invoice.html:290
+msgid "Back"
+msgstr "رجوع"
+
+#: fleet_app/templates/create_invoice.html:299
+msgid "Please select a vehicle."
+msgstr "يرجى اختيار مركبة."
+
+#: fleet_app/templates/create_invoice.html:300
+msgid "Please enter location."
+msgstr "يرجى إدخال الموقع."
+
+#: fleet_app/templates/create_invoice.html:301
+msgid "Please enter a valid amount."
+msgstr "يرجى إدخال مبلغ صحيح."
+
+#: fleet_app/templates/create_invoice.html:302
+msgid "Please enter a valid tax percentage."
+msgstr "يرجى إدخال نسبة ضريبة صحيحة."
+
+#: fleet_app/templates/create_invoice.html:303
+msgid "Please add at least one invoice detail before saving."
+msgstr "يرجى إضافة تفصيل واحد للفاتورة على الأقل قبل الحفظ."
+
+#: fleet_app/templates/create_invoice.html:304
+msgid "Please fill in the"
+msgstr "يرجى تعبئة"
+
+#: fleet_app/templates/create_invoice.html:305
+msgid "field."
+msgstr "الحقل."
+
+#: fleet_app/templates/create_simple_quotation.html:76
+msgid "Edit Quotation"
+msgstr "تعديل عرض السعر"
+
+#: fleet_app/templates/create_simple_quotation.html:78
+msgid "Create Simple Quotation"
+msgstr "إنشاء عرض سعر بسيط"
+
+#: fleet_app/templates/create_simple_quotation.html:97
+msgid "Quotation Info"
+msgstr "معلومات عرض السعر"
+
+#: fleet_app/templates/create_simple_quotation.html:129
+msgid "Manage Client"
+msgstr "إدارة العملاء"
+
+#: fleet_app/templates/create_simple_quotation.html:160
+msgid "Add Quotation Details"
+msgstr "إضافة تفاصيل عرض السعر"
+
+#: fleet_app/templates/create_simple_quotation.html:179
+#: fleet_app/templates/fleet_hire_form.html:182
+#: fleet_app/templates/fleet_hire_form.html:534
+msgid "Hour"
+msgstr "ساعة"
+
+#: fleet_app/templates/create_simple_quotation.html:180
+#: fleet_app/templates/fleet_hire_form.html:183
+#: fleet_app/templates/fleet_hire_form.html:535
+msgid "Day"
+msgstr "يوم"
+
+#: fleet_app/templates/create_simple_quotation.html:181
+#: fleet_app/templates/fleet_hire_form.html:184
+#: fleet_app/templates/fleet_hire_form.html:536
+msgid "Month"
+msgstr "شهر"
+
+#: fleet_app/templates/create_simple_quotation.html:213
+msgid "Update Quotation"
+msgstr "تحديث عرض السعر"
+
+#: fleet_app/templates/create_simple_quotation.html:215
+msgid "Save Quotation"
+msgstr "حفظ عرض السعر"
+
+#: fleet_app/templates/create_simple_quotation.html:225
+msgid "Please fill in all fields."
+msgstr ""
+
+#: fleet_app/templates/create_simple_quotation.html:226
+msgid "Please enter a valid quantity."
+msgstr ""
+
+#: fleet_app/templates/create_simple_quotation.html:227
+msgid "Please enter a valid rent amount."
+msgstr ""
+
+#: fleet_app/templates/create_simple_quotation.html:228
+#: fleet_app/templates/fleet_hire_form.html:437
+#: fleet_app/templates/fleet_hire_form.html:568
+#: fleet_app/templates/repair_and_maintenance_form.html:202
+msgid "Remove"
+msgstr ""
+
+#: fleet_app/templates/create_simple_quotation.html:229
+msgid "No details added. Continue anyway?"
+msgstr ""
+
+#: fleet_app/templates/document_crud.html:118
+msgid "Update Document"
+msgstr "تحديث المستند"
+
+#: fleet_app/templates/document_crud.html:118
+msgid "Create Document"
+msgstr "إنشاء مستند"
+
+#: fleet_app/templates/document_crud.html:128
+msgid "Document Information"
+msgstr "معلومات المستند"
+
+#: fleet_app/templates/document_crud.html:145
+msgid "Office"
+msgstr "المكتب"
+
+#: fleet_app/templates/document_crud.html:200
+msgid "Are you sure you want to delete this document?"
+msgstr "هل أنت متأكد أنك تريد حذف هذا المستند؟"
+
+#: fleet_app/templates/document_crud.html:210
+msgid "All Documents"
+msgstr "جميع المستندات"
+
+#: fleet_app/templates/document_crud.html:219
+msgid "Linked To"
+msgstr "مرتبط بـ"
+
+#: fleet_app/templates/document_crud.html:221
+msgid "Uploaded"
+msgstr "تم الرفع"
+
+#: fleet_app/templates/document_crud.html:250
+msgid "No File"
+msgstr "لا يوجد ملف"
+
+#: fleet_app/templates/document_crud.html:266
+msgid "No documents found. Create your first document above!"
+msgstr "لم يتم العثور على مستندات. قم بإنشاء أول مستند لك أعلاه!"
+
+#: fleet_app/templates/fleet_base1.html:290
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+#: fleet_app/templates/fleet_base1.html:298
+msgid "Master"
+msgstr "البيانات الأساسية"
+
+#: fleet_app/templates/fleet_base1.html:302
+msgid "Company"
+msgstr "الشركة"
+
+#: fleet_app/templates/fleet_base1.html:305
+msgid "V.Manufacturers"
+msgstr "مصنعو المركبات"
+
+#: fleet_app/templates/fleet_base1.html:308
+msgid "V.Type"
+msgstr "نوع المركبة"
+
+#: fleet_app/templates/fleet_base1.html:311
+msgid "V.Models"
+msgstr "موديلات المركبات"
+
+#: fleet_app/templates/fleet_base1.html:314
+#: fleet_app/templates/vehicle_form.html:144
+msgid "Create Vehicle"
+msgstr "إنشاء مركبة"
+
+#: fleet_app/templates/fleet_base1.html:326
+msgid "Staff Creation"
+msgstr "إضافة موظف"
+
+#: fleet_app/templates/fleet_base1.html:331
+msgid ""
+"Are you sure you want to clear all transactions? This action cannot be "
+"undone!"
+msgstr "هل أنت متأكد من حذف جميع المعاملات؟ لا يمكن التراجع عن هذا الإجراء!"
+
+#: fleet_app/templates/fleet_base1.html:332
+msgid "Clear Transactions"
+msgstr "مسح المعاملات"
+
+#: fleet_app/templates/fleet_base1.html:343
+msgid "Transactions"
+msgstr "المعاملات"
+
+#: fleet_app/templates/fleet_base1.html:349
+msgid "V.Timesheet"
+msgstr "جدول زمن المركبات"
+
+#: fleet_app/templates/fleet_base1.html:359
+msgid "Simple Quotation"
+msgstr "عرض سعر بسيط"
+
+#: fleet_app/templates/fleet_base1.html:367
+msgid "Contract"
+msgstr "عقد"
+
+#: fleet_app/templates/fleet_base1.html:373
+msgid "Repair"
+msgstr "إصلاح"
+
+#: fleet_app/templates/fleet_base1.html:379
+msgid "Invoice"
+msgstr "فاتورة"
+
+#: fleet_app/templates/fleet_base1.html:387
+msgid "Hire"
+msgstr "تأجير"
+
+#: fleet_app/templates/fleet_base1.html:393
+msgid "Receipt"
+msgstr "إيصال استلام"
+
+#: fleet_app/templates/fleet_base1.html:397
+msgid "Payment"
+msgstr "إيصال صرف"
+
+#: fleet_app/templates/fleet_base1.html:400
+msgid "Local Payment"
+msgstr "دفعة محلية"
+
+#: fleet_app/templates/fleet_base1.html:408
+#: fleet_app/templates/fleet_home.html:166
+msgid "Bill Clearance"
+msgstr "تصفية فاتورة"
+
+#: fleet_app/templates/fleet_base1.html:426
+#: fleet_app/templates/fleet_base1.html:430
+msgid "Documents"
+msgstr "المستندات"
+
+#: fleet_app/templates/fleet_base1.html:439
+msgid "Reports"
+msgstr "التقارير"
+
+#: fleet_app/templates/fleet_base1.html:443
+msgid "Ledger Posting"
+msgstr "ترحيل دفتر الأستاذ"
+
+#: fleet_app/templates/fleet_base1.html:495
+#: fleet_app/templates/fleet_base1.html:524
+msgid "Settings"
+msgstr "الإعدادات"
+
+#: fleet_app/templates/fleet_base1.html:501
+#: fleet_app/templates/fleet_base1.html:507
+#: fleet_app/templates/fleet_base1.html:508
+msgid "User"
+msgstr "المستخدم"
+
+#: fleet_app/templates/fleet_base1.html:502
+msgid "User Image"
+msgstr "صورة المستخدم"
+
+#: fleet_app/templates/fleet_base1.html:514
+msgid "My Profile"
+msgstr "ملفي الشخصي"
+
+#: fleet_app/templates/fleet_base1.html:517
+msgid "My Balance"
+msgstr "رصيدي"
+
+#: fleet_app/templates/fleet_base1.html:520
+msgid "Inbox"
+msgstr "صندوق الوارد"
+
+#: fleet_app/templates/fleet_base1.html:528
+msgid "Logout"
+msgstr "تسجيل الخروج"
+
+#: fleet_app/templates/fleet_base1.html:553
+msgid "Chat"
+msgstr "الدردشة"
+
+#: fleet_app/templates/fleet_base1.html:554
+msgid "Todo"
+msgstr "قائمة المهام"
+
+#: fleet_app/templates/fleet_base1.html:565
+msgid "Users"
+msgstr "المستخدمون"
+
+#: fleet_app/templates/fleet_base1.html:569
+msgid "Search"
+msgstr "بحث"
+
+#: fleet_app/templates/fleet_base1.html:593
+msgid "Todo List"
+msgstr "قائمة المهام"
+
+#: fleet_app/templates/fleet_hire_form.html:83
+msgid "Edit Fleet Hire"
+msgstr "تعديل تأجير الأسطول"
+
+#: fleet_app/templates/fleet_hire_form.html:85
+msgid "Create Fleet Hire"
+msgstr "إنشاء تأجير أسطول"
+
+#: fleet_app/templates/fleet_hire_form.html:104
+msgid "Fleet Hire Info"
+msgstr "معلومات تأجير الأسطول"
+
+#: fleet_app/templates/fleet_hire_form.html:150
+msgid "Add Vehicle Hire Details"
+msgstr "إضافة تفاصيل تأجير المركبة"
+
+#: fleet_app/templates/fleet_hire_form.html:157
+msgid "Select Vehicle"
+msgstr "اختر المركبة"
+
+#: fleet_app/templates/fleet_hire_form.html:167
+#: fleet_app/templates/fleet_hire_form.html:205
+msgid "Reg No"
+msgstr "رقم التسجيل"
+
+#: fleet_app/templates/fleet_hire_form.html:171
+msgid "Start Date"
+msgstr "تاريخ البدء"
+
+#: fleet_app/templates/fleet_hire_form.html:179
+#: fleet_app/templates/fleet_hire_form.html:208
+msgid "Unit"
+msgstr "الوحدة"
+
+#: fleet_app/templates/fleet_hire_form.html:188
+msgid "Nos"
+msgstr "العدد"
+
+#: fleet_app/templates/fleet_hire_form.html:192
+msgid "Rate/Period"
+msgstr "المعدل/المدة"
+
+#: fleet_app/templates/fleet_hire_form.html:206
+msgid "Start"
+msgstr "البدء"
+
+#: fleet_app/templates/fleet_hire_form.html:207
+msgid "End"
+msgstr "الانتهاء"
+
+#: fleet_app/templates/fleet_hire_form.html:209
+msgid "No Of Unit"
+msgstr "عدد الوحدات"
+
+#: fleet_app/templates/fleet_hire_form.html:210
+msgid "Rate"
+msgstr "المعدل"
+
+#: fleet_app/templates/fleet_hire_form.html:251
+msgid "Update Fleet Hire"
+msgstr "تحديث تأجير الأسطول"
+
+#: fleet_app/templates/fleet_hire_form.html:253
+msgid "Save Fleet Hire"
+msgstr "حفظ تأجير الأسطول"
+
+#: fleet_app/templates/fleet_hire_form.html:263
+msgid "Please fill all fields before adding."
+msgstr "يرجى ملء جميع الحقول قبل الإضافة."
+
+#: fleet_app/templates/fleet_hire_list.html:9
+msgid "Fleet Hire List"
+msgstr "قائمة تأجير الأسطول"
+
+#: fleet_app/templates/fleet_hire_list.html:10
+msgid "Add New Fleet Hire"
+msgstr "إضافة تأجير أسطول جديد"
+
+#: fleet_app/templates/fleet_hire_list.html:51
+msgid "No fleet hire records found."
+msgstr "لم يتم العثور على سجلات لتأجير الأسطول."
+
+#: fleet_app/templates/fleet_home.html:25
+msgid "Total Invoice"
+msgstr "إجمالي الفواتير"
+
+#: fleet_app/templates/fleet_home.html:38
+msgid "Total Hire"
+msgstr "إجمالي التأجير"
+
+#: fleet_app/templates/fleet_home.html:51
+msgid "Total Quotation"
+msgstr "إجمالي عروض الأسعار"
+
+#: fleet_app/templates/fleet_home.html:64
+msgid "Total Repair"
+msgstr "إجمالي الإصلاحات"
+
+#: fleet_app/templates/fleet_home.html:81
+msgid "TIMESHEET"
+msgstr "جدول الوقت"
+
+#: fleet_app/templates/fleet_home.html:88
+msgid "CONTRACT"
+msgstr "العقود"
+
+#: fleet_app/templates/fleet_home.html:95
+msgid "QUOTATION"
+msgstr "عروض الأسعار"
+
+#: fleet_app/templates/fleet_home.html:102
+msgid "REPAIR & MAINTENANCE"
+msgstr "الإصلاح والصيانة"
+
+#: fleet_app/templates/fleet_home.html:117
+msgid "INVOICE"
+msgstr "الفواتير"
+
+#: fleet_app/templates/fleet_home.html:124
+msgid "HIRE"
+msgstr "التأجير"
+
+#: fleet_app/templates/fleet_home.html:142
+msgid "PAYMENT"
+msgstr "المدفوعات"
+
+#: fleet_app/templates/fleet_home.html:149
+msgid "RECEIPT"
+msgstr "الإيصالات"
+
+#: fleet_app/templates/fleet_home.html:156
+msgid "LOCAL PAYMENT"
+msgstr "الدفعات المحلية"
+
+#: fleet_app/templates/fleet_home.html:172
+msgid "PAYMENT-BILL"
+msgstr "فاتورة الدفع"
+
+#: fleet_app/templates/fleet_home.html:179
+msgid "RECEIPT-BILL"
+msgstr "فاتورة الاستلام"
+
+#: fleet_app/templates/invoice_list.html:6
+msgid "Invoices"
+msgstr "الفواتير"
+
+#: fleet_app/templates/invoice_list.html:43
+msgid "No invoices found."
+msgstr "لم يتم العثور على فواتير."
+
+#: fleet_app/templates/manufacturer_create.html:62
+#: fleet_app/templates/manufacturer_create.html:94
+msgid "Create Manufacturer"
+msgstr "إنشاء مصنع"
+
+#: fleet_app/templates/manufacturer_create.html:71
+msgid "Manufacturer Information"
+msgstr "معلومات المصنع"
+
+#: fleet_app/templates/manufacturer_create.html:86
+msgid "Logo preview"
+msgstr "معاينة الشعار"
+
+#: fleet_app/templates/manufacturer_list.html:141
+msgid "Manufacturers"
+msgstr "المصنعون"
+
+#: fleet_app/templates/manufacturer_list.html:143
+#: fleet_app/templates/simple_quotation_list.html:12
+#: fleet_app/templates/vehicle_category_list.html:148
+#: fleet_app/templates/vehicle_model_list.html:68
+msgid "New"
+msgstr "جديد"
+
+#: fleet_app/templates/manufacturer_list.html:180
+#: fleet_app/templates/vehicle_category_list.html:194
+#: fleet_app/templates/vehicle_list.html:415
+#: fleet_app/templates/vehicle_model_list.html:129
+msgid "Are you sure you want to delete"
+msgstr "هل أنت متأكد من حذف"
+
+#: fleet_app/templates/manufacturer_list.html:195
+msgid ""
+"No manufacturers found. Create your first manufacturer by clicking the "
+"\"New\" button above."
+msgstr ""
+"لم يتم العثور على مصنعين. قم بإنشاء أول مصنع لك بالنقر على زر \"جديد\" أعلاه."
+
+#: fleet_app/templates/repair_and_maintenance_form.html:65
+msgid "Repair & Maintenance"
+msgstr "الإصلاح والصيانة"
+
+#: fleet_app/templates/repair_and_maintenance_form.html:73
+msgid "Repair & Maintenance Details"
+msgstr "تفاصيل الإصلاح والصيانة"
+
+#: fleet_app/templates/repair_and_maintenance_form.html:127
+msgid "Enable VAT"
+msgstr "تفعيل الضريبة"
+
+#: fleet_app/templates/repair_and_maintenance_form.html:137
+msgid "Maintenance Items"
+msgstr "عناصر الصيانة"
+
+#: fleet_app/templates/repair_and_maintenance_form.html:201
+msgid "Please fill in at least the Narration and Bill Amount fields"
+msgstr "يرجى ملء حقلي البيان ومبلغ الفاتورة على الأقل"
+
+#: fleet_app/templates/simple_quotation_list.html:10
+msgid "Simple Quotations"
+msgstr "عروض أسعار بسيطة"
+
+#: fleet_app/templates/simple_quotation_list.html:19
+msgid "Quotation No"
+msgstr "رقم عرض السعر"
+
+#: fleet_app/templates/simple_quotation_list.html:22
+msgid "Items"
+msgstr "العناصر"
+
+#: fleet_app/templates/simple_quotation_list.html:39
+msgid "No Customer"
+msgstr "لا يوجد عميل"
+
+#: fleet_app/templates/simple_quotation_list.html:66
+msgid "No quotations found"
+msgstr "لم يتم العثور على عروض أسعار"
+
+#: fleet_app/templates/simple_quotation_list.html:75
+msgid "Are you sure you want to delete Quotation"
+msgstr "هل أنت متأكد أنك تريد حذف عرض السعر"
+
+#: fleet_app/templates/simple_quotation_list.html:77
+msgid "Error deleting quotation"
+msgstr "خطأ في حذف عرض السعر"
+
+#: fleet_app/templates/staff_category_manage.html:76
+msgid "Category Information"
+msgstr "معلومات الفئة"
+
+#: fleet_app/templates/staff_category_manage.html:104
+msgid "Existing Categories"
+msgstr "الفئات الموجودة"
+
+#: fleet_app/templates/staff_category_manage.html:127
+msgid "Are you sure you want to delete this category?"
+msgstr "هل أنت متأكد أنك تريد حذف هذه الفئة؟"
+
+#: fleet_app/templates/staff_category_manage.html:138
+msgid "No categories found. Add your first category above."
+msgstr "لم يتم العثور على فئات. أضف أول فئة لك أعلاه."
+
+#: fleet_app/templates/staff_manage.html:77
+msgid "Personal Information"
+msgstr "المعلومات الشخصية"
+
+#: fleet_app/templates/staff_manage.html:139
+msgid "Employment Information"
+msgstr "معلومات التوظيف"
+
+#: fleet_app/templates/staff_manage.html:175
+msgid "Bank & Emergency Contact"
+msgstr "البنك وجهة الاتصال للطوارئ"
+
+#: fleet_app/templates/staff_manage.html:202
+msgid "Documents & Licenses"
+msgstr "المستندات والرخص"
+
+#: fleet_app/templates/staff_manage.html:262
+msgid "Add Staff Documents"
+msgstr "إضافة مستندات الموظف"
+
+#: fleet_app/templates/staff_manage.html:269
+msgid "Staff List"
+msgstr "قائمة الموظفين"
+
+#: fleet_app/templates/staff_manage.html:279
+#: fleet_app/templates/vehicle_form.html:476
+#: fleet_app/templates/vehicle_model_list.html:108
+msgid "Category"
+msgstr "الفئة"
+
+#: fleet_app/templates/staff_manage.html:299
+msgid "Are you sure to delete?"
+msgstr "هل أنت متأكد من الحذف؟"
+
+#: fleet_app/templates/staff_manage.html:304
+msgid "No staff found."
+msgstr "لم يتم العثور على موظفين."
+
+#: fleet_app/templates/timesheet_form.html:111
+msgid "Edit Timesheet"
+msgstr "تعديل جدول الوقت"
+
+#: fleet_app/templates/timesheet_form.html:113
+msgid "Create Timesheet"
+msgstr "إنشاء جدول الوقت"
+
+#: fleet_app/templates/timesheet_form.html:132
+msgid "Timesheet Information"
+msgstr "معلومات جدول الوقت"
+
+#: fleet_app/templates/timesheet_form.html:216
+msgid "Timesheet Details (31 Days)"
+msgstr "تفاصيل جدول الوقت (31 يوم)"
+
+#: fleet_app/templates/timesheet_form.html:226
+msgid "Break (Hrs)"
+msgstr "استراحة (ساعات)"
+
+#: fleet_app/templates/timesheet_form.html:227
+msgid "OT (Hrs)"
+msgstr "ساعات إضافية"
+
+#: fleet_app/templates/timesheet_form.html:228
+msgid "Total (Hrs)"
+msgstr "الإجمالي (ساعات)"
+
+#: fleet_app/templates/timesheet_form.html:245
+msgid "Update Timesheet"
+msgstr "تحديث جدول الوقت"
+
+#: fleet_app/templates/timesheet_form.html:247
+msgid "Save Timesheet"
+msgstr "حفظ جدول الوقت"
+
+#: fleet_app/templates/timesheet_form.html:259
+#, fuzzy
+#| msgid "Job Location"
+msgid "Location"
+msgstr "موقع العمل"
+
+#: fleet_app/templates/timesheet_form.html:261
+msgid "End Time must be greater than Start Time!"
+msgstr ""
+
+#: fleet_app/templates/timesheet_form.html:262
+msgid "Please fill at least one row with Date, Start Time and End Time!"
+msgstr ""
+
+#: fleet_app/templates/timesheet_form.html:263
+#, fuzzy
+#| msgid "No vendors found."
+msgid "Reg No or Code not found."
+msgstr "لم يتم العثور على موردين."
+
+#: fleet_app/templates/timesheet_form.html:264
+msgid "Error fetching Reg No or Code."
+msgstr ""
+
+#: fleet_app/templates/timesheet_report.html:9
+#, fuzzy
+#| msgid "Timesheet Information"
+msgid "Timesheet Report"
+msgstr "معلومات جدول الوقت"
+
+#: fleet_app/templates/timesheet_report.html:15
+msgid "TS No"
+msgstr ""
+
+#: fleet_app/templates/timesheet_report.html:17
+#, fuzzy
+#| msgid "Project Location"
+msgid "Project"
+msgstr "موقع المشروع"
+
+#: fleet_app/templates/timesheet_report.html:57
+#, fuzzy
+#| msgid "No customers found."
+msgid "No timesheets found"
+msgstr "لم يتم العثور على عملاء."
+
+#: fleet_app/templates/timesheet_report.html:68
+#, fuzzy
+#| msgid "Are you sure you want to delete"
+msgid "Are you sure you want to delete Timesheet"
+msgstr "هل أنت متأكد من حذف"
+
+#: fleet_app/templates/timesheet_report.html:70
+#, fuzzy
+#| msgid "Edit Timesheet"
+msgid "Error deleting timesheet"
+msgstr "تعديل جدول الوقت"
+
+#: fleet_app/templates/vehicle_category_list.html:146
+msgid "Vehicle Types"
+msgstr "أنواع المركبات"
+
+#: fleet_app/templates/vehicle_category_list.html:208
+msgid ""
+"No vehicle types found. Create your first type by clicking the \"New\" "
+"button above."
+msgstr ""
+"لم يتم العثور على أنواع مركبات. قم بإنشاء أول نوع لك بالنقر على زر \"جديد\" "
+"أعلاه."
+
+#: fleet_app/templates/vehicle_form.html:144
+msgid "Update Vehicle"
+msgstr "تحديث المركبة"
+
+#: fleet_app/templates/vehicle_form.html:153
+msgid "Basic Information"
+msgstr "المعلومات الأساسية"
+
+#: fleet_app/templates/vehicle_form.html:197
+msgid "Vehicle Image"
+msgstr "صورة المركبة"
+
+#: fleet_app/templates/vehicle_form.html:199
+msgid "No Image"
+msgstr "لا توجد صورة"
+
+#: fleet_app/templates/vehicle_form.html:226
+msgid "Third Party Inspection Equipment"
+msgstr "معدات الفحص من طرف ثالث"
+
+#: fleet_app/templates/vehicle_form.html:231
+msgid "RAS Inspection"
+msgstr "فحص RAS"
+
+#: fleet_app/templates/vehicle_form.html:233
+#: fleet_app/templates/vehicle_form.html:250
+#: fleet_app/templates/vehicle_form.html:267
+#: fleet_app/templates/vehicle_form.html:284
+#: fleet_app/templates/vehicle_form.html:301
+#: fleet_app/templates/vehicle_form.html:318
+msgid "Inspection Date"
+msgstr "تاريخ الفحص"
+
+#: fleet_app/templates/vehicle_form.html:241
+#: fleet_app/templates/vehicle_form.html:258
+#: fleet_app/templates/vehicle_form.html:275
+#: fleet_app/templates/vehicle_form.html:292
+#: fleet_app/templates/vehicle_form.html:309
+#: fleet_app/templates/vehicle_form.html:326
+msgid "Certificate"
+msgstr "الشهادة"
+
+#: fleet_app/templates/vehicle_form.html:248
+msgid "Hook Inspection"
+msgstr "فحص الخطاف"
+
+#: fleet_app/templates/vehicle_form.html:265
+msgid "Wire Rope Inspection"
+msgstr "فحص حبل السلك"
+
+#: fleet_app/templates/vehicle_form.html:282
+msgid "Winch Inspection"
+msgstr "فحص الونش"
+
+#: fleet_app/templates/vehicle_form.html:299
+msgid "Lifting Wire Rope"
+msgstr "حبل سلك الرفع"
+
+#: fleet_app/templates/vehicle_form.html:316
+msgid "Lifting Belt"
+msgstr "حزام الرفع"
+
+#: fleet_app/templates/vehicle_form.html:336
+msgid "Driver Assignment"
+msgstr "تعيين السائق"
+
+#: fleet_app/templates/vehicle_form.html:359
+msgid "Vehicle Details"
+msgstr "تفاصيل المركبة"
+
+#: fleet_app/templates/vehicle_form.html:429
+msgid "Add Vehicle Category"
+msgstr "إضافة فئة مركبة"
+
+#: fleet_app/templates/vehicle_form.html:430
+#: fleet_app/templates/vehicle_form.html:457
+#: fleet_app/templates/vehicle_form.html:555
+#: fleet_app/templates/vehicle_model_form.html:189
+#: fleet_app/templates/vehicle_model_form.html:223
+msgid "Close"
+msgstr "إغلاق"
+
+#: fleet_app/templates/vehicle_form.html:443
+msgid "Add Category"
+msgstr "إضافة فئة"
+
+#: fleet_app/templates/vehicle_form.html:456
+msgid "Add Vehicle Model"
+msgstr "إضافة موديل مركبة"
+
+#: fleet_app/templates/vehicle_form.html:484
+msgid "Seats"
+msgstr "المقاعد"
+
+#: fleet_app/templates/vehicle_form.html:488
+msgid "Doors"
+msgstr "الأبواب"
+
+#: fleet_app/templates/vehicle_form.html:496
+msgid "Model Range"
+msgstr "مدى الموديل"
+
+#: fleet_app/templates/vehicle_form.html:520
+msgid "Transmission"
+msgstr "ناقل الحركة"
+
+#: fleet_app/templates/vehicle_form.html:528
+msgid "Power (kW)"
+msgstr "القوة (كيلووات)"
+
+#: fleet_app/templates/vehicle_form.html:532
+msgid "Horse Power"
+msgstr "القوة الحصانية"
+
+#: fleet_app/templates/vehicle_form.html:540
+msgid "Add Model"
+msgstr "إضافة موديل"
+
+#: fleet_app/templates/vehicle_form.html:554
+msgid "Add License Plate Code"
+msgstr "إضافة رمز لوحة الترخيص"
+
+#: fleet_app/templates/vehicle_form.html:561
+msgid "Code"
+msgstr "الرمز"
+
+#: fleet_app/templates/vehicle_list.html:295
+msgid "Vehicle Fleet"
+msgstr "أسطول المركبات"
+
+#: fleet_app/templates/vehicle_list.html:297
+msgid "Add New Vehicle"
+msgstr "إضافة مركبة جديدة"
+
+#: fleet_app/templates/vehicle_list.html:306
+msgid "Filter Vehicles"
+msgstr "تصفية المركبات"
+
+#: fleet_app/templates/vehicle_list.html:315
+msgid "Ownership Type"
+msgstr "نوع الملكية"
+
+#: fleet_app/templates/vehicle_list.html:318
+msgid "All Vehicles"
+msgstr "جميع المركبات"
+
+#: fleet_app/templates/vehicle_list.html:319
+msgid "Owned Vehicles"
+msgstr "المركبات المملوكة"
+
+#: fleet_app/templates/vehicle_list.html:320
+msgid "Supplier Vehicles"
+msgstr "مركبات المورد"
+
+#: fleet_app/templates/vehicle_list.html:331
+msgid "All Suppliers"
+msgstr "جميع الموردين"
+
+#: fleet_app/templates/vehicle_list.html:345
+msgid "Quick Search"
+msgstr "بحث سريع"
+
+#: fleet_app/templates/vehicle_list.html:349
+msgid "Search by name or plate number..."
+msgstr "ابحث بالاسم أو رقم اللوحة..."
+
+#: fleet_app/templates/vehicle_list.html:393
+msgid "Owned"
+msgstr "مملوكة"
+
+#: fleet_app/templates/vehicle_list.html:429
+msgid ""
+"No vehicles found. Add your first vehicle by clicking the \"Add New "
+"Vehicle\" button above."
+msgstr ""
+"لم يتم العثور على مركبات. أضف أول مركبة لك بالنقر على زر \"إضافة مركبة "
+"جديدة\" أعلاه."
+
+#: fleet_app/templates/vehicle_model_form.html:68
+msgid "Create Vehicle Model"
+msgstr "إنشاء موديل مركبة"
+
+#: fleet_app/templates/vehicle_model_form.html:76
+msgid "Vehicle Model Information"
+msgstr "معلومات موديل المركبة"
+
+#: fleet_app/templates/vehicle_model_form.html:91
+#: fleet_app/templates/vehicle_model_form.html:187
+#, fuzzy
+#| msgid "All Manufacturers"
+msgid "Add New Manufacturer"
+msgstr "جميع المصنعين"
+
+#: fleet_app/templates/vehicle_model_form.html:103
+#: fleet_app/templates/vehicle_model_form.html:221
+#, fuzzy
+#| msgid "Add Vehicle Category"
+msgid "Add New Vehicle Category"
+msgstr "إضافة فئة مركبة"
+
+#: fleet_app/templates/vehicle_model_form.html:246
+#, fuzzy
+#| msgid "Manufacturer Name"
+msgid "Manufacturer added successfully!"
+msgstr "اسم المصنع"
+
+#: fleet_app/templates/vehicle_model_form.html:247
+msgid "An error occurred"
+msgstr ""
+
+#: fleet_app/templates/vehicle_model_form.html:248
+msgid "An error occurred while saving"
+msgstr ""
+
+#: fleet_app/templates/vehicle_model_form.html:344
+msgid "Vehicle category added successfully!"
+msgstr ""
+
+#: fleet_app/templates/vehicle_model_list.html:62
+msgid "Vehicle Models"
+msgstr "موديلات المركبات"
+
+#: fleet_app/templates/vehicle_model_list.html:75
+msgid "Filter Options"
+msgstr "خيارات التصفية"
+
+#: fleet_app/templates/vehicle_model_list.html:81
+msgid "Select Manufacturer"
+msgstr "اختر المصنع"
+
+#: fleet_app/templates/vehicle_model_list.html:83
+msgid "All Manufacturers"
+msgstr "جميع المصنعين"
+
+#: fleet_app/templates/vehicle_model_list.html:99
+msgid "Vehicle Models List"
+msgstr "قائمة موديلات المركبات"
+
+#: fleet_app/templates/vehicle_model_list.html:143
+msgid ""
+"No models found. Create your first model by clicking the \"New\" button "
+"above."
+msgstr ""
+"لم يتم العثور على موديلات. قم بإنشاء أول موديل لك بالنقر على زر \"جديد\" "
+"أعلاه."
+
+#~ msgid "Vehicle Reg No:"
+#~ msgstr "رقم تسجيل المركبة:"
+
+#~ msgid "Vehicle Name:"
+#~ msgstr "اسم المركبة:"
+
+#~ msgid "Project Location:"
+#~ msgstr "موقع المشروع:"
+
+#~ msgid "Client:"
+#~ msgstr "العميل:"
+
+#~ msgid "Duration:"
+#~ msgstr "المدة:"
+
+#~ msgid "Date:"
+#~ msgstr "التاريخ:"
+
+#~ msgid "Driver Name:"
+#~ msgstr "اسم السائق:"
+
+#~ msgid "Operator Name:"
+#~ msgstr "اسم المشغل:"
+
+#~ msgid "Description:"
+#~ msgstr "الوصف:"
+
+#~ msgid "DATE"
+#~ msgstr "التاريخ"
+
+#~ msgid ""
+#~ "NORMAL\n"
+#~ "HOURS"
+#~ msgstr ""
+#~ "ساعات\n"
+#~ "عادية"
+
+#~ msgid ""
+#~ "O\n"
+#~ "T"
+#~ msgstr ""
+#~ "ساعات\n"
+#~ "إضافية"
+
+#~ msgid ""
+#~ "TOTAL\n"
+#~ "HOURS"
+#~ msgstr ""
+#~ "الإجمالي\n"
+#~ "ساعات"
+
+#~ msgid "REMARKS"
+#~ msgstr "ملاحظات"
+
+#~ msgid "TOTAL"
+#~ msgstr "الإجمالي"
+
+#~ msgid "PREPARED BY"
+#~ msgstr "أعده"
+
+#~ msgid "SITE INCHARGE / ENGINEER"
+#~ msgstr "مسؤول الموقع / المهندس"
+
+#~ msgid "APPROVED BY"
+#~ msgstr "اعتمده"
+
+#~ msgid "Archived"
+#~ msgstr "مؤرشف"
+
+#~ msgid "Deleted"
+#~ msgstr "محذوف"
+
+#~ msgid "Created At"
+#~ msgstr "تاريخ الإنشاء"
+
+#~ msgid "Are you sure you want to delete this ledger?"
+#~ msgstr "هل أنت متأكد من حذف هذا الدفتر؟"
+
+#~ msgid "This charge will be debited to Bank Charges account"
+#~ msgstr "سيتم خصم هذه الرسوم من حساب الرسوم البنكية"

@@ -1,0 +1,1322 @@
+{% extends 'fleet_base1.html' %}
+{% block content %}
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f5f6fa;font-family:'Segoe UI',sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 16px 100px}
+
+/* ── Page header ── */
+.page-hdr{display:flex;align-items:center;justify-content:space-between;
+          margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.page-hdr-left{display:flex;align-items:center;gap:10px}
+.page-icon{width:38px;height:38px;background:#eff6ff;border-radius:9px;
+           display:flex;align-items:center;justify-content:center;font-size:20px}
+.page-title{font-size:20px;font-weight:700;color:#111827;margin:0}
+.page-sub{font-size:12px;color:#6b7280;margin-top:2px}
+.btn-back{background:#f9fafb;color:#374151;border:1px solid #e5e7eb;
+          border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;
+          text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+
+/* ── White cards ── */
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;
+      margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.card-hdr{padding:14px 20px;border-bottom:1px solid #f3f4f6;
+          display:flex;align-items:center;gap:8px}
+.card-hdr-icon{font-size:16px}
+.card-hdr-title{font-size:14px;font-weight:700;color:#111827}
+.card-hdr-sub{font-size:11px;color:#6b7280;margin-top:1px}
+.card-body{padding:20px}
+
+/* ── Field labels ── */
+.fl{display:block;font-size:10px;font-weight:700;color:#9ca3af;
+    text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.re   {color:#ef4444}
+
+/* ── Inputs ── */
+.fi{width:100%;border:1px solid #e5e7eb;border-radius:6px;
+    padding:9px 12px;font-size:13px;color:#111827;
+    background:#fff;outline:none;transition:border-color .15s;font-family:inherit}
+.fi:focus{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.08)}
+.fi::placeholder{color:#d1d5db}
+.fi[readonly]{background:#f9fafb;color:#6b7280}
+select.fi{cursor:pointer}
+textarea.fi{resize:vertical}
+
+/* ── Grids ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.mb{margin-bottom:14px}
+@media(max-width:680px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:460px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+/* ── Sub heading ── */
+.sub-hdr{display:flex;align-items:center;gap:8px;padding:14px 20px 0;
+         border-top:2px solid #f3f4f6;margin-top:4px}
+.sub-hdr-icon{font-size:15px}
+.sub-hdr-title{font-size:13px;font-weight:700;color:#111827}
+.sub-hdr-sub{font-size:11px;color:#6b7280;margin-top:1px}
+
+/* ── Complaints box ── */
+.cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px 20px}
+@media(max-width:560px){.cf-grid{grid-template-columns:1fr}}
+.cf-box{border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+.cf-box-hdr{background:#f9fafb;padding:10px 14px;border-bottom:1px solid #e5e7eb;
+            display:flex;justify-content:space-between;align-items:center}
+.cf-box-title{font-size:12px;font-weight:700;color:#374151;
+              display:flex;align-items:center;gap:5px}
+.cf-cnt{background:#e5e7eb;color:#6b7280;border-radius:10px;
+        padding:1px 8px;font-size:11px;font-weight:700}
+.cf-body{padding:12px}
+.cf-empty{font-size:12px;color:#9ca3af;margin-bottom:10px;font-style:italic}
+.cf-item{display:flex;align-items:flex-start;gap:7px;padding:7px 0;
+         border-top:1px solid #f3f4f6}
+.cf-num-c{background:#eff6ff;color:#2563eb;border-radius:4px;
+          padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0}
+.cf-num-t{background:#fefce8;color:#ca8a04;border-radius:4px;
+          padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0}
+.cf-txt{font-size:12px;color:#374151;flex:1;line-height:1.5}
+.cf-del{background:none;border:none;color:#d1d5db;cursor:pointer;
+        font-size:14px;flex-shrink:0}
+.cf-del:hover{color:#ef4444}
+.cf-add-row{display:flex;gap:6px;margin-top:8px}
+.cf-inp{flex:1;border:1px solid #e5e7eb;border-radius:6px;
+        padding:8px 10px;font-size:12px;color:#374151;
+        background:#f9fafb;outline:none;font-family:inherit}
+.cf-inp:focus{border-color:#2563eb;background:#fff}
+.cf-inp::placeholder{color:#d1d5db}
+.btn-cf-c{background:#2563eb;color:#fff;border:none;border-radius:6px;
+          width:30px;height:30px;font-size:17px;font-weight:700;
+          cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-cf-t{background:#f59e0b;color:#fff;border:none;border-radius:6px;
+          width:30px;height:30px;font-size:17px;font-weight:700;
+          cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ── Parts / Labour table ── */
+.tbl-wrap{overflow-x:auto;padding:0 20px}
+.est-tbl{width:100%;border-collapse:collapse;margin-bottom:4px}
+.est-tbl thead th{padding:9px 10px;font-size:10px;font-weight:700;
+                  color:#6b7280;text-transform:uppercase;letter-spacing:.5px;
+                  border-bottom:1px solid #e5e7eb;text-align:left;
+                  background:#f9fafb;white-space:nowrap}
+.est-tbl thead th.r{text-align:right}
+.est-tbl tbody td{padding:6px 6px;border-bottom:1px solid #f9fafb;
+                  vertical-align:middle}
+.est-tbl tbody tr:last-child td{border-bottom:none}
+.est-tbl tbody tr:hover{background:#fafbfd}
+.est-tbl input,.est-tbl select{
+  width:100%;border:1px solid transparent;border-radius:5px;
+  padding:7px 8px;font-size:12px;color:#111827;background:transparent;
+  outline:none;font-family:inherit;transition:all .12s}
+.est-tbl input:focus,.est-tbl select:focus{
+  border-color:#2563eb;background:#fff;box-shadow:0 0 0 2px rgba(37,99,235,.07)}
+.est-tbl input::placeholder{color:#d1d5db}
+.est-tbl input[readonly]{background:#f9fafb;color:#374151;font-weight:600}
+.est-tbl tbody tr:hover input,
+.est-tbl tbody tr:hover select{background:#fff;border-color:#e5e7eb}
+.cell-r{text-align:right;font-size:13px;font-weight:600;
+         color:#111827;padding-right:6px}
+.btn-rm{background:none;border:none;color:#d1d5db;cursor:pointer;
+        font-size:16px;padding:2px 4px;line-height:1}
+.btn-rm:hover{color:#ef4444}
+
+/* item search */
+.item-wrap{position:relative}
+.item-dd{position:absolute;top:100%;left:0;right:0;background:#fff;
+         border:1.5px solid #2563eb;border-radius:7px;z-index:200;
+         max-height:180px;overflow-y:auto;display:none;
+         box-shadow:0 8px 20px rgba(0,0,0,.1);margin-top:2px}
+.i-opt{padding:8px 12px;cursor:pointer;font-size:12px;color:#111827;
+       border-bottom:1px solid #f3f4f6;display:flex;
+       justify-content:space-between;align-items:center}
+.i-opt:hover{background:#eff6ff;color:#2563eb}
+.i-opt:last-child{border-bottom:none}
+.i-opt-price{font-size:11px;color:#9ca3af;font-family:monospace}
+
+.btn-add-row{background:none;border:none;color:#2563eb;font-size:13px;
+             font-weight:600;cursor:pointer;padding:8px 20px;
+             display:inline-flex;align-items:center;gap:5px;font-family:inherit}
+.btn-add-row:hover{color:#1d4ed8}
+.sub-total-row{display:flex;justify-content:flex-end;padding:8px 20px 12px;
+               font-size:12px;font-weight:700;color:#6b7280;gap:6px}
+.sub-total-row span{color:#111827;font-family:monospace}
+
+/* ── Grand Total ── */
+.grand-box{background:#fff;border:1px solid #e5e7eb;border-radius:10px;
+           margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.gt-row{display:flex;justify-content:space-between;align-items:center;
+        padding:11px 20px;border-bottom:1px solid #f3f4f6;font-size:13px}
+.gt-row:last-child{border-bottom:none}
+.gt-lbl{color:#374151;font-weight:500}
+.gt-val{font-weight:700;color:#111827;font-family:monospace}
+.gt-row.total{background:#1e293b;padding:14px 20px}
+.gt-row.total .gt-lbl{color:#94a3b8;font-size:14px;font-weight:700}
+.gt-row.total .gt-val{color:#22c55e;font-size:18px}
+
+/* ── Save bar ── */
+.save-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;
+          border-top:1px solid #e5e7eb;padding:12px 24px;
+          display:flex;justify-content:flex-end;gap:10px;
+          z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,.06)}
+.btn-cancel{background:#f9fafb;color:#374151;border:1px solid #e5e7eb;
+            border-radius:7px;padding:10px 20px;font-size:13px;
+            font-weight:600;text-decoration:none;display:inline-flex;align-items:center}
+.btn-save{background:#2563eb;color:#fff;border:none;border-radius:7px;
+          padding:10px 26px;font-size:14px;font-weight:700;cursor:pointer;
+          display:inline-flex;align-items:center;gap:6px;
+          box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.btn-save:hover{background:#1d4ed8}
+
+/* flash */
+.flash{padding:10px 16px;border-radius:7px;margin-bottom:12px;font-size:13px}
+.flash-ok {background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+.flash-err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
+
+/* divider */
+.divider{height:1px;background:#f3f4f6;margin:0 20px}
+</style>
+
+<div class="wrap">
+
+  <!-- ── Page Header ── -->
+  <div class="page-hdr">
+    <div class="page-hdr-left">
+      
+      <div>
+        <h1 class="page-title">
+          {% if edit_mode %}Edit Quotation — {{ quotation.quotation_number }}
+          {% else %}Create Quotation{% endif %}
+        </h1>
+        
+      </div>
+    </div>
+    <a href="{% url 'jobcard_app:quotation_list' %}" class="btn-back">← Back</a>
+  </div>
+
+  {% if messages %}{% for m in messages %}
+  <div class="flash {% if 'error' in m.tags %}flash-err{% else %}flash-ok{% endif %}">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <form method="post" id="quaForm">{% csrf_token %}
+
+  <!-- ════════════════════════════════════════
+       TABLE 1 — QUOTATION INFORMATION
+  ════════════════════════════════════════ -->
+  <input type="hidden" name="loaded_estimate" id="loadedEstId" value="{% if edit_mode and quotation.estimate %}{{ quotation.estimate.id }}{% elif prefill_est %}{{ prefill_est.id }}{% endif %}">
+  <input type="hidden" name="loaded_jobcard" id="loadedJcId" value="{% if edit_mode and quotation.jobcard %}{{ quotation.jobcard.id }}{% elif prefill_job %}{{ prefill_job.id }}{% endif %}">
+
+  <!-- ════════════════════════════════════════
+       TABLE 1 — QUOTATION INFORMATION
+  ════════════════════════════════════════ -->
+  <div class="card">
+    <div class="card-hdr" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div>
+          <div class="card-hdr-title">Quotation Info</div>
+        </div>
+      </div>
+
+      <!-- Load from Estimate Button & Dropdown -->
+      <div style="position:relative" id="estPickerWrap">
+        <button type="button" onclick="toggleEstPicker()"
+                style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
+                       border-radius:6px;padding:7px 14px;font-size:12px;
+                       font-weight:700;cursor:pointer;display:inline-flex;
+                       align-items:center;gap:6px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.05)">
+           Load from Estimate ▾
+        </button>
+
+        <!-- Dropdown Panel -->
+        <div id="estPickerPanel"
+             style="display:none;position:absolute;right:0;top:110%;
+                    background:#fff;border:1.5px solid #2563eb;border-radius:8px;
+                    min-width:380px;z-index:400;
+                    box-shadow:0 8px 24px rgba(0,0,0,.13);overflow:hidden">
+          <div style="background:#eff6ff;padding:10px 14px;
+                      border-bottom:1px solid #bfdbfe;
+                      display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12px;font-weight:700;color:#1d4ed8">
+               Select Estimate to Import
+            </span>
+            <button type="button" onclick="closeEstPicker()"
+                    style="background:none;border:none;color:#9ca3af;
+                           font-size:16px;cursor:pointer;line-height:1">✕</button>
+          </div>
+
+          <div id="estNoCustomer"
+               style="padding:14px;font-size:12px;color:#9ca3af;text-align:center">
+            Please select a customer first to view estimates
+          </div>
+          <div id="estList" style="max-height:300px;overflow-y:auto;display:none"></div>
+          <div id="estEmpty"
+               style="display:none;padding:14px;font-size:12px;
+                      color:#9ca3af;text-align:center">
+            No estimates found for this customer
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+
+      <!-- Loaded Estimate Banner -->
+      <div id="estBanner"
+           style="display:{% if prefill_est or edit_mode and quotation.estimate %}flex{% else %}none{% endif %};background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:9px 14px;font-size:12px;color:#1e40af;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px">
+        <span id="estBannerText">
+          {% if prefill_est %}Imported data from Estimate: <strong>{{ prefill_est.estimate_number }}</strong>
+          {% elif edit_mode and quotation.estimate %}Linked Estimate: <strong>{{ quotation.estimate.estimate_number }}</strong>{% endif %}
+        </span>
+        <button type="button" onclick="this.parentElement.style.display='none'"
+                style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:14px">✕</button>
+      </div>
+
+      <!-- Row 1: Voucher No | Quotation No | Date | Status -->
+      <div class="g4 mb">
+        <div>
+          <label class="fl">Voucher Number</label>
+          <input type="text" name="voucher_number" class="fi"
+            placeholder="e.g. VCH-2026-001"
+            value="{% if edit_mode %}{{ quotation.voucher_number|default:'' }}{% endif %}">
+        </div>
+        <div>
+          <label class="fl">Quotation Number</label>
+          <input type="text" name="Quotation_number" class="fi" required
+            placeholder="e.g. QUA-2026-001"
+            value="{% if edit_mode %}{{ quotation.quotation_number }}{% endif %}">
+        </div>
+        <div>
+          <label class="fl">Date <span class="req">*</span></label>
+          <input type="date" name="date" class="fi" required
+            value="{% if edit_mode %}{{ quotation.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
+        </div>
+        <div>
+          <label class="fl">Status</label>
+          <select name="status" class="fi">
+            <option value="draft"    {% if not edit_mode or quotation.status == 'draft'    %}selected{% endif %}>Draft</option>
+            <option value="sent"     {% if edit_mode and quotation.status == 'sent'        %}selected{% endif %}>Sent</option>
+            <option value="approved" {% if edit_mode and quotation.status == 'approved'    %}selected{% endif %}>Approved</option>
+            <option value="rejected" {% if edit_mode and quotation.status == 'rejected'    %}selected{% endif %}>Rejected</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 2: Customer | Vehicle -->
+      <div class="g2 mb">
+        <div>
+          <label class="fl">Customer Name <span class="req">*</span></label>
+          <select name="customer" class="fi" required id="custSel"
+            onchange="loadVehicles(this.value);loadPhone(this)">
+            <option value="">— Select Customer —</option>
+            {% for c in customers %}
+            <option value="{{ c.id }}"
+              data-phone="{{ c.mobile_number|default:'' }}"
+              {% if edit_mode and quotation.customer_id == c.id %}selected{% elif prefill_est and prefill_est.customer_id == c.id %}selected{% endif %}>
+              {{ c.ledger_name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="fl">Vehicle <span class="req">*</span></label>
+          <select name="vehicle" class="fi" id="vehSel"
+            onchange="fillVehicleModel(this)">
+            <option value="">— Select Vehicle —</option>
+            {% if edit_mode and quotation.vehicle %}
+            <option value="{{ quotation.vehicle_id }}" selected
+              data-model="{{ quotation.vehicle.make }} {{ quotation.vehicle.model }}{% if quotation.vehicle.year %} ({{ quotation.vehicle.year }}){% endif %}">
+              {{ quotation.vehicle.make }} {{ quotation.vehicle.model }}
+              {% if quotation.vehicle.year %}({{ quotation.vehicle.year }}){% endif %}
+              · {{ quotation.vehicle.registration_number }}
+            </option>
+            {% elif prefill_est and prefill_est.vehicle %}
+            <option value="{{ prefill_est.vehicle_id }}" selected
+              data-model="{{ prefill_est.vehicle.make }} {{ prefill_est.vehicle.model }}{% if prefill_est.vehicle.year %} ({{ prefill_est.vehicle.year }}){% endif %}">
+              {{ prefill_est.vehicle.make }} {{ prefill_est.vehicle.model }}
+              {% if prefill_est.vehicle.year %}({{ prefill_est.vehicle.year }}){% endif %}
+              · {{ prefill_est.vehicle.registration_number }}
+            </option>
+            {% endif %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 3: Customer Phone | Vehicle Model | Mileage | VIN -->
+      <div class="g4 mb">
+        <div>
+          <label class="fl">Customer Phone</label>
+          <input type="text" name="customer_phone" class="fi" id="custPhone"
+            placeholder="e.g. +968 9123 4567"
+            value="{% if edit_mode %}{{ quotation.customer_phone|default:'' }}{% endif %}">
+        </div>
+        <div>
+          <label class="fl">Vehicle Model</label>
+          <input type="text" name="vehicle_model" class="fi" id="vehModel"
+            placeholder="e.g. Toyota Camry (2021)"
+            value="{% if edit_mode %}{{ quotation.vehicle_model|default:'' }}{% endif %}">
+        </div>
+        <div>
+          <label class="fl">Mileage (KM)</label>
+          <input type="number" name="mileage" class="fi"
+            placeholder="e.g. 52,310" min="0"
+            value="{% if edit_mode %}{{ quotation.mileage|default:'' }}{% elif prefill_est %}{{ prefill_est.mileage|default:'' }}{% endif %}">
+        </div>
+        <div>
+          <label class="fl">VIN / Chassis No</label>
+          <input type="text" name="vin" class="fi"
+            placeholder="e.g. JTEBU5JR805..."
+            value="{% if edit_mode %}{{ quotation.vin|default:'' }}{% elif prefill_est %}{{ prefill_est.vin|default:'' }}{% endif %}">
+        </div>
+      </div>
+
+      <!-- Row 4: Service Advisor | Remarks -->
+      <div class="g2">
+        <div>
+          <label class="fl">Service Advisor</label>
+          <select name="advisor" class="fi">
+            <option value="">— Select —</option>
+            {% for s in advisors %}
+            <option value="{{ s.id }}"
+              {% if edit_mode and quotation.advisor_id == s.id %}selected{% endif %}>
+              {{ s.full_name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="fl">Remarks</label>
+          <input type="text" name="remarks" class="fi"
+            placeholder="Any additional remarks..."
+            value="{% if edit_mode %}{{ quotation.remarks|default:'' }}{% endif %}">
+        </div>
+      </div>
+    </div><!-- /card-body: customer info -->
+  </div><!-- /card: customer info -->
+
+  <!-- ════════════════════════════════════════
+       TABLE 2 — ESTIMATE DETAILS
+  ════════════════════════════════════════ -->
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="card-hdr-title">Quotation Details</div>
+      </div>
+    </div>
+
+
+    <!-- Complaint section card -->
+    <div style="margin:12px 20px 0">
+
+      <!-- Section header with button -->
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px 8px 0 0;
+                  padding:11px 14px;display:flex;align-items:center;
+                  justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:700;color:#374151;
+                     text-transform:uppercase;letter-spacing:.5px">
+          Complaint Management
+        </span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button type="button" onclick="addQuotComplaint()"
+                  style="background:#2563eb;color:#fff;border:none;border-radius:5px;
+                         padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;
+                         display:inline-flex;align-items:center;gap:5px;white-space:nowrap">
+            + Add Complaint
+          </button>
+        </div>
+      </div>
+
+      <!-- Complaint Table -->
+      <div style="overflow-x:auto;border:1px solid #e5e7eb;border-top:none;
+                  border-radius:0 0 8px 8px">
+        <table style="width:100%;border-collapse:collapse;min-width:700px">
+          <thead>
+            <tr style="background:#f9fafb">
+              <th style="padding:9px 12px;font-size:10px;font-weight:700;color:#6b7280;
+                         text-transform:uppercase;letter-spacing:.5px;
+                         border-bottom:1px solid #e5e7eb;text-align:left;width:22%">
+                Service Category
+              </th>
+              <th style="padding:9px 12px;font-size:10px;font-weight:700;color:#6b7280;
+                         text-transform:uppercase;letter-spacing:.5px;
+                         border-bottom:1px solid #e5e7eb;text-align:left;width:36%">
+                Complaint Description
+              </th>
+              <th style="padding:9px 12px;font-size:10px;font-weight:700;color:#6b7280;
+                         text-transform:uppercase;letter-spacing:.5px;
+                         border-bottom:1px solid #e5e7eb;text-align:left;width:14%">
+                Type
+              </th>
+              <th style="padding:9px 12px;font-size:10px;font-weight:700;color:#6b7280;
+                         text-transform:uppercase;letter-spacing:.5px;
+                         border-bottom:1px solid #e5e7eb;text-align:left;width:16%">
+                Status
+              </th>
+              <th style="padding:9px 12px;font-size:10px;font-weight:700;color:#6b7280;
+                         text-transform:uppercase;letter-spacing:.5px;
+                         border-bottom:1px solid #e5e7eb;text-align:center;width:12%">
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody id="quotComplaintBody">
+
+            {% if edit_mode and complaints %}
+              {% for c in complaints %}
+              <tr style="border-bottom:1px solid #f3f4f6">
+                <td style="padding:7px 8px">
+                  <select name="customer_complaint_cat[]"
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                                 padding:7px 8px;font-size:12px;color:#111827;
+                                 background:#fff;outline:none;cursor:pointer">
+                    <option value="">— Category —</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}"
+                      {% if c.service_category_id == cat.id %}selected{% endif %}>
+                      {{ cat.name }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td style="padding:7px 8px">
+                  <input type="text" name="customer_complaint[]"
+                         value="{{ c.description }}"
+                         style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                                padding:7px 8px;font-size:12px;color:#111827;
+                                background:#fff;outline:none">
+                </td>
+                <td style="padding:7px 8px">
+                  <select name="customer_complaint_type[]"
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                                 padding:7px 6px;font-size:12px;color:#111827;
+                                 background:#fff;outline:none;cursor:pointer">
+                    <option value="Mechanical" {% if c.type == 'Mechanical' %}selected{% endif %}>Mechanical</option>
+                    <option value="Electrical" {% if c.type == 'Electrical' %}selected{% endif %}>Electrical</option>
+                    <option value="Body"       {% if c.type == 'Body' %}selected{% endif %}>Body</option>
+                    <option value="AC"         {% if c.type == 'AC' %}selected{% endif %}>AC</option>
+                    <option value="Other"      {% if c.type == 'Other' %}selected{% endif %}>Other</option>
+                  </select>
+                </td>
+                <td style="padding:7px 8px">
+                  <select name="customer_complaint_status[]"
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                                 padding:7px 6px;font-size:12px;color:#111827;
+                                 background:#fff;outline:none;cursor:pointer">
+                    <option value="Open"        {% if c.status == 'Open' %}selected{% endif %}>Open</option>
+                    <option value="In Progress" {% if c.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Resolved"    {% if c.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                  </select>
+                </td>
+                <td style="padding:7px 8px;text-align:center">
+                  <button type="button"
+                          onclick="rmQuotComplaint(this)"
+                          style="background:#dc2626;color:#fff;border:none;border-radius:5px;
+                                 padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;
+                                 display:inline-flex;align-items:center;gap:4px">
+                    ✕ Remove
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr style="border-bottom:1px solid #f3f4f6" id="quotCmpDefault">
+                <td style="padding:7px 8px">
+                  <select name="customer_complaint_cat[]"
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                                 padding:7px 8px;font-size:12px;color:#111827;
+                                 background:#fff;outline:none;cursor:pointer">
+                    <option value="">— Category —</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td style="padding:7px 8px">
+                  <input type="text" name="customer_complaint[]"
+                         placeholder="Describe complaint..."
+                         style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                                padding:7px 8px;font-size:12px;color:#111827;
+                                background:#fff;outline:none">
+                </td>
+                <td style="padding:7px 8px">
+                  <select name="customer_complaint_type[]"
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                                 padding:7px 6px;font-size:12px;color:#111827;
+                                 background:#fff;outline:none;cursor:pointer">
+                    <option value="Mechanical">Mechanical</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Body">Body</option>
+                    <option value="AC">AC</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </td>
+                <td style="padding:7px 8px">
+                  <select name="customer_complaint_status[]"
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                                 padding:7px 6px;font-size:12px;color:#111827;
+                                 background:#fff;outline:none;cursor:pointer">
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                </td>
+                <td style="padding:7px 8px;text-align:center">
+                  <button type="button"
+                          onclick="rmQuotComplaint(this)"
+                          style="background:#dc2626;color:#fff;border:none;border-radius:5px;
+                                 padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;
+                                 display:inline-flex;align-items:center;gap:4px">
+                    ✕ Remove
+                  </button>
+                </td>
+              </tr>
+            {% endif %}
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+
+
+    <!-- ── Parts quotation ── -->
+    <!-- ── Parts Quotation ── -->
+    <div class="sub-hdr" style="margin-top:16px">
+
+        <div>
+            <div class="sub-hdr-title">Parts Quotation</div>
+            
+        </div>
+    </div>
+
+    <div class="tbl-wrap" style="margin-top:12px">
+
+        <table class="est-tbl" id="partsTbl">
+
+            <thead>
+                <tr>
+                    <th style="width:30%">Spare Part</th>
+                    <th style="width:12%">Unit</th>
+                    <th style="width:10%">Qty</th>
+                    <th style="width:15%">Rate </th>
+                    <th style="width:15%">Amount </th>
+                    <th style="width:12%">Warranty</th>
+                    <th style="width:6%">Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="partsTbody">
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <button
+        type="button"
+        class="btn-add-row"
+        onclick="addPartRow()">
+        + Add Part
+    </button>
+
+    <div class="sub-total-row">
+        PARTS SUBTOTAL
+        &nbsp;
+        <span id="partsSub">0.000 </span>
+    </div>
+    <div class="divider"></div>
+
+    <!-- ── Labour Estimate ── -->
+    <div class="sub-hdr" style="margin-top:16px">
+      <div>
+        <div class="sub-hdr-title">Labour Charges</div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="est-tbl">
+        <thead>
+          <tr>
+            <th style="width:36%">Labour Description</th>
+            <th style="width:18%">Technician</th>
+            <th style="width:10%">HRS</th>
+            <th style="width:18%">Rate/Hr </th>
+            <th style="width:12%" class="r">Total </th>
+            <th style="width:6%"></th>
+          </tr>
+        </thead>
+        <tbody id="labourTbody">
+          {% if edit_mode and labour %}
+            {% for l in labour %}
+            <tr>
+              <td><input type="text" name="labour_desc[]"
+                    value="{{ l.description }}" placeholder="e.g. Engine repair..."></td>
+              <td>
+                <select name="labour_tech[]">
+                  <option value="">— Assign —</option>
+                  {% for t in technicians %}
+                  <option value="{{ t.id }}" {% if l.technician_id == t.id %}selected{% endif %}>
+                    {{ t.full_name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input type="number" name="labour_hrs[]" class="lab-hrs"
+                    value="{{ l.hours|default:1 }}" min="0" step="0.5" oninput="calcLabour(this)"></td>
+              <td><input type="number" name="labour_rate[]" class="lab-rate"
+                    value="{{ l.unit_price }}" min="0" step="0.001" oninput="calcLabour(this)"></td>
+              <td><div class="cell-r lab-tot">{{ l.total_price|floatformat:3 }} </div></td>
+              <td><button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">×</button></td>
+            </tr>
+            {% endfor %}
+          {% else %}
+          <tr>
+            <td><input type="text" name="labour_desc[]" placeholder="e.g. Engine repair..."></td>
+            <td>
+              <select name="labour_tech[]">
+                <option value="">— Assign —</option>
+                {% for t in technicians %}
+                <option value="{{ t.id }}">{{ t.full_name }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td><input type="number" name="labour_hrs[]" class="lab-hrs"
+                  value="1" min="0" step="0.5" oninput="calcLabour(this)"></td>
+            <td><input type="number" name="labour_rate[]" class="lab-rate"
+                  value="0.000" min="0" step="0.001" oninput="calcLabour(this)"></td>
+            <td><div class="cell-r lab-tot">0.000 </div></td>
+            <td><button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">×</button></td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    <button type="button" class="btn-add-row" onclick="addLabour()">+ Add Item</button>
+    <div class="sub-total-row">LABOUR SUBTOTAL &nbsp;<span id="labourSub">0.000 </span></div>
+
+  </div>
+
+  <!-- ════════════════════════════════════════
+       GRAND TOTAL
+  ════════════════════════════════════════ -->
+  <div class="grand-box">
+    <div class="gt-row">
+      <span class="gt-lbl">Parts Total</span>
+      <span class="gt-val" id="gtParts">0.000 </span>
+    </div>
+    <div class="gt-row">
+      <span class="gt-lbl">Labour Total</span>
+      <span class="gt-val" id="gtLabour">0.000 </span>
+    </div>
+    <div class="gt-row">
+      <span class="gt-lbl">Discount </span>
+      <span class="gt-val">
+        <input type="number" name="discount" id="discInp"
+          min="0" step="0.001"
+          value="{% if edit_mode %}{{ quotation.discount|default:0 }}{% else %}0{% endif %}"
+          style="border:1px solid #e5e7eb;border-radius:5px;padding:5px 9px;
+                 font-size:13px;width:110px;text-align:right;outline:none;
+                 font-family:monospace;font-weight:700"
+          oninput="calcAll()">
+        
+      </span>
+    </div>
+    <div class="gt-row">
+      <span class="gt-lbl">Tax %</span>
+      <span class="gt-val" style="display:flex;align-items:center;gap:6px">
+        <input type="number" name="tax_percent" id="taxInp"
+          min="0" max="100" step="0.01"
+          value="{% if edit_mode %}{{ quotation.tax_percent|default:0 }}{% else %}0{% endif %}"
+          style="border:1px solid #e5e7eb;border-radius:5px;padding:5px 9px;
+                 font-size:13px;width:80px;text-align:right;outline:none;font-family:monospace"
+          oninput="calcAll()">
+        % &nbsp;= <span id="taxAmt" style="font-family:monospace">0.000 </span>
+      </span>
+    </div>
+    <div class="gt-row total">
+      <span class="gt-lbl">GRAND TOTAL</span>
+      <span class="gt-val" id="grandTotal">0.000 </span>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  <div class="card">
+    <div class="card-body">
+      <label class="fl" style="margin-bottom:6px">Notes / Terms</label>
+      <textarea name="notes" class="fi" rows="3"
+        placeholder="Warranty terms, payment conditions, validity period...">{% if edit_mode %}{{ quotation.notes|default:'' }}{% endif %}</textarea>
+    </div>
+  </div>
+
+  </form>
+
+  
+
+  <!-- Save bar -->
+  <div class="save-bar">
+    <a href="{% url 'jobcard_app:quotation_list' %}" class="btn-cancel">Cancel</a>
+    <button
+        type="button"
+        class="btn-save"
+        onclick="document.getElementById('quaForm').submit()">
+
+        💾
+        {% if edit_mode %}
+            Update Quotation
+        {% else %}
+            Save Quotation
+        {% endif %}
+
+    </button>
+  </div>
+
+</div>
+
+<script>
+const VEH_URL          = "{% url 'jobcard_app:jc_get_vehicles' %}";
+const ITEMS_URL        = "{% url 'jobcard_app:jc_get_items' %}";
+const ITEM_MASTER_URL  = "{% url 'jobcard_app:ajax_get_all_items' %}";
+const GET_EST_URL      = "{% url 'jobcard_app:jc_get_estimate_data' %}";
+const GET_CUST_EST_URL = "{% url 'jobcard_app:ajax_get_customer_estimates' %}";
+
+const fmt = n => parseFloat(n||0).toFixed(3);
+
+let quotationItems = [];
+
+/* ── Estimate Picker Dropdown ── */
+function toggleEstPicker() {
+  const panel = document.getElementById('estPickerPanel');
+  if (!panel) return;
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'block';
+    fetchCustomerEstimates();
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function closeEstPicker() {
+  const panel = document.getElementById('estPickerPanel');
+  if (panel) panel.style.display = 'none';
+}
+
+function fetchCustomerEstimates() {
+  const custSel = document.getElementById('custSel');
+  const cid     = custSel ? custSel.value : '';
+  const noCust  = document.getElementById('estNoCustomer');
+  const list    = document.getElementById('estList');
+  const empty   = document.getElementById('estEmpty');
+
+  if (noCust) noCust.style.display = 'none';
+  if (list) {
+    list.innerHTML = '<div style="padding:14px;font-size:12px;color:#6b7280;text-align:center">Loading estimates...</div>';
+    list.style.display = 'block';
+  }
+  if (empty) empty.style.display = 'none';
+
+  const url = GET_CUST_EST_URL + (cid ? '?customer_id=' + cid : '');
+  fetch(url)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.estimates || !d.estimates.length) {
+        if (list)  list.style.display  = 'none';
+        if (empty) empty.style.display = 'block';
+        return;
+      }
+      let html = '';
+      d.estimates.forEach(e => {
+        html += `
+          <div onclick="selectAndLoadEstimate(${e.id})"
+               style="padding:10px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;
+                      transition:background .12s"
+               onmouseover="this.style.background='#eff6ff'"
+               onmouseout="this.style.background='#fff'">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-weight:700;font-size:13px;color:#1e40af">${e.estimate_number}</span>
+              <span style="font-size:12px;font-weight:700;color:#16a34a">${e.grand_total} </span>
+            </div>
+            <div style="font-size:11px;color:#4b5563;margin-top:3px;display:flex;justify-content:space-between;gap:8px">
+              <span>👤 <strong>${e.customer || 'No Customer'}</strong></span>
+              <span>📅 ${e.date}</span>
+            </div>
+            ${e.vehicle ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px">🚗 ${e.vehicle}</div>` : ''}
+          </div>
+        `;
+      });
+      if (list) list.innerHTML = html;
+    })
+    .catch(err => {
+      console.error('Error fetching estimates:', err);
+      if (list) list.innerHTML = '<div style="padding:14px;font-size:12px;color:#ef4444;text-align:center">Failed to load estimates</div>';
+    });
+}
+
+function selectAndLoadEstimate(estId) {
+  closeEstPicker();
+  loadEstimateData(estId);
+}
+
+function loadEstimateData(estId) {
+  if (!estId) return;
+
+  fetch(GET_EST_URL + '?estimate_id=' + estId)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.found) {
+        alert('Estimate details not found.');
+        return;
+      }
+
+      // Hidden inputs
+      const estHidden = document.getElementById('loadedEstId');
+      if (estHidden) estHidden.value = d.estimate_id;
+
+      if (d.jobcard_id) {
+        const jcHidden = document.getElementById('loadedJcId');
+        if (jcHidden) jcHidden.value = d.jobcard_id;
+      }
+
+      // Advisor
+      if (d.advisor_id) {
+        const advSel = document.querySelector('select[name="advisor"]');
+        if (advSel) advSel.value = d.advisor_id;
+      }
+
+      // Customer & Vehicle
+      if (d.customer_id) {
+        const custSel = document.getElementById('custSel');
+        if (custSel) {
+          custSel.value = d.customer_id;
+          loadPhone(custSel);
+        }
+        loadVehiclesAndSelect(d.customer_id, d.vehicle_id);
+      }
+
+      // Mileage & VIN
+      if (d.mileage) {
+        const mInput = document.querySelector('input[name="mileage"]');
+        if (mInput) mInput.value = d.mileage;
+      }
+      if (d.vin) {
+        const vInput = document.querySelector('input[name="vin"]');
+        if (vInput) vInput.value = d.vin;
+      }
+
+      // Clear & populate Complaints (table style)
+      const quotBody = document.getElementById('quotComplaintBody');
+      if (quotBody) quotBody.innerHTML = '';
+      if (d.complaints && d.complaints.length) {
+        d.complaints.forEach(c => {
+          addQuotComplaint(c, '', 'Mechanical', 'Open', '#f0fdf4');
+        });
+      } else {
+        addQuotComplaint();
+      }
+
+      // Populate Parts Table
+      const partsTbody = document.getElementById('partsTbody');
+      if (partsTbody) partsTbody.innerHTML = '';
+      if (d.parts && d.parts.length) {
+        d.parts.forEach(p => {
+          addPartRow(
+            p.item_ref || '',
+            p.unit || '',
+            p.quantity || 1,
+            (p.unit_price || 0).toFixed(3),
+            p.warranty || 'None',
+            p.description || ''
+          );
+        });
+      } else {
+        addPartRow();
+      }
+
+      // Populate Labour Table
+      const labourTbody = document.getElementById('labourTbody');
+      if (labourTbody) labourTbody.innerHTML = '';
+      if (d.labour && d.labour.length) {
+        d.labour.forEach(l => {
+          addLabourRowWithData(l.description, l.technician_id, l.hours, l.unit_price);
+        });
+      } else {
+        addLabour();
+      }
+
+      // Tax %, Discount, Notes
+      if (document.getElementById('discInp')) document.getElementById('discInp').value = d.discount || 0;
+      if (document.getElementById('taxInp')) document.getElementById('taxInp').value = d.tax_percent || 0;
+      if (d.notes) {
+        const notesArea = document.querySelector('textarea[name="notes"]');
+        if (notesArea) notesArea.value = d.notes;
+      }
+
+      calcAll();
+
+      // Show banner
+      const banner = document.getElementById('estBanner');
+      const bannerText = document.getElementById('estBannerText');
+      if (banner && bannerText) {
+        bannerText.innerHTML = 'Imported entire data from Estimate: <strong>' + d.est_number + '</strong>';
+        banner.style.display = 'flex';
+      }
+    })
+    .catch(err => {
+      console.error('Error loading estimate:', err);
+      alert('Failed to load estimate data.');
+    });
+}
+
+function loadVehiclesAndSelect(cid, vidToSelect) {
+  const vsel = document.getElementById('vehSel');
+  if (!vsel) return;
+  vsel.innerHTML = '<option value="">— Loading... —</option>';
+  if (!cid) { vsel.innerHTML = '<option value="">— Select Vehicle —</option>'; return; }
+  fetch(VEH_URL + '?customer_id=' + cid)
+    .then(r => r.json())
+    .then(d => {
+      vsel.innerHTML = '<option value="">— Select Vehicle —</option>';
+      d.vehicles.forEach(v => {
+        const o = new Option(v.label, v.id);
+        o.dataset.model = v.vehicle_model || (v.make + ' ' + v.model + (v.year ? ' (' + v.year + ')' : ''));
+        if (vidToSelect && String(v.id) === String(vidToSelect)) {
+          o.selected = true;
+        }
+        vsel.add(o);
+      });
+      fillVehicleModel(vsel);
+    });
+}
+
+/* ── Customer → vehicles & phone ── */
+function loadVehicles(cid) {
+  const vsel = document.getElementById('vehSel');
+  vsel.innerHTML = '<option value="">— Loading... —</option>';
+  if (!cid) { vsel.innerHTML = '<option value="">— Select Vehicle —</option>'; return; }
+  fetch(VEH_URL + '?customer_id=' + cid)
+    .then(r => r.json())
+    .then(d => {
+      vsel.innerHTML = '<option value="">— Select Vehicle —</option>';
+      d.vehicles.forEach(v => {
+        const o = new Option(v.label, v.id);
+        o.dataset.model = v.vehicle_model || (v.make + ' ' + v.model + (v.year ? ' (' + v.year + ')' : ''));
+        vsel.add(o);
+      });
+    });
+}
+function loadPhone(sel) {
+  const opt   = sel.options[sel.selectedIndex];
+  const phone = opt ? opt.dataset.phone || '' : '';
+  const phoneInp = document.getElementById('custPhone');
+  if (phoneInp) phoneInp.value = phone;
+}
+function fillVehicleModel(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const modelInp = document.getElementById('vehModel');
+  if (opt && opt.dataset.model && modelInp)
+    modelInp.value = opt.dataset.model;
+}
+
+/* ── Calc ── */
+function calcPart(inp) {
+    if (!inp) return;
+    const tr = inp.closest('tr');
+    const qty = parseFloat(tr.querySelector('.qty')?.value) || 0;
+    const rate = parseFloat(tr.querySelector('.price')?.value) || 0;
+    const total = qty * rate;
+    const output = tr.querySelector('.part-total');
+    if (output) {
+        output.textContent = total.toFixed(3) ;
+    }
+    calcAll();
+}
+
+function renderQuotationParts() {
+    const tbody = document.getElementById('partsTbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    {% if edit_mode and parts %}
+        {% for p in parts %}
+            addPartRow(
+                '{{ p.item_ref|default:"" }}',
+                '{{ p.unit|default:"" }}',
+                '{{ p.quantity|default:1 }}',
+                '{{ p.unit_price|floatformat:3 }}',
+                '{{ p.warranty|default:"None" }}',
+                '{{ p.description|default:"" }}'
+            );
+        {% endfor %}
+    {% else %}
+        addPartRow();
+    {% endif %}
+}
+
+function calcLabour(inp) {
+  const tr  = inp.closest('tr');
+  const hrs = parseFloat(tr.querySelector('.lab-hrs')?.value)  || 0;
+  const rt  = parseFloat(tr.querySelector('.lab-rate')?.value) || 0;
+  const td  = tr.querySelector('.lab-tot');
+  if (td) td.textContent = fmt(hrs * rt) ;
+  calcAll();
+}
+
+function calcAll() {
+  let parts = 0, labour = 0;
+  document.querySelectorAll('#partsTbody tr').forEach(tr => {
+    const q = parseFloat(tr.querySelector('.qty')?.value)   || 0;
+    const p = parseFloat(tr.querySelector('.price')?.value) || 0;
+    parts += q * p;
+  });
+  document.querySelectorAll('#labourTbody tr').forEach(tr => {
+    const h = parseFloat(tr.querySelector('.lab-hrs')?.value)  || 0;
+    const r = parseFloat(tr.querySelector('.lab-rate')?.value) || 0;
+    labour += h * r;
+  });
+  const sub    = parts + labour;
+  const discInp = document.getElementById('discInp');
+  const taxInp  = document.getElementById('taxInp');
+  const disc   = parseFloat(discInp ? discInp.value : 0) || 0;
+  const taxPct = parseFloat(taxInp ? taxInp.value : 0)   || 0;
+  const tax    = sub * taxPct / 100;
+  const grand  = sub - disc + tax;
+
+  if (document.getElementById('partsSub'))   document.getElementById('partsSub').textContent   = fmt(parts)  ;
+  if (document.getElementById('labourSub'))  document.getElementById('labourSub').textContent  = fmt(labour) ;
+  if (document.getElementById('gtParts'))    document.getElementById('gtParts').textContent    = fmt(parts)  ;
+  if (document.getElementById('gtLabour'))   document.getElementById('gtLabour').textContent   = fmt(labour);
+  if (document.getElementById('taxAmt'))     document.getElementById('taxAmt').textContent     = fmt(tax)    ;
+  if (document.getElementById('grandTotal')) document.getElementById('grandTotal').textContent = fmt(grand)  ;
+}
+
+function addLabour() {
+  addLabourRowWithData('', '', 1, 0);
+}
+
+function addLabourRowWithData(desc = '', techId = '', hrs = 1, rate = 0) {
+  const tbody = document.getElementById('labourTbody');
+  if (!tbody) return;
+  const tr = document.createElement('tr');
+  let techOpts = '<option value="">— Assign —</option>';
+  {% for t in technicians %}
+    techOpts += `<option value="{{ t.id }}" ${String(techId) === '{{ t.id }}' ? 'selected' : ''}>{{ t.full_name }}</option>`;
+  {% endfor %}
+
+  tr.innerHTML = `
+    <td><input type="text" name="labour_desc[]" value="${desc}" placeholder="e.g. Engine repair..."></td>
+    <td><select name="labour_tech[]">${techOpts}</select></td>
+    <td><input type="number" name="labour_hrs[]" class="lab-hrs" value="${hrs}" min="0" step="0.5" oninput="calcLabour(this)"></td>
+    <td><input type="number" name="labour_rate[]" class="lab-rate" value="${parseFloat(rate).toFixed(3)}" min="0" step="0.001" oninput="calcLabour(this)"></td>
+    <td><div class="cell-r lab-tot">${fmt(hrs * rate)} </div></td>
+    <td><button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">×</button></td>
+  `;
+  tbody.appendChild(tr);
+  calcAll();
+}
+
+function rmRow(btn) {
+  const tbody = btn.closest('tbody');
+  const tr    = btn.closest('tr');
+  if (tbody && tbody.rows.length > 1) tr.remove();
+  calcAll();
+}
+
+/* ── Item Master Search & Row Addition ── */
+document.addEventListener('DOMContentLoaded', function () {
+    fetch(ITEM_MASTER_URL)
+        .then(response => response.json())
+        .then(data => {
+            quotationItems = data.items || [];
+            renderQuotationParts();
+            calcAll();
+
+            {% if prefill_est %}
+              loadEstimateData({{ prefill_est.id }});
+            {% endif %}
+        })
+        .catch(error => {
+            console.error('Failed to load Item Master:', error);
+        });
+});
+
+function buildQuotationItemOptions(selectedId = '') {
+    let html = '<option value="">— Select Spare Part —</option>';
+    quotationItems.forEach(item => {
+        const selected = String(selectedId) === String(item.id) ? 'selected' : '';
+        html += `
+            <option
+                value="${item.id}"
+                data-name="${item.name}"
+                data-unit="${item.unit}"
+                data-price="${item.unit_price}"
+                ${selected}>
+                ${item.name}
+            </option>
+        `;
+    });
+    return html;
+}
+
+function buildWarrantyOptions(selected = 'None') {
+    const options = ['None', '1 Month', '3 Months', '6 Months', '12 Months', '2 Years'];
+    return options.map(w => `
+        <option value="${w}" ${w === selected ? 'selected' : ''}>${w}</option>
+    `).join('');
+}
+
+function addPartRow(
+    itemId = '',
+    unit = '',
+    qty = 1,
+    rate = '0.000',
+    warranty = 'None',
+    customDesc = ''
+) {
+    const tbody = document.getElementById('partsTbody');
+    if (!tbody) return;
+
+    const tr = document.createElement('tr');
+    const existingItem = quotationItems.find(i => String(i.id) === String(itemId) || (customDesc && String(i.name).toLowerCase() === String(customDesc).toLowerCase()));
+    const matchedId = existingItem ? existingItem.id : itemId;
+    const description = existingItem ? existingItem.name : (customDesc || '');
+    const existingUnit = unit || (existingItem ? existingItem.unit : '');
+    const safeDesc = String(description).replace(/"/g, '&quot;');
+
+    tr.innerHTML = `
+        <td>
+            <select name="part_item_id[]" class="part-item" onchange="quotationItemChanged(this)">
+                ${buildQuotationItemOptions(matchedId)}
+            </select>
+            <input type="text" name="description[]" class="part-desc" value="${safeDesc}" placeholder="Item description..." style="width:100%;margin-top:4px;border:1px solid #e5e7eb;border-radius:5px;padding:5px 8px;font-size:12px;display:${matchedId ? 'none' : 'block'}">
+        </td>
+        <td>
+            <input type="text" name="item_unit[]" class="part-unit" value="${existingUnit}" ${matchedId ? 'readonly' : ''} style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:5px 8px;font-size:12px">
+        </td>
+        <td>
+            <input type="number" name="quantity[]" class="qty" value="${qty}" min="0" step="0.01" oninput="calcPart(this)">
+        </td>
+        <td>
+            <input type="number" name="unit_price[]" class="price" value="${rate}" min="0" step="0.001" oninput="calcPart(this)">
+        </td>
+        <td>
+            <div class="cell-r part-total">0.000 </div>
+        </td>
+        <td>
+            <select name="part_warranty[]">
+                ${buildWarrantyOptions(warranty)}
+            </select>
+        </td>
+        <td>
+            <button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">×</button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    calcPart(tr.querySelector('.qty'));
+}
+
+function quotationItemChanged(select) {
+    const tr = select.closest('tr');
+    const option = select.options[select.selectedIndex];
+    const descInp = tr.querySelector('.part-desc');
+    const unitInp = tr.querySelector('.part-unit');
+    const priceInp = tr.querySelector('.price');
+
+    if (!option || !option.value) {
+        if (descInp) { descInp.value = ''; descInp.style.display = 'block'; }
+        if (unitInp) { unitInp.value = ''; unitInp.removeAttribute('readonly'); }
+        if (priceInp) priceInp.value = '0.000';
+        calcPart(tr.querySelector('.qty'));
+        return;
+    }
+
+    const name  = option.dataset.name || '';
+    const unit  = option.dataset.unit || '';
+    const price = parseFloat(option.dataset.price || 0);
+
+    if (descInp) { descInp.value = name; descInp.style.display = 'none'; }
+    if (unitInp) { unitInp.value = unit; unitInp.setAttribute('readonly', 'readonly'); }
+    if (priceInp) priceInp.value = price.toFixed(3);
+    calcPart(tr.querySelector('.qty'));
+}
+
+/* ── category options for quotation ── */
+const quotCatOpts = `
+  <option value="">— Category —</option>
+  {% for cat in categories %}
+  <option value="{{ cat.id }}">{{ cat.name }}</option>
+  {% endfor %}
+`;
+
+/* ── Add complaint row (table style) ── */
+function addQuotComplaint(desc='', catName='', type='Mechanical', status='Open', bg='') {
+  const tr = document.createElement('tr');
+  tr.style.cssText = 'border-bottom:1px solid #f3f4f6' + (bg ? ';background:' + bg : '');
+  tr.innerHTML = `
+    <td style="padding:7px 8px">
+      <select name="customer_complaint_cat[]"
+              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                     padding:7px 8px;font-size:12px;color:#111827;
+                     background:#fff;outline:none;cursor:pointer">
+        ${quotCatOpts}
+      </select>
+    </td>
+    <td style="padding:7px 8px">
+      <input type="text" name="customer_complaint[]"
+             value="${String(desc).replace(/"/g,'&quot;')}"
+             placeholder="Describe complaint..."
+             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                    padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
+    </td>
+    <td style="padding:7px 8px">
+      <select name="customer_complaint_type[]"
+              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                     padding:7px 6px;font-size:12px;color:#111827;
+                     background:#fff;outline:none;cursor:pointer">
+        <option value="Mechanical" ${type==='Mechanical'?'selected':''}>Mechanical</option>
+        <option value="Electrical" ${type==='Electrical'?'selected':''}>Electrical</option>
+        <option value="Body"       ${type==='Body'      ?'selected':''}>Body</option>
+        <option value="AC"         ${type==='AC'        ?'selected':''}>AC</option>
+        <option value="Other"      ${type==='Other'     ?'selected':''}>Other</option>
+      </select>
+    </td>
+    <td style="padding:7px 8px">
+      <select name="customer_complaint_status[]"
+              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
+                     padding:7px 6px;font-size:12px;color:#111827;
+                     background:#fff;outline:none;cursor:pointer">
+        <option value="Open"        ${status==='Open'       ?'selected':''}>Open</option>
+        <option value="In Progress" ${status==='In Progress'?'selected':''}>In Progress</option>
+        <option value="Resolved"    ${status==='Resolved'   ?'selected':''}>Resolved</option>
+      </select>
+    </td>
+    <td style="padding:7px 8px;text-align:center">
+      <button type="button" onclick="rmQuotComplaint(this)"
+              style="background:#dc2626;color:#fff;border:none;border-radius:5px;
+                     padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;
+                     display:inline-flex;align-items:center;gap:4px">
+        ✕ Remove
+      </button>
+    </td>`;
+  document.getElementById('quotComplaintBody').appendChild(tr);
+}
+
+/* ── Remove complaint row ── */
+function rmQuotComplaint(btn) {
+  const tbody = btn.closest('tbody');
+  const tr    = btn.closest('tr');
+  if (tbody.rows.length > 1) {
+    tr.remove();
+  } else {
+    tr.querySelectorAll('input[type=text]').forEach(i => i.value = '');
+    tr.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+  }
+}
+
+/* Close estimate picker on outside click */
+document.addEventListener('click', e => {
+  if (!e.target.closest('#estPickerWrap')) {
+    closeEstPicker();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', calcAll);
+</script>
+{% endblock %}

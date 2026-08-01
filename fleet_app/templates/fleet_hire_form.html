@@ -1,11 +1,14 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
 {% load privilege_tags %}
+{% load i18n %}
 
 {% block content %}
 <!-- Custom CSS -->
 <style>
-    h2, h3, h5 {
+    h2,
+    h3,
+    h5 {
         font-family: 'Segoe UI', sans-serif;
     }
 
@@ -14,7 +17,9 @@
         color: #444;
     }
 
-    input, select, textarea {
+    input,
+    select,
+    textarea {
         width: 100% !important;
         border: 1px solid #ced4da;
         border-radius: 6px;
@@ -22,7 +27,9 @@
         font-size: 0.95rem;
     }
 
-    input:focus, select:focus, textarea:focus {
+    input:focus,
+    select:focus,
+    textarea:focus {
         border-color: #5A8DEE;
         box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
         outline: none;
@@ -73,29 +80,28 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="fw-bold text-primary mb-0">
             {% if is_edit_mode %}
-                Edit Fleet Hire #{{ hire_instance.voucher_no }}
+            {% trans "Edit Fleet Hire" %} #{{ hire_instance.voucher_no }}
             {% else %}
-                Create Fleet Hire
+            {% trans "Create Fleet Hire" %}
             {% endif %}
         </h2>
 
         {% has_priv request.user 6 "can_read" as can_read_hire %}
         {% if can_read_hire %}
-        <a href="{% url 'fleet_app:fleet_hire_list' %}" 
-        class="btn btn-sm btn-primary">
-            View
+        <a href="{% url 'fleet_app:fleet_hire_list' %}" class="btn btn-sm btn-primary">
+            {% trans "View" %}
         </a>
         {% endif %}
 
     </div>
-    
-    <form method="post" class="needs-validation">
+
+    <form method="post" class="needs-validation" id="fleet-hire-form">
         {% csrf_token %}
 
         <!-- Fleet Hire Info -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Fleet Hire Info</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Fleet Hire Info" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -133,6 +139,12 @@
                     <div class="col-md-2">
                         {{ form.payment_mode.label_tag }}
                         {{ form.payment_mode }}
+                    </div>  
+                    <div class="col-md-2">
+                        {{ form.ledger.label_tag }}
+                        {{ form.ledger }}
+                    </div>
+                    
                     </div>
                 </div>
             </div>
@@ -141,70 +153,68 @@
         <!-- Vehicle Hire Details -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Add Vehicle Hire Details</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Add Vehicle Hire Details" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3 mb-3">
                     <div class="col-md-2">
-                        <label class="form-label">Vehicle</label>
+                        <label class="form-label">{% trans "Vehicle" %}</label>
                         <select id="vehicle" class="form-select vehicle-select">
-                            <option value="">-- Select Vehicle --</option>
+                            <option value="">-- {% trans "Select Vehicle" %} --</option>
                             {% for v in vehicle %}
-                                <option value="{{ v.pk }}"
-                                        data-rate-hr="{{ v.rate_per_hr }}"
-                                        data-rate-day="{{ v.rate_per_day }}"
-                                        data-rate-month="{{ v.rate_per_month }}">
+                            <option value="{{ v.pk }}" data-rate-hr="{{ v.rate_per_hr }}"
+                                data-rate-day="{{ v.rate_per_day }}" data-rate-month="{{ v.rate_per_month }}">
                                 {{ v }}
-                                </option>
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Reg No</label>
+                        <label class="form-label">{% trans "Reg No" %}</label>
                         <input type="text" id="reg_no" class="form-control">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Start Date</label>
+                        <label class="form-label">{% trans "Start Date" %}</label>
                         <input type="date" id="start_date" class="form-control">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">End Date</label>
+                        <label class="form-label">{% trans "End Date" %}</label>
                         <input type="date" id="end_date" class="form-control">
                     </div>
                     <div class="col-md-1">
-                        <label class="form-label">Unit</label>
+                        <label class="form-label">{% trans "Unit" %}</label>
                         <select id="unit" class="form-select unit-select">
-                            <option value="">-- Select --</option>
-                            <option value="Hr">Hour</option>
-                            <option value="Day">Day</option>
-                            <option value="Month">Month</option>
+                            <option value="">-- {% trans "Select" %} --</option>
+                            <option value="Hr">{% trans "Hour" %}</option>
+                            <option value="Day">{% trans "Day" %}</option>
+                            <option value="Month">{% trans "Month" %}</option>
                         </select>
                     </div>
                     <div class="col-md-1">
-                        <label class="form-label">Nos</label>
+                        <label class="form-label">{% trans "Nos" %}</label>
                         <input type="number" id="no_of_unit" class="form-control no-of-unit" value="1" min="1">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Rate/Period</label>
+                        <label class="form-label">{% trans "Rate/Period" %}</label>
                         <input type="number" id="rate_per_period" class="form-control rate-per-period" readonly>
                     </div>
                 </div>
 
-                <button type="button" class="btn btn-success mt-2" onclick="addDetail()">Add</button>
+                <button type="button" class="btn btn-success mt-2" onclick="addDetail()">{% trans "Add" %}</button>
 
                 <!-- Table for entered details -->
                 <div class="table-responsive mt-3">
                     <table class="table table-bordered align-middle text-center" id="detailsTable">
                         <thead class="table-light">
                             <tr>
-                                <th>Vehicle</th>
-                                <th>Reg No</th>
-                                <th>Start</th>
-                                <th>End</th>
-                                <th>Unit</th>
-                                <th>No Of Unit</th>
-                                <th>Rate</th>
-                                <th>Action</th>
+                                <th>{% trans "Vehicle" %}</th>
+                                <th>{% trans "Reg No" %}</th>
+                                <th>{% trans "Start" %}</th>
+                                <th>{% trans "End" %}</th>
+                                <th>{% trans "Unit" %}</th>
+                                <th>{% trans "No Of Unit" %}</th>
+                                <th>{% trans "Rate" %}</th>
+                                <th>{% trans "Action" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -217,7 +227,7 @@
         <!-- Totals -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Totals</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Totals" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -243,158 +253,165 @@
 
         <div class="text-end mt-4">
             <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-    {% if is_edit_mode %}
-         Update Fleet Hire
-    {% else %}
-        Save Fleet Hire
-    {% endif %}
-</button>
+                {% if is_edit_mode %}
+                {% trans "Update Fleet Hire" %}
+                {% else %}
+                {% trans "Save Fleet Hire" %}
+                {% endif %}
+            </button>
         </div>
     </form>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-  function updateRate(row) {
-    let vehicleSelect = row.querySelector(".vehicle-select");
-    let unitSelect = row.querySelector(".unit-select");
-    let noOfUnitInput = row.querySelector(".no-of-unit");
-    let rateInput = row.querySelector(".rate-per-period");
+    // Translation strings for JavaScript
+    const translations = {
+        fillAllFields: "{% trans 'Please fill all fields before adding.' %}",
+        loading: "{% trans 'Loading...' %}",
+        error: "{% trans 'Error' %}"
+    };
 
-    let rate = 0;
-    if (vehicleSelect && unitSelect) {
-      let selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
-      let noOfUnit = parseInt(noOfUnitInput.value) || 0;
+    document.addEventListener("DOMContentLoaded", function () {
+        function updateRate(row) {
+            let vehicleSelect = row.querySelector(".vehicle-select");
+            let unitSelect = row.querySelector(".unit-select");
+            let noOfUnitInput = row.querySelector(".no-of-unit");
+            let rateInput = row.querySelector(".rate-per-period");
 
-      if (unitSelect.value === "Hr") {
-        rate = parseFloat(selectedOption.dataset.rateHr || 0);
-      } else if (unitSelect.value === "Day") {
-        rate = parseFloat(selectedOption.dataset.rateDay || 0);
-      } else if (unitSelect.value === "Month") {
-        rate = parseFloat(selectedOption.dataset.rateMonth || 0);
-      }
-      rateInput.value = (rate * noOfUnit).toFixed(2);
-    }
-  }
+            let rate = 0;
+            if (vehicleSelect && unitSelect) {
+                let selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
+                let noOfUnit = parseInt(noOfUnitInput.value) || 0;
 
-  let entryRow = document.querySelector(".row.g-3.mb-3");
-  let vehicleSelect = entryRow.querySelector(".vehicle-select");
-  let unitSelect = entryRow.querySelector(".unit-select");
-  let noOfUnitInput = entryRow.querySelector(".no-of-unit");
+                if (unitSelect.value === "Hr") {
+                    rate = parseFloat(selectedOption.dataset.rateHr || 0);
+                } else if (unitSelect.value === "Day") {
+                    rate = parseFloat(selectedOption.dataset.rateDay || 0);
+                } else if (unitSelect.value === "Month") {
+                    rate = parseFloat(selectedOption.dataset.rateMonth || 0);
+                }
+                rateInput.value = (rate * noOfUnit).toFixed(2);
+            }
+        }
 
-  if (vehicleSelect) vehicleSelect.addEventListener("change", () => updateRate(entryRow));
-  if (unitSelect) unitSelect.addEventListener("change", () => updateRate(entryRow));
-  if (noOfUnitInput) noOfUnitInput.addEventListener("input", () => updateRate(entryRow));
+        let entryRow = document.querySelector(".row.g-3.mb-3");
+        let vehicleSelect = entryRow.querySelector(".vehicle-select");
+        let unitSelect = entryRow.querySelector(".unit-select");
+        let noOfUnitInput = entryRow.querySelector(".no-of-unit");
 
-  // Add event listeners for VAT and Other Charges to recalculate totals
-  const vatInput = document.getElementById('id_vat');
-  const otherChargesInput = document.getElementById('id_other_charges');
-  
-  if (vatInput) {
-    vatInput.addEventListener('input', calculateTotals);
-  }
-  if (otherChargesInput) {
-    otherChargesInput.addEventListener('input', calculateTotals);
-  }
+        if (vehicleSelect) vehicleSelect.addEventListener("change", () => updateRate(entryRow));
+        if (unitSelect) unitSelect.addEventListener("change", () => updateRate(entryRow));
+        if (noOfUnitInput) noOfUnitInput.addEventListener("input", () => updateRate(entryRow));
 
-  // Make total fields readonly and add styling
-  const subtotalInput = document.getElementById('id_subtotal');
-  const grandTotalInput = document.getElementById('id_grand_total');
-  
-  if (subtotalInput) {
-    subtotalInput.setAttribute('readonly', 'readonly');
-    subtotalInput.classList.add('total-field');
-  }
-  if (grandTotalInput) {
-    grandTotalInput.setAttribute('readonly', 'readonly');
-    grandTotalInput.classList.add('total-field');
-  }
+        // Add event listeners for VAT and Other Charges to recalculate totals
+        const vatInput = document.getElementById('id_vat');
+        const otherChargesInput = document.getElementById('id_other_charges');
 
-  // Ensure totals are calculated before form submission
-  const form = document.querySelector('form');
-  if (form) {
-    form.addEventListener('submit', function(e) {
-      // Recalculate totals one final time
-      calculateTotals();
-      
-      // Log values for debugging
-      console.log('Form Submission Values:');
-      console.log('Subtotal:', document.getElementById('id_subtotal').value);
-      console.log('VAT:', document.getElementById('id_vat').value);
-      console.log('Other Charges:', document.getElementById('id_other_charges').value);
-      console.log('Grand Total:', document.getElementById('id_grand_total').value);
-      
-      // Ensure the values are definitely set
-      const currentGrandTotal = document.getElementById('id_grand_total').value;
-      if (!currentGrandTotal || currentGrandTotal === '0' || currentGrandTotal === '0.00') {
-        console.warn('Grand total might be zero - recalculating');
-        calculateTotals();
-      }
+        if (vatInput) {
+            vatInput.addEventListener('input', calculateTotals);
+        }
+        if (otherChargesInput) {
+            otherChargesInput.addEventListener('input', calculateTotals);
+        }
+
+        // Make total fields readonly and add styling
+        const subtotalInput = document.getElementById('id_subtotal');
+        const grandTotalInput = document.getElementById('id_grand_total');
+
+        if (subtotalInput) {
+            subtotalInput.setAttribute('readonly', 'readonly');
+            subtotalInput.classList.add('total-field');
+        }
+        if (grandTotalInput) {
+            grandTotalInput.setAttribute('readonly', 'readonly');
+            grandTotalInput.classList.add('total-field');
+        }
+
+        // Ensure totals are calculated before form submission
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                // Recalculate totals one final time
+                calculateTotals();
+
+                // Log values for debugging
+                console.log('Form Submission Values:');
+                console.log('Subtotal:', document.getElementById('id_subtotal').value);
+                console.log('VAT:', document.getElementById('id_vat').value);
+                console.log('Other Charges:', document.getElementById('id_other_charges').value);
+                console.log('Grand Total:', document.getElementById('id_grand_total').value);
+
+                // Ensure the values are definitely set
+                const currentGrandTotal = document.getElementById('id_grand_total').value;
+                if (!currentGrandTotal || currentGrandTotal === '0' || currentGrandTotal === '0.00') {
+                    console.warn('Grand total might be zero - recalculating');
+                    calculateTotals();
+                }
+            });
+        }
     });
-  }
-});
 
-// Function to calculate totals dynamically
-function calculateTotals() {
-  const table = document.getElementById("detailsTable").getElementsByTagName("tbody")[0];
-  const rows = table.getElementsByTagName("tr");
-  
-  let subtotal = 0;
-  
-  // Sum up all rates from the table
-  for (let i = 0; i < rows.length; i++) {
-    const rateInput = rows[i].querySelector('input[name="details-rate_per_period[]"]');
-    if (rateInput) {
-      subtotal += parseFloat(rateInput.value) || 0;
+    // Function to calculate totals dynamically
+    function calculateTotals() {
+        const table = document.getElementById("detailsTable").getElementsByTagName("tbody")[0];
+        const rows = table.getElementsByTagName("tr");
+
+        let subtotal = 0;
+
+        // Sum up all rates from the table
+        for (let i = 0; i < rows.length; i++) {
+            const rateInput = rows[i].querySelector('input[name="details-rate_per_period[]"]');
+            if (rateInput) {
+                subtotal += parseFloat(rateInput.value) || 0;
+            }
+        }
+
+        // Get VAT and Other Charges
+        const vat = parseFloat(document.getElementById('id_vat').value) || 0;
+        const otherCharges = parseFloat(document.getElementById('id_other_charges').value) || 0;
+
+        // Calculate Grand Total
+        const grandTotal = subtotal + vat + otherCharges;
+
+        // Update the fields - use both value and setAttribute to ensure it sticks
+        const subtotalField = document.getElementById('id_subtotal');
+        const grandTotalField = document.getElementById('id_grand_total');
+
+        if (subtotalField) {
+            subtotalField.value = subtotal.toFixed(2);
+            subtotalField.setAttribute('value', subtotal.toFixed(2));
+        }
+
+        if (grandTotalField) {
+            grandTotalField.value = grandTotal.toFixed(2);
+            grandTotalField.setAttribute('value', grandTotal.toFixed(2));
+        }
+
+        console.log('Calculated - Subtotal:', subtotal.toFixed(2), 'Grand Total:', grandTotal.toFixed(2));
     }
-  }
-  
-  // Get VAT and Other Charges
-  const vat = parseFloat(document.getElementById('id_vat').value) || 0;
-  const otherCharges = parseFloat(document.getElementById('id_other_charges').value) || 0;
-  
-  // Calculate Grand Total
-  const grandTotal = subtotal + vat + otherCharges;
-  
-  // Update the fields - use both value and setAttribute to ensure it sticks
-  const subtotalField = document.getElementById('id_subtotal');
-  const grandTotalField = document.getElementById('id_grand_total');
-  
-  if (subtotalField) {
-    subtotalField.value = subtotal.toFixed(2);
-    subtotalField.setAttribute('value', subtotal.toFixed(2));
-  }
-  
-  if (grandTotalField) {
-    grandTotalField.value = grandTotal.toFixed(2);
-    grandTotalField.setAttribute('value', grandTotal.toFixed(2));
-  }
-  
-  console.log('Calculated - Subtotal:', subtotal.toFixed(2), 'Grand Total:', grandTotal.toFixed(2));
-}
 
-function addDetail() {
-  let vehicleSelect = document.getElementById("vehicle");
-  let vehicleText = vehicleSelect.options[vehicleSelect.selectedIndex].text;
-  let vehicleValue = vehicleSelect.value;
-  let regNo = document.getElementById("reg_no").value;
-  let startDate = document.getElementById("start_date").value;
-  let endDate = document.getElementById("end_date").value;
-  let unitSelect = document.getElementById("unit");
-  let unitText = unitSelect.options[unitSelect.selectedIndex].text;
-  let unitValue = unitSelect.value;
-  let noofunit = document.getElementById("no_of_unit").value;
-  let rate = document.getElementById("rate_per_period").value;
+    function addDetail() {
+        let vehicleSelect = document.getElementById("vehicle");
+        let vehicleText = vehicleSelect.options[vehicleSelect.selectedIndex].text;
+        let vehicleValue = vehicleSelect.value;
+        let regNo = document.getElementById("reg_no").value;
+        let startDate = document.getElementById("start_date").value;
+        let endDate = document.getElementById("end_date").value;
+        let unitSelect = document.getElementById("unit");
+        let unitText = unitSelect.options[unitSelect.selectedIndex].text;
+        let unitValue = unitSelect.value;
+        let noofunit = document.getElementById("no_of_unit").value;
+        let rate = document.getElementById("rate_per_period").value;
 
-  if (!vehicleValue || !regNo || !startDate || !endDate || !unitValue || !rate || !noofunit) {
-    alert("Please fill all fields before adding.");
-    return;
-  }
+        if (!vehicleValue || !regNo || !startDate || !endDate || !unitValue || !rate || !noofunit) {
+            alert(translations.fillAllFields);
+            return;
+        }
 
-  let table = document.getElementById("detailsTable").getElementsByTagName("tbody")[0];
-  let row = table.insertRow();
+        let table = document.getElementById("detailsTable").getElementsByTagName("tbody")[0];
+        let row = table.insertRow();
 
-  row.innerHTML = `
+        row.innerHTML = `
     <td>
       <input type="hidden" name="details-vehicle[]" value="${vehicleValue}">
       ${vehicleText}
@@ -423,108 +440,86 @@ function addDetail() {
       <input type="hidden" name="details-rate_per_period[]" value="${rate}">
       ${rate}
     </td>
-    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>
+    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">{% trans "Remove" %}</button></td>
   `;
 
-  // Clear entry fields
-  document.getElementById("vehicle").value = "";
-  document.getElementById("reg_no").value = "";
-  document.getElementById("start_date").value = "";
-  document.getElementById("end_date").value = "";
-  document.getElementById("unit").value = "";
-  document.getElementById("no_of_unit").value = "1";
-  document.getElementById("rate_per_period").value = "";
+        // Clear entry fields
+        document.getElementById("vehicle").value = "";
+        document.getElementById("reg_no").value = "";
+        document.getElementById("start_date").value = "";
+        document.getElementById("end_date").value = "";
+        document.getElementById("unit").value = "";
+        document.getElementById("no_of_unit").value = "1";
+        document.getElementById("rate_per_period").value = "";
 
-  // Recalculate totals after adding a row
-  calculateTotals();
-}
+        // Recalculate totals after adding a row
+        calculateTotals();
+    }
 
-function removeRow(button) {
-  let row = button.closest("tr");
-  row.remove();
-  
-  // Recalculate totals after removing a row
-  calculateTotals();
-}
+    function removeRow(button) {
+        let row = button.closest("tr");
+        row.remove();
+
+        // Recalculate totals after removing a row
+        calculateTotals();
+    }
 </script>
 
 <!-- Get Next Voucher_no -->
+{% if not is_edit_mode %}
 <script>
-function updateVoucherNumber() {
-    const select = document.getElementById('id_voucherType');
-    const input = document.getElementById('id_voucher_no');
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
 
-    if (select && input && select.value) {
-        input.value = 'Loading...';
-        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    input.value = data.voucher_number;
-                } else {
-                    input.value = 'Error';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching voucher number:', error);
-                input.value = 'Error';
-            });
-    } else if (input) {
-        input.value = '';
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = data.voucher_number;
+                    } else {
+                        input.value = "{% trans 'Error' %}";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching voucher number:', error);
+                    input.value = "{% trans 'Error' %}";
+                });
+        } else if (input) {
+            input.value = '';
+        }
     }
-}
 
-window.addEventListener('DOMContentLoaded', function() {
-    const voucherSelect = document.getElementById('id_voucherType');
-    if (voucherSelect) {
-        voucherSelect.addEventListener('change', updateVoucherNumber);
-        updateVoucherNumber(); // also run once on load
-    }
-});
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
 </script>
+{% endif %}
 
 <!-- Pre-populate Fleet Hire Details for EDIT Mode -->
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    {% if existing_details %}
-        console.log("📝 Edit mode detected - loading existing hire details...");
-        
-        // Load each existing detail
-        {% for detail in existing_details %}
-            preloadHireDetail(
-                {{ detail.vehicle.id }},
-                "{{ detail.vehicle.vehicle_name|escapejs }}",
-                "{{ detail.reg_no|escapejs }}",
-                "{{ detail.start_date|date:'Y-m-d' }}",
-                "{{ detail.end_date|date:'Y-m-d' }}",
-                "{{ detail.unit }}",
-                {{ detail.no_of_unit }},
-                {{ detail.rate_per_period }}
-            );
-        {% endfor %}
-        
-        console.log("✅ Loaded {{ existing_details|length }} hire details");
-        
-        // Recalculate totals after loading all details
-        calculateTotals();
-    {% endif %}
-});
+    /**
+     * Preload existing fleet hire detail into the table
+     * Used in EDIT mode to populate existing data
+     */
+    function preloadHireDetail(vehicleId, vehicleName, regNo, startDate, endDate, unit, noOfUnit, rate) {
+        let table = document.getElementById("detailsTable").getElementsByTagName("tbody")[0];
+        let row = table.insertRow();
 
-/**
- * Preload existing fleet hire detail into the table
- * Used in EDIT mode to populate existing data
- */
-function preloadHireDetail(vehicleId, vehicleName, regNo, startDate, endDate, unit, noOfUnit, rate) {
-    let table = document.getElementById("detailsTable").getElementsByTagName("tbody")[0];
-    let row = table.insertRow();
+        // Determine unit text
+        let unitText = unit;
+        if (unit === 'Hr') unitText = "{% trans 'Hour' %}";
+        else if (unit === 'Day') unitText = "{% trans 'Day' %}";
+        else if (unit === 'Month') unitText = "{% trans 'Month' %}";
 
-    // Determine unit text
-    let unitText = unit;
-    if (unit === 'Hr') unitText = 'Hour';
-    else if (unit === 'Day') unitText = 'Day';
-    else if (unit === 'Month') unitText = 'Month';
-
-    row.innerHTML = `
+        row.innerHTML = `
         <td>
             <input type="hidden" name="details-vehicle[]" value="${vehicleId}">
             ${vehicleName}
@@ -554,10 +549,154 @@ function preloadHireDetail(vehicleId, vehicleName, regNo, startDate, endDate, un
             ${parseFloat(rate).toFixed(2)}
         </td>
         <td>
-            <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">{% trans "Remove" %}</button>
         </td>
     `;
-}
+    }
 </script>
+
+<!-- Admin Override  -->
+<script>
+$(document).on("submit", "#fleet-hire-form", function (e) {
+    e.preventDefault();
+
+    // 🔐 REGISTER PENDING ACTION
+    window.pendingFormId = "fleet-hire-form";
+    window.pendingFormAction = this.action;
+    window.afterSuccessRedirect = "{% url 'fleet_app:fleet_hire_list' %}";
+
+    let formData = new FormData(this);
+
+    $.ajax({
+        url: window.pendingFormAction,
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+
+        success: function (response) {
+
+            if (response.admin_required) {
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+
+                setTimeout(function () {
+                    window.location.href = window.afterSuccessRedirect;
+                }, 800);
+            }
+        },
+
+        error: function (xhr) {
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+            } else {
+                alert("Something went wrong");
+            }
+        }
+    });
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const paymentModeField = document.getElementById("id_payment_mode");
+    const supplierField = document.getElementById("id_supplier");
+    const ledgerField = document.getElementById("id_ledger");
+
+    if (!paymentModeField || !supplierField || !ledgerField) return;
+
+    // Your layout uses col-md-2 wrapper
+    const ledgerWrapper = ledgerField.closest(".col-md-2");
+
+    function handleLedgerLogic() {
+        const paymentMode = paymentModeField.value.toLowerCase();
+        const selectedSupplier = supplierField.value;
+
+        if (paymentMode === "credit") {
+            // 🔥 Auto select supplier ledger
+            if (selectedSupplier) {
+                ledgerField.value = selectedSupplier;
+            }
+
+            // 🔥 Hide ledger field
+            ledgerWrapper.style.display = "none";
+        } else {
+            // Show ledger for cash/bank
+            ledgerWrapper.style.display = "block";
+        }
+    }
+
+    // Run on load
+    handleLedgerLogic();
+
+    // When payment mode changes
+    paymentModeField.addEventListener("change", handleLedgerLogic);
+
+    // When supplier changes
+    supplierField.addEventListener("change", handleLedgerLogic);
+
+});
+</script>
+
+<!-- Get Ledger by Group with selected payment mode -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const paymentModeField = document.getElementById("id_payment_mode");
+    const ledgerField = document.getElementById("id_ledger");
+
+    function getGroupId(paymentMode) {
+
+        paymentMode = paymentMode.toLowerCase();
+
+        if (paymentMode === "cash") return 8;
+        if (paymentMode === "bank") return 5;
+        if (paymentMode === "credit") return 28;
+
+        return null;
+    }
+
+    function loadLedgers(paymentMode) {
+
+        const groupId = getGroupId(paymentMode);
+
+        if (!groupId) return;
+
+        fetch(`/ajax/get-ledgers/?group_id=${groupId}`)
+            .then(response => response.json())
+            .then(data => {
+
+                ledgerField.innerHTML = "";
+
+                data.ledgers.forEach(function (ledger) {
+                    const option = document.createElement("option");
+                    option.value = ledger.id;
+                    option.textContent = ledger.name;
+                    ledgerField.appendChild(option);
+                });
+
+            });
+    }
+
+    if (paymentModeField.value) {
+        loadLedgers(paymentModeField.value);
+    }
+
+    paymentModeField.addEventListener("change", function () {
+        loadLedgers(this.value);
+    });
+
+});
+</script>
+
+
 
 {% endblock %}

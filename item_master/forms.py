@@ -2,7 +2,7 @@ from django import forms
 from accounts_app.models import Groups
 from item_master.models import *
 from django.forms import inlineformset_factory, modelformset_factory
-from item_master.common import get_ledgers_by_group_ids, filter_voucher_types
+from fleet_app.common import get_ledgers_by_group_ids, filter_voucher_types
 
 
 
@@ -417,7 +417,7 @@ class PurchaseVoucherForm(forms.ModelForm):
         self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 28)
 
         # Voucher type filter 
-        filter_voucher_types(self, [1])    
+        filter_voucher_types(self, [13])    
             
     
         
@@ -747,7 +747,7 @@ class PurchaseReturnVoucherForm(forms.ModelForm):
         self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 28)
 
         # Voucher type filter 
-        filter_voucher_types(self, [3])    
+        filter_voucher_types(self, [17])    
             
     
         
@@ -1034,7 +1034,7 @@ class SalesVoucherForm(forms.ModelForm):
             'DO_number': forms.TextInput(),
             'mobile': forms.TextInput(),
             'customer_TRN': forms.TextInput(),
-            'vehicle_number': forms.TextInput(),
+            'vehicle_number': forms.Select(),
             'location': forms.TextInput(),
             'terms_and_conditions': forms.TextInput(),
             'remarks': forms.TextInput(),
@@ -1070,7 +1070,7 @@ class SalesVoucherForm(forms.ModelForm):
         self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 29)
 
         # Voucher type filter 
-        filter_voucher_types(self, [2])    
+        filter_voucher_types(self, [14])    
             
     
         
@@ -1238,7 +1238,7 @@ class SalesReturnVoucherForm(forms.ModelForm):
         self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 29)
 
         # Voucher type filter 
-        filter_voucher_types(self, [4])    
+        filter_voucher_types(self, [18])    
             
     
         

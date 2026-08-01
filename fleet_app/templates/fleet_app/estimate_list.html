@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Estimates</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f4f4f4; }
+        tr:hover { background: #f9f9f9; }
+        .btn { padding: 6px 14px; border-radius: 4px; text-decoration: none; color: white; font-size: 0.85em; display: inline-block; margin-right: 4px; }
+        .btn-success  { background: #28a745; }
+        .btn-primary  { background: #007bff; }
+        .btn-warning  { background: #ffc107; color: #000; }
+        .btn-danger   { background: #dc3545; }
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 0.8em; color: white; }
+        .badge-draft    { background: #6c757d; }
+        .badge-sent     { background: #007bff; }
+        .badge-approved { background: #28a745; }
+        .badge-rejected { background: #dc3545; }
+        h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        .empty { text-align: center; padding: 40px; color: #888; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<h2>📋 Estimates</h2>
+
+{% if messages %}
+    {% for message in messages %}
+        <div style="padding:10px;background:#d4edda;border:1px solid #c3e6cb;border-radius:4px;margin-bottom:16px;color:#155724;">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="toolbar">
+    <a href="{% url 'estimate_create' %}" class="btn btn-success">+ New Estimate</a>
+    <span style="color:#888;">Total: {{ estimates.count }} estimates</span>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Estimate No</th>
+            <th>Customer</th>
+            <th>Vehicle</th>
+            <th>Status</th>
+            <th>Valid Until</th>
+            <th>Total</th>
+            <th>Created</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for est in estimates %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><strong>{{ est.estimate_number }}</strong></td>
+            <td>{{ est.customer.customer_name }}</td>
+            <td>{{ est.vehicle.vehicle_name|default:"—" }}</td>
+            <td>
+                <span class="badge badge-{{ est.status }}">
+                    {{ est.get_status_display }}
+                </span>
+            </td>
+            <td>{{ est.valid_until|default:"—" }}</td>
+            <td><strong>{{ est.get_total }}</strong></td>
+            <td>{{ est.created_on|date:"d M Y" }}</td>
+            <td>
+                <a href="{% url 'estimate_detail' est.pk %}" class="btn btn-primary">View</a>
+                <a href="{% url 'estimate_edit'   est.pk %}" class="btn btn-warning">Edit</a>
+                <a href="{% url 'estimate_delete' est.pk %}" class="btn btn-danger">Delete</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="9" class="empty">
+                No estimates yet. <a href="{% url 'estimate_create' %}">Create your first estimate →</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

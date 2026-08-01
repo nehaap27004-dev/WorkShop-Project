@@ -1,0 +1,449 @@
+{% extends 'fleet_base1.html' %}
+
+{% block title %}Profit & Loss Account{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <!-- Heading -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h4 class="mb-0 font-weight-bold">Profit &amp; Loss Account</h4>
+      <small class="text-muted">{{ from_date|date:"d-M-Y" }} to {{ to_date|date:"d-M-Y" }}</small>
+    </div>
+    <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-print mr-1"></i> Print
+    </button>
+  </div>
+
+  <!-- Filter -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body py-2">
+      <form method="get" class="form-inline">
+        <label class="mr-2 font-weight-bold text-muted small">From</label>
+        <input type="date" name="from_date" value="{{ from_date|date:'Y-m-d' }}" class="form-control form-control-sm mr-3"/>
+        <label class="mr-2 font-weight-bold text-muted small">To</label>
+        <input type="date" name="to_date"   value="{{ to_date|date:'Y-m-d' }}"   class="form-control form-control-sm mr-3"/>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter mr-1"></i>Apply</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm ml-2" onclick="expandAll()">Expand All</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm ml-1" onclick="collapseAll()">Collapse All</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 1 — TRADING ACCOUNT (Gross Profit / Loss)
+       
+       T-format rules:
+         PROFIT → Left:  Purchase + Gross Profit c/o   |  Right: Sales only
+         LOSS   → Left:  Purchase only                 |  Right: Sales + Gross Loss c/o
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body p-0">
+      <div class="row no-gutters">
+
+        <!-- ── LEFT: Purchase Accounts ───────────────────────────────── -->
+        <div class="col-6" style="border-right:1px solid #dee2e6;">
+
+          <!-- FIX 5: Only ONE header at the top — no duplicate below -->
+          <div class="pl-col-header">
+            <span>Particulars</span><span>Amount</span>
+          </div>
+
+          {% if purchase %}
+          <div class="pl-group-header" onclick="plToggle('blk_purchase')">
+            <span>
+              <i class="fas fa-chevron-right pl-icon mr-2" id="icon_blk_purchase" style="font-size:10px;"></i>
+              <strong>{{ purchase.group.groupName }}</strong>
+            </span>
+            <!-- FIX 1: purchase.total is already normalized to positive in view -->
+            <strong style="font-family:monospace;">{{ purchase.total|floatformat:3 }}</strong>
+          </div>
+
+          <div id="blk_purchase" class="pl-block-body" style="display:none;">
+            {% for item in purchase.ledgers %}
+            <div class="pl-ledger-row">
+              <span>{{ item.ledger.ledger_name }}</span>
+              <!-- FIX 1: item.balance is normalized positive in view -->
+              <span style="font-family:monospace;">{{ item.balance|floatformat:3 }}</span>
+            </div>
+            {% endfor %}
+
+            {% for child in purchase.child_groups %}
+            <div class="pl-child-header" onclick="plToggle('blk_purchase_child_{{ forloop.counter }}')">
+              <span>
+                <i class="fas fa-chevron-right pl-icon mr-2" id="icon_blk_purchase_child_{{ forloop.counter }}" style="font-size:10px;"></i>
+                <strong>{{ child.group.groupName }}</strong>
+              </span>
+              <strong style="font-family:monospace;">{{ child.total|floatformat:3 }}</strong>
+            </div>
+            <div id="blk_purchase_child_{{ forloop.counter }}" class="pl-block-body" style="display:none;">
+              {% for item in child.ledgers %}
+              <div class="pl-ledger-row" style="padding-left:60px;">
+                <span>{{ item.ledger.ledger_name }}</span>
+                <span style="font-family:monospace;">{{ item.balance|floatformat:3 }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- FIX 2 & 3: Gross Profit c/o ONLY here when profit (balancing figure on left) -->
+          <!-- FIX 2: Gross Loss c/o is REMOVED from left — it belongs on the right side -->
+          {% if gross_profit > 0 %}
+          <div class="pl-summary-row pl-profit">
+            <strong>Gross Profit c/d</strong>
+            <!-- gp_bf = abs(gross_profit), always positive -->
+            <strong style="font-family:monospace;">{{ gp_bf|floatformat:3 }}</strong>
+          </div>
+          {% endif %}
+
+        </div><!-- /LEFT -->
+
+        <!-- ── RIGHT: Sales Accounts ──────────────────────────────────── -->
+        <div class="col-6">
+
+          <div class="pl-col-header">
+            <span>Particulars</span><span>Amount</span>
+          </div>
+
+          {% if sales %}
+          <div class="pl-group-header" onclick="plToggle('blk_sales')">
+            <span>
+              <i class="fas fa-chevron-right pl-icon mr-2" id="icon_blk_sales" style="font-size:10px;"></i>
+              <strong>{{ sales.group.groupName }}</strong>
+            </span>
+            <strong style="font-family:monospace;">{{ sales.total|floatformat:3 }}</strong>
+          </div>
+
+          <div id="blk_sales" class="pl-block-body" style="display:none;">
+            {% for item in sales.ledgers %}
+            <div class="pl-ledger-row">
+              <span>{{ item.ledger.ledger_name }}</span>
+              <span style="font-family:monospace;">{{ item.balance|floatformat:3 }}</span>
+            </div>
+            {% endfor %}
+
+            {% for child in sales.child_groups %}
+            <div class="pl-child-header" onclick="plToggle('blk_sales_child_{{ forloop.counter }}')">
+              <span>
+                <i class="fas fa-chevron-right pl-icon mr-2" id="icon_blk_sales_child_{{ forloop.counter }}" style="font-size:10px;"></i>
+                <strong>{{ child.group.groupName }}</strong>
+              </span>
+              <strong style="font-family:monospace;">{{ child.total|floatformat:3 }}</strong>
+            </div>
+            <div id="blk_sales_child_{{ forloop.counter }}" class="pl-block-body" style="display:none;">
+              {% for item in child.ledgers %}
+              <div class="pl-ledger-row" style="padding-left:60px;">
+                <span>{{ item.ledger.ledger_name }}</span>
+                <span style="font-family:monospace;">{{ item.balance|floatformat:3 }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- FIX 2: Gross Loss c/o ONLY here on the right (balancing figure) -->
+          <!-- FIX 2: "Gross Loss b/o" REMOVED — replaced with correct "Gross Loss c/o" -->
+          <!-- FIX 1: gp_bf is always positive (abs value from view) -->
+          {% if gross_profit < 0 %}
+          <div class="pl-summary-row pl-loss">
+            <strong>Gross Loss c/d</strong>
+            <strong style="font-family:monospace;">{{ gp_bf|floatformat:3 }}</strong>
+          </div>
+          {% endif %}
+
+        </div><!-- /RIGHT -->
+      </div>
+
+      <!-- Gross Section Balancing Totals -->
+      <div class="row no-gutters pl-total-row">
+        <div class="col-6 pl-total-cell" style="border-right:1px solid #dee2e6;">
+          <span></span>
+          <strong style="font-family:monospace;">{{ gross_section_total|floatformat:3 }}</strong>
+        </div>
+        <div class="col-6 pl-total-cell">
+          <span></span>
+          <strong style="font-family:monospace;">{{ gross_section_total|floatformat:3 }}</strong>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /Section 1 card -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 2 — PROFIT & LOSS ACCOUNT (Net Profit / Loss)
+
+       T-format rules:
+         PROFIT → Left:  Indirect Expenses + Net Profit   |  Right: Gross Profit b/f + Indirect Income
+         LOSS   → Left:  Gross Loss b/f + Indirect Expenses |  Right: Indirect Income + Net Loss
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body p-0">
+      <div class="row no-gutters">
+
+        <!-- ── LEFT: Indirect Expenses ───────────────────────────────── -->
+        <div class="col-6" style="border-right:1px solid #dee2e6;">
+
+          <!-- FIX 5: NO header row here — the top section already has the header -->
+
+          <!-- Gross Loss b/f on the LEFT when there is a gross loss -->
+          {% if gross_profit < 0 %}
+          <div class="pl-summary-row pl-loss">
+            <strong>Gross Loss b/d</strong>
+            <!-- FIX 1: gp_bf is always positive -->
+            <strong style="font-family:monospace;">{{ gp_bf|floatformat:3 }}</strong>
+          </div>
+          {% endif %}
+
+          {% if indirect_expense %}
+          <div class="pl-group-header" onclick="plToggle('blk_indexp')">
+            <span>
+              <i class="fas fa-chevron-right pl-icon mr-2" id="icon_blk_indexp" style="font-size:10px;"></i>
+              <strong>{{ indirect_expense.group.groupName }}</strong>
+            </span>
+            <!-- FIX 1: indirect_expense.total is normalized to positive in view -->
+            <strong style="font-family:monospace;">{{ indirect_expense.total|floatformat:3 }}</strong>
+          </div>
+
+          <div id="blk_indexp" class="pl-block-body" style="display:none;">
+            {% for item in indirect_expense.ledgers %}
+            <div class="pl-ledger-row">
+              <span>{{ item.ledger.ledger_name }}</span>
+              <!-- FIX 1: item.balance is normalized positive in view -->
+              <span style="font-family:monospace;">{{ item.balance|floatformat:3 }}</span>
+            </div>
+            {% endfor %}
+
+            {% for child in indirect_expense.child_groups %}
+            <div class="pl-child-header" onclick="plToggle('blk_indexp_child_{{ forloop.counter }}')">
+              <span>
+                <i class="fas fa-chevron-right pl-icon mr-2" id="icon_blk_indexp_child_{{ forloop.counter }}" style="font-size:10px;"></i>
+                <strong>{{ child.group.groupName }}</strong>
+              </span>
+              <strong style="font-family:monospace;">{{ child.total|floatformat:3 }}</strong>
+            </div>
+            <div id="blk_indexp_child_{{ forloop.counter }}" class="pl-block-body" style="display:none;">
+              {% for item in child.ledgers %}
+              <div class="pl-ledger-row" style="padding-left:60px;">
+                <span>{{ item.ledger.ledger_name }}</span>
+                <span style="font-family:monospace;">{{ item.balance|floatformat:3 }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Net Profit on LEFT when profit -->
+          {% if net_profit > 0 %}
+          <div class="pl-summary-row pl-profit">
+            <strong style="font-size:14px;">Net Profit</strong>
+            <strong style="font-family:monospace; font-size:14px;">{{ net_profit_abs|floatformat:3 }}</strong>
+          </div>
+          {% endif %}
+
+        </div><!-- /LEFT -->
+
+        <!-- ── RIGHT: Indirect Income ─────────────────────────────────── -->
+        <div class="col-6">
+
+          <!-- FIX 5: NO header row here — removed duplicate header -->
+
+          <!-- Gross Profit b/f on the RIGHT when there is a gross profit -->
+          {% if gross_profit >= 0 %}
+          <div class="pl-summary-row pl-profit">
+            <strong>Gross Profit b/d</strong>
+            <!-- FIX 1: gp_bf is always positive -->
+            <strong style="font-family:monospace;">{{ gp_bf|floatformat:3 }}</strong>
+          </div>
+          {% endif %}
+
+          {% if indirect_income %}
+          <div class="pl-group-header" onclick="plToggle('blk_indinc')">
+            <span>
+              <i class="fas fa-chevron-right pl-icon mr-2" id="icon_blk_indinc" style="font-size:10px;"></i>
+              <strong>{{ indirect_income.group.groupName }}</strong>
+            </span>
+            <strong style="font-family:monospace;">{{ indirect_income.total|floatformat:3 }}</strong>
+          </div>
+
+          <div id="blk_indinc" class="pl-block-body" style="display:none;">
+            {% for item in indirect_income.ledgers %}
+            <div class="pl-ledger-row">
+              <span>{{ item.ledger.ledger_name }}</span>
+              <span style="font-family:monospace;">{{ item.balance|floatformat:3 }}</span>
+            </div>
+            {% endfor %}
+
+            {% for child in indirect_income.child_groups %}
+            <div class="pl-child-header" onclick="plToggle('blk_indinc_child_{{ forloop.counter }}')">
+              <span>
+                <i class="fas fa-chevron-right pl-icon mr-2" id="icon_blk_indinc_child_{{ forloop.counter }}" style="font-size:10px;"></i>
+                <strong>{{ child.group.groupName }}</strong>
+              </span>
+              <strong style="font-family:monospace;">{{ child.total|floatformat:3 }}</strong>
+            </div>
+            <div id="blk_indinc_child_{{ forloop.counter }}" class="pl-block-body" style="display:none;">
+              {% for item in child.ledgers %}
+              <div class="pl-ledger-row" style="padding-left:60px;">
+                <span>{{ item.ledger.ledger_name }}</span>
+                <span style="font-family:monospace;">{{ item.balance|floatformat:3 }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Net Loss on RIGHT when loss -->
+          <!-- FIX 1: use net_profit_abs (always positive), FIX 4: no background color -->
+          {% if net_profit < 0 %}
+          <div class="pl-summary-row pl-loss">
+            <strong style="font-size:14px;">Net Loss</strong>
+            <strong style="font-family:monospace; font-size:14px;">{{ net_profit_abs|floatformat:3 }}</strong>
+          </div>
+          {% endif %}
+
+        </div><!-- /RIGHT -->
+      </div>
+
+      <!-- Indirect Section Balancing Totals -->
+      <div class="row no-gutters pl-total-row">
+        <div class="col-6 pl-total-cell" style="border-right:1px solid #dee2e6;">
+          <strong>Total</strong>
+          <strong style="font-family:monospace;">{{ indirect_section_total|floatformat:3 }}</strong>
+        </div>
+        <div class="col-6 pl-total-cell">
+          <strong>Total</strong>
+          <strong style="font-family:monospace;">{{ indirect_section_total|floatformat:3 }}</strong>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /Section 2 card -->
+
+</div><!-- /container-fluid -->
+
+<style>
+  /* ── Column header (dark bar) ── */
+  .pl-col-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 9px 14px;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+  }
+
+  /* ── Collapsible group header ── */
+  .pl-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 14px;
+    background: #f3f5fc;
+    border-top: 1px solid #dee2e6;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .pl-group-header:hover { background: #e8eaf6; }
+
+  /* ── Child group header ── */
+  .pl-child-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 14px 7px 30px;
+    background: #fafbff;
+    border-top: 1px solid #eee;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .pl-child-header:hover { background: #f0f3ff; }
+
+  /* ── Individual ledger row ── */
+  .pl-ledger-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 14px 4px 46px;
+    font-size: 12.5px;
+    color: #888;
+    border-top: 1px dashed #eee;
+  }
+
+  /* ── Summary rows (Gross Profit/Loss, Net Profit/Loss) ──
+     FIX 4: NO background colour — only text colour via modifier classes below */
+  .pl-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 14px;
+    border-top: 1px solid #dee2e6;
+    font-size: 13px;
+    /* no background-color here */
+  }
+
+  /* FIX 4: Text-only colour modifiers */
+  .pl-profit       { color: #16a085; }   /* green — Gross Profit, Net Profit */
+  .pl-loss         { color: #c0392b; }   /* red   — Gross Loss,   Net Loss   */
+
+  /* ── Balancing total row ── */
+  .pl-total-row {
+    border-top: 2px solid #c8cde8;
+    background: #f3f5fc;
+  }
+  .pl-total-cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    font-size: 13.5px;
+  }
+
+  /* ── Print ── */
+  @media print {
+    .btn, form { display: none !important; }
+    .card      { box-shadow: none !important; }
+    .pl-block-body { display: block !important; }
+  }
+</style>
+
+<script>
+  function plToggle(id) {
+    const el   = document.getElementById(id);
+    const icon = document.getElementById('icon_' + id);
+    if (!el) return;
+    const show = el.style.display === 'none';
+    el.style.display = show ? 'block' : 'none';
+    if (icon) {
+      icon.classList.toggle('fa-chevron-down',  show);
+      icon.classList.toggle('fa-chevron-right', !show);
+    }
+  }
+
+  function expandAll() {
+    document.querySelectorAll('.pl-block-body').forEach(el => el.style.display = 'block');
+    document.querySelectorAll('.pl-icon').forEach(el => {
+      el.classList.remove('fa-chevron-right');
+      el.classList.add('fa-chevron-down');
+    });
+  }
+
+  function collapseAll() {
+    document.querySelectorAll('.pl-block-body').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.pl-icon').forEach(el => {
+      el.classList.remove('fa-chevron-down');
+      el.classList.add('fa-chevron-right');
+    });
+  }
+</script>
+
+{% endblock %}

@@ -1,0 +1,365 @@
+{% extends "fleet_base1.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+<style>
+  .btn-purple            { background-color:#6f42c1; border-color:#6f42c1; color:#fff; }
+  .btn-purple:hover      { background-color:#5a32a3; color:#fff; }
+  .text-purple           { color:#6f42c1 !important; }
+  .bg-purple-light       { background-color:#f3effe !important; }
+  .card                  { border-radius:10px; }
+  .card-header           { border-bottom:1px solid #e9ecef; }
+  .thead-purple-light th { background-color:#e8dff8; color:#4a2d8c; white-space:nowrap; font-weight:600; }
+  .btn-xs                { padding:2px 8px; font-size:.75rem; }
+  form label             { font-weight:500; color:#444; }
+  .total-field           { background-color:#f8f9fa !important; font-weight:600; }
+</style>
+
+<div class="container-fluid mt-4 mb-5">
+
+  <!-- Page header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold text-purple mb-0">
+      <i class="fas fa-file-invoice mr-2"></i>{{ title }}
+    </h4>
+    <a href="{% url 'fleet_app:po_list' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="fas fa-arrow-left mr-1"></i> Back to List
+    </a>
+  </div>
+
+  <!-- Messages -->
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show py-2" role="alert">
+    {{ msg|safe }}
+    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+  </div>
+  {% endfor %}
+
+  <form method="post" id="po-form">
+    {% csrf_token %}
+
+    <!-- ══════════════════════════════════════
+         PO HEADER CARD
+    ══════════════════════════════════════ -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-purple-light py-2">
+        <h5 class="mb-0 fw-bold text-purple">
+          <i class="fas fa-info-circle mr-1"></i> PO Header
+        </h5>
+      </div>
+      <div class="card-body">
+
+        <div class="row g-3">
+          <div class="col-md-2">
+            <label>PO No. <span class="text-danger">*</span></label>
+            {{ form.PO_no }}
+            {% if form.PO_no.errors %}<small class="text-danger">{{ form.PO_no.errors.0 }}</small>{% endif %}
+          </div>
+          <div class="col-md-2">
+            <label>PO Date <span class="text-danger">*</span></label>
+            {{ form.PO_date }}
+            {% if form.PO_date.errors %}<small class="text-danger">{{ form.PO_date.errors.0 }}</small>{% endif %}
+          </div>
+          <div class="col-md-2">
+            <label>Quote Reference</label>
+            {{ form.quote_ref }}
+          </div>
+          <div class="col-md-2">
+            <label>Quote Ref Date</label>
+            {{ form.quote_ref_date }}
+          </div>
+          <div class="col-md-2">
+            <label>Delivery Date</label>
+            {{ form.delivery_date }}
+          </div>
+          <div class="col-md-4">
+            <label>Supplier <span class="text-danger">*</span></label>
+            {{ form.supplier }}
+            {% if form.supplier.errors %}<small class="text-danger">{{ form.supplier.errors.0 }}</small>{% endif %}
+          </div>
+          <div class="col-md-3">
+            <label>Payment Terms 1</label>
+            {{ form.payment_terms1 }}
+          </div>
+          <div class="col-md-3">
+            <label>Payment Terms 2</label>
+            {{ form.payment_terms2 }}
+          </div>
+          <div class="col-md-2">
+            <label>Kind Attention</label>
+            {{ form.kind_attn }}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         LINE ITEMS CARD
+    ══════════════════════════════════════ -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-purple-light py-2">
+        <h5 class="mb-0 fw-bold text-purple">
+          <i class="fas fa-list mr-1"></i> Add Line Item
+        </h5>
+      </div>
+      <div class="card-body">
+
+        <!-- ── ENTRY ROW ── -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label>Description</label>
+            <input type="text" id="entry-description" class="form-control" placeholder="Item description">
+          </div>
+          <div class="col-md-1">
+            <label>Units</label>
+            <input type="text" id="entry-units" class="form-control" placeholder="pcs">
+          </div>
+          <div class="col-md-2">
+            <label>Quantity</label>
+            <input type="number" id="entry-quantity" class="form-control" step="0.001" placeholder="0.000" min="0">
+          </div>
+          <div class="col-md-2">
+            <label>Rate</label>
+            <input type="number" id="entry-rate" class="form-control" step="0.001" placeholder="0.000" min="0">
+          </div>
+          <div class="col-md-2">
+            <label>Amount</label>
+            <input type="number" id="entry-amount" class="form-control total-field" step="0.001" placeholder="0.000" readonly>
+          </div>
+          <div class="col-md-1 d-flex align-items-end">
+            <button type="button" class="btn btn-success w-100" id="btn-add-item">
+              <i class="fas fa-plus mr-1"></i> Add
+            </button>
+          </div>
+        </div>
+
+        <!-- ── ITEMS TABLE ── -->
+        <div class="table-responsive mt-2">
+          <table class="table table-bordered table-sm align-middle" id="details-table">
+            <thead class="thead-purple-light">
+              <tr>
+                <th style="width:35%">Description</th>
+                <th style="width:9%" class="text-center">Units</th>
+                <th style="width:12%" class="text-center">Quantity</th>
+                <th style="width:13%" class="text-center">Rate</th>
+                <th style="width:13%" class="text-center">Amount</th>
+                <th style="width:8%" class="text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="items-body">
+              {# rows populated by JS #}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- ── TOTALS FOOTER ── -->
+      <div class="card-footer bg-light">
+        <div class="row justify-content-end">
+          <div class="col-md-4">
+            <table class="table table-sm table-borderless mb-0">
+              <tr>
+                <td class="text-right font-weight-bold small">Taxable Amount</td>
+                <td style="width:150px">
+                  <input id="display_taxable" type="text"
+                         class="form-control form-control-sm text-right total-field" readonly>
+                </td>
+              </tr>
+              <tr>
+                <td class="text-right font-weight-bold small">VAT (5%)</td>
+                <td>
+                  <input id="display_vat" type="text"
+                         class="form-control form-control-sm text-right total-field" readonly>
+                </td>
+              </tr>
+              <tr class="border-top">
+                <td class="text-right font-weight-bold">Grand Total</td>
+                <td>
+                  <input id="display_grand" type="text"
+                         class="form-control form-control-sm text-right total-field" readonly>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="d-flex justify-content-end mt-2 mb-4">
+      <a href="{% url 'fleet_app:po_list' %}" class="btn btn-outline-secondary mr-2">
+        <i class="fas fa-times mr-1"></i> Cancel
+      </a>
+      <button type="submit" class="btn btn-purple px-4">
+        <i class="fas fa-save mr-1"></i> {{ action }} Purchase Order
+      </button>
+    </div>
+
+  </form>
+</div>
+
+
+<script>
+// ── Escape HTML to safely inject into innerHTML ───────────
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(str));
+  return d.innerHTML;
+}
+
+// ── Auto-calc Amount in entry row ─────────────────────────
+document.getElementById('entry-quantity').addEventListener('input', calcEntryAmount);
+document.getElementById('entry-rate').addEventListener('input', calcEntryAmount);
+
+function calcEntryAmount() {
+  const qty  = parseFloat(document.getElementById('entry-quantity').value) || 0;
+  const rate = parseFloat(document.getElementById('entry-rate').value)     || 0;
+  document.getElementById('entry-amount').value = (qty * rate).toFixed(3);
+}
+
+// ── Add row ───────────────────────────────────────────────
+document.getElementById('btn-add-item').addEventListener('click', function () {
+  const descEl = document.getElementById('entry-description');
+  const unitEl = document.getElementById('entry-units');
+  const qtyEl  = document.getElementById('entry-quantity');
+  const rateEl = document.getElementById('entry-rate');
+  const amtEl  = document.getElementById('entry-amount');
+
+  const desc = descEl.value.trim();
+  const unit = unitEl.value.trim();
+  const qty  = qtyEl.value.trim();
+  const rate = rateEl.value.trim();
+  const amt  = amtEl.value.trim() || (parseFloat(qty||0) * parseFloat(rate||0)).toFixed(3);
+
+  if (!desc) { alert('Please enter a Description.'); descEl.focus(); return; }
+  if (!qty)  { alert('Please enter a Quantity.');    qtyEl.focus();  return; }
+  if (!rate) { alert('Please enter a Rate.');        rateEl.focus(); return; }
+
+  appendRow(desc, unit, qty, rate, amt);
+
+  // Clear entry fields
+  descEl.value = '';
+  unitEl.value = '';
+  qtyEl.value  = '';
+  rateEl.value = '';
+  amtEl.value  = '';
+  descEl.focus();
+
+  recalcTotals();
+});
+
+// ── Build and append a single table row ───────────────────
+function appendRow(desc, unit, qty, rate, amt) {
+  const tbody = document.getElementById('items-body');
+  const tr    = document.createElement('tr');
+
+  // Use DOM methods for hidden inputs — avoids any innerHTML escaping issues
+  // that could mangle the POST key name or value
+
+  function makeHidden(name, value) {
+    const inp = document.createElement('input');
+    inp.type  = 'hidden';
+    inp.name  = name;
+    inp.value = value;
+    return inp;
+  }
+
+  // Description cell
+  const tdDesc = document.createElement('td');
+  tdDesc.appendChild(makeHidden('details-description[]', desc));
+  tdDesc.appendChild(document.createTextNode(desc));
+
+  // Units cell
+  const tdUnit = document.createElement('td');
+  tdUnit.className = 'text-center';
+  tdUnit.appendChild(makeHidden('details-units[]', unit));
+  tdUnit.appendChild(document.createTextNode(unit || '—'));
+
+  // Qty cell
+  const tdQty = document.createElement('td');
+  tdQty.className = 'text-center';
+  tdQty.appendChild(makeHidden('details-quantity[]', qty));
+  tdQty.appendChild(document.createTextNode(parseFloat(qty).toFixed(3)));
+
+  // Rate cell
+  const tdRate = document.createElement('td');
+  tdRate.className = 'text-center';
+  tdRate.appendChild(makeHidden('details-rate[]', rate));
+  tdRate.appendChild(document.createTextNode(parseFloat(rate).toFixed(3)));
+
+  // Amount cell
+  const tdAmt = document.createElement('td');
+  tdAmt.className = 'text-center';
+  tdAmt.appendChild(makeHidden('details-amount[]', amt));
+  tdAmt.appendChild(document.createTextNode(parseFloat(amt).toFixed(3)));
+
+  // Delete button cell
+  const tdDel = document.createElement('td');
+  tdDel.className = 'text-center';
+  const delBtn = document.createElement('button');
+  delBtn.type      = 'button';
+  delBtn.className = 'btn btn-danger btn-xs';
+  delBtn.innerHTML = '<i class="fas fa-times"></i>';
+  delBtn.addEventListener('click', function () {
+    tr.remove();
+    recalcTotals();
+  });
+  tdDel.appendChild(delBtn);
+
+  tr.appendChild(tdDesc);
+  tr.appendChild(tdUnit);
+  tr.appendChild(tdQty);
+  tr.appendChild(tdRate);
+  tr.appendChild(tdAmt);
+  tr.appendChild(tdDel);
+
+  tbody.appendChild(tr);
+}
+
+// ── Recalc footer totals ──────────────────────────────────
+function recalcTotals() {
+  let taxable = 0;
+  document.querySelectorAll('#items-body input[name="details-amount[]"]').forEach(function (inp) {
+    taxable += parseFloat(inp.value) || 0;
+  });
+  const vat   = taxable * 0.05;
+  const grand = taxable + vat;
+  document.getElementById('display_taxable').value = taxable.toFixed(3);
+  document.getElementById('display_vat').value     = vat.toFixed(3);
+  document.getElementById('display_grand').value   = grand.toFixed(3);
+}
+
+// ── Guard on submit ───────────────────────────────────────
+document.getElementById('po-form').addEventListener('submit', function (e) {
+  if (document.querySelectorAll('#items-body tr').length === 0) {
+    e.preventDefault();
+    alert('Please add at least one line item before saving.');
+  }
+});
+
+
+// ════════════════════════════════════════════════════════
+//  EDIT MODE — preload existing details on page load
+// ════════════════════════════════════════════════════════
+{% if existing_details %}
+document.addEventListener('DOMContentLoaded', function () {
+  {% for d in existing_details %}
+  appendRow(
+    "{{ d.description|escapejs }}",
+    "{{ d.units|escapejs }}",
+    "{{ d.quantity }}",
+    "{{ d.rate }}",
+    "{{ d.amount }}"
+  );
+  {% endfor %}
+  recalcTotals();
+});
+{% endif %}
+
+</script>
+
+{% endblock %}

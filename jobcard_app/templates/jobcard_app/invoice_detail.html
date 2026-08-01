@@ -1,0 +1,266 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% block content %}
+<style>
+*{box-sizing:border-box}
+body,input,select,textarea,button{font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+.iw{max-width:960px;margin:0 auto;padding:0 4px 60px}
+
+/* Page Header */
+.pg-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.pg-title{font-size:20px;font-weight:700;color:#0f172a}
+.pg-actions{display:flex;gap:8px}
+.btn-act{background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn-act:hover{background:#f8fafc;border-color:#94a3b8}
+.btn-primary{background:#2563eb;color:#fff;border:none}.btn-primary:hover{background:#1d4ed8;color:#fff}
+
+/* Invoice Sheet */
+.inv-sheet{background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.06);padding:36px;margin-bottom:24px}
+
+/* Company & Invoice Top Header */
+.inv-hdr-grid{display:grid;grid-template-columns:1fr auto;gap:24px;border-bottom:2px solid #f1f5f9;padding-bottom:24px;margin-bottom:24px}
+.company-title{font-size:22px;font-weight:800;color:#1e40af;letter-spacing:-0.4px;margin-bottom:4px}
+.company-sub{font-size:12px;color:#64748b;line-height:1.5}
+.inv-meta-box{text-align:right}
+.inv-num-big{font-size:24px;font-weight:800;color:#0f172a;margin-bottom:4px}
+.inv-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:8px}
+.badge-draft{background:#f1f5f9;color:#64748b}
+.badge-sent{background:#eff6ff;color:#2563eb}
+.badge-paid{background:#f0fdf4;color:#16a34a}
+.badge-partial{background:#fefce8;color:#a16207}
+.badge-overdue{background:#fef2f2;color:#dc2626}
+.badge-cancelled{background:#f1f5f9;color:#94a3b8}
+
+/* Info columns */
+.info-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}
+.info-col-title{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px}
+.info-col-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:14px 16px;font-size:13px;color:#0f172a;line-height:1.6}
+.info-col-box strong{color:#0f172a;font-weight:700}
+
+/* Tables */
+.sec-hdr{font-size:13px;font-weight:700;color:#0f172a;margin:20px 0 10px;display:flex;align-items:center;gap:6px}
+.dt-tbl{width:100%;border-collapse:collapse;margin-bottom:16px}
+.dt-tbl th{background:#f8fafc;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:10px 12px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;text-align:left}
+.dt-tbl th.num{text-align:right}
+.dt-tbl td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#0f172a;vertical-align:middle}
+.dt-tbl td.num{text-align:right;font-family:monospace;font-weight:600}
+
+/* Summary Box */
+.summary-wrap{display:flex;justify-content:flex-end;margin-top:24px}
+.summary-table{width:320px;border-collapse:collapse}
+.summary-table td{padding:7px 0;font-size:13px;color:#64748b}
+.summary-table td.val{text-align:right;font-weight:600;color:#0f172a;font-family:monospace}
+.summary-table tr.total-row td{border-top:2px solid #0f172a;border-bottom:2px solid #0f172a;padding:10px 0;font-size:16px;font-weight:800;color:#1e40af}
+.summary-table tr.total-row td.val{font-size:18px;color:#1e40af}
+
+/* Print CSS */
+@media print{
+  body{background:#fff}
+  .pg-actions,.bottom-bar,nav,header,footer{display:none!important}
+  .iw{max-width:100%;padding:0}
+  .inv-sheet{border:none;box-shadow:none;padding:0}
+}
+</style>
+
+<div class="iw">
+
+<!-- Actions header -->
+<div class="pg-hdr">
+  <div class="pg-title">Invoice Details</div>
+  <div class="pg-actions">
+    <a href="{% url 'jobcard_app:invoice_list' %}" class="btn-act">← Back to List</a>
+    <a href="{% url 'jobcard_app:invoice_edit' invoice.id %}" class="btn-act">✏ Edit</a>
+    <button type="button" class="btn-act btn-primary" onclick="window.print()">🖨 Print Invoice</button>
+  </div>
+</div>
+
+<div class="inv-sheet">
+
+  <!-- Header -->
+  <div class="inv-hdr-grid">
+    <div>
+      <div class="company-title">SILVER LINE GROUP</div>
+      <div class="company-sub">
+        Automotive Workshop &amp; Fleet Services<br>
+        Muscat, Sultanate of Oman<br>
+        Tel: +968 2400 0000 | Email: info@silverline.om
+      </div>
+    </div>
+    <div class="inv-meta-box">
+      <div class="inv-num-big">{{ invoice.invoice_number }}</div>
+      <div><span class="inv-badge badge-{{ invoice.status }}">{{ invoice.get_status_display }}</span></div>
+      <div style="font-size:12px;color:#64748b">
+        <strong>Date:</strong> {{ invoice.invoice_date|date:"d M Y" }}<br>
+        {% if invoice.due_date %}<strong>Due Date:</strong> {{ invoice.due_date|date:"d M Y" }}<br>{% endif %}
+        {% if invoice.job_card %}<strong>Job Card:</strong> {{ invoice.job_card.job_number }}<br>{% endif %}
+        <strong>Currency:</strong> OMR
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Columns -->
+  <div class="info-row">
+    <div>
+      <div class="info-col-title">Billed To (Customer)</div>
+      <div class="info-col-box">
+        <strong>{{ invoice.customer.ledger_name }}</strong><br>
+        {% if invoice.customer_mobile %}📱 {{ invoice.customer_mobile }}<br>{% endif %}
+        {% if invoice.customer_address %}{{ invoice.customer_address|linebreaksbr }}{% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="info-col-title">Vehicle Details</div>
+      <div class="info-col-box">
+        {% if invoice.vehicle %}
+        <strong>Vehicle:</strong> {{ invoice.vehicle }}<br>
+        {% endif %}
+        {% if invoice.vehicle_model %}
+        <strong>Model:</strong> {{ invoice.vehicle_model }}<br>
+        {% endif %}
+        <strong>Payment Mode:</strong> {{ invoice.get_payment_mode_display|default:invoice.payment_mode|capfirst }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Spare Parts -->
+  {% if parts %}
+  <div class="sec-hdr">⚙️ Spare Parts</div>
+  <table class="dt-tbl">
+    <thead>
+      <tr>
+        <th style="width:30px">#</th>
+        <th>Item Description</th>
+        <th style="width:110px">Part Code</th>
+        <th style="width:60px;text-align:center">Qty</th>
+        <th style="width:60px">Unit</th>
+        <th class="num" style="width:110px">Rate (OMR)</th>
+        <th class="num" style="width:80px">Tax %</th>
+        <th class="num" style="width:110px">Total (OMR)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in parts %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><strong>{{ p.description }}</strong></td>
+        <td>{{ p.item_code|default:"—" }}</td>
+        <td style="text-align:center">{{ p.quantity }}</td>
+        <td>{{ p.unit }}</td>
+        <td class="num">{{ p.unit_price|floatformat:3 }}</td>
+        <td class="num">{{ p.tax_percent }}%</td>
+        <td class="num">{{ p.total_price|floatformat:3 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- Labour Charges -->
+  {% if labour %}
+  <div class="sec-hdr">👷 Labour Charges</div>
+  <table class="dt-tbl">
+    <thead>
+      <tr>
+        <th style="width:30px">#</th>
+        <th>Work Description</th>
+        <th>Technician</th>
+        <th style="width:60px;text-align:center">Hrs</th>
+        <th class="num" style="width:110px">Rate/Hr (OMR)</th>
+        <th class="num" style="width:80px">Tax %</th>
+        <th class="num" style="width:110px">Total (OMR)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in labour %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><strong>{{ l.description }}</strong></td>
+        <td>{{ l.technician.full_name|default:"—" }}</td>
+        <td style="text-align:center">{{ l.hours }}</td>
+        <td class="num">{{ l.rate|floatformat:3 }}</td>
+        <td class="num">{{ l.tax_percent }}%</td>
+        <td class="num">{{ l.total_price|floatformat:3 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- Other Charges -->
+  {% if other_charges %}
+  <div class="sec-hdr">💰 Other Charges</div>
+  <table class="dt-tbl">
+    <thead>
+      <tr>
+        <th style="width:30px">#</th>
+        <th>Description</th>
+        <th class="num" style="width:120px">Amount (OMR)</th>
+        <th class="num" style="width:80px">Tax %</th>
+        <th class="num" style="width:120px">Total (OMR)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in other_charges %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><strong>{{ o.description }}</strong></td>
+        <td class="num">{{ o.amount|floatformat:3 }}</td>
+        <td class="num">{{ o.tax_percent }}%</td>
+        <td class="num">{{ o.total_price|floatformat:3 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- Payment Summary -->
+  <div class="summary-wrap">
+    <table class="summary-table">
+      <tr>
+        <td>Parts Subtotal</td>
+        <td class="val">OMR {{ invoice.parts_subtotal|default:0|floatformat:3 }}</td>
+      </tr>
+      <tr>
+        <td>Labour Subtotal</td>
+        <td class="val">OMR {{ invoice.labour_subtotal|default:0|floatformat:3 }}</td>
+      </tr>
+      <tr>
+        <td>Other Charges Subtotal</td>
+        <td class="val">OMR {{ invoice.other_subtotal|default:0|floatformat:3 }}</td>
+      </tr>
+      <tr>
+        <td>Total Tax</td>
+        <td class="val">OMR {{ invoice.tax_total|default:0|floatformat:3 }}</td>
+      </tr>
+      {% if invoice.discount_pct %}
+      <tr>
+        <td>Discount ({{ invoice.discount_pct }}%)</td>
+        <td class="val">- OMR {{ invoice.discount_amount|default:0|floatformat:3 }}</td>
+      </tr>
+      {% endif %}
+      <tr class="total-row">
+        <td>Grand Total</td>
+        <td class="val">OMR {{ invoice.grand_total|default:0|floatformat:3 }}</td>
+      </tr>
+      <tr>
+        <td>Amount Paid</td>
+        <td class="val">OMR {{ invoice.amount_paid|default:0|floatformat:3 }}</td>
+      </tr>
+      <tr style="font-weight:700">
+        <td style="color:#854d0e">Balance Due</td>
+        <td class="val" style="color:#854d0e">OMR {{ invoice.balance_due|default:0|floatformat:3 }}</td>
+      </tr>
+    </table>
+  </div>
+
+  {% if invoice.notes %}
+  <div style="margin-top:24px;padding-top:16px;border-top:1px solid #f1f5f9;font-size:12.5px;color:#64748b">
+    <strong style="color:#0f172a">Notes / Terms:</strong><br>
+    {{ invoice.notes|linebreaksbr }}
+  </div>
+  {% endif %}
+
+</div>
+
+</div>
+{% endblock %}

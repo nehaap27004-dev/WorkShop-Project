@@ -1,5 +1,6 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
 <!-- Custom CSS -->
@@ -58,16 +59,16 @@
 </style>
 
 <div class="container mt-4 mb-5">
-    <h2 class="mb-4 text-center fw-bold text-primary">Create Manufacturer</h2>
+    <h2 class="mb-4 text-center fw-bold text-primary">{% trans "Create Manufacturer" %}</h2>
 
     <!-- Form -->
     <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
         {% csrf_token %}
-        
+
         <!-- Manufacturer Information -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Manufacturer Information</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Manufacturer Information" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -82,7 +83,7 @@
                             {{ form.manufacturer_logo.label }}
                         </label>
                         {{ form.manufacturer_logo }}
-                        <img id="logo-preview" src="" alt="Logo preview" class="mt-2 img-thumbnail d-none" style="max-width: 200px; max-height: 100px;">
+                        <img id="logo-preview" src="" alt="{% trans 'Logo preview' %}" class="mt-2 img-thumbnail d-none" style="max-width: 200px; max-height: 100px;">
                     </div>
                 </div>
             </div>
@@ -90,9 +91,9 @@
 
         <div class="d-flex justify-content-between mt-4">
             <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-                Create Manufacturer
+                {% trans "Create Manufacturer" %}
             </button>
-            <a href="{% url 'fleet_app:manufacturer_list' %}" class="btn btn-secondary px-4 py-2">Cancel</a>
+            <a href="{% url 'fleet_app:manufacturer_list' %}" class="btn btn-secondary px-4 py-2">{% trans "Cancel" %}</a>
         </div>
     </form>
 </div>

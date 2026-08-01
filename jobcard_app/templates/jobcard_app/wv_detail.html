@@ -1,0 +1,650 @@
+{% extends "fleet_base1.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold">
+                Workshop Vehicle Details
+            </h2>
+
+            <small class="text-muted">
+                {{ vehicle.vehicle_number }}
+            </small>
+        </div>
+
+        <div>
+            <a href="{% url 'jobcard_app:inspection_create_for_vehicle' v.pk %}"class="btn btn-insp">🔍 New Inspection</a>
+
+            <a href="{% url 'jobcard_app:wv_list' %}"
+               class="btn btn-secondary">
+                Back
+            </a>
+
+            <a href="{% url 'jobcard_app:wv_edit' v.pk %}"
+               class="btn btn-primary">
+                Edit
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div class="row">
+
+        <!-- LEFT SIDE -->
+
+        <div class="col-lg-4">
+
+            <div class="card shadow-sm">
+
+                <div class="card-body text-center">
+
+                    {% if vehicle.vehicle_image %}
+                        <img src="{{ vehicle.vehicle_image.url }}"
+                             class="img-fluid rounded"
+                             style="max-height:220px;">
+                    {% else %}
+
+                        <img src="{% static 'images/no-car.png' %}"
+                             class="img-fluid"
+                             style="max-height:220px;">
+
+                    {% endif %}
+
+                    <h4 class="mt-3">
+                        {{ vehicle.make }}
+                        {{ vehicle.model }}
+                    </h4>
+
+                    <h5 class="text-primary">
+                        {{ vehicle.registration_number }}
+                    </h5>
+
+                    <p>
+
+                        <strong>Vehicle No :</strong>
+
+                        {{ vehicle.vehicle_number }}
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="card shadow-sm mt-3">
+
+                <div class="card-header">
+
+                    Status
+
+                </div>
+
+                <div class="card-body">
+
+                    <table class="table table-borderless">
+
+                        <tr>
+                            <th>Insurance</th>
+
+                            <td>
+
+                                {{ vehicle.get_insurance_status }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>Registration</th>
+
+                            <td>
+
+                                {{ vehicle.get_registration_status }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>Next Service</th>
+
+                            <td>
+
+                                {{ vehicle.get_service_status }}
+
+                            </td>
+
+                        </tr>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+
+        <div class="col-lg-8">
+
+
+            <div class="card shadow-sm">
+
+                <div class="card-header">
+
+                    Customer Information
+
+                </div>
+
+                <div class="card-body">
+
+                    <table class="table">
+
+                        <tr>
+
+                            <th width="220">
+
+                                Customer
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.customer.ledger_name }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Mobile
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.customer.mobile }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Phone
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.customer.phone_no }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Email
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.customer.email }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Address
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.customer.address1 }}
+
+                            </td>
+
+                        </tr>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="card shadow-sm mt-3">
+
+                <div class="card-header">
+
+                    Vehicle Information
+
+                </div>
+
+                <div class="card-body">
+
+                    <table class="table">
+
+                        <tr>
+
+                            <th width="220">
+
+                                Make
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.make }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Model
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.model }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Model Year
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.year }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Fuel Type
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.get_fuel_type_display }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Colour
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.color }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Odometer
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.odometer }} km
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Chassis No
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.chassis_number }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Engine No
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.engine_number }}
+
+                            </td>
+
+                        </tr>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="card shadow-sm mt-3">
+
+                <div class="card-header">
+
+                    Registration & Insurance
+
+                </div>
+
+                <div class="card-body">
+
+                    <table class="table">
+
+                        <tr>
+
+                            <th width="220">
+
+                                Registration Date
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.registration_date }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Registration Expiry
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.registration_expiry_date }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Insurance Policy
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.insurance_policy_number }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Insurance Expiry
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.insurance_expiry_date }}
+
+                            </td>
+
+                        </tr>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="card shadow-sm mt-3">
+
+                <div class="card-header">
+
+                    Service Tracking
+
+                </div>
+
+                <div class="card-body">
+
+                    <table class="table">
+
+                        <tr>
+
+                            <th width="220">
+
+                                Last Service
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.last_service_date }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Next Service
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.next_service_date }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Service Interval
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.service_interval }}
+
+                                km
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>
+
+                                Notes
+
+                            </th>
+
+                            <td>
+
+                                {{ vehicle.notes }}
+
+                            </td>
+
+                        </tr>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="card shadow-sm mt-3">
+
+                <div class="card-header">
+
+                    Workshop History
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="row text-center">
+
+                        <div class="col-md-3">
+
+                            <h4>
+
+                                {{ vehicle.jobcards.count }}
+
+                            </h4>
+
+                            <small>
+
+                                Job Cards
+
+                            </small>
+
+                        </div>
+
+                        <div class="col-md-3">
+
+                            <h4>
+
+                                0
+
+                            </h4>
+
+                            <small>
+
+                                Estimates
+
+                            </small>
+
+                        </div>
+
+                        <div class="col-md-3">
+
+                            <h4>
+
+                                0
+
+                            </h4>
+
+                            <small>
+
+                                Invoices
+
+                            </small>
+
+                        </div>
+
+                        <div class="col-md-3">
+
+                            <h4>
+
+                                0
+
+                            </h4>
+
+                            <small>
+
+                                Inspections
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

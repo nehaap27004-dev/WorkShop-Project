@@ -1,13 +1,16 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
 {% load privilege_tags %}
+{% load i18n %}
 
 {% block content %}
 <div class="container mt-4">
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>Fleet Contracts</h3>
-        <a href="{% url 'fleet_app:create_fleet_contract' %}" class="btn btn-success">+ New Contract</a>
+        <h3>{% trans "Fleet Contracts" %}</h3>
+        <a href="{% url 'fleet_app:create_fleet_contract' %}" class="btn btn-success">
+            + {% trans "New Contract" %}
+        </a>
     </div>
 
     <div class="card shadow-sm">
@@ -16,13 +19,13 @@
             <table class="table table-bordered table-hover mb-0">
                 <thead class="table-primary">
                     <tr>
-                        <th>Voucher No</th>
-                        <th>Contract No</th>
-                        <th>Vehicle</th>
-                        <th>Customer</th>
-                        <th>Date</th>
-                        <th>End Date</th>
-                        <th>Actions</th>
+                        <th>{% trans "Voucher No" %}</th>
+                        <th>{% trans "Contract No" %}</th>
+                        <th>{% trans "Vehicle" %}</th>
+                        <th>{% trans "Customer" %}</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "End Date" %}</th>
+                        <th>{% trans "Actions" %}</th>
                     </tr>
                 </thead>
 
@@ -36,29 +39,21 @@
                             <td>{{ c.date }}</td>
                             <td>{{ c.end_date }}</td>
                             <td>
-                                {% has_priv request.user 3 "can_edit" as can_edit_contract %}
-                                {% if can_edit_contract %}
                                 <a href="{% url 'fleet_app:edit_fleet_contract' c.id %}"
                                 class="btn btn-sm btn-primary">
-                                Edit
+                                    {% trans "Edit" %}
                                 </a>
-                                {% endif %}
 
-
-                               {% has_priv request.user 3 "can_delete" as can_delete_contract %}
-                                {% if can_delete_contract %}
                                 <button onclick="deleteContract({{ c.id }}, '{{ c.contract_no }}')" 
                                         class="btn btn-sm btn-danger">
-                                    Delete
+                                    {% trans "Delete" %}
                                 </button>
-                                {% endif %}
-
 
                             </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center">No contracts found.</td>
+                            <td colspan="7" class="text-center">{% trans "No contracts found." %}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -68,24 +63,53 @@
     </div>
 
 </div>
-<script>
-function deleteContract(id, contractNo) {
-    if (!confirm(`Delete Contract ${contractNo}?`)) return;
 
-    fetch(`/contract/delete/${id}/`, {
-        method: "POST",
+<script>
+const translations = {
+    deleteConfirm: "{% trans 'Delete Contract' %}",
+    errorDeleting: "{% trans 'Error deleting contract' %}"
+};
+
+function deleteContract(id, contractNo) {
+
+    if (!confirm(`${translations.deleteConfirm} ${contractNo}?`)) {
+        return;
+    }
+
+    // 🔐 REGISTER DELETE URL
+    window.pendingDeleteId = `/contract/delete/${id}/`;
+
+    $.ajax({
+        url: window.pendingDeleteId,
+        type: "POST",
         headers: {
-            "X-CSRFToken": "{{ csrf_token }}"
+            "X-CSRFToken": "{{ csrf_token }}",
+            "X-Requested-With": "XMLHttpRequest"
+        },
+
+        success: function (response) {
+
+            if (response.admin_required) {
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+                location.reload();
+            }
+        },
+
+        error: function (xhr) {
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+            } else {
+                alert(translations.errorDeleting);
+            }
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert(data.message);
-        if (data.success) {
-            location.reload();
-        }
-    })
-    .catch(error => alert("Error deleting contract"));
+    });
 }
 </script>
 

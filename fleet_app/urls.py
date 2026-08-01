@@ -1,6 +1,7 @@
 from django.urls import path
 from fleet_app.views import *
-
+from . import views          # ← ADD THIS LINE AT THE TOP
+from django.views.generic import RedirectView
 app_name = 'fleet_app'
 
 urlpatterns = [
@@ -55,10 +56,11 @@ urlpatterns = [
     path('vendors/service/', service_vendor_list, name='service_vendor_list'),
     
     path('timesheet/', time_sheet_view, name='time_sheet'),
-    path('timesheet/get_next_timesheet_no/', get_next_timesheet_no, name='get_next_timesheet_no'),
     path('timesheets/', timesheet_report, name='timesheet_report'),
     path('timesheet/edit/<int:timesheet_id>/', time_sheet_view, name='timesheet_edit'),
     path('timesheet/delete/<int:timesheet_id>/', timesheet_delete, name='timesheet_delete'),
+    path('timesheet/pdf/<int:timesheet_id>/', timesheet_pdf_view, name='timesheet_pdf'),
+    path('timesheet/pdf/<int:pk>/no-header/', timesheet_pdf_without_header, name='timesheet_pdf_no_header'),
     
     path('get_vehicle_reg_no/<int:vehicle_id>/', get_vehicle_reg_no, name='get_vehicle_reg_no'),
     
@@ -79,10 +81,11 @@ urlpatterns = [
     path('maintenance/<int:pk>/', maintenance_detail, name='maintenance_detail'),
     path('maintenances/get_next_voucher_no/', get_next_voucher_no, name='get_next_voucher_no'),
     
-    path('vehicle-master-list/', vehicle_master_list, name='vehicle_master_list'),
     
-    path('item/fleet-customers/', fleet_customer_management, name='fleet_customer_management'),
-    path('item/fleet-customers/<int:customer_id>/', fleet_customer_management, name='fleet_customer_management'),
+    # AFTER
+
+    path('item/fleet-customers/', RedirectView.as_view(url='/customers-manage/', permanent=False), name='fleet_customer_management'),
+    path('item/fleet-customers/<int:customer_id>/', RedirectView.as_view(url='/customers-manage/', permanent=False), name='fleet_customer_management_edit'),
     path("fleetcustomer/<int:pk>/delete/", fleetcustomer_delete, name="fleetcustomer_delete"),
     
     
@@ -105,23 +108,37 @@ urlpatterns = [
     path('quotation/', simple_quotation_list, name='simple_quotation_list'),
     path('quotation/edit/<int:quotation_id>/', create_simple_quotation, name='edit_simple_quotation'),
     path('simple-quotation/delete/<int:quotation_id>/', simple_quotation_delete, name='simple_quotation_delete'),
+    path('simple-quotation/pdf/<int:quotation_id>/', simple_quotation_pdf, name='simple_quotation_pdf'),
+    path('simplequotation/pdf/<int:pk>/no-header/', simplequotation_pdf_without_header, name='simplequotation_pdf_no_header'),
     
     path('invoice/create/', create_invoice, name='create_invoice'),
     path('invoices/', invoice_list, name='invoice_list'),
     path('invoices/<int:pk>/edit/', invoice_edit, name='invoice_edit'),
     path('invoice/edit/<int:invoice_id>/', create_invoice, name='edit_invoice'),
     path("invoice/delete/<int:invoice_id>/", invoice_delete, name="invoice_delete"),
-    
+    path('invoice/pdf/<int:invoice_id>/', invoice_pdf, name='invoice_pdf'),
+    path('invoice/pdf/<int:pk>/no-header/', invoice_pdf_without_header, name='invoice_pdf_no_header'),
+    path('get-vehicle-rates/', get_vehicle_rates, name='get_vehicle_rates'),
+
+    path('delivery-contract/create/', create_delivery_contract, name='delivery_contract_create'),
+    path('delivery-contract/edit/<int:contract_id>/', create_delivery_contract, name='delivery_contract_edit'),
+    path('delivery-contract/list/', delivery_contract_list, name='delivery_contract_list'),
+    path('delivery-contract/delete/<int:contract_id>/', delete_delivery_contract, name='delivery_contract_delete'),
+    path('get-delivery-contract-details/', get_delivery_contract_details, name='get_delivery_contract_details'),
+    path('delivery-contract/pdf/<int:contract_id>/', delivery_contract_pdf, name='delivery_contract_pdf'), 
+    path('get-customer-contracts/', get_customer_contracts, name='get_customer_contracts'),
+    path('delivery-contract/pdf/<int:pk>/no-header/', delivery_contract_pdf_without_header, name='delivery_contract_pdf_no_header'),
+
     path('company/', company_setup, name="company_setup"),
     path('company/documents/', document_list, name="document_list"),
+
     path('documents/delete/<int:doc_id>/', document_delete, name="document_delete"),
     
     path("fleet-hire/create/", fleet_hire_create, name="fleet_hire_create"),
     path("fleet-hire/", fleet_hire_list, name="fleet_hire_list"),
     path("fleet-hire/<int:pk>/", fleet_hire_detail, name="fleet_hire_detail"),
     path('fleet-hire/edit/<int:hire_id>/', fleet_hire_create, name='fleet_hire_edit'),
-    
-    path("hire/delete/<int:hire_id>/", fleet_hire_delete, name="fleet_hire_delete"),
+    path('fleet-hire/delete/<int:hire_id>/', fleet_hire_delete, name='fleet_hire_delete'),
 
     
     path('fleet/vouchers/', fleet_voucher_list, name='fleet_voucher_list'),
@@ -135,10 +152,50 @@ urlpatterns = [
     path('contracts/', fleet_contract_list, name='fleet_contract_list'),
     path("contract/delete/<int:pk>/", fleet_contract_delete, name="fleet_contract_delete"),
 
+    path('ajax/add-manufacturer/', add_manufacturer_ajax, name='add_manufacturer_ajax'),
+    path('ajax/add-vehicle-category/', add_vehicle_category_ajax, name='add_vehicle_category_ajax'),
 
-
+    path('notifications/', get_notifications, name='get_notifications'),
     
+     #EMI URLs
+    path('emi/', emi_list, name='emi_list'),
+    path('emi/create/', manage_emi, name='create_emi'),
+    path('emi/<int:emi_id>/edit/', manage_emi, name='edit_emi'),
+    path('emi/<int:emi_id>/detail/', emi_detail, name='emi_detail'),
+    path('emi/<int:emi_id>/delete/', delete_emi, name='delete_emi'),
+    path('emi/notifications/', emi_notifications, name='emi_notifications'),
+    path('emi/installment/<int:installment_id>/paid/', mark_installment_paid, name='mark_installment_paid'),
+    path('emi/installment/<int:installment_id>/unpaid/', mark_installment_unpaid, name='mark_installment_unpaid'),
     
+    # Vehicle Profit & Loss Report URLs
+    path('reports/vehicle-pl/', vehicle_profit_loss_report, name='vehicle_pl_report'),
+    path('reports/vehicle-pl/<int:vehicle_id>/', vehicle_profit_loss_detail, name='vehicle_pl_detail'),
 
+    path('offhire/create/', create_offhire, name='create_offhire'),
+    path('offhire/edit/<int:offhire_id>/', create_offhire, name='edit_offhire'),
+    path('offhire/list/', offhire_list, name='offhire_list'),
+    path('offhire/delete/<int:offhire_id>/', delete_offhire, name='delete_offhire'),
+    
+    # AJAX endpoints for OffHire
+    path('get-customer-delivery-contracts-offhire/', get_customer_delivery_contracts_offhire, name='get_customer_delivery_contracts_offhire'),
+    path('get-delivery-contract-details-offhire/', get_delivery_contract_details_offhire, name='get_delivery_contract_details_offhire'),
+
+    path('reports/asset_report/', asset_report, name='asset_report'),
+
+    path('trial-balance/', trial_balance_report, name='trial_balance_report'),
+    path('trial-balance/postings/', trial_balance_postings_ajax, name='trial_balance_postings_ajax'),
+
+    path("ajax/get-ledgers/", get_ledgers_by_group, name="get_ledgers_by_group"),
+
+    path('reports/balance-sheet/', balance_sheet, name='balance_sheet'),
+
+    path('reports/profit-loss/', profit_and_loss, name='profit_loss'),
+
+    # Purchase Orders
+    path('purchase-orders/', po_list,   name='po_list'),
+    path('purchase-orders/create/', po_create, name='po_create'),
+    path('purchase-orders/<int:pk>/edit/', po_edit,   name='po_edit'),
+    path('purchase-orders/<int:pk>/delete/', po_delete, name='po_delete'),
+    path('purchase-orders/<int:pk>/pdf/', po_pdf,    name='po_pdf'),
 
 ]

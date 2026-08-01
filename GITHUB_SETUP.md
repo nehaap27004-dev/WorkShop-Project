@@ -323,3 +323,11 @@ git stash pop  # Restore changes
 - [Git Documentation](https://git-scm.com/doc)
 - [GitHub Guides](https://guides.github.com)
 - [Atlassian Git Tutorials](https://www.atlassian.com/git)
+
+
+Daily workflow now:
+```bash
+git add .
+git commit -m "Feature: your description"
+git push
+```

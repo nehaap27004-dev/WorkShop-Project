@@ -1,5 +1,6 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
 <!-- Custom CSS -->
@@ -114,7 +115,7 @@
 
 <div class="container mt-4 mb-5">
     <h2 class="mb-4 text-center fw-bold text-primary">
-        {{ instance|yesno:"Update Document,Create Document" }}
+        {% if instance %}{% trans "Update Document" %}{% else %}{% trans "Create Document" %}{% endif %}
     </h2>
 
     <!-- Add/Edit Form -->
@@ -124,24 +125,31 @@
         <!-- Document Information -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Document Information</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Document Information" %}</h5>
             </div>
             <div class="card-body">
                 <!-- Link Type Selection -->
                 <div class="radio-group">
                     <label class="form-check-label">
                         <input type="radio" name="linked_to" value="staff" checked class="form-check-input me-2">
-                        <span><i class="bi bi-person-fill me-1"></i>Staff</span>
+                        <span><i class="bi bi-person-fill me-1"></i>{% trans "Staff" %}</span>
                     </label>
                     <label class="form-check-label">
                         <input type="radio" name="linked_to" value="vehicle" class="form-check-input me-2">
-                        <span><i class="bi bi-truck me-1"></i>Vehicle</span>
+                        <span><i class="bi bi-truck me-1"></i>{% trans "Vehicle" %}</span>
                     </label>
                     <label class="form-check-label">
                         <input type="radio" class="form-check-input me-2">
                         <span>
                             <i class="bi bi-building me-1"></i>
-                            <a href="{% url 'fleet_app:document_list'%}" class="text-decoration-none">Office</a>
+                            <a href="{% url 'fleet_app:document_list'%}" class="text-decoration-none">{% trans "Office" %}</a>
+                        </span>
+                    </label>
+                    <label class="form-check-label">
+                        <input type="radio" class="form-check-input me-2">
+                        <span>
+                            <i class="bi bi-building me-1"></i>
+                            <a href="{% url 'fleet_app:emi_list'%}" class="text-decoration-none">{% trans "Vehicle EMI" %}</a>
                         </span>
                     </label>
                 </div>
@@ -193,11 +201,11 @@
         <div class="d-flex gap-3 mt-4">
             <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
                 <i class="bi bi-{% if instance %}check-circle{% else %}plus-circle{% endif %} me-2"></i>
-                {% if instance %}Update{% else %}Create{% endif %}
+                {% if instance %}{% trans "Update" %}{% else %}{% trans "Create" %}{% endif %}
             </button>
             {% if instance %}
-                <button type="submit" name="delete" class="btn btn-danger px-4 py-2" onclick="return confirm('Are you sure you want to delete this document?')">
-                    <i class="bi bi-trash me-2"></i>Delete
+                <button type="submit" name="delete" class="btn btn-danger px-4 py-2" onclick="return confirm('{% trans "Are you sure you want to delete this document?" %}')">
+                    <i class="bi bi-trash me-2"></i>{% trans "Delete" %}
                 </button>
             {% endif %}
         </div>
@@ -206,19 +214,19 @@
     <!-- Documents Table -->
     <div class="card shadow-sm mt-5">
         <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">All Documents</h5>
+            <h5 class="mb-0 fw-bold text-secondary">{% trans "All Documents" %}</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered table-hover align-middle text-center">
                     <thead class="table-dark">
                         <tr>
-                            <th><i class="bi bi-file-text me-2"></i>Title</th>
-                            <th><i class="bi bi-circle-fill me-2"></i>Status</th>
-                            <th><i class="bi bi-link-45deg me-2"></i>Linked To</th>
-                            <th><i class="bi bi-paperclip me-2"></i>File</th>
-                            <th><i class="bi bi-calendar me-2"></i>Uploaded</th>
-                            <th><i class="bi bi-gear me-2"></i>Actions</th>
+                            <th><i class="bi bi-file-text me-2"></i>{% trans "Title" %}</th>
+                            <th><i class="bi bi-circle-fill me-2"></i>{% trans "Status" %}</th>
+                            <th><i class="bi bi-link-45deg me-2"></i>{% trans "Linked To" %}</th>
+                            <th><i class="bi bi-paperclip me-2"></i>{% trans "File" %}</th>
+                            <th><i class="bi bi-calendar me-2"></i>{% trans "Uploaded" %}</th>
+                            <th><i class="bi bi-gear me-2"></i>{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -233,28 +241,28 @@
                             <td>
                                 {% if doc.staff %}
                                     <i class="bi bi-person-fill text-primary me-1"></i>
-                                    <strong>Staff:</strong> {{ doc.staff.name }}
+                                    <strong>{% trans "Staff" %}:</strong> {{ doc.staff.name }}
                                 {% endif %}
                                 {% if doc.vehicle %}
                                     <i class="bi bi-truck text-success me-1"></i>
-                                    <strong>Vehicle:</strong> {{ doc.vehicle.number_plate }}
+                                    <strong>{% trans "Vehicle" %}:</strong> {{ doc.vehicle.number_plate }}
                                 {% endif %}
                             </td>
                             <td>
-                                {% if doc.file %}
-                                    <a href="{{ doc.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye me-1"></i>View
-                                    </a>
-                                {% else %}
-                                    <span class="text-muted">No File</span>
-                                {% endif %}
-                            </td>
+    {% if doc.file_path %}
+        <a href="{{ doc.file_path.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-eye me-1"></i>{% trans "View" %}
+        </a>
+    {% else %}
+        <span class="text-muted">{% trans "No File" %}</span>
+    {% endif %}
+</td>
                             <td>
                                 <small class="text-muted">{{ doc.upload_date|date:"M d, Y" }}</small>
                             </td>
                             <td>
                                 <a href="{% url 'fleet_app:document_update' doc.pk %}" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-pencil-square me-1"></i>Edit
+                                    <i class="bi bi-pencil-square me-1"></i>{% trans "Edit" %}
                                 </a>
                             </td>
                         </tr>
@@ -262,7 +270,7 @@
                         <tr>
                             <td colspan="6" class="text-center text-muted py-4">
                                 <i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>
-                                No documents found. Create your first document above!
+                                {% trans "No documents found. Create your first document above!" %}
                             </td>
                         </tr>
                         {% endfor %}

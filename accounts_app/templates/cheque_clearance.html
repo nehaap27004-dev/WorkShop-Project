@@ -1,5 +1,6 @@
 {% extends "fleet_base1.html" %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
 <style>
@@ -18,19 +19,19 @@
         -moz-appearance: checkbox !important;
         appearance: checkbox !important;
     }
-    
+
     #bills-table th:first-child,
     #bills-table td:first-child {
         text-align: center !important;
         vertical-align: middle !important;
         padding: 10px !important;
     }
-    
+
     /* Highlight selected rows */
     tr.selected-row {
         background-color: #e3f2fd !important;
     }
-    
+
     /* Make sure table cells don't hide overflow */
     #bills-table td {
         overflow: visible !important;
@@ -40,23 +41,23 @@
 <div class="container-fluid mt-3">
     <div class="card">
         <div class="card-header bg-primary text-white">
-            <h4><i class="fas fa-money-check"></i> Cheque Clearance</h4>
+            <h4><i class="fas fa-money-check"></i> {% trans "Cheque Clearance" %}</h4>
         </div>
         <div class="card-body">
-            
+
             <!-- ACTION BUTTONS -->
             <div class="mb-3">
                 <button type="button" class="btn btn-success" id="btn-cleared">
-                    <i class="fas fa-check-circle"></i> Cleared
+                    <i class="fas fa-check-circle"></i> {% trans "Cleared" %}
                 </button>
                 <button type="button" class="btn btn-danger" id="btn-bounced">
-                    <i class="fas fa-times-circle"></i> Bounced
+                    <i class="fas fa-times-circle"></i> {% trans "Bounced" %}
                 </button>
                 <button type="button" class="btn btn-warning" id="btn-uncleared">
-                    <i class="fas fa-clock"></i> Un Cleared
+                    <i class="fas fa-clock"></i> {% trans "Un Cleared" %}
                 </button>
                 <a href="{% url 'accounts_app:cheque_clearance' %}" class="btn btn-secondary">
-                    <i class="fas fa-sign-out-alt"></i> Exit
+                    <i class="fas fa-sign-out-alt"></i> {% trans "Exit" %}
                 </a>
             </div>
 
@@ -66,33 +67,37 @@
             <div class="row mb-3">
                 <div class="col-md-8">
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="filterType" id="radio-payable" value="payable" checked>
+                        <input class="form-check-input" type="radio" name="filterType" id="radio-payable"
+                            value="payable" checked>
                         <label class="form-check-label" for="radio-payable">
-                            Payable
+                            {% trans "Payable" %}
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="filterType" id="radio-receivable" value="receivable">
+                        <input class="form-check-input" type="radio" name="filterType" id="radio-receivable"
+                            value="receivable">
                         <label class="form-check-label" for="radio-receivable">
-                            Receivable
+                            {% trans "Receivable" %}
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="filterType" id="radio-payment-bill" value="payment-bill">
+                        <input class="form-check-input" type="radio" name="filterType" id="radio-payment-bill"
+                            value="payment-bill">
                         <label class="form-check-label" for="radio-payment-bill">
-                            Payment-Bill
+                            {% trans "Payment-Bill" %}
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="filterType" id="radio-receipt-bill" value="receipt-bill">
+                        <input class="form-check-input" type="radio" name="filterType" id="radio-receipt-bill"
+                            value="receipt-bill">
                         <label class="form-check-label" for="radio-receipt-bill">
-                            Receipt-Bill
+                            {% trans "Receipt-Bill" %}
                         </label>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="input-group">
-                        <span class="input-group-text">Date</span>
+                        <span class="input-group-text">{% trans "Date" %}</span>
                         <input type="date" class="form-control" id="date-filter">
                     </div>
                 </div>
@@ -106,22 +111,22 @@
                             <th width="100" class="text-center">
                                 <label>
                                     <input type="checkbox" id="select-all">
-                                    Select All
+                                    {% trans "Select All" %}
                                 </label>
                             </th>
-                            <th>VoucherNo</th>
-                            <th>Date</th>
-                            <th>NetTotal</th>
-                            <th>LedgerName</th>
-                            <th>CheckDate</th>
-                            <th>ChequeNo</th>
-                            <th>Status</th>
+                            <th>{% trans "VoucherNo" %}</th>
+                            <th>{% trans "Date" %}</th>
+                            <th>{% trans "NetTotal" %}</th>
+                            <th>{% trans "LedgerName" %}</th>
+                            <th>{% trans "CheckDate" %}</th>
+                            <th>{% trans "ChequeNo" %}</th>
+                            <th>{% trans "Status" %}</th>
                         </tr>
                     </thead>
                     <tbody id="bills-tbody">
                         <tr>
                             <td colspan="7" class="text-center text-muted">
-                                <i class="fas fa-spinner fa-spin"></i> Loading...
+                                <i class="fas fa-spinner fa-spin"></i> {% trans "Loading..." %}
                             </td>
                         </tr>
                     </tbody>
@@ -131,112 +136,128 @@
         </div>
     </div>
     <!-- BOUNCE CHARGE MODAL -->
-<div class="modal fade" id="bounceChargeModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Enter Bounce Charge</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="bounce-charge-amount" class="form-label">Bounce Charge Amount:</label>
-                    <input type="number" class="form-control" id="bounce-charge-amount" 
-                           placeholder="Enter bounce charge" step="0.01" min="0" value="0">
+    <div class="modal fade" id="bounceChargeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">{% trans "Enter Bounce Charge" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> This charge will be debited to Bank Charges account
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="bounce-charge-amount" class="form-label">{% trans "Bounce Charge Amount:" %}</label>
+                        <input type="number" class="form-control" id="bounce-charge-amount"
+                            placeholder="{% trans 'Enter bounce charge' %}" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> {% trans "This charge will be debited to Bank Charges
+                        account" %}
+                    </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirm-bounce">
-                    <i class="fas fa-check"></i> Confirm Bounce
-                </button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel"
+                        %}</button>
+                    <button type="button" class="btn btn-danger" id="confirm-bounce">
+                        <i class="fas fa-check"></i> {% trans "Confirm Bounce" %}
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
-</div>
 
 <script>
-let selectedBills = new Set();
-let bounceChargeModal;
+    let selectedBills = new Set();
+    let bounceChargeModal;
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Bootstrap modal
-    bounceChargeModal = new bootstrap.Modal(document.getElementById('bounceChargeModal'));
-    
-    loadBills();
-    
-    document.querySelectorAll('input[name="filterType"]').forEach(radio => {
-        radio.addEventListener('change', loadBills);
-    });
-    
-    document.getElementById('date-filter').addEventListener('change', loadBills);
-    
-    document.getElementById('btn-cleared').addEventListener('click', () => updateStatus('Cleared'));
-    document.getElementById('btn-bounced').addEventListener('click', handleBounced);  // ✅ Changed
-    document.getElementById('btn-uncleared').addEventListener('click', () => updateStatus('Not Cleared'));
-    
-    // ✅ Handle bounce charge confirmation
-    document.getElementById('confirm-bounce').addEventListener('click', confirmBounce);
-    
-    document.getElementById('select-all').addEventListener('change', function(e) {
-        const checkboxes = document.querySelectorAll('.bill-checkbox');
-        
-        checkboxes.forEach(cb => {
-            cb.checked = this.checked;
-            const billId = parseInt(cb.dataset.billId);
-            const row = cb.closest('tr');
-            
-            if (this.checked) {
-                selectedBills.add(billId);
-                row.classList.add('selected-row');
-            } else {
-                selectedBills.delete(billId);
-                row.classList.remove('selected-row');
-            }
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Bootstrap modal
+        bounceChargeModal = new bootstrap.Modal(document.getElementById('bounceChargeModal'));
+
+        loadBills();
+
+        document.querySelectorAll('input[name="filterType"]').forEach(radio => {
+            radio.addEventListener('change', loadBills);
+        });
+
+        document.getElementById('date-filter').addEventListener('change', loadBills);
+
+        document.getElementById('btn-cleared').addEventListener('click', () => updateStatus('Cleared'));
+        document.getElementById('btn-bounced').addEventListener('click', handleBounced);  // ✅ Changed
+        document.getElementById('btn-uncleared').addEventListener('click', () => updateStatus('Not Cleared'));
+
+        // ✅ Handle bounce charge confirmation
+        document.getElementById('confirm-bounce').addEventListener('click', confirmBounce);
+
+        document.getElementById('select-all').addEventListener('change', function (e) {
+            const checkboxes = document.querySelectorAll('.bill-checkbox');
+
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+                const billId = parseInt(cb.dataset.billId);
+                const row = cb.closest('tr');
+
+                if (this.checked) {
+                    selectedBills.add(billId);
+                    row.classList.add('selected-row');
+                } else {
+                    selectedBills.delete(billId);
+                    row.classList.remove('selected-row');
+                }
+            });
         });
     });
-});
 
-function loadBills() {
-    const filterType = document.querySelector('input[name="filterType"]:checked').value;
-    const dateFilter = document.getElementById('date-filter').value || '';
-    
-    const tbody = document.getElementById('bills-tbody');
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
-    
-    selectedBills.clear();
-    document.getElementById('select-all').checked = false;
-    
-    fetch(`/cheque-clearance/bills/?type=${filterType}&date=${dateFilter}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Error: ${data.error}</td></tr>`;
-                return;
-            }
-            
-            if (data.bills.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No bills found</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = '';
-            data.bills.forEach(bill => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
+    const translations = {
+        selectBill: "{% trans 'Please select at least one bill' %}",
+        noBills: "{% trans 'No bills found' %}",
+        error: "{% trans 'Error' %}",
+        loading: "{% trans 'Loading...' %}",
+        select: "{% trans 'Select' %}",
+        bounceNegative: "{% trans 'Bounce charge cannot be negative' %}",
+        billUpdated: "{% trans 'bill(s) updated successfully!' %}",
+        updateError: "{% trans 'Error updating bills' %}",
+        confirmMark: "{% trans 'Are you sure you want to mark' %}",
+        as: "{% trans 'as' %}",
+        withBounce: "{% trans 'with bounce charge' %}"
+    };
+
+    function loadBills() {
+        const filterType = document.querySelector('input[name="filterType"]:checked').value;
+        const dateFilter = document.getElementById('date-filter').value || '';
+
+        const tbody = document.getElementById('bills-tbody');
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i> ' + translations.loading + '</td></tr>';
+
+        selectedBills.clear();
+        document.getElementById('select-all').checked = false;
+
+        fetch(`/cheque-clearance/bills/?type=${filterType}&date=${dateFilter}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">${translations.error}: ${data.error}</td></tr>`;
+                    return;
+                }
+
+                if (data.bills.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">' + translations.noBills + '</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                data.bills.forEach(bill => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
                     <td class="text-center">
                         <label style="cursor: pointer; display: block;">
                             <input type="checkbox" class="bill-checkbox" data-bill-id="${bill.id}">
-                            <span style="margin-left: 5px;">Select</span>
+                            <span style="margin-left: 5px;">${translations.select}</span>
                         </label>
                     </td>
                     <td>${bill.voucher_no}</td>
@@ -247,121 +268,120 @@ function loadBills() {
                     <td>${bill.cheque_no}</td>
                     <td>${bill.cleared}</td>
                 `;
-                tbody.appendChild(row);
-            });
-            
-            document.querySelectorAll('.bill-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', function(e) {
-                    const billId = parseInt(this.dataset.billId);
-                    const row = this.closest('tr');
-                    
-                    if (this.checked) {
-                        selectedBills.add(billId);
-                        row.classList.add('selected-row');
-                    } else {
-                        selectedBills.delete(billId);
-                        row.classList.remove('selected-row');
-                    }
+                    tbody.appendChild(row);
                 });
-            });
-        })
-        .catch(error => {
-            console.error('Error loading bills:', error);
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error: ${error.message}</td></tr>`;
-        });
-}
 
-// ✅ Handle Bounced button - show modal
-function handleBounced() {
-    if (selectedBills.size === 0) {
-        alert('Please select at least one bill');
-        return;
-    }
-    
-    // Reset bounce charge input
-    document.getElementById('bounce-charge-amount').value = '0';
-    
-    // Show modal
-    bounceChargeModal.show();
-}
+                document.querySelectorAll('.bill-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', function (e) {
+                        const billId = parseInt(this.dataset.billId);
+                        const row = this.closest('tr');
 
-// ✅ Confirm bounce with charge
-function confirmBounce() {
-    const bounceCharge = parseFloat(document.getElementById('bounce-charge-amount').value) || 0;
-    
-    if (bounceCharge < 0) {
-        alert('Bounce charge cannot be negative');
-        return;
-    }
-    
-    // Hide modal
-    bounceChargeModal.hide();
-    
-    // Update status with bounce charge
-    updateStatus('Bounced', bounceCharge);
-}
-
-function updateStatus(status, bounceCharge = 0) {
-    if (selectedBills.size === 0) {
-        alert('Please select at least one bill');
-        return;
-    }
-    
-    const confirmMsg = status === 'Bounced' && bounceCharge > 0
-        ? `Are you sure you want to mark ${selectedBills.size} bill(s) as "${status}" with bounce charge ₹${bounceCharge.toFixed(2)}?`
-        : `Are you sure you want to mark ${selectedBills.size} bill(s) as "${status}"?`;
-    
-    if (!confirm(confirmMsg)) {
-        return;
-    }
-    
-    const filterType = document.querySelector('input[name="filterType"]:checked').value;
-    const promises = [];
-    
-    selectedBills.forEach(billId => {
-        const promise = fetch('/cheque-clearance/update/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                bill_id: billId,
-                status: status,
-                type: filterType,
-                bounce_charge: bounceCharge  // ✅ Send bounce charge
+                        if (this.checked) {
+                            selectedBills.add(billId);
+                            row.classList.add('selected-row');
+                        } else {
+                            selectedBills.delete(billId);
+                            row.classList.remove('selected-row');
+                        }
+                    });
+                });
             })
-        }).then(response => response.json());
-        
-        promises.push(promise);
-    });
-    
-    Promise.all(promises)
-        .then(results => {
-            const successCount = results.filter(r => r.success).length;
-            alert(`${successCount} bill(s) updated successfully!`);
-            loadBills();
-        })
-        .catch(error => {
-            console.error('Error updating status:', error);
-            alert('Error updating bills');
-        });
-}
+            .catch(error => {
+                console.error('Error loading bills:', error);
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">${translations.error}: ${error.message}</td></tr>`;
+            });
+    }
 
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+    // ✅ Handle Bounced button - show modal
+    function handleBounced() {
+        if (selectedBills.size === 0) {
+            alert(translations.selectBill);
+            return;
+        }
+
+        // Reset bounce charge input
+        document.getElementById('bounce-charge-amount').value = '0';
+
+        // Show modal
+        bounceChargeModal.show();
+    }
+
+    // ✅ Confirm bounce with charge
+    function confirmBounce() {
+        const bounceCharge = parseFloat(document.getElementById('bounce-charge-amount').value) || 0;
+
+        if (bounceCharge < 0) {
+            alert(translations.bounceNegative);
+            return;
+        }
+
+        // Hide modal
+        bounceChargeModal.hide();
+
+        // Update status with bounce charge
+        updateStatus('Bounced', bounceCharge);
+    }
+
+    function updateStatus(status, bounceCharge = 0) {
+        if (selectedBills.size === 0) {
+            alert(translations.selectBill);
+            return;
+        }
+
+        const confirmMsg = status === 'Bounced' && bounceCharge > 0
+            ? `${translations.confirmMark} ${selectedBills.size} bill(s) ${translations.as} "${status}" ${translations.withBounce} ₹${bounceCharge.toFixed(2)}?`
+            : `${translations.confirmMark} ${selectedBills.size} bill(s) ${translations.as} "${status}"?`;
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
+        const filterType = document.querySelector('input[name="filterType"]:checked').value;
+        const promises = [];
+
+        selectedBills.forEach(billId => {
+            const promise = fetch('/cheque-clearance/update/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    bill_id: billId,
+                    status: status,
+                    type: filterType,
+                    bounce_charge: bounceCharge  // ✅ Send bounce charge
+                })
+            }).then(response => response.json());
+
+            promises.push(promise);
+        });
+
+        Promise.all(promises)
+            .then(results => {
+                const successCount = results.filter(r => r.success).length;
+                alert(`${successCount} ${translations.billUpdated}`);
+                loadBills();
+            })
+            .catch(error => {
+                console.error('Error updating status:', error);
+                alert(translations.updateError);
+            });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
         }
+        return cookieValue;
     }
-    return cookieValue;
-}
 </script>
-
 {% endblock %}

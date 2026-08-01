@@ -1,11 +1,14 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
 {% load privilege_tags %}
+{% load i18n %}
 
 {% block content %}
 <!-- Custom CSS -->
 <style>
-    h2, h3, h5 {
+    h2,
+    h3,
+    h5 {
         font-family: 'Segoe UI', sans-serif;
     }
 
@@ -14,7 +17,9 @@
         color: #444;
     }
 
-    input, select, textarea {
+    input,
+    select,
+    textarea {
         width: 100% !important;
         border: 1px solid #ced4da;
         border-radius: 6px;
@@ -22,7 +27,9 @@
         font-size: 0.95rem;
     }
 
-    input:focus, select:focus, textarea:focus {
+    input:focus,
+    select:focus,
+    textarea:focus {
         border-color: #5A8DEE;
         box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
         outline: none;
@@ -46,6 +53,35 @@
     .btn-danger {
         background-color: #dc3545 !important;
         border-color: #dc3545 !important;
+    }
+
+    /* ── EDIT BUTTON ── */
+    .btn-edit-detail {
+        background-color: #ffc107 !important;
+        border-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+
+    .btn-edit-detail:hover {
+        background-color: #e0a800 !important;
+        border-color: #d39e00 !important;
+    }
+
+    /* ── EDITING-ROW HIGHLIGHT ── */
+    tr.editing-row {
+        background-color: #fff8e1 !important;
+        outline: 2px solid #ffc107;
+    }
+
+    /* ── ADD/UPDATE BUTTON STATE ── */
+    #addDetailBtn.btn-update-mode {
+        background-color: #fd7e14 !important;
+        border-color: #fd7e14 !important;
+    }
+
+    /* ── CANCEL EDIT BUTTON ── */
+    #cancelEditBtn {
+        display: none;
     }
 
     .card {
@@ -80,6 +116,40 @@
     #detailsTable tbody tr:hover {
         background-color: #f8f9fa;
     }
+
+    /* Invoice type styles */
+    .invoice-type-selector {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .invoice-type-selector .form-check {
+        display: inline-block;
+        margin-right: 30px;
+    }
+
+    .invoice-type-selector .form-check-input {
+        width: 1.3em;
+        height: 1.3em;
+    }
+
+    .invoice-type-selector .form-check-label {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #333;
+        cursor: pointer;
+    }
+
+    /* Complex invoice fields - hidden by default */
+    .complex-field {
+        display: none;
+    }
+
+    .complex-column {
+        display: none;
+    }
 </style>
 
 <div class="container mt-4 mb-5">
@@ -88,95 +158,156 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="fw-bold text-primary mb-0">
             {% if is_edit_mode %}
-                Edit Invoice #{{ invoice_instance.voucher_no }}
+            {% trans "Edit Invoice" %} #{{ invoice_instance.voucher_no }}
             {% else %}
-                Create Invoice
+            {% trans "Create Invoice" %}
             {% endif %}
         </h2>
 
         {% has_priv request.user 5 "can_read" as can_read_invoice %}
         {% if can_read_invoice %}
-        <a href="{% url 'fleet_app:invoice_list' %}" 
-        class="btn btn-sm btn-primary">View</a>
+        <a href="{% url 'fleet_app:invoice_list' %}" class="btn btn-sm btn-primary">{% trans "View" %}</a>
         {% endif %}
-
     </div>
-    
+
     <form method="post" id="invoiceForm" class="needs-validation">
         {% csrf_token %}
-        
+
+        <!-- Invoice Type Selector -->
+        <div class="invoice-type-selector">
+            <label class="fw-bold mb-2">{% trans "Select Invoice Type" %}:</label>
+            <div class="d-flex align-items-center">
+                <div class="form-check me-4">
+                    <input class="form-check-input" type="radio" name="invoice_type" id="invoiceTypeSimple"
+                    value="simple"
+                    {% if invoice_instance and invoice_instance.invoice_type == "simple" %}checked{% endif %}
+                    onchange="toggleInvoiceType()">
+                    <label class="form-check-label" for="invoiceTypeSimple">
+                        📄 {% trans "Simple Invoice" %}
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="invoice_type" id="invoiceTypeComplex"
+                    value="complex" {% if not invoice_instance or invoice_instance.invoice_type == "complex" %}checked{% endif %}
+                    onchange="toggleInvoiceType()">
+                    <label class="form-check-label" for="invoiceTypeComplex">
+                        📊 {% trans "Complex Invoice" %}
+                    </label>
+                </div>
+            </div>
+        </div>
+
         <!-- Invoice Information -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Invoice Information</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Invoice Information" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <!-- Row 1 -->
                     <div class="col-md-2">
-                        <label for="{{ invoice_form.voucher_no.id_for_label }}" class="form-label">{{ invoice_form.voucher_no.label }}</label>
+                        {{ invoice_form.voucher_no.label_tag }}
                         {{ invoice_form.voucher_no }}
                         {% if invoice_form.voucher_no.errors %}
-                            <div class="text-danger small">{{ invoice_form.voucher_no.errors }}</div>
+                        <div class="text-danger small">{{ invoice_form.voucher_no.errors }}</div>
                         {% endif %}
                     </div>
                     <div class="col-md-2">
-                        <label for="{{ invoice_form.date.id_for_label }}" class="form-label">{{ invoice_form.date.label }}</label>
+                        {{ invoice_form.invoice_no.label_tag }}
+                        {{ invoice_form.invoice_no }}
+                        {% if invoice_form.invoice_no.errors %}
+                        <div class="text-danger small">{{ invoice_form.invoice_no.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {{ invoice_form.date.label_tag }}
                         {{ invoice_form.date }}
                         {% if invoice_form.date.errors %}
-                            <div class="text-danger small">{{ invoice_form.date.errors }}</div>
+                        <div class="text-danger small">{{ invoice_form.date.errors }}</div>
                         {% endif %}
                     </div>
                     <div class="col-md-2" style="display: none;">
-                        <label for="{{ invoice_form.voucherType.id_for_label }}" class="form-label">{{ invoice_form.voucherType.label }}</label>
+                        {{ invoice_form.voucherType.label_tag }}
                         {{ invoice_form.voucherType }}
                         {% if invoice_form.voucherType.errors %}
-                            <div class="text-danger small">{{ invoice_form.voucherType.errors }}</div>
+                        <div class="text-danger small">{{ invoice_form.voucherType.errors }}</div>
                         {% endif %}
                     </div>
                     <div class="col-md-2">
-                        <label for="{{ invoice_form.customer.id_for_label }}" class="form-label">{{ invoice_form.customer.label }}</label>
+                        {{ invoice_form.customer.label_tag }}
                         {{ invoice_form.customer }}
                         {% if invoice_form.customer.errors %}
-                            <div class="text-danger small">{{ invoice_form.customer.errors }}</div>
+                        <div class="text-danger small">{{ invoice_form.customer.errors }}</div>
                         {% endif %}
                     </div>
                     <div class="col-md-2">
-                        <label for="{{ invoice_form.payment_mode.id_for_label }}" class="form-label">{{ invoice_form.payment_mode.label }}</label>
+                        {{ invoice_form.payment_mode.label_tag }}
                         {{ invoice_form.payment_mode }}
                         {% if invoice_form.payment_mode.errors %}
-                            <div class="text-danger small">{{ invoice_form.payment_mode.errors }}</div>
+                        <div class="text-danger small">{{ invoice_form.payment_mode.errors }}</div>
                         {% endif %}
                     </div>
                     <div class="col-md-2">
-                        <label for="{{ invoice_form.supplier_ref.id_for_label }}" class="form-label">{{ invoice_form.supplier_ref.label }}</label>
+                        {{ invoice_form.ledger.label_tag }}
+                        {{ invoice_form.ledger }}
+                        {% if invoice_form.ledger.errors %}
+                        <div class="text-danger small">{{ invoice_form.ledger.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {{ invoice_form.supplier_ref.label_tag }}
                         {{ invoice_form.supplier_ref }}
                         {% if invoice_form.supplier_ref.errors %}
-                            <div class="text-danger small">{{ invoice_form.supplier_ref.errors }}</div>
+                        <div class="text-danger small">{{ invoice_form.supplier_ref.errors }}</div>
                         {% endif %}
                     </div>
+
+                    <!-- Complex Invoice Fields -->
+                    <div class="col-md-2 complex-field">
+                        {{ invoice_form.lpo_date.label_tag }}
+                        {{ invoice_form.lpo_date }}
+                        {% if invoice_form.lpo_date.errors %}
+                        <div class="text-danger small">{{ invoice_form.lpo_date.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2 complex-field">
+                        {{ invoice_form.hire_contract_no.label_tag }}
+                        {{ invoice_form.hire_contract_no }}
+                        {% if invoice_form.hire_contract_no.errors %}
+                        <div class="text-danger small">{{ invoice_form.hire_contract_no.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2 complex-field">
+                        {{ invoice_form.location.label_tag }}
+                        {{ invoice_form.location }}
+                        {% if invoice_form.location.errors %}
+                        <div class="text-danger small">{{ invoice_form.location.errors }}</div>
+                        {% endif %}
+                    </div>
+
                     <div class="col-md-2">
                         <div class="form-check mt-4">
-                            <input class="form-check-input" type="checkbox" name="is_taxable" id="is_taxable" checked onchange="toggleTaxFields()">
+                            <input class="form-check-input" type="checkbox" name="is_taxable" id="is_taxable" checked
+                                onchange="toggleTaxFields()">
                             <label class="form-check-label" for="is_taxable">
-                                <strong>Tax Invoice</strong>
+                                <strong>{% trans "Tax Invoice" %}</strong>
                             </label>
                         </div>
                     </div>
 
                     <!-- Row 2 -->
                     <div class="col-md-2">
-                        <label for="{{ invoice_form.other_ref.id_for_label }}" class="form-label">{{ invoice_form.other_ref.label }}</label>
+                        {{ invoice_form.other_ref.label_tag }}
                         {{ invoice_form.other_ref }}
                         {% if invoice_form.other_ref.errors %}
-                            <div class="text-danger small">{{ invoice_form.other_ref.errors }}</div>
+                        <div class="text-danger small">{{ invoice_form.other_ref.errors }}</div>
                         {% endif %}
                     </div>
                     <div class="col-md-2">
-                        <label for="{{ invoice_form.buyer_order_no.id_for_label }}" class="form-label">{{ invoice_form.buyer_order_no.label }}</label>
+                        {{ invoice_form.buyer_order_no.label_tag }}
                         {{ invoice_form.buyer_order_no }}
                         {% if invoice_form.buyer_order_no.errors %}
-                            <div class="text-danger small">{{ invoice_form.buyer_order_no.errors }}</div>
+                        <div class="text-danger small">{{ invoice_form.buyer_order_no.errors }}</div>
                         {% endif %}
                     </div>
                     <div class="form-check col-md-2">
@@ -199,41 +330,121 @@
                             {{ invoice_form.enable_signature.label }}
                         </label>
                     </div>
+
                 </div>
             </div>
         </div>
 
         <!-- Invoice Details Section -->
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Add Invoice Details</h5>
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Add Invoice Details" %}</h5>
+                <div class="d-flex gap-2">
+                    <!-- Contract Selection Dropdown -->
+                    <select id="contractSelect" class="form-select form-select-sm" style="width: 250px;" disabled>
+                        <option value="">{% trans "Select Contract" %}</option>
+                    </select>
+
+                    <!-- Load Button -->
+                    <button type="button" class="btn btn-sm btn-info" id="loadContractBtn"
+                        onclick="loadDeliveryContractDetails()" disabled>
+                        📋 {% trans "Load from Contract" %}
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row g-3 align-items-end mb-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Vehicle</label>
-                        <select id="vehicle" class="form-control">
-                            <option value="" disabled selected>Select vehicle</option>
+                    <!-- Vehicle - Always visible -->
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Vehicle" %}</label>
+                        <select id="vehicle" class="form-control" onchange="onVehicleChange()">
+                            <option value="" disabled selected>{% trans "Select vehicle" %}</option>
                             {% for vehicle in vehicles %}
-                                <option value="{{ vehicle.id }}">{{ vehicle.vehicle_name }}</option>
+                            <option value="{{ vehicle.id }}">{{ vehicle.vehicle_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
+
+                    <!-- Vehicle Model (auto-populated, read-only) -->
                     <div class="col-md-2">
-                        <label class="form-label">Details</label>
-                        <input type="text" id="location" class="form-control" placeholder="Details">
+                        <label class="form-label">{% trans "Vehicle Model" %}</label>
+                        <input type="text" id="vehicle_model" class="form-control"
+                            placeholder="{% trans 'Auto-filled' %}" readonly>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Amount (OMR)</label>
-                        <input type="number" id="amount" class="form-control" placeholder="Amount" step="0.001">
-                    </div>
-                    <div class="col-md-2 tax-field">
-                        <label class="form-label">Tax %</label>
-                        <input type="number" id="tax" class="form-control" placeholder="Tax %" step="0.01" value="5">
-                    </div>
+
+                    <!-- Description (auto-populated, editable) -->
                     <div class="col-md-3">
-                        <button type="button" class="btn btn-success w-100" onclick="addDetail()">
-                            Add 
+                        <label class="form-label">{% trans "Description" %}</label>
+                        <textarea id="detail_description" class="form-control" rows="2"
+                            placeholder="{% trans 'Description (editable)' %}"></textarea>
+                    </div>
+
+                    <!-- Details - Always visible -->
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Details" %}</label>
+                        <input type="text" id="location" class="form-control" placeholder="{% trans 'Details' %}">
+                    </div>
+
+                    <!-- Complex Invoice: Period -->
+                    <div class="col-md-2 complex-field">
+                        <label class="form-label">{% trans "Period" %}</label>
+                        <select id="period" class="form-control" onchange="fetchAndSetRate()">
+                            <option value="" disabled selected>{% trans "Select period" %}</option>
+                            <option value="hourly">{% trans "Hourly" %}</option>
+                            <option value="daily">{% trans "Daily" %}</option>
+                            <option value="monthly">{% trans "Monthly" %}</option>
+                        </select>
+                    </div>
+
+                    <!-- Complex Invoice: Quantity -->
+                    <div class="col-md-2 complex-field">
+                        <label class="form-label">{% trans "Quantity" %}</label>
+                        <input type="number" id="quantity" class="form-control" placeholder="{% trans 'Quantity' %}"
+                            step="0.01" oninput="calculateAmount()">
+                    </div>
+
+                    <!-- Complex Invoice: Unit Rate -->
+                    <div class="col-md-2 complex-field">
+                        <label class="form-label">{% trans "Unit Rate" %}</label>
+                        <input type="number" id="unit_rate" class="form-control" placeholder="{% trans 'Unit Rate' %}"
+                            step="0.001" oninput="calculateAmount()">
+                    </div>
+
+                    <!-- Complex Invoice: From Date -->
+                    <div class="col-md-2 complex-field">
+                        <label class="form-label">{% trans "From Date" %}</label>
+                        <input type="date" id="from_date" class="form-control">
+                    </div>
+
+                    <!-- Complex Invoice: To Date -->
+                    <div class="col-md-2 complex-field">
+                        <label class="form-label">{% trans "To Date" %}</label>
+                        <input type="date" id="to_date" class="form-control">
+                    </div>
+
+                    <!-- Simple Invoice: Amount (visible only for simple) -->
+                    <div class="col-md-2 simple-field">
+                        <label class="form-label">{% trans "Amount (OMR)" %}</label>
+                        <input type="number" id="amount" class="form-control" placeholder="{% trans 'Amount' %}"
+                            step="0.001">
+                    </div>
+
+                    <!-- Tax % - Always visible when taxable -->
+                    <div class="col-md-2 tax-field">
+                        <label class="form-label">{% trans "Tax %" %}</label>
+                        <input type="number" id="tax" class="form-control" placeholder="{% trans 'Tax %' %}" step="0.01"
+                            value="5">
+                    </div>
+
+                    <!-- Add / Update Button -->
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="button" id="addDetailBtn" class="btn btn-success w-100" onclick="addDetail()">
+                            {% trans "Add" %}
+                        </button>
+                        <!-- Cancel edit button – shown only while editing a row -->
+                        <button type="button" id="cancelEditBtn" class="btn btn-secondary" onclick="cancelEdit()"
+                            title="{% trans 'Cancel Edit' %}">
+                            ✕
                         </button>
                     </div>
                 </div>
@@ -243,25 +454,36 @@
                     <table class="table table-bordered align-middle text-center" id="detailsTable">
                         <thead class="table-light">
                             <tr>
-                                <th style="width: 5%">#</th>
-                                <th style="width: 25%">Vehicle</th>
-                                <th style="width: 15%">Details</th>
-                                <th style="width: 12%">Amount</th>
-                                <th style="width: 8%" class="tax-column">Tax %</th>
-                                <th style="width: 12%" class="tax-column">Tax Amount</th>
-                                <th style="width: 13%">Total</th>
-                                <th style="width: 10%">Action</th>
+                                <th style="width: 4%">#</th>
+                                <th style="width: 12%">{% trans "Vehicle" %}</th>
+                                <th style="width: 10%">{% trans "Model" %}</th>
+                                <th style="width: 12%">{% trans "Description" %}</th>
+                                <th style="width: 10%">{% trans "Details" %}</th>
+
+                                <!-- Complex columns -->
+                                <th style="width: 7%" class="complex-column">{% trans "Period" %}</th>
+                                <th style="width: 5%" class="complex-column">{% trans "Qty" %}</th>
+                                <th style="width: 7%" class="complex-column">{% trans "Rate" %}</th>
+                                <th style="width: 7%" class="complex-column">{% trans "From" %}</th>
+                                <th style="width: 7%" class="complex-column">{% trans "To" %}</th>
+
+                                <th style="width: 8%">{% trans "Amount" %}</th>
+                                <th style="width: 5%" class="tax-column">{% trans "Tax %" %}</th>
+                                <th style="width: 8%" class="tax-column">{% trans "Tax Amount" %}</th>
+                                <th style="width: 8%">{% trans "Total" %}</th>
+                                <th style="width: 6%">{% trans "Action" %}</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr id="noDataRow">
-                                <td colspan="8" class="text-center text-muted">No details added yet</td>
+                                <td colspan="13" class="text-center text-muted">{% trans "No details added yet" %}</td>
                             </tr>
                         </tbody>
                         <tfoot id="totalRow" style="display: none;">
                             <tr class="table-info">
-                                <th colspan="6" class="tax-label">Grand Total</th>
-                                <th colspan="5" class="no-tax-label" style="display:none;">Grand Total</th>
+                                <th colspan="11" class="tax-label">{% trans "Grand Total" %}</th>
+                                <th colspan="8" class="no-tax-label" style="display:none;">{% trans "Grand Total" %}
+                                </th>
                                 <th id="grandTotal">0.000</th>
                                 <th></th>
                             </tr>
@@ -279,23 +501,77 @@
         <!-- Form Actions -->
         <div class="text-end mt-4">
             <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-    {% if is_edit_mode %}
-        💾 Update & Generate PDF
-    {% else %}
-        💾 Save & Generate PDF
-    {% endif %}
-</button>
+                {% if is_edit_mode %}
+                💾 {% trans "Update & Generate PDF" %}
+                {% else %}
+                💾 {% trans "Save & Generate PDF" %}
+                {% endif %}
+            </button>
             <button type="button" class="btn btn-secondary px-4 py-2 ms-3" onclick="window.history.back()">
-                ← Back
+                ← {% trans "Back" %}
             </button>
         </div>
     </form>
 </div>
 
 <script>
+    // Translation strings for JavaScript
+    const translations = {
+        selectVehicle: "{% trans 'Please select a vehicle.' %}",
+        enterLocation: "{% trans 'Please enter Details.' %}",
+        validAmount: "{% trans 'Please enter a valid amount.' %}",
+        validTax: "{% trans 'Please enter a valid tax percentage.' %}",
+        addDetail: "{% trans 'Please add at least one invoice detail before saving.' %}",
+        fillField: "{% trans 'Please fill in the' %}",
+        field: "{% trans 'field.' %}",
+        loading: "{% trans 'Loading...' %}",
+        error: "{% trans 'Error' %}",
+        selectPeriod: "{% trans 'Please select a period.' %}",
+        validQuantity: "{% trans 'Please enter a valid quantity.' %}",
+        validRate: "{% trans 'Please enter a valid rate.' %}",
+    };
+
     let details = [];
     let grandTotalAmount = 0;
     let isTaxable = true;
+    let isComplexInvoice = false;
+
+    // ── EDIT STATE ────────────────────────────────────────────────────────────
+    // -1  = not editing;  >=0 = index of the row being edited
+    let editingIndex = -1;
+
+    // Toggle between Simple and Complex invoice
+    function toggleInvoiceType() {
+        const invoiceType = document.querySelector('input[name="invoice_type"]:checked').value;
+        isComplexInvoice = (invoiceType === 'complex');
+
+        const complexFields = document.querySelectorAll('.complex-field');
+        const complexColumns = document.querySelectorAll('.complex-column');
+        const simpleFields = document.querySelectorAll('.simple-field');
+
+        if (isComplexInvoice) {
+            complexFields.forEach(el => { el.style.display = 'block'; });
+            complexColumns.forEach(el => { el.style.display = 'table-cell'; });
+            simpleFields.forEach(el => { el.style.display = 'none'; });
+        } else {
+            complexFields.forEach(el => { el.style.display = 'none'; });
+            complexColumns.forEach(el => { el.style.display = 'none'; });
+            simpleFields.forEach(el => { el.style.display = 'block'; });
+        }
+
+        updateNoDataRowColspan();
+        clearDetailInputs();
+    }
+
+    function updateNoDataRowColspan() {
+        const noDataRow = document.getElementById('noDataRow');
+        if (noDataRow) {
+            let colspan = 7;
+            if (isComplexInvoice) colspan += 5;
+            if (isTaxable) colspan += 2;
+            noDataRow.querySelector('td').setAttribute('colspan', colspan);
+        }
+    }
 
     function toggleTaxFields() {
         isTaxable = document.getElementById('is_taxable').checked;
@@ -303,10 +579,10 @@
         const taxColumns = document.querySelectorAll('.tax-column');
         const taxLabels = document.querySelectorAll('.tax-label');
         const noTaxLabels = document.querySelectorAll('.no-tax-label');
-        
+
         if (isTaxable) {
-            taxFields.forEach(el => el.style.display = '');
-            taxColumns.forEach(el => el.style.display = '');
+            taxFields.forEach(el => el.style.display = 'block');
+            taxColumns.forEach(el => el.style.display = 'table-cell');
             taxLabels.forEach(el => el.style.display = '');
             noTaxLabels.forEach(el => el.style.display = 'none');
         } else {
@@ -315,145 +591,418 @@
             taxLabels.forEach(el => el.style.display = 'none');
             noTaxLabels.forEach(el => el.style.display = '');
         }
-        
-        // Update colspan for noDataRow
-        const noDataRow = document.getElementById('noDataRow');
-        if (noDataRow) {
-            noDataRow.querySelector('td').setAttribute('colspan', isTaxable ? '8' : '6');
-        }
+
+        updateNoDataRowColspan();
     }
 
+    function onVehicleChange() {
+        const vehicleId = document.getElementById('vehicle').value;
+        if (!vehicleId) return;
+
+        // Fetch vehicle info (rates + description + model)
+        fetch(`/get-vehicle-rates/?vehicle_id=${vehicleId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('vehicle_model').value = data.vehicle_model || '';
+                    document.getElementById('detail_description').value = data.description || '';
+                    if (isComplexInvoice) {
+                        document.getElementById('period').selectedIndex = 0;
+                        document.getElementById('unit_rate').value = '';
+                        document.getElementById('quantity').value = '';
+                    }
+                }
+            })
+            .catch(err => console.error('Error fetching vehicle info:', err));
+    }
+
+    function fetchAndSetRate() {
+        if (!isComplexInvoice) return;
+        const vehicleId = document.getElementById('vehicle').value;
+        const period = document.getElementById('period').value;
+        if (!vehicleId || !period) return;
+
+        fetch(`/get-vehicle-rates/?vehicle_id=${vehicleId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let rate = 0;
+                    if (period === 'hourly') rate = parseFloat(data.rate_per_hr);
+                    else if (period === 'daily') rate = parseFloat(data.rate_per_day);
+                    else if (period === 'monthly') rate = parseFloat(data.rate_per_month);
+                    document.getElementById('unit_rate').value = rate.toFixed(3);
+                    calculateAmount();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function calculateAmount() {
+        if (!isComplexInvoice) return;
+        // Amount calculated on add/update
+    }
+
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  EDIT  –  populate form fields from an existing row
+    // ════════════════════════════════════════════════════════════════════════
+    function editDetail(btn) {
+        const row = btn.closest('tr');
+        const rowIndex = parseInt(row.getAttribute('data-index'));
+
+        // Highlight the row being edited
+        document.querySelectorAll('#detailsTable tbody tr').forEach(r => r.classList.remove('editing-row'));
+        row.classList.add('editing-row');
+
+        // Store which row we are editing
+        editingIndex = rowIndex;
+
+        // Read data from the hidden input for this row
+        const hiddenInput = details[rowIndex];
+        if (!hiddenInput) return;
+
+        const parts = hiddenInput.value.split('|');
+
+        // parts[0] = vehicleId, parts[1] = location
+        const vehicleId = parts[0];
+        const locationVal = parts[1];
+
+        // Set vehicle
+        const vehicleSel = document.getElementById('vehicle');
+        for (let i = 0; i < vehicleSel.options.length; i++) {
+            if (vehicleSel.options[i].value == vehicleId) {
+                vehicleSel.selectedIndex = i;
+                break;
+            }
+        }
+
+        // Set location/details
+        document.getElementById('location').value = locationVal;
+
+        if (isComplexInvoice) {
+            // parts: vehicleId|location|period|quantity|unitRate|tax|fromDate|toDate|vehicleModel|description
+            const period = parts[2] || '';
+            const quantity = parts[3] || '';
+            const unitRate = parts[4] || '';
+            const tax = parts[5] || '5';
+            const fromDate = parts[6] || '';
+            const toDate = parts[7] || '';
+            const vModel = parts[8] || '';
+            const desc = parts[9] || '';
+
+            const periodSel = document.getElementById('period');
+            for (let i = 0; i < periodSel.options.length; i++) {
+                if (periodSel.options[i].value === period) { periodSel.selectedIndex = i; break; }
+            }
+            document.getElementById('quantity').value = quantity;
+            document.getElementById('unit_rate').value = unitRate;
+            document.getElementById('from_date').value = fromDate;
+            document.getElementById('to_date').value = toDate;
+            document.getElementById('vehicle_model').value = vModel;
+            document.getElementById('detail_description').value = desc;
+            if (isTaxable) document.getElementById('tax').value = tax;
+        } else {
+            // parts: vehicleId|location|amount|tax|vehicleModel|description
+            const amount = parts[2] || '';
+            const tax = parts[3] || '5';
+            const vModel = parts[4] || '';
+            const desc = parts[5] || '';
+            document.getElementById('amount').value = amount;
+            document.getElementById('vehicle_model').value = vModel;
+            document.getElementById('detail_description').value = desc;
+            if (isTaxable) document.getElementById('tax').value = tax;
+        }
+
+        // Switch button label to "Update"
+        const addBtn = document.getElementById('addDetailBtn');
+        addBtn.textContent = '✏️ Update';
+        addBtn.classList.add('btn-update-mode');
+        addBtn.classList.remove('btn-success');
+
+        // Show cancel button
+        document.getElementById('cancelEditBtn').style.display = 'inline-block';
+
+        // Scroll form fields into view
+        document.getElementById('vehicle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  CANCEL EDIT  –  revert form to "Add" state without saving
+    // ════════════════════════════════════════════════════════════════════════
+    function cancelEdit() {
+        editingIndex = -1;
+        document.querySelectorAll('#detailsTable tbody tr').forEach(r => r.classList.remove('editing-row'));
+        clearDetailInputs();
+        resetAddButton();
+    }
+
+    function resetAddButton() {
+        const addBtn = document.getElementById('addDetailBtn');
+        addBtn.textContent = '{% trans "Add" %}';
+        addBtn.classList.remove('btn-update-mode');
+        addBtn.classList.add('btn-success');
+        document.getElementById('cancelEditBtn').style.display = 'none';
+    }
+
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  ADD / UPDATE  –  unified handler
+    // ════════════════════════════════════════════════════════════════════════
     function addDetail() {
         const vehicleSelect = document.getElementById('vehicle');
         const vehicleId = vehicleSelect.value;
         const vehicleName = vehicleSelect.options[vehicleSelect.selectedIndex].text;
         const location = document.getElementById('location').value.trim();
-        const amount = parseFloat(document.getElementById('amount').value);
-        let tax = 0;
-        
-        if (isTaxable) {
-            tax = parseFloat(document.getElementById('tax').value);
-            if (isNaN(tax) || tax < 0) {
-                alert("Please enter a valid tax percentage.");
-                document.getElementById('tax').focus();
-                return;
-            }
-        }
+        const vehicleModel = document.getElementById('vehicle_model').value.trim();
+        const detailDescription = document.getElementById('detail_description').value.trim();
 
-        // Validation
+        let amount, tax, period, quantity, unitRate, fromDate, toDate;
+
+        // ── Validation ────────────────────────────────────────────────────
         if (!vehicleId) {
-            alert("Please select a vehicle.");
+            alert(translations.selectVehicle);
             vehicleSelect.focus();
             return;
         }
         if (!location) {
-            alert("Please enter location.");
+            alert(translations.enterLocation);
             document.getElementById('location').focus();
             return;
         }
-        if (isNaN(amount) || amount <= 0) {
-            alert("Please enter a valid amount.");
-            document.getElementById('amount').focus();
-            return;
+
+        if (isComplexInvoice) {
+            period = document.getElementById('period').value;
+            quantity = parseFloat(document.getElementById('quantity').value);
+            unitRate = parseFloat(document.getElementById('unit_rate').value);
+            fromDate = document.getElementById('from_date').value || '';
+            toDate = document.getElementById('to_date').value || '';
+
+            if (!period) { alert(translations.selectPeriod); document.getElementById('period').focus(); return; }
+            if (isNaN(quantity) || quantity <= 0) { alert(translations.validQuantity); document.getElementById('quantity').focus(); return; }
+            if (isNaN(unitRate) || unitRate <= 0) { alert(translations.validRate); document.getElementById('unit_rate').focus(); return; }
+
+            amount = quantity * unitRate;
+            tax = 0;
+            if (isTaxable) {
+                tax = parseFloat(document.getElementById('tax').value);
+                if (isNaN(tax) || tax < 0) { alert(translations.validTax); document.getElementById('tax').focus(); return; }
+            }
+        } else {
+            amount = parseFloat(document.getElementById('amount').value);
+            if (isNaN(amount) || amount <= 0) { alert(translations.validAmount); document.getElementById('amount').focus(); return; }
+            tax = 0;
+            if (isTaxable) {
+                tax = parseFloat(document.getElementById('tax').value);
+                if (isNaN(tax) || tax < 0) { alert(translations.validTax); document.getElementById('tax').focus(); return; }
+            }
         }
 
         const taxAmount = isTaxable ? (amount * tax / 100) : 0;
         const total = amount + taxAmount;
-        const index = details.length + 1;
 
-        // Hide "no data" row if it exists
-        const noDataRow = document.getElementById('noDataRow');
-        if (noDataRow) {
-            noDataRow.style.display = 'none';
+        // ── If editing: remove old row's total from grand total ───────────
+        if (editingIndex >= 0) {
+            const oldRow = document.querySelector(`#detailsTable tbody tr[data-index="${editingIndex}"]`);
+            if (oldRow) {
+                // Find total cell (last numeric cell before Action)
+                const cells = oldRow.cells;
+                let totalCellIndex = isComplexInvoice ? (isTaxable ? 11 : 9) : (isTaxable ? 6 : 4);
+                const oldTotal = parseFloat(cells[totalCellIndex].textContent) || 0;
+                grandTotalAmount -= oldTotal;
+                oldRow.remove();
+            }
+            // Remove old hidden input
+            if (details[editingIndex]) {
+                details[editingIndex].remove();
+            }
         }
 
-        // Add new row
+        // ── Build row HTML ────────────────────────────────────────────────
+        const targetIndex = editingIndex >= 0 ? editingIndex : details.length;
+
+        // Hide "no data" row
+        const noDataRow = document.getElementById('noDataRow');
+        if (noDataRow) noDataRow.style.display = 'none';
+
         let row = `
-            <tr data-index="${index - 1}">
-                <td>${index}</td>
+            <tr data-index="${targetIndex}">
+                <td>${targetIndex + 1}</td>
                 <td>${vehicleName}</td>
-                <td>${location}</td>
-                <td class="text-end">${amount.toFixed(3)}</td>`;
-        
+                <td>${vehicleModel}</td>
+                <td>${detailDescription}</td>
+                <td>${location}</td>`;
+
+        if (isComplexInvoice) {
+            const periodDisplay = period.charAt(0).toUpperCase() + period.slice(1);
+            let fromDateDisplay = '-', toDateDisplay = '-';
+            if (fromDate) fromDateDisplay = new Date(fromDate).toLocaleDateString('en-GB');
+            if (toDate) toDateDisplay = new Date(toDate).toLocaleDateString('en-GB');
+
+            row += `
+                <td class="complex-column" style="display: table-cell;">${periodDisplay}</td>
+                <td class="text-end complex-column" style="display: table-cell;">${quantity.toFixed(2)}</td>
+                <td class="text-end complex-column" style="display: table-cell;">${unitRate.toFixed(3)}</td>
+                <td class="complex-column" style="display: table-cell;">${fromDateDisplay}</td>
+                <td class="complex-column" style="display: table-cell;">${toDateDisplay}</td>`;
+        } else {
+            row += `
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>`;
+        }
+
+        row += `<td class="text-end">${amount.toFixed(3)}</td>`;
+
         if (isTaxable) {
             row += `
-                <td class="text-center tax-column">${tax.toFixed(2)}%</td>
-                <td class="text-end tax-column">${taxAmount.toFixed(3)}</td>`;
+                <td class="text-center tax-column" style="display: table-cell;">${tax.toFixed(2)}%</td>
+                <td class="text-end tax-column" style="display: table-cell;">${taxAmount.toFixed(3)}</td>`;
+        } else {
+            row += `
+                <td class="tax-column" style="display: none;"></td>
+                <td class="tax-column" style="display: none;"></td>`;
         }
-        
+
         row += `
                 <td class="text-end">${total.toFixed(3)}</td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-danger" onclick="removeDetail(this)" title="Remove">
+                    <button type="button" class="btn btn-sm btn-edit-detail me-1"
+                            onclick="editDetail(this)" title="{% trans 'Edit' %}">
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger"
+                            onclick="removeDetail(this)" title="{% trans 'Remove' %}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
             </tr>`;
 
-        document.querySelector('#detailsTable tbody').insertAdjacentHTML('beforeend', row);
+        // ── Insert row at the correct position ────────────────────────────
+        if (editingIndex >= 0) {
+            // Re-insert after the removed row — find position by data-index of next row
+            const tbody = document.querySelector('#detailsTable tbody');
+            const nextRow = tbody.querySelector(`tr[data-index="${targetIndex + 1}"]`);
+            if (nextRow) {
+                tbody.insertBefore(createRowElement(row), nextRow);
+            } else {
+                tbody.insertAdjacentHTML('beforeend', row);
+            }
+        } else {
+            document.querySelector('#detailsTable tbody').insertAdjacentHTML('beforeend', row);
+        }
 
-        // Add to hidden inputs
-        const hiddenDiv = document.getElementById("hiddenDetails");
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = "details[]";
-        input.value = `${vehicleId}|${location}|${amount}|${tax}`;
-        input.setAttribute('data-index', index - 1);
+        // ── Rebuild hidden input ──────────────────────────────────────────
+        const hiddenDiv = document.getElementById('hiddenDetails');
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'details[]';
+        input.setAttribute('data-index', targetIndex);
+
+        if (isComplexInvoice) {
+            input.value = `${vehicleId}|${location}|${period}|${quantity}|${unitRate}|${tax}|${fromDate}|${toDate}|${vehicleModel}|${detailDescription}`;
+        } else {
+            input.value = `${vehicleId}|${location}|${amount}|${tax}|${vehicleModel}|${detailDescription}`;
+        }
+
         hiddenDiv.appendChild(input);
 
-        // Push to array for tracking
-        details.push(input);
-        
-        // Update grand total
+        if (editingIndex >= 0) {
+            details[editingIndex] = input;   // replace in-place
+        } else {
+            details.push(input);
+        }
+
+        // ── Update grand total & re-number ────────────────────────────────
         grandTotalAmount += total;
+        renumberRows();
         updateGrandTotal();
 
-        // Clear fields
-        vehicleSelect.selectedIndex = 0;
-        document.getElementById('location').value = "";
-        document.getElementById('amount').value = "";
-        if (isTaxable) {
-            document.getElementById('tax').value = "5";
-        }
-        
-        // Focus on vehicle select for next entry
+        // ── Reset form ────────────────────────────────────────────────────
+        editingIndex = -1;
+        clearDetailInputs();
+        resetAddButton();
         vehicleSelect.focus();
     }
 
+    // Helper: parse an HTML string into a real DOM element (for insertion)
+    function createRowElement(html) {
+        const tmp = document.createElement('tbody');
+        tmp.innerHTML = html;
+        return tmp.firstElementChild;
+    }
+
+    // Re-number all visible rows sequentially
+    function renumberRows() {
+        const rows = document.querySelectorAll('#detailsTable tbody tr:not(#noDataRow)');
+        rows.forEach((r, i) => {
+            r.cells[0].textContent = i + 1;
+            r.setAttribute('data-index', i);
+        });
+        // Sync hidden input data-index values
+        details.forEach((inp, i) => {
+            if (inp) inp.setAttribute('data-index', i);
+        });
+    }
+
+
+    function clearDetailInputs() {
+        document.getElementById('vehicle').selectedIndex = 0;
+        document.getElementById('vehicle_model').value = '';
+        document.getElementById('detail_description').value = '';
+        document.getElementById('location').value = '';
+
+        if (isComplexInvoice) {
+            const periodEl = document.getElementById('period');
+            const qtyEl = document.getElementById('quantity');
+            const rateEl = document.getElementById('unit_rate');
+            const fromEl = document.getElementById('from_date');
+            const toEl = document.getElementById('to_date');
+            if (periodEl) periodEl.selectedIndex = 0;
+            if (qtyEl) qtyEl.value = '';
+            if (rateEl) rateEl.value = '';
+            if (fromEl) fromEl.value = '';
+            if (toEl) toEl.value = '';
+        } else {
+            const amountEl = document.getElementById('amount');
+            if (amountEl) amountEl.value = '';
+        }
+
+        if (isTaxable) document.getElementById('tax').value = '5';
+
+        // Remove editing highlight
+        document.querySelectorAll('#detailsTable tbody tr').forEach(r => r.classList.remove('editing-row'));
+    }
+
     function removeDetail(button) {
-        const row = button.closest("tr");
+        // If we were editing this row, cancel edit first
+        const row = button.closest('tr');
         const rowIndex = parseInt(row.getAttribute('data-index'));
-        
-        // Get the total amount from the row to subtract from grand total
+        if (editingIndex === rowIndex) cancelEdit();
+
         const cells = row.cells;
-        const totalCell = isTaxable ? cells[6] : cells[4];
-        const totalAmount = parseFloat(totalCell.textContent);
+        let totalCellIndex = isComplexInvoice ? (isTaxable ? 11 : 9) : (isTaxable ? 6 : 4);
+        const totalAmount = parseFloat(cells[totalCellIndex].textContent) || 0;
         grandTotalAmount -= totalAmount;
-        
+
         row.remove();
 
-        // Remove from hidden inputs and array
         if (details[rowIndex]) {
             details[rowIndex].remove();
             details.splice(rowIndex, 1);
         }
 
-        // Re-number rows and update data-index
         const rows = document.querySelectorAll('#detailsTable tbody tr:not(#noDataRow)');
         if (rows.length === 0) {
-            // Show no data row if no details left
             const noDataRow = document.getElementById('noDataRow');
-            if (noDataRow) {
-                noDataRow.style.display = '';
-            }
+            if (noDataRow) noDataRow.style.display = '';
             grandTotalAmount = 0;
         } else {
-            rows.forEach((r, i) => {
-                r.querySelector("td").textContent = i + 1;
-                r.setAttribute('data-index', i);
-            });
+            renumberRows();
         }
-        
+
         updateGrandTotal();
     }
 
@@ -461,7 +1010,7 @@
         const totalRow = document.getElementById('totalRow');
         const grandTotalCell = document.getElementById('grandTotal');
         const grandTotalInput = document.getElementById('id_grand_total');
-        
+
         if (grandTotalAmount > 0) {
             totalRow.style.display = '';
             grandTotalCell.textContent = grandTotalAmount.toFixed(3);
@@ -472,166 +1021,517 @@
         }
     }
 
-    // Form validation before submit
-    document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  CONTRACT LOADING (unchanged)
+    // ════════════════════════════════════════════════════════════════════════
+    function loadCustomerContracts() {
+        const customerId = document.querySelector('[name="customer"]').value;
+        const contractSelect = document.getElementById('contractSelect');
+        const loadBtn = document.getElementById('loadContractBtn');
+
+        contractSelect.innerHTML = '<option value="">{% trans "Select Contract" %}</option>';
+        contractSelect.disabled = true;
+        loadBtn.disabled = true;
+
+        if (!customerId) return;
+
+        fetch(`/get-customer-contracts/?customer_id=${customerId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.contracts.length > 0) {
+                    data.contracts.forEach(contract => {
+                        const option = document.createElement('option');
+                        option.value = contract.id;
+                        option.textContent = `${contract.voucher_no} - ${contract.date}`;
+                        contractSelect.appendChild(option);
+                    });
+                    contractSelect.disabled = false;
+                    loadBtn.disabled = false;
+                } else {
+                    contractSelect.innerHTML = '<option value="">{% trans "No contracts found" %}</option>';
+                }
+            })
+            .catch(err => { console.error('Error:', err); alert('Failed to load contracts'); });
+    }
+
+    function loadDeliveryContractDetails() {
+        const contractId = document.getElementById('contractSelect').value;
+        if (!contractId) { alert('Please select a contract first'); return; }
+
+        const loadButton = document.getElementById('loadContractBtn');
+        if (loadButton) { loadButton.disabled = true; loadButton.textContent = 'Loading...'; }
+
+        fetch(`/get-delivery-contract-details/?contract_id=${contractId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.details.length === 0) {
+                        alert('No uncleared details found for this contract.');
+                    } else {
+                        details = [];
+                        grandTotalAmount = 0;
+                        document.getElementById('hiddenDetails').innerHTML = '';
+                        document.querySelector('#detailsTable tbody').innerHTML =
+                            '<tr id="noDataRow"><td colspan="13" class="text-center text-muted">No details added yet</td></tr>';
+                        data.details.forEach(detail => loadContractDetail(detail));
+
+                        // ✅ Auto-fill Invoice header fields from Contract
+                        const fieldMap = {
+                            'supplier_ref': data.supplier_ref,
+                            'hire_contract_no': data.hire_contract_no,
+                            'location': data.location,
+                            'buyer_order_no': data.buyer_order_no,
+                            'other_ref': data.other_ref,
+                        };
+                        Object.entries(fieldMap).forEach(([fieldName, value]) => {
+                            const el = document.querySelector(`[name="${fieldName}"]`);
+                            if (el && value) el.value = value;
+                        });
+
+                        alert(`Loaded ${data.details.length} details from contract ${data.contract_no}`);
+                    }
+                } else {
+                    alert('Error loading contract details: ' + data.message);
+                }
+            })
+            .catch(err => { console.error('Error:', err); alert('Failed to load contract details'); })
+            .finally(() => {
+                if (loadButton) { loadButton.disabled = false; loadButton.textContent = '📋 Load from Contract'; }
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const customerSelect = document.querySelector('[name="customer"]');
+        if (customerSelect) customerSelect.addEventListener('change', loadCustomerContracts);
+    });
+
+    function loadContractDetail(detail) {
+        const index = details.length + 1;
+        const isComplex = detail.period && detail.period.trim() !== '';
+
+        const noDataRow = document.getElementById('noDataRow');
+        if (noDataRow) noDataRow.style.display = 'none';
+
+        const amount = parseFloat(detail.amount);
+        const tax = parseFloat(detail.tax);
+        const taxAmount = parseFloat(detail.tax_amount);
+        const total = parseFloat(detail.total_amount);
+
+        let row = `
+            <tr data-index="${index - 1}" data-contract-detail-id="${detail.id}">
+                <td>${index}</td>
+                <td>${detail.vehicle_name}</td>
+                <td>${detail.vehicle_model || ''}</td>
+                <td>${detail.description || ''}</td>
+                <td>${detail.location}</td>`;
+
+        if (isComplexInvoice && isComplex) {
+            const periodDisplay = detail.period.charAt(0).toUpperCase() + detail.period.slice(1);
+            const quantity = parseFloat(detail.quantity);
+            const unitRate = parseFloat(detail.unit_rate);
+            const fromDateDisplay = detail.from_date ? new Date(detail.from_date).toLocaleDateString('en-GB') : '-';
+            const toDateDisplay = detail.to_date ? new Date(detail.to_date).toLocaleDateString('en-GB') : '-';
+
+            row += `
+                <td class="complex-column" style="display: table-cell;">${periodDisplay}</td>
+                <td class="text-end complex-column" style="display: table-cell;">${quantity.toFixed(2)}</td>
+                <td class="text-end complex-column" style="display: table-cell;">${unitRate.toFixed(3)}</td>
+                <td class="complex-column" style="display: table-cell;">${fromDateDisplay}</td>
+                <td class="complex-column" style="display: table-cell;">${toDateDisplay}</td>`;
+        } else {
+            row += `
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>`;
+        }
+
+        row += `<td class="text-end">${amount.toFixed(3)}</td>`;
+
+        if (isTaxable) {
+            row += `
+                <td class="text-center tax-column" style="display: table-cell;">${tax.toFixed(2)}%</td>
+                <td class="text-end tax-column" style="display: table-cell;">${taxAmount.toFixed(3)}</td>`;
+        } else {
+            row += `
+                <td class="tax-column" style="display: none;"></td>
+                <td class="tax-column" style="display: none;"></td>`;
+        }
+
+        row += `
+                <td class="text-end">${total.toFixed(3)}</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-edit-detail me-1"
+                            onclick="editDetail(this)" title="{% trans 'Edit' %}">
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger"
+                            onclick="removeDetail(this)" title="{% trans 'Remove' %}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+
+        document.querySelector('#detailsTable tbody').insertAdjacentHTML('beforeend', row);
+
+        const hiddenDiv = document.getElementById('hiddenDetails');
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'details[]';
+
+        if (isComplex) {
+            input.value = `${detail.vehicle_id}|${detail.location}|${detail.period}|${detail.quantity}|${detail.unit_rate}|${detail.tax}|${detail.from_date}|${detail.to_date}|${detail.vehicle_model}|${detail.description}`;
+        } else {
+            input.value = `${detail.vehicle_id}|${detail.location}|${detail.amount}|${detail.tax}|${detail.vehicle_model}|${detail.description}`;
+        }
+
+        input.setAttribute('data-index', index - 1);
+        hiddenDiv.appendChild(input);
+
+        const contractIdInput = document.createElement('input');
+        contractIdInput.type = 'hidden';
+        contractIdInput.name = 'contract_detail_ids[]';
+        contractIdInput.value = detail.id;
+        contractIdInput.setAttribute('data-index', index - 1);
+        hiddenDiv.appendChild(contractIdInput);
+
+        details.push(input);
+        grandTotalAmount += total;
+        updateGrandTotal();
+    }
+
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  FORM SUBMIT VALIDATION
+    // ════════════════════════════════════════════════════════════════════════
+    document.getElementById('invoiceForm').addEventListener('submit', function (e) {
         if (details.length === 0) {
             e.preventDefault();
-            alert('Please add at least one invoice detail before saving.');
+            alert(translations.addDetail);
             return false;
         }
-        
-        // Check required invoice fields
         const requiredFields = ['voucher_no', 'date', 'customer'];
         for (let field of requiredFields) {
             const input = document.querySelector(`[name="${field}"]`);
             if (!input || !input.value.trim()) {
                 e.preventDefault();
-                alert(`Please fill in the ${field.replace('_', ' ')} field.`);
+                alert(`${translations.fillField} ${field.replace('_', ' ')} ${translations.field}`);
                 if (input) input.focus();
                 return false;
             }
         }
     });
 
-    // Set default date to today
-    document.addEventListener('DOMContentLoaded', function() {
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  INITIALISE
+    // ════════════════════════════════════════════════════════════════════════
+    document.addEventListener('DOMContentLoaded', function () {
         const dateInput = document.querySelector('input[name="date"]');
         if (dateInput && !dateInput.value) {
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.value = today;
+            dateInput.value = new Date().toISOString().split('T')[0];
         }
-        
-        // Initialize tax fields visibility
+
+        const checkedType = document.querySelector('input[name="invoice_type"]:checked');
+        if (checkedType) isComplexInvoice = (checkedType.value === 'complex');
+
+        toggleInvoiceType();
         toggleTaxFields();
     });
 </script>
 
 <!-- Get Next Voucher_no -->
+{% if not is_edit_mode %}
 <script>
-function updateVoucherNumber() {
-    const select = document.getElementById('id_voucherType');
-    const input = document.getElementById('id_voucher_no');
-
-    if (select && input && select.value) {
-        input.value = 'Loading...';
-        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    input.value = data.voucher_number;
-                } else {
-                    input.value = 'Error';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching voucher number:', error);
-                input.value = 'Error';
-            });
-    } else if (input) {
-        input.value = '';
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(r => r.json())
+                .then(data => { input.value = data.success ? data.voucher_number : "{% trans 'Error' %}"; })
+                .catch(() => { input.value = "{% trans 'Error' %}"; });
+        } else if (input) { input.value = ''; }
     }
-}
-
-window.addEventListener('DOMContentLoaded', function() {
-    const voucherSelect = document.getElementById('id_voucherType');
-    if (voucherSelect) {
-        voucherSelect.addEventListener('change', updateVoucherNumber);
-        updateVoucherNumber(); // also run once on load
-    }
-});
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
 </script>
+{% endif %}
 
 <!-- Pre-populate Invoice Details for EDIT Mode -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    {% if existing_details %}
-        console.log("📝 Edit mode detected - loading existing details...");
-        
-        // Check if invoice is taxable and set checkbox
+    document.addEventListener('DOMContentLoaded', function () {
+        {% if existing_details %}
         {% if invoice_instance.is_taxable %}
-            document.getElementById('is_taxable').checked = true;
-            isTaxable = true;
+        document.getElementById('is_taxable').checked = true;
+        isTaxable = true;
         {% else %}
-            document.getElementById('is_taxable').checked = false;
-            isTaxable = false;
+        document.getElementById('is_taxable').checked = false;
+        isTaxable = false;
         {% endif %}
-        
-        // Toggle tax fields based on is_taxable
+
+        {% if invoice_instance.invoice_type == 'complex' %}
+        document.getElementById('invoiceTypeComplex').checked = true;
+        isComplexInvoice = true;
+        {% else %}
+        document.getElementById('invoiceTypeSimple').checked = true;
+        isComplexInvoice = false;
+        {% endif %}
+
+        toggleInvoiceType();
         toggleTaxFields();
-        
-        // Load each existing detail
+
         {% for detail in existing_details %}
-            preloadDetail(
-                {{ detail.vehicle.id }},
-                "{{ detail.vehicle.vehicle_name|escapejs }}",
-                "{{ detail.location|escapejs }}",
-                {{ detail.amount }},
-                {{ detail.tax }},
-                {{ detail.tax_amount }},
-                {{ detail.total_amount }}
-            );
-        {% endfor %}
-        
-        console.log("✅ Loaded {{ existing_details|length }} invoice details");
+        preloadDetail(
+            {{ detail.vehicle.id }},
+        "{{ detail.vehicle.vehicle_name|escapejs }}",
+        "{{ detail.location|escapejs }}",
+        {{ detail.amount }},
+        {{ detail.tax }},
+        {{ detail.tax_amount }},
+        {{ detail.total_amount }},
+        "{{ detail.period|default:'' }}",
+        {{ detail.quantity|default:'0' }},
+        {{ detail.unit_rate|default:'0' }},
+        "{% if detail.from_date %}{{ detail.from_date|date:'Y-m-d' }}{% endif %}",
+        "{% if detail.to_date %}{{ detail.to_date|date:'Y-m-d' }}{% endif %}",
+        "{{ detail.vehicle_model|default:''|escapejs }}",
+        "{{ detail.description|default:''|escapejs }}"
+    );
+    {% endfor %}
     {% endif %}
 });
 
-/**
- * Preload existing invoice detail into the table
- * Used in EDIT mode to populate existing data
- */
-function preloadDetail(vehicleId, vehicleName, location, amount, tax, taxAmount, totalAmount) {
-    const index = details.length + 1;
+    function preloadDetail(vehicleId, vehicleName, location, amount, tax, taxAmount, totalAmount, period, quantity, unitRate, fromDate, toDate, vehicleModel, description) {
+        vehicleModel = vehicleModel || '';
+        description = description || '';
+        const index = details.length + 1;
 
-    // Hide "no data" row if it exists
-    const noDataRow = document.getElementById('noDataRow');
-    if (noDataRow) {
-        noDataRow.style.display = 'none';
-    }
+        const noDataRow = document.getElementById('noDataRow');
+        if (noDataRow) noDataRow.style.display = 'none';
 
-    // Build the row HTML
-    let row = `
+        let row = `
         <tr data-index="${index - 1}">
             <td>${index}</td>
             <td>${vehicleName}</td>
-            <td>${location}</td>
-            <td class="text-end">${parseFloat(amount).toFixed(3)}</td>`;
-    
-    if (isTaxable) {
+            <td>${vehicleModel}</td>
+            <td>${description}</td>
+            <td>${location}</td>`;
+
+        if (isComplexInvoice && period) {
+            const periodDisplay = period.charAt(0).toUpperCase() + period.slice(1);
+            let fromDateDisplay = '', toDateDisplay = '';
+            if (fromDate && fromDate.trim() !== '') {
+                try { const d = new Date(fromDate); if (!isNaN(d)) fromDateDisplay = d.toLocaleDateString('en-GB'); } catch (e) { }
+            }
+            if (toDate && toDate.trim() !== '') {
+                try { const d = new Date(toDate); if (!isNaN(d)) toDateDisplay = d.toLocaleDateString('en-GB'); } catch (e) { }
+            }
+            row += `
+            <td class="complex-column" style="display: table-cell;">${periodDisplay}</td>
+            <td class="text-end complex-column" style="display: table-cell;">${parseFloat(quantity).toFixed(2)}</td>
+            <td class="text-end complex-column" style="display: table-cell;">${parseFloat(unitRate).toFixed(3)}</td>
+            <td class="complex-column" style="display: table-cell;">${fromDateDisplay}</td>
+            <td class="complex-column" style="display: table-cell;">${toDateDisplay}</td>`;
+        } else {
+            row += `
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>`;
+        }
+
+        row += `<td class="text-end">${parseFloat(amount).toFixed(3)}</td>`;
+
+        if (isTaxable) {
+            row += `
+            <td class="text-center tax-column" style="display: table-cell;">${parseFloat(tax).toFixed(2)}%</td>
+            <td class="text-end tax-column" style="display: table-cell;">${parseFloat(taxAmount).toFixed(3)}</td>`;
+        } else {
+            row += `
+            <td class="tax-column" style="display: none;"></td>
+            <td class="tax-column" style="display: none;"></td>`;
+        }
+
         row += `
-            <td class="text-center tax-column">${parseFloat(tax).toFixed(2)}%</td>
-            <td class="text-end tax-column">${parseFloat(taxAmount).toFixed(3)}</td>`;
-    }
-    
-    row += `
             <td class="text-end">${parseFloat(totalAmount).toFixed(3)}</td>
             <td class="text-center">
-                <button type="button" class="btn btn-sm btn-danger" onclick="removeDetail(this)" title="Remove">
+                <button type="button" class="btn btn-sm btn-edit-detail me-1"
+                        onclick="editDetail(this)" title="Edit">
+                    <i class="fas fa-pencil-alt"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-danger"
+                        onclick="removeDetail(this)" title="Remove">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
         </tr>`;
 
-    // Add row to table
-    document.querySelector('#detailsTable tbody').insertAdjacentHTML('beforeend', row);
+        document.querySelector('#detailsTable tbody').insertAdjacentHTML('beforeend', row);
 
-    // Add to hidden inputs array
-    const hiddenDiv = document.getElementById("hiddenDetails");
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = "details[]";
-    input.value = `${vehicleId}|${location}|${amount}|${tax}`;
-    input.setAttribute('data-index', index - 1);
-    hiddenDiv.appendChild(input);
+        const hiddenDiv = document.getElementById('hiddenDetails');
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'details[]';
+        input.setAttribute('data-index', index - 1);
 
-    // Add to details array
-    details.push(input);
-    
-    // Update grand total
-    grandTotalAmount += parseFloat(totalAmount);
-    updateGrandTotal();
-}
+        if (isComplexInvoice && period && period.trim() !== '') {
+            const fromDateValue = (fromDate && fromDate.trim() !== '') ? fromDate : '';
+            const toDateValue = (toDate && toDate.trim() !== '') ? toDate : '';
+            input.value = `${vehicleId}|${location}|${period}|${quantity}|${unitRate}|${tax}|${fromDateValue}|${toDateValue}|${vehicleModel}|${description}`;
+        } else {
+            input.value = `${vehicleId}|${location}|${amount}|${tax}|${vehicleModel}|${description}`;
+        }
+
+        hiddenDiv.appendChild(input);
+        details.push(input);
+        grandTotalAmount += parseFloat(totalAmount);
+        updateGrandTotal();
+    }
 </script>
 
+<!-- admin override -->
+<script>
+    $(document).on("submit", "#invoiceForm", function (e) {
+        e.preventDefault();
+
+        window.pendingFormId = "invoiceForm";
+        window.pendingFormAction = this.action;
+        window.afterSuccessRedirect = "{% url 'fleet_app:invoice_list' %}";
+
+        let formData = new FormData(this);
+
+        $.ajax({
+            url: window.pendingFormAction,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+
+            success: function (response) {
+                if (response.admin_required) {
+                    $("#admin_error").text(response.message || "");
+                    $("#adminOverrideModal").modal("show");
+                    return;
+                }
+                if (response.success) {
+                    alert(response.message);
+                    if (response.pdf_url) window.open(response.pdf_url, "_blank");
+                    setTimeout(function () { window.location.href = window.afterSuccessRedirect; }, 1000);
+                }
+            },
+
+            error: function (xhr) {
+                if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                    $("#admin_error").text(xhr.responseJSON.message || "");
+                    $("#adminOverrideModal").modal("show");
+                } else {
+                    alert("Something went wrong");
+                }
+            }
+        });
+    });
+</script>
+
+<!-- Auto select ledger for payment mode credit also hide ledger field -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const paymentModeField = document.getElementById("id_payment_mode");
+        const customerField = document.getElementById("id_customer");
+        const ledgerField = document.getElementById("id_ledger");
+
+        if (!paymentModeField || !customerField || !ledgerField) return;
+
+        const ledgerWrapper = ledgerField.closest(".col-md-2");
+
+        function handleLedgerLogic() {
+            const paymentMode = paymentModeField.value.toLowerCase();
+            const selectedCustomer = customerField.value;
+
+            if (paymentMode === "credit") {
+                ledgerWrapper.style.display = "none";
+
+                if (selectedCustomer) {
+                    ledgerField.value = selectedCustomer;  // 🔥 Auto select same ledger
+                }
+
+            } else {
+                ledgerWrapper.style.display = "block";
+            }
+        }
+
+        // Run on load
+        handleLedgerLogic();
+
+        // Run when payment mode changes
+        paymentModeField.addEventListener("change", handleLedgerLogic);
+
+        // Run when customer changes
+        customerField.addEventListener("change", handleLedgerLogic);
+
+    });
+</script>
+
+<!-- Get Ledger by Group with selected payment mode -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const paymentModeField = document.getElementById("id_payment_mode");
+        const ledgerField = document.getElementById("id_ledger");
+
+        function getGroupId(paymentMode) {
+
+            paymentMode = paymentMode.toLowerCase();
+
+            if (paymentMode === "cash") return 8;
+            if (paymentMode === "bank") return 5;
+            if (paymentMode === "credit") return 29;
+
+            return null;
+        }
+
+        function loadLedgers(paymentMode) {
+
+            const groupId = getGroupId(paymentMode);
+
+            if (!groupId) return;
+
+            fetch(`/ajax/get-ledgers/?group_id=${groupId}`)
+                .then(response => response.json())
+                .then(data => {
+
+                    ledgerField.innerHTML = "";
+
+                    data.ledgers.forEach(function (ledger) {
+                        const option = document.createElement("option");
+                        option.value = ledger.id;
+                        option.textContent = ledger.name;
+                        ledgerField.appendChild(option);
+                    });
+
+                });
+        }
+
+        if (paymentModeField.value) {
+            loadLedgers(paymentModeField.value);
+        }
+
+        paymentModeField.addEventListener("change", function () {
+            loadLedgers(this.value);
+        });
+
+    });
+</script>
 
 {% endblock %}

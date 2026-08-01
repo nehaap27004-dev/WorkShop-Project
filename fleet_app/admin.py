@@ -111,55 +111,116 @@ admin.site.register(LicensePlateCode, LicensePlateCodeAdmin)
 
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
-    # Fields to display in the list view
+
     list_display = (
-        'model', 'vehicle_name', 'license_plate_code', 'license_plate_number',
-        'vehicle_driver', 'driver_assignment_date', 'vehicle_registration_date',
-        'RC_number', 'last_odometer', 'rate_per_hr', 'rate_per_day', 'rate_per_month',
-        'RAS_inspection_date', 'hook_inspection_date', 'wire_rope_inspection_date',
-        'winch_inspection_date', 'lifting_wire_rope_inspection_date', 'lifting_belt_inspection_date', 'is_owned', 'supplier' 
+        'vehicle_name',
+        'model',
+        'customer',
+        'license_plate_code',
+        'license_plate_number',
+        'fuel_type',
+        'vehicle_registration_date',
+        'RC_number',
+        'last_odometer',
+        'status',
+        'is_owned',
+        'supplier',
     )
-    
-    # Fields that are searchable in the admin interface
+
     search_fields = (
-        'license_plate_code', 'license_plate_number', 'model__model_name', 
-        'manufacturer__manufacturer_name', 'vehicle_driver__driver_name', 
-        'RC_number', 'chassis_number'
+        'vehicle_name',
+        'license_plate_number',
+        'RC_number',
+        'chassis_number',
+        'engine_number',
+        'customer__ledger_name',
     )
-    
-    # Fields that can be filtered in the list view
-    list_filter = ('model', 'vehicle_driver', 'vehicle_registration_date', 'RC_expiry_date')
-    
-    # Fields that are editable directly in the list view
-    list_editable = ('vehicle_driver', 'vehicle_registration_date', 'RC_number', 'last_odometer', 'rate_per_hr', 'rate_per_day', 'rate_per_month')
-    
-    # Fieldsets to organize the form fields in the detail view
+
+    list_filter = (
+        'status',
+        'fuel_type',
+        'vehicle_registration_date',
+        'RC_expiry_date',
+        'is_owned',
+    )
+
+    list_editable = (
+        'status',
+    )
+
     fieldsets = (
-        (None, {
-            'fields': ('model', 'vehicle_name', 'license_plate_code', 'license_plate_number', 'vehicle_image')
-        }),
-        ('Driver Details', {
-            'fields': ('vehicle_driver', 'vehicle_second_driver', 'driver_assignment_date')
-        }),
-        ('Registration & Odometer', {
-            'fields': ('vehicle_registration_date', 'vehicle_cancellation_date', 'RC_number', 'RC_file', 'RC_expiry_date', 'chassis_number', 'last_odometer')
-        }),
-        ('Third Party Inspection Equipment', {
+
+        ('Basic Information', {
             'fields': (
-                'RAS_inspection_date', 'RAS_inspection_expiry_date', 'RAS_inspection_certificate',
-                'hook_inspection_date', 'hook_inspection_expiry_date', 'hook_inspection_certificate',
-                'wire_rope_inspection_date', 'wire_rope_inspection_expiry_date', 'wire_rope_inspection_certificate',
-                'winch_inspection_date', 'winch_inspection_expiry_date', 'winch_inspection_certificate',
-                'lifting_wire_rope_inspection_date', 'lifting_wire_rope_inspection_expiry_date', 'lifting_wire_rope_inspection_certificate',
-                'lifting_belt_inspection_date', 'lifting_belt_inspection_expiry_date', 'lifting_belt_inspection_certificate'
+                'is_owned',
+                'supplier',
+                'customer',
+                'vehicle_category',
+                'vehicle_name',
+                'model',
+                'vehicle_image',
+                'status',
             )
         }),
-    )    
-    # Ordering the entries by model in the list view
-    ordering = ['model'] 
-    
- 
 
+        ('Registration Details', {
+            'fields': (
+                'license_plate_code',
+                'license_plate_number',
+                'vehicle_registration_date',
+                'vehicle_cancellation_date',
+                'RC_number',
+                'RC_file',
+                'RC_expiry_date',
+            )
+        }),
+
+        ('Vehicle Information', {
+            'fields': (
+                'chassis_number',
+                'engine_number',
+                'fuel_type',
+                'last_odometer',
+                'capacity',
+                'model_year',
+            )
+        }),
+
+        ('Insurance & Compliance', {
+            'fields': (
+                'insurance_policy_number',
+                'insurance_expiry_date',
+                'insurance_certificate',
+
+                'registration_renewed_date',
+                'registration_expiry_date',
+                'registration_document',
+
+                'fitness_test_date',
+                'fitness_test_expiry_date',
+                'fitness_test_certificate',
+            )
+        }),
+
+        ('Service Tracking', {
+            'fields': (
+                'last_service_date',
+                'service_due_date',
+                'service_interval_km',
+            )
+        }),
+
+        ('Financial Details', {
+            'fields': (
+                'purchase_value',
+                'replacement_value',
+                'vat',
+                'description',
+            )
+        }),
+    )
+
+    ordering = ['vehicle_name']
 @admin.register(RentalCompany)
 class RentalCompanyAdmin(admin.ModelAdmin):
     # Fields to display in the list view
@@ -316,10 +377,12 @@ class RepairAndMaintenanceItemAdmin(admin.ModelAdmin):
 admin.site.register(RepairAndMaintenanceItem, RepairAndMaintenanceItemAdmin)    
 
     
+'''
 @admin.register(VehicleMaster)
 class VehicleMasterAdmin(admin.ModelAdmin):
     # Fields to display in the list view
     list_display = (
+        'customer',
         'vehicle_name', 
         'license_plate_code', 
         'license_plate_number', 
@@ -343,7 +406,7 @@ class VehicleMasterAdmin(admin.ModelAdmin):
 
     # Editable fields in the list view
     list_editable = ('vehicle_driver', 'contract_no', 'contract_start_date', 'contract_end_date')
-    
+'''
 @admin.register(FleetCustomer)
 class FleetCustomerAdmin(admin.ModelAdmin):
     list_display = ('customer_name', 'customer_mobile', 'customer_email', 'customer_city', 'customer_country')
@@ -418,3 +481,97 @@ class FleetHireDetailsAdmin(admin.ModelAdmin):
     list_display = ('fleet_hire', 'vehicle', 'reg_no', 'start_date', 'end_date', 'unit', 'rate_per_period')
     list_filter = ('unit', 'start_date', 'end_date')
     search_fields = ('reg_no', 'vehicle__name', 'fleet_hire__voucher_no')    
+
+'''@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
+    list_display = (
+        'title',
+        'staff',
+        'vehicle',
+        'status',
+        'upload_date',
+        'expiry_date',
+        'reminder_date',
+    )
+
+    list_filter = (
+        'status',
+        'staff',
+        'vehicle',
+        'expiry_date',
+    )
+
+    search_fields = (
+        'title',
+        'description',
+        'staff__name',
+        'vehicle__registration_no',
+    )
+
+    readonly_fields = ('upload_date',)
+
+    ordering = ('-upload_date',)
+
+    date_hierarchy = 'upload_date'
+
+    fieldsets = (
+        ('Document Info', {
+            'fields': ('title', 'description', 'file_path')
+        }),
+        ('Linked To', {
+            'fields': ('staff', 'vehicle')
+        }),
+        ('Status & Dates', {
+            'fields': ('status', 'upload_date', 'expiry_date', 'reminder_date')
+        }),
+    )
+'''
+
+
+@admin.register(CompanyDocument)
+class CompanyDocumentAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'company',
+        'uploaded_at',
+        'expiry_date',
+        'reminder_date',
+    )
+
+    list_filter = (
+        'company',
+        'expiry_date',
+    )
+
+    search_fields = (
+        'name',
+        'company__name',
+    )
+
+    readonly_fields = ('uploaded_at',)
+
+    ordering = ('-uploaded_at',)
+
+    date_hierarchy = 'uploaded_at'
+
+    fieldsets = (
+        ('Company Document Info', {
+            'fields': ('company', 'name', 'file')
+        }),
+        ('Dates', {
+            'fields': ('uploaded_at', 'expiry_date', 'reminder_date')
+        }),
+    )    
+    
+@admin.register(VehicleEMI)
+class VehicleEMIAdmin(admin.ModelAdmin):
+    # Shows the main details of the plan
+    list_display = ('title', 'vehicle', 'amount', 'start_date', 'end_date', 'is_active')
+    search_fields = ('title',)
+
+@admin.register(EMIInstallment)
+class EMIInstallmentAdmin(admin.ModelAdmin):
+    # Shows individual monthly payments
+    list_display = ('emi_plan', 'due_date', 'amount', 'is_paid')
+    # minimal filters to check what is unpaid
+    list_filter = ('is_paid', 'due_date')    

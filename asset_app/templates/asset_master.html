@@ -1,0 +1,476 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    /* Advanced Premium Styles */
+    :root {
+        --primary-color: #4361ee;
+        --primary-hover: #3a56d4;
+        --success-color: #10b981;
+        --success-hover: #059669;
+        --danger-color: #ef4444;
+        --danger-hover: #dc2626;
+        --text-main: #1f2937;
+        --text-muted: #6b7280;
+        --bg-light: #f3f4f6;
+        --card-bg: #ffffff;
+        --border-color: #e5e7eb;
+    }
+
+    /* Typography and Base */
+    .asset-container {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        color: var(--text-main);
+        padding: 1.5rem;
+        animation: fadeIn 0.4s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Cards */
+    .asset-card {
+        background: var(--card-bg);
+        border: 1px solid rgba(229, 231, 235, 0.5);
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s ease;
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .asset-card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+    }
+
+    /* Headers */
+    .asset-header {
+        background: #ffffff;
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .asset-header h5 {
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+        font-size: 1.15rem;
+        letter-spacing: -0.025em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .asset-header h5::before {
+        content: '';
+        display: inline-block;
+        width: 4px;
+        height: 18px;
+        background: var(--primary-color);
+        border-radius: 4px;
+    }
+
+    /* Forms */
+    .asset-form {
+        padding: 0.5rem;
+    }
+
+    .asset-form label {
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: #4b5563;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .asset-form input,
+    .asset-form select,
+    .asset-form textarea {
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 0.625rem 0.875rem;
+        font-size: 0.95rem;
+        color: #1f2937;
+        background-color: #f9fafb;
+        transition: all 0.2s;
+        width: 100%;
+    }
+
+    .asset-form input:focus,
+    .asset-form select:focus,
+    .asset-form textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+        background-color: #ffffff;
+    }
+
+    .form-group-spaced {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Buttons */
+    .btn-glass {
+        font-weight: 600;
+        padding: 0.625rem 1.25rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary-glass {
+        background-color: var(--primary-color);
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(67, 97, 238, 0.2);
+    }
+
+    .btn-primary-glass:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px -1px rgba(67, 97, 238, 0.3);
+        color: white;
+    }
+
+    .btn-success-glass {
+        background-color: var(--success-color);
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-success-glass:hover {
+        background-color: var(--success-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px -1px rgba(16, 185, 129, 0.3);
+        color: white;
+    }
+
+    .btn-secondary-glass {
+        background-color: #ffffff;
+        color: #4b5563;
+        border: 1px solid #d1d5db;
+    }
+
+    .btn-secondary-glass:hover {
+        background-color: #f3f4f6;
+        color: #111827;
+        border-color: #9ca3af;
+    }
+
+    /* Tables */
+    .table-responsive {
+        border-radius: 0 0 16px 16px;
+    }
+
+    .asset-table {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: collapse;
+    }
+
+    .asset-table thead th {
+        background-color: #f9fafb;
+        color: #4b5563;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        border-top: none;
+    }
+
+    .asset-table tbody td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+        color: #374151;
+        font-size: 0.95rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .asset-table tbody tr {
+        transition: background-color 0.15s ease;
+        background-color: #ffffff;
+    }
+
+    .asset-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .asset-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Badges */
+    .badge-code {
+        background-color: #eff6ff;
+        color: #1d4ed8;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border: 1px solid #bfdbfe;
+        display: inline-block;
+    }
+
+    .badge-category {
+        background-color: #f3f4f6;
+        color: #4b5563;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.85rem;
+        display: inline-block;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        transition: all 0.2s;
+        font-size: 0.85rem;
+        text-decoration: none;
+    }
+
+    .btn-edit {
+        background-color: #eff6ff;
+        color: #3b82f6;
+    }
+
+    .btn-edit:hover {
+        background-color: #3b82f6;
+        color: #ffffff;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-delete {
+        background-color: #fef2f2;
+        color: #ef4444;
+    }
+
+    .btn-delete:hover {
+        background-color: #ef4444;
+        color: #ffffff;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Custom icon integration */
+    .icon-svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+    }
+
+    .icon-svg-sm {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+    }
+</style>
+
+<div class="asset-container container-fluid">
+
+    <!-- ================= FORM SECTION ================= -->
+    <div class="card asset-card">
+        <div class="card-header asset-header">
+            <h5>
+                {% if edit_id %}
+                <svg class="icon-svg mr-2" viewBox="0 0 24 24">
+                    <path
+                        d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                </svg>
+                Edit Asset Details
+                {% else %}
+                <svg class="icon-svg mr-2" viewBox="0 0 24 24">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                </svg>
+                Create New Asset
+                {% endif %}
+            </h5>
+        </div>
+
+        <div class="card-body">
+            <form method="POST" class="asset-form">
+                {% csrf_token %}
+
+                <div class="row">
+                    <div class="col-md-3 form-group-spaced">
+                        <label>Asset Code</label>
+                        {{ form.asset_code }}
+                    </div>
+
+                    <div class="col-md-3 form-group-spaced">
+                        <label>Asset Name</label>
+                        {{ form.asset_name }}
+                    </div>
+
+                    <div class="col-md-3 form-group-spaced">
+                        <label>Asset Category</label>
+                        {{ form.asset_category }}
+                    </div>
+
+                    <div class="col-md-3 form-group-spaced">
+                        <label>Asset Type</label>
+                        {{ form.asset_type }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 form-group-spaced">
+                        <label>VAT</label>
+                        {{ form.vat }}
+                    </div>
+
+                    <div class="col-md-3 form-group-spaced">
+                        <label>Vehicle</label>
+                        {{ form.vehicle }}
+                    </div>
+
+                    <div class="col-md-6 form-group-spaced">
+                        <label>Description</label>
+                        {{ form.description }}
+                    </div>
+                </div>
+
+                <div class="mt-2 pt-3 border-top d-flex flex-wrap gap-2" style="gap: 10px;">
+                    <button type="submit"
+                        class="btn-glass {% if edit_id %}btn-primary-glass{% else %}btn-success-glass{% endif %}">
+                        {% if edit_id %}
+                        <svg class="icon-svg-sm" viewBox="0 0 24 24">
+                            <path
+                                d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z" />
+                        </svg>
+                        Update Asset
+                        {% else %}
+                        <svg class="icon-svg-sm" viewBox="0 0 24 24">
+                            <path
+                                d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z" />
+                        </svg>
+                        Save Asset
+                        {% endif %}
+                    </button>
+
+                    <a href="{% url 'asset_app:asset_master' %}" class="btn-glass btn-secondary-glass"
+                        style="text-decoration:none;">
+                        <svg class="icon-svg-sm" viewBox="0 0 24 24">
+                            <path
+                                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                        </svg>
+                        Clear Form
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= LIST SECTION ================= -->
+    <div class="card asset-card">
+        <div class="card-header asset-header">
+            <h5>
+                <svg class="icon-svg mr-2" viewBox="0 0 24 24">
+                    <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
+                </svg>
+                Asset Directory
+            </h5>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table asset-table">
+                    <thead>
+                        <tr>
+                            <th width="15%">Asset Code</th>
+                            <th width="22%">Asset Name</th>
+                            <th width="18%">Category</th>
+                            <th width="15%">Type</th>
+                            <th width="15%">VAT</th>
+                            <th width="15%" style="text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asset in assets %}
+                        <tr>
+                            <td>
+                                <span class="badge-code">{{ asset.asset_code }}</span>
+                            </td>
+                            <td style="font-weight: 600;">{{ asset.asset_name }}</td>
+                            <td>
+                                <span class="badge-category">{{ asset.asset_category }}</span>
+                            </td>
+                            <td>{{ asset.asset_type }}</td>
+                            <td>{{ asset.vat }}</td>
+                            <td>
+                                <div class="action-buttons" style="justify-content: center;">
+                                    <a href="{% url 'asset_app:asset_edit' asset.id %}" class="btn-icon btn-edit"
+                                        title="Edit">
+                                        <svg class="icon-svg-sm" viewBox="0 0 24 24">
+                                            <path
+                                                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                                        </svg>
+                                    </a>
+                                    <a href="{% url 'asset_app:asset_delete' asset.id %}" class="btn-icon btn-delete"
+                                        title="Delete"
+                                        onclick="return confirm('Are you sure you want to delete this asset? This action cannot be undone.')">
+                                        <svg class="icon-svg-sm" viewBox="0 0 24 24">
+                                            <path
+                                                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div style="display:flex; flex-direction:column; align-items:center; color:#9ca3af;">
+                                    <svg style="width: 48px; height: 48px; fill: #d1d5db; margin-bottom: 12px;"
+                                        viewBox="0 0 24 24">
+                                        <path
+                                            d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
+                                    </svg>
+                                    <h6 style="font-weight: 600; color:#4b5563; margin-bottom: 4px;">No Assets Found
+                                    </h6>
+                                    <p style="font-size: 0.85rem; margin-bottom: 0;">Create a new asset to get started.
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,5 +1,6 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
 <!-- Custom CSS -->
@@ -52,12 +53,12 @@
 </style>
 
 <div class="container mt-4 mb-5">
-    <h2 class="mb-4 text-center fw-bold text-primary">Company Setup</h2>
+    <h2 class="mb-4 text-center fw-bold text-primary">{% trans "Company Setup" %}</h2>
 
     <!-- Company Form -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">Company Information</h5>
+            <h5 class="mb-0 fw-bold text-secondary">{% trans "Company Information" %}</h5>
         </div>
         <div class="card-body">
             <form method="post" enctype="multipart/form-data">
@@ -76,7 +77,7 @@
 
                 <div class="mt-4">
                     <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-                        <i class="bi bi-save me-2"></i>Save Company
+                        <i class="bi bi-save me-2"></i>{% trans "Save Company" %}
                     </button>
                 </div>
             </form>
@@ -86,7 +87,7 @@
     {% if company %}
     <div class="text-center">
         <a href="{% url 'fleet_app:document_list' %}" class="btn btn-info text-white px-4 py-2">
-            <i class="bi bi-folder-fill me-2"></i>Manage Documents
+            <i class="bi bi-folder-fill me-2"></i>{% trans "Manage Documents" %}
         </a>
     </div>
     {% endif %}

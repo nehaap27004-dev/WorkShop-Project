@@ -1,0 +1,189 @@
+<!-- ═══════════════════════════════════════════════════════════
+     delivery_list.html
+     Save to: jobcard_app/templates/jobcard_app/delivery_list.html
+═══════════════════════════════════════════════════════════ -->
+{% extends 'fleet_base1.html' %}
+{% block content %}
+<style>
+*{box-sizing:border-box}
+body{background:#f5f6fa;font-family:'Segoe UI',sans-serif}
+.wrap{max-width:1300px;margin:0 auto;padding:24px 20px 60px}
+.top-bar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:20px;font-weight:700;color:#1a1a2e;margin-bottom:2px}
+.page-sub{font-size:12px;color:#6b7280}
+.btn-new{background:#2563eb;color:#fff;border:none;border-radius:7px;padding:10px 20px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-new:hover{background:#1d4ed8;color:#fff}
+.stats-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.stat{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 20px;flex:1;min-width:100px;cursor:pointer;transition:all .15s}
+.stat:hover{border-color:#2563eb}
+.stat.active{border-color:#2563eb;background:#eff6ff}
+.stat-num{font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:2px}
+.stat-lbl{font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.search-bar{display:flex;gap:10px;margin-bottom:18px;align-items:center;flex-wrap:wrap}
+.srch-wrap{flex:1;position:relative;min-width:200px}
+.srch-wrap input{width:100%;border:1px solid #e5e7eb;border-radius:7px;padding:9px 12px 9px 36px;font-size:13px;color:#1a1a2e;background:#fff;outline:none}
+.srch-wrap input:focus{border-color:#2563eb}
+.srch-wrap input::placeholder{color:#d1d5db}
+.srch-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:14px}
+.btn-clear{background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;border-radius:7px;padding:9px 14px;font-size:13px;text-decoration:none;white-space:nowrap}
+.tcard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{padding:11px 16px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid #f3f4f6;text-align:left;background:#f9fafb;white-space:nowrap}
+tbody tr{border-bottom:1px solid #f9fafb;transition:background .12s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f0f4ff}
+tbody td{padding:12px 16px;vertical-align:middle}
+.dn-no{font-size:12px;font-weight:700;color:#2563eb;font-family:monospace}
+.dn-date{font-size:11px;color:#6b7280;margin-top:2px}
+.cust-name{font-size:13px;font-weight:600;color:#1a1a2e}
+.ref-chip{display:inline-block;border-radius:4px;padding:2px 7px;font-size:11px;font-family:monospace;font-weight:600}
+.ref-green{background:#f0fdf4;color:#16a34a}
+.ref-blue{background:#eff6ff;color:#2563eb}
+.ref-grey{background:#f3f4f6;color:#6b7280}
+.sbadge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.sb-draft    {background:#f3f4f6;color:#374151}
+.sb-delivered{background:#dcfce7;color:#16a34a}
+.sb-cancelled{background:#fee2e2;color:#dc2626}
+.signed-y{color:#16a34a;font-size:12px;font-weight:700}
+.signed-n{color:#d1d5db;font-size:12px}
+.act-wrap{display:flex;gap:5px}
+.ab{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;border:1px solid transparent;cursor:pointer;background:none;white-space:nowrap}
+.ab-view{background:#eff6ff;color:#2563eb;border-color:#bfdbfe}
+.ab-edit{background:#f0fdf4;color:#16a34a;border-color:#bbf7d0}
+.ab-del {background:#fef2f2;color:#dc2626;border-color:#fecaca}
+.empty{text-align:center;padding:60px 20px;color:#9ca3af}
+.flash{padding:10px 16px;border-radius:7px;margin-bottom:14px;font-size:13px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+</style>
+
+<div class="wrap">
+  <div class="top-bar">
+    <div>
+      <div class="page-title">Delivery Notes</div>
+      <div class="page-sub">{{ counts.total }} delivery note{{ counts.total|pluralize }}</div>
+    </div>
+    <a href="{% url 'jobcard_app:delivery_create' %}" class="btn-new">+ New Delivery Note</a>
+  </div>
+
+  {% if messages %}{% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}{% endif %}
+
+  <div class="stats-row">
+    <div class="stat {% if not status %}active{% endif %}" onclick="filterStatus('')">
+      <div class="stat-num">{{ counts.total }}</div><div class="stat-lbl">All</div>
+    </div>
+    <div class="stat {% if status == 'draft' %}active{% endif %}" onclick="filterStatus('draft')">
+      <div class="stat-num" style="color:#374151">{{ counts.draft }}</div><div class="stat-lbl">Draft</div>
+    </div>
+    <div class="stat {% if status == 'delivered' %}active{% endif %}" onclick="filterStatus('delivered')">
+      <div class="stat-num" style="color:#16a34a">{{ counts.delivered }}</div><div class="stat-lbl">Delivered</div>
+    </div>
+    <div class="stat {% if status == 'cancelled' %}active{% endif %}" onclick="filterStatus('cancelled')">
+      <div class="stat-num" style="color:#dc2626">{{ counts.cancelled }}</div><div class="stat-lbl">Cancelled</div>
+    </div>
+  </div>
+
+  <form method="get" class="search-bar" id="searchForm">
+    <div class="srch-wrap">
+      <span class="srch-icon">🔍</span>
+      <input type="text" name="q" value="{{ q }}" id="qInp"
+             placeholder="Search delivery no., customer, job card..." autocomplete="off">
+    </div>
+    <input type="hidden" name="status" id="statusHidden" value="{{ status }}">
+    <a href="{% url 'jobcard_app:delivery_list' %}" class="btn-clear">✕ Clear</a>
+  </form>
+
+  <div class="tcard">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Delivery No.</th>
+            <th>Customer</th>
+            <th>Vehicle</th>
+            <th>Job Card</th>
+            <th>Quotation</th>
+            <th>Driver</th>
+            <th>Odometer Out</th>
+            <th>Signed</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for dn in deliveries %}
+          <tr>
+            <td>
+              <div class="dn-no">{{ dn.delivery_number }}</div>
+              <div class="dn-date">{{ dn.date|date:"d M Y" }}</div>
+            </td>
+            <td><div class="cust-name">{{ dn.customer.ledger_name }}</div></td>
+            <td>
+              {% if dn.vehicle %}
+              <div style="font-size:13px;font-weight:600;color:#1a1a2e">{{ dn.vehicle.registration_number }}</div>
+              <div style="font-size:11px;color:#6b7280">{{ dn.vehicle.make }} {{ dn.vehicle.model }}</div>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if dn.jobcard %}
+              <span class="ref-chip ref-green">{{ dn.jobcard.job_number }}</span>
+              {% else %}<span class="ref-chip ref-grey">—</span>{% endif %}
+            </td>
+            <td>
+              {% if dn.quotation %}
+              <span class="ref-chip ref-blue">{{ dn.quotation.quotation_number }}</span>
+              {% else %}<span class="ref-chip ref-grey">—</span>{% endif %}
+            </td>
+            <td style="font-size:13px;color:#374151">{{ dn.driver_name|default:"—" }}</td>
+            <td style="font-size:12px;font-family:monospace;color:#374151">
+              {% if dn.odometer_out %}{{ dn.odometer_out }} km{% else %}—{% endif %}
+            </td>
+            <td>
+              {% if dn.customer_signed %}
+              <span class="signed-y">✅ Yes</span>
+              {% else %}
+              <span class="signed-n">—</span>
+              {% endif %}
+            </td>
+            <td><span class="sbadge sb-{{ dn.status }}">{{ dn.get_status_display }}</span></td>
+            <td onclick="event.stopPropagation()">
+              <div class="act-wrap">
+                
+                <a href="{% url 'jobcard_app:delivery_edit' dn.pk %}"   class="ab ab-edit">✏️ Edit</a>
+                <form method="post" action="{% url 'jobcard_app:delivery_delete' dn.pk %}"
+                      onsubmit="return confirm('Delete {{ dn.delivery_number }}?')" style="margin:0">
+                  {% csrf_token %}
+                  <button type="submit" class="ab ab-del">🗑</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="10">
+            <div class="empty">
+              <div style="font-size:44px;margin-bottom:12px">🚚</div>
+              <p style="font-size:14px;margin-bottom:16px">No delivery notes yet</p>
+              <a href="{% url 'jobcard_app:delivery_create' %}"
+                 style="background:#2563eb;color:#fff;border-radius:7px;padding:9px 20px;text-decoration:none;font-size:13px;font-weight:600">
+                Create First Delivery Note
+              </a>
+            </div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let t;
+document.getElementById('qInp').addEventListener('input', function() {
+  clearTimeout(t);
+  t = setTimeout(() => document.getElementById('searchForm').submit(), 400);
+});
+function filterStatus(s) {
+  document.getElementById('statusHidden').value = s;
+  document.getElementById('searchForm').submit();
+}
+</script>
+{% endblock %}

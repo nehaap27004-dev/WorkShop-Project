@@ -1,0 +1,1327 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% block content %}
+<style>
+*{box-sizing:border-box}
+body,input,select,textarea,button{font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+.iw{max-width:1140px;margin:0 auto;padding:0 4px 90px}
+
+/* ── Page title & metadata ── */
+.pg-hdr-box{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.pg-title{font-size:20px;font-weight:700;color:#0f172a;letter-spacing:-0.3px;margin-bottom:3px}
+.pg-meta{font-size:12px;color:#64748b;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pg-meta span{display:flex;align-items:center;gap:5px}
+.currency-badge{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700}
+
+/* ── Cards ── */
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden;transition:box-shadow .15s}
+.card:hover{box-shadow:0 4px 12px rgba(0,0,0,.05)}
+.card-hdr{padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9;background:#fafbfc}
+.card-hdr-left{display:flex;align-items:center;gap:10px}
+.card-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.ci-blue  {background:#eff6ff;color:#2563eb}
+.ci-purple{background:#faf5ff;color:#9333ea}
+.ci-teal  {background:#f0fdfa;color:#0d9488}
+.ci-orange{background:#fff7ed;color:#ea580c}
+.ci-green {background:#f0fdf4;color:#16a34a}
+.card-title{font-size:14px;font-weight:700;color:#0f172a}
+.card-badge{background:#e2e8f0;color:#475569;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
+.card-body{padding:18px}
+.card-hdr-actions{display:flex;gap:8px}
+
+/* ── Form inputs & labels ── */
+.fl{display:block;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.req{color:#ef4444}
+.fc{width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:8px 12px;font-size:13px;color:#0f172a;background:#fff;outline:none;font-family:inherit;transition:all .15s}
+.fc:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.fc::placeholder{color:#94a3b8}
+.fc:disabled{background:#f8fafc;color:#2563eb;font-family:monospace;font-weight:700;cursor:not-allowed}
+select.fc{cursor:pointer;appearance:auto}
+textarea.fc{resize:vertical;min-height:72px}
+.fc-wrap{position:relative;display:flex;align-items:center}
+.fc-icon{position:absolute;left:10px;color:#94a3b8;font-size:13px;pointer-events:none}
+.fc.with-icon{padding-left:30px}
+
+/* ── Information layout grid ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:840px){.info-grid{grid-template-columns:1fr}}
+
+.fields-block{padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid #f1f5f9}
+.fields-block:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
+.fields-row{display:grid;gap:12px}
+.fr2{grid-template-columns:1fr 1fr}
+.fr3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:540px){.fr2,.fr3{grid-template-columns:1fr}}
+
+/* ── Document Loader Banner ── */
+.doc-loader-card{background:linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);border:1px solid #bfdbfe;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.doc-loader-info{display:flex;align-items:center;gap:12px}
+.doc-loader-icon{width:38px;height:38px;background:#2563eb;color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.doc-loader-title{font-size:14px;font-weight:700;color:#1e40af;margin-bottom:2px}
+.doc-loader-sub{font-size:12px;color:#3b82f6}
+.btn-doc-load{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .15s;box-shadow:0 2px 6px rgba(37,99,235,.25)}
+.btn-doc-load:hover{background:#1d4ed8;transform:translateY(-1px)}
+
+/* ── Document Picker Panel ── */
+.doc-picker-panel{display:none;position:absolute;right:0;top:115%;background:#fff;border:1.5px solid #2563eb;border-radius:12px;width:520px;max-width:92vw;z-index:500;box-shadow:0 12px 32px rgba(0,0,0,.15);overflow:hidden}
+.doc-picker-hdr{background:#1e40af;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+.doc-picker-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.doc-picker-close{background:none;border:none;color:#93c5fd;font-size:18px;cursor:pointer;line-height:1}
+.doc-picker-close:hover{color:#fff}
+.doc-tabs{display:flex;background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:4px 8px 0}
+.doc-tab{padding:8px 14px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px}
+.doc-tab.active{color:#2563eb;border-bottom-color:#2563eb;background:#fff;border-radius:6px 6px 0 0}
+.doc-tab-badge{background:#e2e8f0;color:#475569;border-radius:10px;padding:1px 6px;font-size:10px}
+.doc-tab.active .doc-tab-badge{background:#dbeafe;color:#1e40af}
+.doc-body{max-height:360px;overflow-y:auto;padding:12px}
+.doc-item{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:all .15s}
+.doc-item:hover{border-color:#93c5fd;background:#f0f9ff;transform:translateX(2px)}
+.doc-item-main{flex:1}
+.doc-item-num{font-size:13px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:8px}
+.doc-item-sub{font-size:11px;color:#64748b;margin-top:3px;display:flex;gap:12px}
+.doc-item-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:#f1f5f9;color:#475569}
+.btn-doc-select{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-doc-select:hover{background:#1d4ed8}
+
+/* ── Buttons ── */
+.btn-add{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s}
+.btn-add:hover{background:#1d4ed8}
+.btn-add.teal{background:#0d9488}.btn-add.teal:hover{background:#0f766e}
+.btn-add.orange{background:#ea580c}.btn-add.orange:hover{background:#c2410c}
+
+/* ── Table styles ── */
+.tbl-wrap{overflow-x:auto}
+table.inv-tbl{width:100%;border-collapse:collapse;min-width:760px}
+table.inv-tbl thead tr{background:#f8fafc;border-bottom:1.5px solid #e2e8f0}
+table.inv-tbl thead th{padding:10px 10px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;text-align:left;white-space:nowrap}
+table.inv-tbl thead th.num{text-align:right}
+table.inv-tbl tbody td{padding:6px 6px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+table.inv-tbl tbody tr:last-child td{border-bottom:none}
+table.inv-tbl tbody tr:hover{background:#f8fafc}
+table.inv-tbl input,table.inv-tbl select{width:100%;border:1px solid transparent;border-radius:6px;padding:6px 9px;font-size:12.5px;color:#0f172a;background:transparent;outline:none;font-family:inherit;transition:all .15s}
+table.inv-tbl input:focus,table.inv-tbl select:focus{border-color:#2563eb;background:#fff;box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+table.inv-tbl input::placeholder{color:#94a3b8}
+table.inv-tbl tbody tr:hover input,table.inv-tbl tbody tr:hover select{background:#fff;border-color:#cbd5e1}
+.cell-num{text-align:right;font-size:12.5px;font-weight:600;color:#0f172a;font-family:monospace;padding-right:8px!important;white-space:nowrap}
+.cell-tax{text-align:center;font-size:12px;color:#64748b;font-family:monospace;white-space:nowrap}
+.row-num{color:#94a3b8;font-size:11px;text-align:center;width:26px}
+.btn-rm{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:all .15s}
+.btn-rm:hover{color:#ef4444;background:#fef2f2}
+
+/* Item select in table */
+table.inv-tbl select.inv-item-sel{width:100%;border:1px solid transparent;border-radius:6px;padding:6px 9px;font-size:12.5px;color:#0f172a;background:transparent;outline:none;cursor:pointer}
+table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
+
+/* Subtotal row */
+.tbl-subtotal{display:flex;justify-content:flex-end;align-items:center;gap:20px;padding:10px 16px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12.5px;color:#64748b}
+.tbl-subtotal strong{color:#0f172a;font-size:13.5px;font-family:monospace}
+
+/* ── Payment Summary Layout ── */
+.pay-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+@media(max-width:840px){.pay-layout{grid-template-columns:1fr}}
+.pay-summary{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.pay-summary-hdr{padding:12px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px;background:#fafbfc}
+.pay-summary-hdr span{font-size:14px;font-weight:700;color:#0f172a}
+.pay-summary-body{padding:16px 18px}
+.pay-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:5px 0}
+.pay-row .pl{color:#64748b}
+.pay-row .pv{font-weight:600;color:#0f172a;font-family:monospace}
+.pay-row .pv.small{font-size:11.5px;color:#94a3b8;font-weight:400}
+.pay-divider{height:1px;background:#f1f5f9;margin:8px 0}
+.pay-total-box{background:#1e40af;border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-top:12px;box-shadow:0 4px 12px rgba(30,64,175,.2)}
+.ptb-label{font-size:12px;font-weight:700;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.5px}
+.ptb-sub  {font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
+.ptb-value{font-size:22px;font-weight:700;color:#fff;font-family:monospace}
+.pay-balance-box{background:#fef9c3;border:1px solid #fde047;border-radius:9px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.pbb-label{font-size:12.5px;font-weight:700;color:#854d0e}
+.pbb-value{font-size:17px;font-weight:700;color:#854d0e;font-family:monospace}
+.amtpaid-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.amtpaid-row label{font-size:11.5px;color:#64748b;font-weight:600;white-space:nowrap}
+.amtpaid-row input{flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 10px;font-size:13px;font-family:monospace;font-weight:600;color:#0f172a;outline:none;text-align:right}
+.amtpaid-row input:focus{border-color:#2563eb}
+
+/* Notes area */
+.notes-area textarea{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:12px;font-size:13px;color:#0f172a;background:#fff;outline:none;resize:vertical;min-height:95px;font-family:inherit}
+.notes-area textarea:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.notes-area label{display:block;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+
+/* Floating bottom bar */
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;z-index:300;box-shadow:0 -4px 16px rgba(0,0,0,.06)}
+.bb-unsaved{font-size:12px;color:#d97706;font-weight:600;display:flex;align-items:center;gap:6px}
+.bb-actions{display:flex;gap:10px}
+.btn-discard{background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn-discard:hover{background:#e2e8f0}
+.btn-save-inv{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 24px;font-size:13.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(37,99,235,.3);transition:all .15s}
+.btn-save-inv:hover{background:#1d4ed8}
+
+/* Dropdown menu */
+.item-dd{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #2563eb;border-radius:8px;z-index:300;max-height:220px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.12);margin-top:4px}
+.iopt{padding:9px 12px;cursor:pointer;font-size:13px;color:#0f172a;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.iopt:hover{background:#eff6ff;color:#2563eb}
+.iopt:last-child{border-bottom:none}
+.iopt-code{font-size:10px;color:#94a3b8;font-family:monospace;flex-shrink:0}
+
+/* Toast banner */
+.toast-banner{display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:10px;padding:11px 16px;margin-bottom:16px;font-size:13px;font-weight:600;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 8px rgba(22,163,74,.1)}
+</style>
+
+<div class="iw">
+
+<!-- Page Header -->
+<div class="pg-hdr-box">
+  <div>
+    <div class="pg-title">{% if invoice %}Edit Invoice — {{ invoice.invoice_number }}{% else %}Create Invoice{% endif %}</div>
+    
+    
+  </div>
+</div>
+
+<!-- Loaded Toast Banner -->
+<div class="toast-banner" id="loadToast">
+  <span id="loadToastText"></span>
+  <button type="button" onclick="document.getElementById('loadToast').style.display='none'" style="background:none;border:none;color:#16a34a;cursor:pointer;font-size:16px;line-height:1">✕</button>
+</div>
+
+<!-- Document Loader Banner -->
+<div class="doc-loader-card">
+  <div class="doc-loader-info">
+    <div>
+      <div class="doc-loader-title">Load Data from Delivery Note / Job Card</div>
+    </div>
+  </div>
+  <div style="position:relative">
+    <button type="button" class="btn-doc-load" onclick="toggleDocPicker()">
+      📥 Load Document ▾
+    </button>
+
+    <!-- Document Picker Panel Dropdown -->
+    <div class="doc-picker-panel" id="docPickerPanel">
+      <div class="doc-picker-hdr">
+        <div class="doc-picker-title">Select Document to Import</div>
+        <button type="button" class="doc-picker-close" onclick="closeDocPicker()">✕</button>
+      </div>
+
+      <div class="doc-tabs">
+        <div class="doc-tab active" id="tabDN" onclick="switchDocTab('DN')">
+          Delivery Notes <span class="doc-tab-badge" id="badgeDN">0</span>
+        </div>
+        <div class="doc-tab" id="tabJC" onclick="switchDocTab('JC')">
+          Job Cards <span class="doc-tab-badge" id="badgeJC">0</span>
+        </div>
+      </div>
+
+      <div class="doc-body" id="docBody">
+        <div id="docPromptSelectCust" style="padding:24px 16px;text-align:center;color:#94a3b8;font-size:12.5px">
+           Please select a Customer first to load available documents.
+        </div>
+        <div id="docListDN" style="display:none"></div>
+        <div id="docListJC" style="display:none"></div>
+        <div id="docEmptyMsg" style="display:none;padding:24px 16px;text-align:center;color:#94a3b8;font-size:12.5px">
+          No documents found for this customer / vehicle.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<form method="post" id="invForm">{% csrf_token %}
+
+<!-- Hidden document reference trackers -->
+<input type="hidden" name="loaded_delivery_note" id="loadedDN" value="">
+<input type="hidden" name="loaded_job_card" id="loadedJC" value="">
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 1. INVOICE INFORMATION                        -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-hdr">
+    <div class="card-hdr-left">
+      <span class="card-title">Invoice Info</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="info-grid">
+
+      <!-- LEFT: Invoice fields -->
+      <div>
+        <div class="fields-block">
+          <div class="fields-row fr2">
+            <div>
+              <label class="fl">Invoice Number</label>
+              <input type="text" class="fc" disabled
+                     value="{% if invoice %}{{ invoice.invoice_number }}{% else %}INV-AUTO{% endif %}">
+            </div>
+            <div>
+              <label class="fl">Invoice Date <span class="req">*</span></label>
+              <input type="date" name="invoice_date" class="fc" required
+                     value="{% if invoice %}{{ invoice.invoice_date|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields-block">
+          <div class="fields-row fr2">
+            <div>
+              <label class="fl">Due Date</label>
+              <input type="date" name="due_date" class="fc"
+                     value="{% if invoice and invoice.due_date %}{{ invoice.due_date|date:'Y-m-d' }}{% endif %}">
+            </div>
+            <div>
+              <label class="fl">Payment Mode</label>
+              <select name="payment_mode" class="fc">
+                <option value="cash"   {% if not invoice or invoice.payment_mode == 'cash'   %}selected{% endif %}>Cash</option>
+                <option value="bank"   {% if invoice and invoice.payment_mode == 'bank'       %}selected{% endif %}>Bank Transfer</option>
+                <option value="cheque" {% if invoice and invoice.payment_mode == 'cheque'     %}selected{% endif %}>Cheque</option>
+                <option value="card"   {% if invoice and invoice.payment_mode == 'card'       %}selected{% endif %}>Credit Card</option>
+                <option value="pdc"    {% if invoice and invoice.payment_mode == 'pdc'        %}selected{% endif %}>PDC</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields-block">
+          <div class="fields-row fr2">
+            <div>
+              <label class="fl">Job Card Ref</label>
+              <div style="position:relative">
+                <input type="text" name="job_card_ref" id="jcSearch" class="fc"
+                       placeholder="JC-2026-XXXX"
+                       value="{% if invoice and invoice.job_card %}{{ invoice.job_card.job_number }}{% endif %}"
+                       autocomplete="off">
+                <div class="item-dd" id="jcDd"></div>
+                <input type="hidden" name="job_card" id="jcId"
+                       value="{% if invoice and invoice.job_card %}{{ invoice.job_card.id }}{% endif %}">
+              </div>
+            </div>
+            <div>
+              <label class="fl">Invoice Status</label>
+              <select name="status" class="fc">
+                <option value="draft"    {% if not invoice or invoice.status == 'draft'    %}selected{% endif %}>Draft</option>
+                <option value="sent"     {% if invoice and invoice.status == 'sent'        %}selected{% endif %}>Sent</option>
+                <option value="paid"     {% if invoice and invoice.status == 'paid'        %}selected{% endif %}>Paid</option>
+                <option value="partial"  {% if invoice and invoice.status == 'partial'     %}selected{% endif %}>Partially Paid</option>
+                <option value="overdue"  {% if invoice and invoice.status == 'overdue'     %}selected{% endif %}>Overdue</option>
+                <option value="cancelled"{% if invoice and invoice.status == 'cancelled'   %}selected{% endif %}>Cancelled</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Customer & Vehicle info -->
+      <div>
+        <div style="margin-bottom:12px">
+          <label class="fl">Customer <span class="req">*</span></label>
+          <select name="customer" id="custSel" class="fc" required>
+            <option value="">— Select Customer —</option>
+            {% for c in customers %}
+            <option value="{{ c.id }}"
+              data-mobile="{{ c.contact_number|default:'' }}"
+              {% if invoice and invoice.customer_id == c.id %}selected{% endif %}>
+              {{ c.ledger_name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="fields-row fr2" style="margin-bottom:12px">
+          <div>
+            <label class="fl">Mobile</label>
+            <div class="fc-wrap">
+              <input type="text" name="customer_mobile" id="custMobile" class="fc with-icon"
+                     placeholder="+968 9000 0000"
+                     value="{% if invoice %}{{ invoice.customer_mobile }}{% endif %}">
+            </div>
+          </div>
+          <div>
+            <label class="fl">Vehicle Number</label>
+            <div class="fc-wrap">
+              <select name="vehicle" id="vehSel" class="fc with-icon">
+                <option value="">— Select Vehicle —</option>
+                {% if invoice and invoice.vehicle %}
+                <option value="{{ invoice.vehicle.id }}" selected>{{ invoice.vehicle }}</option>
+                {% endif %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label class="fl">Vehicle Model</label>
+          <input type="text" name="vehicle_model" id="vehModel" class="fc"
+                 placeholder="e.g. Toyota Land Cruiser (4.0 V6)"
+                 value="{% if invoice and invoice.vehicle_model %}{{ invoice.vehicle_model }}{% endif %}">
+        </div>
+
+        <div>
+          <label class="fl">Customer Address</label>
+          <textarea name="customer_address" class="fc" rows="2"
+                    placeholder="Address details...">{% if invoice %}{{ invoice.customer_address }}{% endif %}</textarea>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 2. SPARE PARTS                                -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-hdr">
+    <div class="card-hdr-left">
+      <span class="card-title">Spare Parts</span>
+      <span class="card-badge" id="partsBadge">0 items</span>
+    </div>
+    <div class="card-hdr-actions">
+      <button type="button" class="btn-add" onclick="addPartRow()">+ Add Part</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table class="inv-tbl" id="partsTable">
+      <thead>
+        <tr>
+          <th style="width:26px">#</th>
+          <th>Item / Description</th>
+          <th style="width:110px">Part Code</th>
+          <th style="width:65px">Qty</th>
+          <th style="width:85px">Unit</th>
+          <th style="width:105px">Rate </th>
+          <th style="width:55px">Disc %</th>
+          <th style="width:55px">Tax %</th>
+          <th style="width:75px">Tax Amt</th>
+          <th class="num" style="width:100px">Total </th>
+          <th style="width:30px"></th>
+        </tr>
+      </thead>
+      <tbody id="partsTbody">
+        {% if invoice %}
+          {% for item in parts %}
+          <tr
+            data-item-id="{{ item.item_ref|default:'' }}"
+            data-item-name="{{ item.description|default:'' }}"
+            data-item-code="{{ item.item_code|default:'' }}"
+            data-item-unit="{{ item.unit|default:'Pcs' }}"
+            data-item-rate="{{ item.unit_price|default:0 }}"
+            data-item-qty="{{ item.quantity|default:1 }}"
+            data-item-disc="{{ item.discount_pct|default:0 }}"
+            data-item-tax="{{ item.tax_percent|default:8 }}">
+          </tr>
+          {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  <div class="tbl-subtotal">
+    <span>Spare Parts Total:</span>
+    <span>Tax  <strong id="partsTaxTotal">0.000</strong></span>
+    <span style="font-size:14px;font-weight:700;color:#0f172a"><strong id="partsTotal">0.000</strong></span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 3. LABOUR CHARGES                             -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-hdr">
+    <div class="card-hdr-left">
+      <span class="card-title">Labour Charges</span>
+      <span class="card-badge" id="labourBadge">0 items</span>
+    </div>
+    <div class="card-hdr-actions">
+      <button type="button" class="btn-add teal" onclick="addLabourRow()">+ Add Labour</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table class="inv-tbl" id="labourTable">
+      <thead>
+        <tr>
+          <th style="width:26px">#</th>
+          <th style="width:35%">Description / Work Done</th>
+          <th style="width:20%">Technician</th>
+          <th style="width:70px">Hours</th>
+          <th style="width:100px">Rate / Hr </th>
+          <th style="width:55px">Tax %</th>
+          <th style="width:75px">Tax Amt</th>
+          <th class="num" style="width:100px">Total </th>
+          <th style="width:30px"></th>
+        </tr>
+      </thead>
+      <tbody id="labourTbody">
+        {% if invoice %}
+          {% for item in labour %}
+          <tr>
+            <td class="row-num">{{ forloop.counter }}</td>
+            <td><input type="text" name="lab_desc[]" value="{{ item.description }}" placeholder="e.g. Engine overhaul..."></td>
+            <td>
+              <select name="lab_tech[]">
+                <option value="">— Assign —</option>
+                {% for t in technicians %}<option value="{{ t.id }}" {% if item.technician_id == t.id %}selected{% endif %}>{{ t.full_name }}</option>{% endfor %}
+              </select>
+            </td>
+            <td><input type="number" name="lab_hrs[]"  class="lhrs"  value="{{ item.hours|default:1 }}" min="0" step="0.5"></td>
+            <td><input type="number" name="lab_rate[]" class="lrate" value="{{ item.rate }}" min="0" step="0.001"></td>
+            <td><input type="number" name="lab_tax[]"  class="ltax"  value="{{ item.tax_percent|default:8 }}" min="0" step="0.1"></td>
+            <td class="cell-tax ltax-amt">{{ item.tax_amount|default:0|floatformat:3 }}</td>
+            <td class="cell-num ltotal">{{ item.total_price|floatformat:3 }}</td>
+            <td><button type="button" class="btn-rm rm-labour">×</button></td>
+          </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td class="row-num">1</td>
+          <td><input type="text" name="lab_desc[]" placeholder="e.g. Engine oil change & filter replacement..."></td>
+          <td>
+            <select name="lab_tech[]">
+              <option value="">— Assign —</option>
+              {% for t in technicians %}<option value="{{ t.id }}">{{ t.full_name }}</option>{% endfor %}
+            </select>
+          </td>
+          <td><input type="number" name="lab_hrs[]"  class="lhrs"  value="1" min="0" step="0.5"></td>
+          <td><input type="number" name="lab_rate[]" class="lrate" value="0.000" min="0" step="0.001"></td>
+          <td><input type="number" name="lab_tax[]"  class="ltax"  value="8" min="0" step="0.1"></td>
+          <td class="cell-tax ltax-amt">0.000</td>
+          <td class="cell-num ltotal">0.000</td>
+          <td><button type="button" class="btn-rm rm-labour">×</button></td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  <div class="tbl-subtotal">
+    <span>Labour Total:</span>
+    <span>Tax <strong id="labourTaxTotal">0.000</strong></span>
+    <span style="font-size:14px;font-weight:700;color:#0f172a"><strong id="labourTotal">0.000</strong></span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 4. OTHER CHARGES                              -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-hdr">
+    <div class="card-hdr-left">
+      <span class="card-title">Other Charges</span>
+      <span class="card-badge" id="otherBadge">0 items</span>
+    </div>
+    <div class="card-hdr-actions">
+      <button type="button" class="btn-add orange" onclick="addOtherRow()">+ Add Charge</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table class="inv-tbl" id="otherTable">
+      <thead>
+        <tr>
+          <th style="width:26px">#</th>
+          <th>Description</th>
+          <th style="width:120px">Amount</th>
+          <th style="width:55px">Tax %</th>
+          <th style="width:85px">Tax Amt</th>
+          <th class="num" style="width:110px">Total </th>
+          <th style="width:30px"></th>
+        </tr>
+      </thead>
+      <tbody id="otherTbody">
+        {% if invoice %}
+          {% for item in other_charges %}
+          <tr>
+            <td class="row-num">{{ forloop.counter }}</td>
+            <td><input type="text" name="oth_desc[]" value="{{ item.description }}" placeholder="e.g. Wheel Alignment..."></td>
+            <td><input type="number" name="oth_amt[]"  class="oamt" value="{{ item.amount }}" min="0" step="0.001"></td>
+            <td><input type="number" name="oth_tax[]"  class="otax" value="{{ item.tax_percent|default:0 }}" min="0" step="0.1"></td>
+            <td class="cell-tax otax-amt">{{ item.tax_amount|default:0|floatformat:3 }}</td>
+            <td class="cell-num ototl">{{ item.total_price|floatformat:3 }}</td>
+            <td><button type="button" class="btn-rm rm-other">×</button></td>
+          </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td class="row-num">1</td>
+          <td><input type="text" name="oth_desc[]" placeholder="e.g. Wheel Alignment / Diagnostics..."></td>
+          <td><input type="number" name="oth_amt[]"  class="oamt" value="0.000" min="0" step="0.001"></td>
+          <td><input type="number" name="oth_tax[]"  class="otax" value="0" min="0" step="0.1"></td>
+          <td class="cell-tax otax-amt">0.000</td>
+          <td class="cell-num ototl">0.000</td>
+          <td><button type="button" class="btn-rm rm-other">×</button></td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  <div class="tbl-subtotal">
+    <span>Other Charges Total:</span>
+    <span>Tax  <strong id="otherTaxTotal">0.000</strong></span>
+    <span style="font-size:14px;font-weight:700;color:#0f172a"> <strong id="otherTotal">0.000</strong></span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 5. PAYMENT SUMMARY + NOTES                    -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="pay-layout">
+  <!-- Notes -->
+  <div class="notes-area">
+    <label>Notes / Remarks</label>
+    <textarea name="notes" placeholder="Additional notes or payment instructions for the customer...">{% if invoice %}{{ invoice.notes }}{% endif %}</textarea>
+  </div>
+
+  <!-- Payment summary card -->
+  <div class="pay-summary">
+    <div class="pay-summary-hdr">
+      <span>Payment Summary </span>
+    </div>
+    <div class="pay-summary-body">
+      <div class="pay-row">
+        <span class="pl">Spare Parts</span>
+        <span class="pv" id="sumParts"> 0.000</span>
+      </div>
+      <div class="pay-row">
+        <span class="pl pv small" style="padding-left:12px">Tax  <span id="sumPartsTax">0.000</span></span>
+        <span></span>
+      </div>
+      <div class="pay-row">
+        <span class="pl">Labour Charges</span>
+        <span class="pv" id="sumLabour"> 0.000</span>
+      </div>
+      <div class="pay-row">
+        <span class="pl pv small" style="padding-left:12px">Tax  <span id="sumLabourTax">0.000</span></span>
+        <span></span>
+      </div>
+      <div class="pay-row">
+        <span class="pl">Other Charges</span>
+        <span class="pv" id="sumOther"> 0.000</span>
+      </div>
+      <div class="pay-row">
+        <span class="pl pv small" style="padding-left:12px">Tax  <span id="sumOtherTax">0.000</span></span>
+        <span></span>
+      </div>
+      <div class="pay-divider"></div>
+      <div class="pay-row">
+        <span class="pl">Subtotal (Before Tax)</span>
+        <span class="pv" id="sumSubtotal">0.000</span>
+      </div>
+      <div class="pay-row">
+        <span class="pl">Total Tax</span>
+        <span class="pv" id="sumTotalTax"> 0.000</span>
+      </div>
+      <div class="pay-row" style="align-items:flex-start;margin-top:4px">
+        <span class="pl">Discount (%)</span>
+        <div>
+          <input type="number" name="discount_pct" id="discPct" value="{% if invoice %}{{ invoice.discount_pct|default:0 }}{% else %}0{% endif %}"
+                 min="0" max="100" step="0.1"
+                 style="width:65px;border:1px solid #cbd5e1;border-radius:6px;padding:4px 7px;font-size:12.5px;text-align:right;outline:none;font-family:monospace">
+        </div>
+      </div>
+      <div class="pay-total-box">
+        <div>
+          <div class="ptb-label">Grand Total</div>
+          <div class="ptb-sub">Incl. all taxes &amp; charges</div>
+        </div>
+        <span class="ptb-value" id="grandTotal"> 0.000</span>
+      </div>
+      <div class="amtpaid-row">
+        <label>Amount Paid</label>
+        <input type="number" name="amount_paid" id="amtPaid"
+               value="{% if invoice %}{{ invoice.amount_paid|default:0 }}{% else %}0{% endif %}"
+               min="0" step="0.001" placeholder="0.000">
+      </div>
+      <div class="pay-balance-box">
+        <span class="pbb-label">Balance Due</span>
+        <span class="pbb-value" id="balanceDue">0.000</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</form>
+
+<!-- ROW TEMPLATES FOR DYNAMIC INSERTION -->
+<template id="labourRowTpl">
+  <tr>
+    <td class="row-num">•</td>
+    <td><input type="text" name="lab_desc[]" placeholder="e.g. Oil change service..."></td>
+    <td><select name="lab_tech[]"><option value="">— Assign —</option>{% for t in technicians %}<option value="{{ t.id }}">{{ t.full_name }}</option>{% endfor %}</select></td>
+    <td><input type="number" name="lab_hrs[]"  class="lhrs"  value="1" min="0" step="0.5"></td>
+    <td><input type="number" name="lab_rate[]" class="lrate" value="0.000" min="0" step="0.001"></td>
+    <td><input type="number" name="lab_tax[]"  class="ltax"  value="8" min="0" step="0.1"></td>
+    <td class="cell-tax ltax-amt">0.000</td>
+    <td class="cell-num ltotal">0.000</td>
+    <td><button type="button" class="btn-rm rm-labour">×</button></td>
+  </tr>
+</template>
+<template id="otherRowTpl">
+  <tr>
+    <td class="row-num">•</td>
+    <td><input type="text" name="oth_desc[]" placeholder="e.g. Wheel Alignment..."></td>
+    <td><input type="number" name="oth_amt[]"  class="oamt" value="0.000" min="0" step="0.001"></td>
+    <td><input type="number" name="oth_tax[]"  class="otax" value="0" min="0" step="0.1"></td>
+    <td class="cell-tax otax-amt">0.000</td>
+    <td class="cell-num ototl">0.000</td>
+    <td><button type="button" class="btn-rm rm-other">×</button></td>
+  </tr>
+</template>
+
+<!-- Bottom floating bar -->
+<div class="bottom-bar">
+  <div class="bb-unsaved" id="bbUnsaved" style="display:none">⚠ Unsaved changes in form</div>
+  <div class="bb-actions">
+    <a href="{% url 'jobcard_app:invoice_list' %}" class="btn-discard">Discard</a>
+    <button type="button" class="btn-save-inv" onclick="document.getElementById('invForm').submit()">
+      💾 Save Invoice
+    </button>
+  </div>
+</div>
+
+</div><!-- /iw -->
+
+<script>
+const VEHICLES_URL        = "{% url 'jobcard_app:jc_get_vehicles' %}";
+const INV_ALL_ITEMS_URL   = "{% url 'jobcard_app:ajax_get_all_items' %}";
+const JC_SEARCH           = "{% url 'jobcard_app:jc_search_jobcards' %}";
+const GET_DOCS_INVOICE_URL= "{% url 'jobcard_app:ajax_get_docs_for_invoice' %}";
+
+let invAllItems = [];
+let cachedDocs = { delivery_notes: [], jobcards: [] };
+
+/* ── Build item dropdown options ── */
+function buildInvItemOptions(selectedId = '') {
+  let opts = '<option value="">— Select Item —</option>';
+  invAllItems.forEach(item => {
+    const sel = selectedId && String(selectedId) === String(item.id) ? 'selected' : '';
+    const name = (item.name || '').replace(/"/g, '&quot;');
+    const code = (item.code || '').replace(/"/g, '&quot;');
+    const unit = (item.unit || 'Pcs').replace(/"/g, '&quot;');
+    opts += `<option value="${item.id}" data-name="${name}" data-code="${code}" data-unit="${unit}" data-rate="${item.unit_price || 0}" ${sel}>${item.name}</option>`;
+  });
+  return opts;
+}
+
+/* ── Build unit dropdown options ── */
+function buildUnitOptions(selected = 'Pcs') {
+  return ['No','Ltr','Kg','Pkt','Set','Pcs','Box','Mtr'].map(u =>
+    `<option value="${u}" ${u.toLowerCase() === String(selected).toLowerCase() ? 'selected' : ''}>${u}</option>`
+  ).join('');
+}
+
+/* ── Add a spare parts row ── */
+function addInvPartRow(itemId='', partCode='', qty=1, unit='Pcs', rate='0.000', disc=0, tax=8) {
+  const tbody = document.getElementById('partsTbody');
+  const sl = tbody.rows.length + 1;
+  const tr = document.createElement('tr');
+
+  const inpBase = `width:100%;border:1px solid transparent;border-radius:6px;padding:6px 8px;font-size:12.5px;color:#0f172a;background:transparent;outline:none;font-family:inherit`;
+
+  tr.innerHTML = `
+    <td class="row-num">${sl}</td>
+    <td>
+      <select name="part_item_id[]" class="inv-item-sel" style="${inpBase};cursor:pointer" onchange="onInvItemSelect(this)">
+        ${buildInvItemOptions(itemId)}
+      </select>
+      <input type="hidden" name="part_name[]" class="inv-pname" value="">
+    </td>
+    <td><input type="text" name="part_code[]" class="inv-pcode" value="${partCode}" placeholder="Auto" style="${inpBase}"></td>
+    <td><input type="number" name="part_qty[]" class="pqty" value="${qty}" min="0" step="0.01" style="${inpBase};text-align:center"></td>
+    <td>
+      <select name="part_unit[]" class="inv-unit-sel" style="${inpBase};cursor:pointer">
+        ${buildUnitOptions(unit)}
+      </select>
+    </td>
+    <td><input type="number" name="part_rate[]" class="prate" value="${parseFloat(rate).toFixed(3)}" min="0" step="0.001" style="${inpBase};text-align:right"></td>
+    <td><input type="number" name="part_disc[]" class="pdisc" value="${disc}" min="0" step="0.1" style="${inpBase};text-align:right"></td>
+    <td><input type="number" name="part_tax[]"  class="ptax"  value="${tax}"  min="0" step="0.1" style="${inpBase};text-align:right"></td>
+    <td class="cell-tax ptax-amt">0.000</td>
+    <td class="cell-num ptotal">0.000</td>
+    <td><button type="button" class="btn-rm rm-part">×</button></td>`;
+
+  tbody.appendChild(tr);
+
+  if (itemId) {
+    const found = invAllItems.find(i => String(i.id) === String(itemId));
+    if (found) {
+      tr.querySelector('.inv-pname').value = found.name;
+      if (!partCode) tr.querySelector('.inv-pcode').value = found.code || '';
+      const unitSel = tr.querySelector('.inv-unit-sel');
+      if (unitSel) {
+        [...unitSel.options].forEach(o => o.selected = o.value.toLowerCase() === (found.unit || 'Pcs').toLowerCase());
+      }
+    }
+  }
+
+  bindInvPartRow(tr);
+  renumber('partsTbody');
+  calcAll();
+}
+
+/* ── Item select handler ── */
+function onInvItemSelect(sel) {
+  const tr  = sel.closest('tr');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) {
+    tr.querySelector('.inv-pname').value = '';
+    return;
+  }
+  const name = opt.dataset.name || '';
+  const code = opt.dataset.code || '';
+  const unit = opt.dataset.unit || 'Pcs';
+  const rate = parseFloat(opt.dataset.rate || 0).toFixed(3);
+
+  tr.querySelector('.inv-pname').value = name;
+  const codeInp = tr.querySelector('.inv-pcode');
+  if (codeInp) codeInp.value = code;
+
+  const unitSel = tr.querySelector('.inv-unit-sel');
+  if (unitSel) {
+    [...unitSel.options].forEach(o => o.selected = o.value.toLowerCase() === unit.toLowerCase());
+  }
+
+  const rateInp = tr.querySelector('.prate');
+  if (rateInp) rateInp.value = rate;
+
+  calcPartRow(tr); calcAll();
+}
+
+const omr = (n, d=3) => parseFloat(n||0).toFixed(d);
+const fOMR = n => 'OMR ' + omr(n);
+
+// ── Customer → load vehicles & load documents ─────────────────────────
+document.getElementById('custSel').addEventListener('change', function () {
+  const opt  = this.options[this.selectedIndex];
+  document.getElementById('custMobile').value = opt.dataset.mobile || '';
+  const vsel = document.getElementById('vehSel');
+  vsel.innerHTML = '<option value="">— Select Vehicle —</option>';
+  
+  fetchDocsForInvoice();
+
+  if (!this.value) return;
+  fetch(VEHICLES_URL + '?customer_id=' + this.value)
+    .then(r => r.json())
+    .then(d => {
+      d.vehicles.forEach(v => {
+        const o = new Option(v.label || (v.make + ' ' + v.model + ' (' + v.reg + ')'), v.id);
+        vsel.add(o);
+      });
+    });
+});
+
+document.getElementById('vehSel').addEventListener('change', function() {
+  fetchDocsForInvoice();
+});
+
+// ── Job card search ───────────────────────────────────────────────────────────
+let jcTimer;
+document.getElementById('jcSearch').addEventListener('input', function () {
+  clearTimeout(jcTimer);
+  const q  = this.value.trim();
+  const dd = document.getElementById('jcDd');
+  if (q.length < 2) { dd.style.display = 'none'; return; }
+  jcTimer = setTimeout(() => {
+    fetch(JC_SEARCH + '?q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(data => {
+        if (!data.jobcards?.length) { dd.style.display = 'none'; return; }
+        dd.innerHTML = data.jobcards.map(jc =>
+          `<div class="iopt" data-id="${jc.id}" data-num="${jc.job_number}"
+                data-cust="${jc.customer_id}" data-veh="${jc.vehicle_id}">
+             <span>${jc.job_number} — ${jc.customer_name}</span>
+             <span class="iopt-code">${jc.date}</span>
+           </div>`
+        ).join('');
+        dd.style.display = 'block';
+        dd.querySelectorAll('.iopt').forEach(opt => opt.addEventListener('click', () => {
+          document.getElementById('jcSearch').value = opt.dataset.num;
+          document.getElementById('jcId').value     = opt.dataset.id;
+          dd.style.display = 'none';
+          const cSel = document.getElementById('custSel');
+          [...cSel.options].forEach(o => o.selected = o.value == opt.dataset.cust);
+          cSel.dispatchEvent(new Event('change'));
+        }));
+      });
+  }, 250);
+});
+
+// ── Document Loader Fetch & Picker logic ──────────────────────────────────────
+function fetchDocsForInvoice() {
+  const custId = document.getElementById('custSel').value;
+  const vehId  = document.getElementById('vehSel').value;
+  
+  if (!custId) {
+    cachedDocs = { delivery_notes: [], jobcards: [] };
+    updateDocBadges();
+    return;
+  }
+
+  fetch(`${GET_DOCS_INVOICE_URL}?customer_id=${custId}&vehicle_id=${vehId}`)
+    .then(r => r.json())
+    .then(data => {
+      cachedDocs = data || { delivery_notes: [], jobcards: [] };
+      updateDocBadges();
+      renderDocLists();
+    })
+    .catch(err => console.error("Error fetching docs:", err));
+}
+
+function updateDocBadges() {
+  const dnCount = cachedDocs.delivery_notes ? cachedDocs.delivery_notes.length : 0;
+  const jcCount = cachedDocs.jobcards ? cachedDocs.jobcards.length : 0;
+  document.getElementById('badgeDN').textContent = dnCount;
+  document.getElementById('badgeJC').textContent = jcCount;
+}
+
+function toggleDocPicker() {
+  const panel = document.getElementById('docPickerPanel');
+  if (panel.style.display === 'block') {
+    panel.style.display = 'none';
+  } else {
+    panel.style.display = 'block';
+    renderDocLists();
+  }
+}
+
+function closeDocPicker() {
+  document.getElementById('docPickerPanel').style.display = 'none';
+}
+
+function switchDocTab(tab) {
+  document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
+  if (tab === 'DN') {
+    document.getElementById('tabDN').classList.add('active');
+    document.getElementById('docListDN').style.display = 'block';
+    document.getElementById('docListJC').style.display = 'none';
+  } else {
+    document.getElementById('tabJC').classList.add('active');
+    document.getElementById('docListDN').style.display = 'none';
+    document.getElementById('docListJC').style.display = 'block';
+  }
+}
+
+function renderDocLists() {
+  const custId = document.getElementById('custSel').value;
+  const promptEl = document.getElementById('docPromptSelectCust');
+  const listDN   = document.getElementById('docListDN');
+  const listJC   = document.getElementById('docListJC');
+  const emptyEl  = document.getElementById('docEmptyMsg');
+
+  if (!custId) {
+    promptEl.style.display = 'block';
+    listDN.style.display   = 'none';
+    listJC.style.display   = 'none';
+    emptyEl.style.display  = 'none';
+    return;
+  }
+
+  promptEl.style.display = 'none';
+
+  // Render Delivery Notes
+  const dns = cachedDocs.delivery_notes || [];
+  if (dns.length === 0) {
+    listDN.innerHTML = `<div style="padding:16px;text-align:center;color:#94a3b8;font-size:12px">No Delivery Notes found</div>`;
+  } else {
+    listDN.innerHTML = dns.map(dn => `
+      <div class="doc-item">
+        <div class="doc-item-main">
+          <div class="doc-item-num">
+            <span>🚚 ${dn.number}</span>
+            <span class="doc-item-badge">${dn.status}</span>
+          </div>
+          <div class="doc-item-sub">
+            <span>📅 ${dn.date}</span>
+            <span>🚗 ${dn.vehicle_name || 'Vehicle N/A'}</span>
+            <span>⚙️ ${dn.parts_count} parts, ${dn.labours_count} labour</span>
+          </div>
+        </div>
+        <button type="button" class="btn-doc-select" onclick="loadDeliveryNoteData(${dn.id})">Load Data</button>
+      </div>
+    `).join('');
+  }
+
+  // Render Job Cards
+  const jcs = cachedDocs.jobcards || [];
+  if (jcs.length === 0) {
+    listJC.innerHTML = `<div style="padding:16px;text-align:center;color:#94a3b8;font-size:12px">No Job Cards found</div>`;
+  } else {
+    listJC.innerHTML = jcs.map(jc => `
+      <div class="doc-item">
+        <div class="doc-item-main">
+          <div class="doc-item-num">
+            <span>🔧 ${jc.number}</span>
+            <span class="doc-item-badge">${jc.status}</span>
+          </div>
+          <div class="doc-item-sub">
+            <span>📅 ${jc.date}</span>
+            <span>🚗 ${jc.vehicle_name || 'Vehicle N/A'}</span>
+            <span>⚙️ ${jc.parts_count} parts, ${jc.labours_count} labour</span>
+          </div>
+        </div>
+        <button type="button" class="btn-doc-select" onclick="loadJobCardData(${jc.id})">Load Data</button>
+      </div>
+    `).join('');
+  }
+
+  const isDNActive = document.getElementById('tabDN').classList.contains('active');
+  listDN.style.display = isDNActive ? 'block' : 'none';
+  listJC.style.display = isDNActive ? 'none' : 'block';
+  emptyEl.style.display = 'none';
+}
+
+function loadDeliveryNoteData(dnId) {
+  const dn = (cachedDocs.delivery_notes || []).find(d => d.id === dnId);
+  if (!dn) return;
+
+  // Auto select vehicle if available
+  if (dn.vehicle_id) {
+    const vsel = document.getElementById('vehSel');
+    if ([...vsel.options].some(o => o.value == dn.vehicle_id)) {
+      vsel.value = dn.vehicle_id;
+    }
+  }
+
+  // Job card ref if linked
+  if (dn.job_number) {
+    document.getElementById('jcSearch').value = dn.job_number;
+    document.getElementById('jcId').value     = dn.job_card_id || '';
+  }
+
+  document.getElementById('loadedDN').value = dn.id;
+
+  // Populate parts
+  if (dn.parts && dn.parts.length > 0) {
+    clearEmptyPartsRows();
+    dn.parts.forEach(p => {
+      addInvPartRow(p.item_id, p.part_code, p.quantity, p.unit, p.rate, p.discount_pct || 0, p.tax_percent || 8);
+      // Set name if item_id was not matched
+      const lastRow = document.querySelector('#partsTbody tr:last-child');
+      if (lastRow && p.description) {
+        lastRow.querySelector('.inv-pname').value = p.description;
+      }
+    });
+  }
+
+  // Populate labour
+  if (dn.labours && dn.labours.length > 0) {
+    clearEmptyLabourRows();
+    dn.labours.forEach(l => {
+      addLabourDataRow(l.description, l.technician_id, l.hours, l.rate, l.tax_percent || 8);
+    });
+  }
+
+  closeDocPicker();
+  showToastBanner(`✅ Successfully loaded data from Delivery Note ${dn.number} (${dn.parts_count} parts, ${dn.labours_count} labours)`);
+  calcAll();
+}
+
+function loadJobCardData(jcId) {
+  const jc = (cachedDocs.jobcards || []).find(j => j.id === jcId);
+  if (!jc) return;
+
+  // Auto select vehicle if available
+  if (jc.vehicle_id) {
+    const vsel = document.getElementById('vehSel');
+    if ([...vsel.options].some(o => o.value == jc.vehicle_id)) {
+      vsel.value = jc.vehicle_id;
+    }
+  }
+
+  document.getElementById('jcSearch').value = jc.number;
+  document.getElementById('jcId').value     = jc.id;
+  document.getElementById('loadedJC').value = jc.id;
+
+  // Populate parts
+  if (jc.parts && jc.parts.length > 0) {
+    clearEmptyPartsRows();
+    jc.parts.forEach(p => {
+      addInvPartRow(p.item_id, p.part_code, p.quantity, p.unit || 'Pcs', p.rate, p.discount_pct || 0, p.tax_percent || 8);
+      const lastRow = document.querySelector('#partsTbody tr:last-child');
+      if (lastRow && p.description) {
+        lastRow.querySelector('.inv-pname').value = p.description;
+      }
+    });
+  }
+
+  // Populate labour
+  if (jc.labours && jc.labours.length > 0) {
+    clearEmptyLabourRows();
+    jc.labours.forEach(l => {
+      addLabourDataRow(l.description, l.technician_id, l.hours, l.rate, l.tax_percent || 8);
+    });
+  }
+
+  closeDocPicker();
+  showToastBanner(`✅ Successfully loaded data from Job Card ${jc.number} (${jc.parts_count} parts, ${jc.labours_count} labours)`);
+  calcAll();
+}
+
+function clearEmptyPartsRows() {
+  const tbody = document.getElementById('partsTbody');
+  const rows = [...tbody.querySelectorAll('tr')];
+  rows.forEach(r => {
+    const itemSel = r.querySelector('select[name="part_item_id[]"]');
+    const pname = r.querySelector('.inv-pname')?.value || '';
+    const prate = parseFloat(r.querySelector('.prate')?.value || 0);
+    if ((!itemSel || !itemSel.value) && !pname && prate === 0) {
+      r.remove();
+    }
+  });
+}
+
+function clearEmptyLabourRows() {
+  const tbody = document.getElementById('labourTbody');
+  const rows = [...tbody.querySelectorAll('tr')];
+  rows.forEach(r => {
+    const ldesc = r.querySelector('input[name="lab_desc[]"]')?.value || '';
+    const lrate = parseFloat(r.querySelector('.lrate')?.value || 0);
+    if (!ldesc.trim() && lrate === 0) {
+      r.remove();
+    }
+  });
+}
+
+function addLabourDataRow(desc='', techId='', hrs=1, rate=0, tax=8) {
+  const tbody = document.getElementById('labourTbody');
+  const tr    = document.getElementById('labourRowTpl').content.cloneNode(true).querySelector('tr');
+  tr.querySelector('input[name="lab_desc[]"]').value = desc;
+  if (techId) {
+    const techSel = tr.querySelector('select[name="lab_tech[]"]');
+    if (techSel) techSel.value = techId;
+  }
+  tr.querySelector('.lhrs').value  = hrs;
+  tr.querySelector('.lrate').value = parseFloat(rate).toFixed(3);
+  tr.querySelector('.ltax').value  = tax;
+
+  tbody.appendChild(tr);
+  bindLabourRow(tr);
+  renumber('labourTbody');
+}
+
+function showToastBanner(msg) {
+  const toast = document.getElementById('loadToast');
+  document.getElementById('loadToastText').textContent = msg;
+  toast.style.display = 'flex';
+}
+
+// ── Row calculations ──────────────────────────────────────────────────────────
+function calcPartRow(tr) {
+  const qty   = parseFloat(tr.querySelector('.pqty')?.value)  || 0;
+  const rate  = parseFloat(tr.querySelector('.prate')?.value) || 0;
+  const disc  = parseFloat(tr.querySelector('.pdisc')?.value) || 0;
+  const taxPct= parseFloat(tr.querySelector('.ptax')?.value)  || 0;
+  const base  = qty * rate * (1 - disc / 100);
+  const tax   = base * taxPct / 100;
+  const total = base + tax;
+  const taxEl = tr.querySelector('.ptax-amt');
+  const totEl = tr.querySelector('.ptotal');
+  if (taxEl) taxEl.textContent = omr(tax);
+  if (totEl) totEl.textContent = omr(total);
+  markUnsaved();
+  return { base, tax, total };
+}
+
+function calcLabourRow(tr) {
+  const hrs   = parseFloat(tr.querySelector('.lhrs')?.value)  || 0;
+  const rate  = parseFloat(tr.querySelector('.lrate')?.value) || 0;
+  const taxPct= parseFloat(tr.querySelector('.ltax')?.value)  || 0;
+  const base  = hrs * rate;
+  const tax   = base * taxPct / 100;
+  const total = base + tax;
+  const taxEl = tr.querySelector('.ltax-amt');
+  const totEl = tr.querySelector('.ltotal');
+  if (taxEl) taxEl.textContent = omr(tax);
+  if (totEl) totEl.textContent = omr(total);
+  markUnsaved();
+  return { base, tax, total };
+}
+
+function calcOtherRow(tr) {
+  const amt   = parseFloat(tr.querySelector('.oamt')?.value) || 0;
+  const taxPct= parseFloat(tr.querySelector('.otax')?.value) || 0;
+  const tax   = amt * taxPct / 100;
+  const total = amt + tax;
+  const taxEl = tr.querySelector('.otax-amt');
+  const totEl = tr.querySelector('.ototl');
+  if (taxEl) taxEl.textContent = omr(tax);
+  if (totEl) totEl.textContent = omr(total);
+  markUnsaved();
+  return { base: amt, tax, total };
+}
+
+function calcAll() {
+  let pBase=0,pTax=0,pTotal=0,lBase=0,lTax=0,lTotal=0,oBase=0,oTax=0,oTotal=0;
+  document.querySelectorAll('#partsTbody tr').forEach(tr => {
+    const r = calcPartRow(tr);
+    pBase+=r.base; pTax+=r.tax; pTotal+=r.total;
+  });
+  document.querySelectorAll('#labourTbody tr').forEach(tr => {
+    const r = calcLabourRow(tr);
+    lBase+=r.base; lTax+=r.tax; lTotal+=r.total;
+  });
+  document.querySelectorAll('#otherTbody tr').forEach(tr => {
+    const r = calcOtherRow(tr);
+    oBase+=r.base; oTax+=r.tax; oTotal+=r.total;
+  });
+
+  document.getElementById('partsTotal').textContent    = omr(pTotal);
+  document.getElementById('partsTaxTotal').textContent = omr(pTax);
+  document.getElementById('labourTotal').textContent   = omr(lTotal);
+  document.getElementById('labourTaxTotal').textContent= omr(lTax);
+  document.getElementById('otherTotal').textContent    = omr(oTotal);
+  document.getElementById('otherTaxTotal').textContent = omr(oTax);
+
+  const subtotal  = pBase + lBase + oBase;
+  const totalTax  = pTax + lTax + oTax;
+  const discPct   = parseFloat(document.getElementById('discPct').value) || 0;
+  const discAmt   = (subtotal + totalTax) * discPct / 100;
+  const grand     = subtotal + totalTax - discAmt;
+  const amtPaid   = parseFloat(document.getElementById('amtPaid').value) || 0;
+  const balance   = grand - amtPaid;
+
+  document.getElementById('sumParts').textContent    = fOMR(pTotal);
+  document.getElementById('sumPartsTax').textContent = omr(pTax);
+  document.getElementById('sumLabour').textContent   = fOMR(lTotal);
+  document.getElementById('sumLabourTax').textContent= omr(lTax);
+  document.getElementById('sumOther').textContent    = fOMR(oTotal);
+  document.getElementById('sumOtherTax').textContent = omr(oTax);
+  document.getElementById('sumSubtotal').textContent = fOMR(subtotal);
+  document.getElementById('sumTotalTax').textContent = fOMR(totalTax);
+  document.getElementById('grandTotal').textContent  = fOMR(grand);
+  document.getElementById('balanceDue').textContent  = fOMR(balance);
+
+  updateBadges();
+}
+
+function updateBadges() {
+  document.getElementById('partsBadge').textContent  = document.querySelectorAll('#partsTbody tr').length + ' items';
+  document.getElementById('labourBadge').textContent = document.querySelectorAll('#labourTbody tr').length + ' items';
+  document.getElementById('otherBadge').textContent  = document.querySelectorAll('#otherTbody tr').length + ' items';
+}
+
+function renumber(tbodyId) {
+  document.querySelectorAll('#' + tbodyId + ' .row-num').forEach((el, i) => el.textContent = i + 1);
+}
+
+// ── Bind part row ─────────────────────────────────────────────────────────────
+function bindInvPartRow(tr) {
+  ['pqty','prate','pdisc','ptax'].forEach(cls => {
+    tr.querySelector('.' + cls)?.addEventListener('input', () => { calcPartRow(tr); calcAll(); });
+  });
+  tr.querySelector('.rm-part')?.addEventListener('click', () => {
+    if (document.querySelectorAll('#partsTbody tr').length <= 1) {
+      tr.querySelector('select[name="part_item_id[]"]').value = '';
+      tr.querySelector('.inv-pname').value = '';
+      tr.querySelector('.inv-pcode').value = '';
+      tr.querySelector('.pqty').value = 1;
+      tr.querySelector('.prate').value = '0.000';
+      calcPartRow(tr); calcAll(); return;
+    }
+    tr.remove(); renumber('partsTbody'); calcAll();
+  });
+}
+function bindLabourRow(tr) {
+  ['lhrs','lrate','ltax'].forEach(cls => {
+    tr.querySelector('.' + cls)?.addEventListener('input', () => { calcLabourRow(tr); calcAll(); });
+  });
+  tr.querySelector('.rm-labour')?.addEventListener('click', () => {
+    if (document.querySelectorAll('#labourTbody tr').length <= 1) return;
+    tr.remove(); renumber('labourTbody'); calcAll();
+  });
+}
+function bindOtherRow(tr) {
+  ['oamt','otax'].forEach(cls => {
+    tr.querySelector('.' + cls)?.addEventListener('input', () => { calcOtherRow(tr); calcAll(); });
+  });
+  tr.querySelector('.rm-other')?.addEventListener('click', () => {
+    if (document.querySelectorAll('#otherTbody tr').length <= 1) return;
+    tr.remove(); renumber('otherTbody'); calcAll();
+  });
+}
+
+// ── Add rows ──────────────────────────────────────────────────────────────────
+function addPartRow() {
+  addInvPartRow();
+}
+function addLabourRow() {
+  const tbody = document.getElementById('labourTbody');
+  const tr    = document.getElementById('labourRowTpl').content.cloneNode(true).querySelector('tr');
+  tbody.appendChild(tr); bindLabourRow(tr); renumber('labourTbody'); calcAll();
+}
+function addOtherRow() {
+  const tbody = document.getElementById('otherTbody');
+  const tr    = document.getElementById('otherRowTpl').content.cloneNode(true).querySelector('tr');
+  tbody.appendChild(tr); bindOtherRow(tr); renumber('otherTbody'); calcAll();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  fetch(INV_ALL_ITEMS_URL)
+    .then(r => r.json())
+    .then(data => {
+      invAllItems = data.items || [];
+      renderInvExistingParts();
+      calcAll();
+    })
+    .catch(() => {
+      renderInvExistingParts();
+      calcAll();
+    });
+
+  document.querySelectorAll('#labourTbody tr').forEach(tr => bindLabourRow(tr));
+  document.querySelectorAll('#otherTbody tr').forEach(tr  => bindOtherRow(tr));
+
+  document.getElementById('discPct').addEventListener('input', calcAll);
+  document.getElementById('amtPaid').addEventListener('input', calcAll);
+
+  // If editing and customer already selected, fetch available docs
+  if (document.getElementById('custSel').value) {
+    fetchDocsForInvoice();
+  }
+});
+
+/* ── Render existing parts ── */
+function renderInvExistingParts() {
+  const tbody = document.getElementById('partsTbody');
+  const placeholders = [...tbody.querySelectorAll('tr[data-item-id], tr[data-item-name]')];
+
+  if (placeholders.length > 0) {
+    placeholders.forEach(ph => ph.remove());
+    placeholders.forEach(ph => {
+      const itemId   = ph.dataset.itemId   || '';
+      const itemName = ph.dataset.itemName || '';
+      const itemCode = ph.dataset.itemCode || '';
+      const itemUnit = ph.dataset.itemUnit || 'Pcs';
+      const itemRate = ph.dataset.itemRate || '0.000';
+      const itemQty  = ph.dataset.itemQty  || 1;
+      const itemDisc = ph.dataset.itemDisc || 0;
+      const itemTax  = ph.dataset.itemTax  || 8;
+
+      let resolvedId = itemId;
+      if (!resolvedId && itemName) {
+        const found = invAllItems.find(i => (i.name || '').toLowerCase().trim() === itemName.toLowerCase().trim());
+        if (found) resolvedId = String(found.id);
+      }
+
+      addInvPartRow(resolvedId, itemCode, itemQty, itemUnit, itemRate, itemDisc, itemTax);
+
+      if (!resolvedId && itemName) {
+        const lastRow = tbody.querySelector('tr:last-child');
+        if (lastRow) lastRow.querySelector('.inv-pname').value = itemName;
+      }
+    });
+  } else if (tbody.rows.length === 0) {
+    addInvPartRow();
+  }
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#jcSearch'))
+    document.querySelectorAll('#jcDd').forEach(d => d.style.display = 'none');
+  if (!e.target.closest('.doc-loader-card'))
+    closeDocPicker();
+});
+
+function markUnsaved() {
+  const unsaved = document.getElementById('bbUnsaved');
+  if (unsaved) unsaved.style.display = 'flex';
+}
+document.getElementById('invForm').querySelectorAll('input,select,textarea').forEach(el => {
+  el.addEventListener('change', markUnsaved);
+});
+</script>
+{% endblock %}

@@ -1,11 +1,15 @@
 <!--vehicle_form.html-->
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
 <!-- Custom CSS -->
 <style>
-    h2, h3, h4, h5 {
+    h2,
+    h3,
+    h4,
+    h5 {
         font-family: 'Segoe UI', sans-serif;
     }
 
@@ -14,7 +18,9 @@
         color: #444;
     }
 
-    input, select, textarea {
+    input,
+    select,
+    textarea {
         width: 100% !important;
         border: 1px solid #ced4da;
         border-radius: 6px;
@@ -22,7 +28,9 @@
         font-size: 0.95rem;
     }
 
-    input:focus, select:focus, textarea:focus {
+    input:focus,
+    select:focus,
+    textarea:focus {
         border-color: #5A8DEE;
         box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
         outline: none;
@@ -70,14 +78,14 @@
         align-items: center;
         padding-top: 0.5rem;
     }
-    
+
     .form-check-input {
         width: auto !important;
         height: 18px;
         margin-right: 8px;
         cursor: pointer;
     }
-    
+
     .form-check-label {
         cursor: pointer;
         font-size: 0.95rem;
@@ -92,7 +100,7 @@
         flex-wrap: wrap;
     }
 
-    .inspection-row > label {
+    .inspection-row>label {
         width: 160px;
         font-weight: 500;
         margin-bottom: 0;
@@ -104,7 +112,7 @@
         min-width: 180px;
         margin-right: 10px;
     }
-    
+
     .inspection-field:last-child {
         margin-right: 0;
     }
@@ -113,7 +121,7 @@
     .input-group .btn {
         padding: 0.375rem 0.75rem;
     }
-    
+
     /* Fix file input */
     input[type="file"] {
         padding: 0.375rem 0.75rem;
@@ -124,12 +132,12 @@
             flex-direction: column;
             align-items: flex-start;
         }
-        
-        .inspection-row > label {
+
+        .inspection-row>label {
             width: 100%;
             margin-bottom: 5px;
         }
-        
+
         .inspection-field {
             width: 100%;
             margin-right: 0;
@@ -140,7 +148,7 @@
 
 <div class="container mt-4 mb-5">
     <h2 class="mb-4 text-center font-weight-bold text-primary">
-        {% if vehicle %}Update Vehicle{% else %}Create Vehicle{% endif %}
+        {% if vehicle %}{% trans "Update Vehicle" %}{% else %}{% trans "Create Vehicle" %}{% endif %}
     </h2>
 
     <form method="POST" enctype="multipart/form-data" class="needs-validation">
@@ -149,71 +157,119 @@
         <!-- Basic Information -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 font-weight-bold text-secondary">Basic Information</h5>
+                <h5 class="mb-0 font-weight-bold text-secondary">{% trans "Basic Information" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row mb-3">
                     <div class="col-md-3">
                         <div class="form-check">
                             {{ form.is_owned }}
-                            <label class="form-check-label" for="id_is_owned">Owned Vehicle</label>
+                            <label class="form-check-label" for="id_is_owned">{% trans "Owned Vehicle" %}</label>
                         </div>
                     </div>
                     <div class="col-md-3" id="supplier-field" style="display: none;">
-                        <label for="id_supplier" class="form-label">Supplier</label>
+                        <label for="id_supplier" class="form-label">{% trans "Supplier" %}</label>
                         {{ form.supplier }}
+                    </div>
+                </div>
+                <!-- Customer / Owner Section -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Customer / Owner</label>
+                        <div class="d-flex gap-2 align-items-center">
+                        {{ form.customer }}
+                        <a href="{% url 'fleet_app:fleet_customer_management' %}" 
+                            target="_blank"
+                            class="btn btn-sm btn-outline-success text-nowrap">
+                            + New Customer
+                        </a>
+                        </div>
+                        {% if form.customer.errors %}
+                        <div class="text-danger small">{{ form.customer.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted">Link this vehicle to an existing client</small>
+                    </div>
+                </div>
+                <button type="button" onclick="refreshCustomers()" 
+                            class="btn btn-sm btn-link p-0 mt-1"
+                            style="font-size:11px">
+                    ↻ Refresh customer list
+                    </button>
+
+                    <script>
+                    function refreshCustomers() {
+                    const sel = document.querySelector('[name="customer"]');
+                    const currentVal = sel.value;
+                    fetch(window.location.href)
+                        .then(r => r.text())
+                        .then(html => {
+                        const doc = new DOMParser().parseFromString(html, 'text/html');
+                        const newSel = doc.querySelector('[name="customer"]');
+                        if (newSel) {
+                            sel.innerHTML = newSel.innerHTML;
+                            sel.value = currentVal;
+                        }
+                        });
+                    }
+                    </script>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="id_vehicle_category" class="form-label">{% trans "Vehicle Type" %}</label>
+                        <div class="input-group">
+                            {{ form.vehicle_category }}
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-primary" data-toggle="modal"
+                                    data-target="#addVehicleCategoryModal">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="id_vehicle_name" class="form-label">{% trans "Fleet No" %}</label>
+                        {{ form.vehicle_name }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="id_model" class="form-label">{% trans "Vehicle Model" %}</label>
+                        <div class="input-group">
+                            {{ form.model }}
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-primary" data-toggle="modal"
+                                    data-target="#addVehicleModelModal">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="id_vehicle_image" class="form-label">{% trans "Fleet Image" %}</label>
+                        {{ form.vehicle_image }}
+                        <div class="image-preview-box mt-2">
+                            {% if vehicle and vehicle.vehicle_image %}
+                            <img id="image-preview-box" src="{{ vehicle.vehicle_image.url }}"
+                                alt="{% trans 'Vehicle Image' %}" />
+                            {% else %}
+                            <img id="image-preview-box" src="" alt="{% trans 'No Image' %}" style="display: none;" />
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <label for="id_vehicle_category" class="form-label">Vehicle Type</label>
-                        <div class="input-group">
-                            {{ form.vehicle_category }}
-                            <div class="input-group-append">
-                                <button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#addVehicleCategoryModal">+</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="id_vehicle_name" class="form-label">Fleet No</label>
-                        {{ form.vehicle_name }}
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="id_model" class="form-label">Vehicle Model</label>
-                        <div class="input-group">
-                            {{ form.model }}
-                            <div class="input-group-append">
-                                <button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#addVehicleModelModal">+</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="id_vehicle_image" class="form-label">Fleet Image</label>
-                        {{ form.vehicle_image }}
-                        <div class="image-preview-box mt-2">
-                            {% if vehicle and vehicle.vehicle_image %}
-                                <img id="image-preview-box" src="{{ vehicle.vehicle_image.url }}" alt="Vehicle Image" />
-                            {% else %}
-                                <img id="image-preview-box" src="" alt="No Image" style="display: none;" />
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label for="id_license_plate_code" class="form-label">Reg-Plate Code</label>
+                        <label for="id_license_plate_code" class="form-label">{% trans "Reg-Plate Code" %}</label>
                         <div class="input-group">
                             {{ form.license_plate_code }}
                             <div class="input-group-append">
-                                <button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#addLicensePlateCodeModal">+</button>
+                                <button type="button" class="btn btn-outline-primary" data-toggle="modal"
+                                    data-target="#addLicensePlateCodeModal">+</button>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="id_license_plate_number" class="form-label">Reg-Plate No</label>
+                        <label for="id_license_plate_number" class="form-label">{% trans "Reg-Plate No" %}</label>
                         {{ form.license_plate_number }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="id_status" class="form-label">{% trans "Status" %}</label>
+                        {{ form.status }}
                     </div>
                 </div>
             </div>
@@ -222,107 +278,107 @@
         <!-- Third Party Inspection Equipment -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 font-weight-bold text-secondary">Third Party Inspection Equipment</h5>
+                <h5 class="mb-0 font-weight-bold text-secondary">{% trans "Third Party Inspection Equipment" %}</h5>
             </div>
             <div class="card-body">
                 <!-- RAS Inspection -->
                 <div class="inspection-row">
-                    <label>RAS Inspection</label>
+                    <label>{% trans "RAS Inspection" %}</label>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Inspection Date</small>
+                        <small class="text-muted d-block">{% trans "Inspection Date" %}</small>
                         {{ form.RAS_inspection_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Expiry Date</small>
+                        <small class="text-muted d-block">{% trans "Expiry Date" %}</small>
                         {{ form.RAS_inspection_expiry_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Certificate</small>
+                        <small class="text-muted d-block">{% trans "Certificate" %}</small>
                         {{ form.RAS_inspection_certificate }}
                     </div>
                 </div>
 
                 <!-- Hook Inspection -->
                 <div class="inspection-row">
-                    <label>Hook Inspection</label>
+                    <label>{% trans "Hook Inspection" %}</label>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Inspection Date</small>
+                        <small class="text-muted d-block">{% trans "Inspection Date" %}</small>
                         {{ form.hook_inspection_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Expiry Date</small>
+                        <small class="text-muted d-block">{% trans "Expiry Date" %}</small>
                         {{ form.hook_inspection_expiry_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Certificate</small>
+                        <small class="text-muted d-block">{% trans "Certificate" %}</small>
                         {{ form.hook_inspection_certificate }}
                     </div>
                 </div>
 
                 <!-- Wire Rope Inspection -->
                 <div class="inspection-row">
-                    <label>Wire Rope Inspection</label>
+                    <label>{% trans "Wire Rope Inspection" %}</label>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Inspection Date</small>
+                        <small class="text-muted d-block">{% trans "Inspection Date" %}</small>
                         {{ form.wire_rope_inspection_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Expiry Date</small>
+                        <small class="text-muted d-block">{% trans "Expiry Date" %}</small>
                         {{ form.wire_rope_inspection_expiry_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Certificate</small>
+                        <small class="text-muted d-block">{% trans "Certificate" %}</small>
                         {{ form.wire_rope_inspection_certificate }}
                     </div>
                 </div>
 
                 <!-- Winch Inspection -->
                 <div class="inspection-row">
-                    <label>Winch Inspection</label>
+                    <label>{% trans "Winch Inspection" %}</label>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Inspection Date</small>
+                        <small class="text-muted d-block">{% trans "Inspection Date" %}</small>
                         {{ form.winch_inspection_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Expiry Date</small>
+                        <small class="text-muted d-block">{% trans "Expiry Date" %}</small>
                         {{ form.winch_inspection_expiry_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Certificate</small>
+                        <small class="text-muted d-block">{% trans "Certificate" %}</small>
                         {{ form.winch_inspection_certificate }}
                     </div>
                 </div>
 
                 <!-- Lifting Wire Rope -->
                 <div class="inspection-row">
-                    <label>Lifting Wire Rope</label>
+                    <label>{% trans "Lifting Wire Rope" %}</label>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Inspection Date</small>
+                        <small class="text-muted d-block">{% trans "Inspection Date" %}</small>
                         {{ form.lifting_wire_rope_inspection_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Expiry Date</small>
+                        <small class="text-muted d-block">{% trans "Expiry Date" %}</small>
                         {{ form.lifting_wire_rope_inspection_expiry_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Certificate</small>
+                        <small class="text-muted d-block">{% trans "Certificate" %}</small>
                         {{ form.lifting_wire_rope_inspection_certificate }}
                     </div>
                 </div>
 
                 <!-- Lifting Belt -->
                 <div class="inspection-row">
-                    <label>Lifting Belt</label>
+                    <label>{% trans "Lifting Belt" %}</label>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Inspection Date</small>
+                        <small class="text-muted d-block">{% trans "Inspection Date" %}</small>
                         {{ form.lifting_belt_inspection_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Expiry Date</small>
+                        <small class="text-muted d-block">{% trans "Expiry Date" %}</small>
                         {{ form.lifting_belt_inspection_expiry_date }}
                     </div>
                     <div class="inspection-field">
-                        <small class="text-muted d-block">Certificate</small>
+                        <small class="text-muted d-block">{% trans "Certificate" %}</small>
                         {{ form.lifting_belt_inspection_certificate }}
                     </div>
                 </div>
@@ -332,20 +388,20 @@
         <!-- Driver Assignment -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 font-weight-bold text-secondary">Driver Assignment</h5>
+                <h5 class="mb-0 font-weight-bold text-secondary">{% trans "Driver Assignment" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4 mb-3">
-                        <label for="id_vehicle_driver" class="form-label">Assigned Driver</label>
+                        <label for="id_vehicle_driver" class="form-label">{% trans "Assigned Driver" %}</label>
                         {{ form.vehicle_driver }}
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label for="id_vehicle_second_driver" class="form-label">Second Driver</label>
+                        <label for="id_vehicle_second_driver" class="form-label">{% trans "Second Driver" %}</label>
                         {{ form.vehicle_second_driver }}
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label for="id_driver_assignment_date" class="form-label">Assignment Date</label>
+                        <label for="id_driver_assignment_date" class="form-label">{% trans "Assignment Date" %}</label>
                         {{ form.driver_assignment_date }}
                     </div>
                 </div>
@@ -355,56 +411,88 @@
         <!-- Vehicle Details -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 font-weight-bold text-secondary">Vehicle Details</h5>
+                <h5 class="mb-0 font-weight-bold text-secondary">{% trans "Vehicle Details" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <!-- Row 1 -->
                     <div class="col-md-2 mb-3">
-                        <label for="id_vehicle_registration_date" class="form-label">Registration Date</label>
+                        <label for="id_vehicle_registration_date" class="form-label">{% trans "Registration Date"
+                            %}</label>
                         {{ form.vehicle_registration_date }}
                     </div>
                     <div class="col-md-2 mb-3">
-                        <label for="id_vehicle_cancellation_date" class="form-label">Cancellation Date</label>
+                        <label for="id_vehicle_cancellation_date" class="form-label">{% trans "Cancellation Date"
+                            %}</label>
                         {{ form.vehicle_cancellation_date }}
                     </div>
                     <div class="col-md-2 mb-3">
-                        <label for="id_RC_number" class="form-label">Mulki Number</label>
+                        <label for="id_RC_number" class="form-label">{% trans "Mulki Number" %}</label>
                         {{ form.RC_number }}
                     </div>
                     <div class="col-md-2 mb-3">
-                        <label for="id_RC_file" class="form-label">RC File</label>
+                        <label for="id_RC_file" class="form-label">{% trans "RC File" %}</label>
                         {{ form.RC_file }}
                     </div>
                     <div class="col-md-2 mb-3">
-                        <label for="id_RC_expiry_date" class="form-label">Mulki Expiry Date</label>
+                        <label for="id_RC_expiry_date" class="form-label">{% trans "Mulki Expiry Date" %}</label>
                         {{ form.RC_expiry_date }}
                     </div>
                     <div class="col-md-2 mb-3">
-                        <label for="id_chassis_number" class="form-label">Chassis Number</label>
+                        <label for="id_chassis_number" class="form-label">{% trans "Chassis Number" %}</label>
                         {{ form.chassis_number }}
                     </div>
 
                     <!-- Row 2 -->
                     <div class="col-md-2 mb-3">
-                        <label for="id_engine_number" class="form-label">Engine Number</label>
+                        <label for="id_engine_number" class="form-label">{% trans "Engine Number" %}</label>
                         {{ form.engine_number }}
                     </div>
                     <div class="col-md-2 mb-3">
-                        <label for="id_last_odometer" class="form-label">Last Odometer</label>
+                        <label for="id_last_odometer" class="form-label">{% trans "Last Odometer" %}</label>
                         {{ form.last_odometer }}
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="id_rate_per_hr" class="form-label">Rate Per Hour</label>
+                        <label for="id_rate_per_hr" class="form-label">{% trans "Rate Per Hour" %}</label>
                         {{ form.rate_per_hr }}
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="id_rate_per_day" class="form-label">Rate Per Day</label>
+                        <label for="id_rate_per_day" class="form-label">{% trans "Rate Per Day" %}</label>
                         {{ form.rate_per_day }}
                     </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="id_rate_per_week" class="form-label">{% trans "Rate Per Week" %}</label>
+                        {{ form.rate_per_week }}
+                    </div>
                     <div class="col-md-2 mb-3">
-                        <label for="id_rate_per_month" class="form-label">Rate Per Month</label>
+                        <label for="id_rate_per_month" class="form-label">{% trans "Rate Per Month" %}</label>
                         {{ form.rate_per_month }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="id_replacement_value" class="form-label">{% trans "Replacement Value" %}</label>
+                        {{ form.replacement_value }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="id_model_year" class="form-label">{% trans "Model Year" %}</label>
+                        {{ form.model_year }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="id_capacity" class="form-label">{% trans "Capacity" %}</label>
+                        {{ form.capacity }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="id_purchase_value" class="form-label">{% trans "Purchase Value" %}</label>
+                        {{ form.purchase_value }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="id_description" class="form-label">{% trans "Description" %}</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <div class="form-check" style="margin-top: 1.8rem;">
+                            {{ form.vat }}
+                            <label class="form-check-label" for="id_vat">{% trans "VAT" %}</label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -412,34 +500,35 @@
 
         <div class="d-flex justify-content-between mt-4">
             <button type="submit" class="btn btn-dark px-4 py-2">
-                {% if vehicle %}Update{% else %}Save{% endif %}
+                {% if vehicle %}{% trans "Update" %}{% else %}{% trans "Save" %}{% endif %}
             </button>
-            <a href="{% url 'fleet_app:vehicle_list' %}" class="btn btn-secondary px-4 py-2">Cancel</a>
+            <a href="{% url 'fleet_app:vehicle_list' %}" class="btn btn-secondary px-4 py-2">{% trans "Cancel" %}</a>
         </div>
     </form>
 </div>
 
 <!-- Vehicle Category Modal -->
-<div class="modal fade" id="addVehicleCategoryModal" tabindex="-1" role="dialog" aria-labelledby="addVehicleCategoryModalLabel" aria-hidden="true">
+<div class="modal fade" id="addVehicleCategoryModal" tabindex="-1" role="dialog"
+    aria-labelledby="addVehicleCategoryModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <form id="addVehicleCategoryForm">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addVehicleCategoryModalLabel">Add Vehicle Category</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <h5 class="modal-title" id="addVehicleCategoryModalLabel">{% trans "Add Vehicle Category" %}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="{% trans 'Close' %}">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="vehicle_category_name" class="form-label">Category Name</label>
+                        <label for="vehicle_category_name" class="form-label">{% trans "Category Name" %}</label>
                         <input type="text" class="form-control" id="vehicle_category_name" required>
                         <div id="vehicle-category-error" class="text-danger mt-1"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Category</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "Cancel" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Add Category" %}</button>
                 </div>
             </form>
         </div>
@@ -447,96 +536,97 @@
 </div>
 
 <!-- Vehicle Model Modal -->
-<div class="modal fade" id="addVehicleModelModal" tabindex="-1" role="dialog" aria-labelledby="addVehicleModelModalLabel" aria-hidden="true">
+<div class="modal fade" id="addVehicleModelModal" tabindex="-1" role="dialog"
+    aria-labelledby="addVehicleModelModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <form id="addVehicleModelForm">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addVehicleModelModalLabel">Add Vehicle Model</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <h5 class="modal-title" id="addVehicleModelModalLabel">{% trans "Add Vehicle Model" %}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="{% trans 'Close' %}">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Model Name</label>
+                            <label class="form-label">{% trans "Model Name" %}</label>
                             <input type="text" class="form-control" id="model_name" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Manufacturer</label>
+                            <label class="form-label">{% trans "Manufacturer" %}</label>
                             <select class="form-control" id="manufacturer" required>
                                 {% for manufacturer in manufacturers %}
-                                    <option value="{{ manufacturer.id }}">{{ manufacturer.manufacturer_name }}</option>
+                                <option value="{{ manufacturer.id }}">{{ manufacturer.manufacturer_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Category</label>
+                            <label class="form-label">{% trans "Category" %}</label>
                             <select class="form-control" id="vehicle_category" required>
                                 {% for category in categories %}
-                                    <option value="{{ category.id }}">{{ category.category_name }}</option>
+                                <option value="{{ category.id }}">{{ category.category_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Seats</label>
+                            <label class="form-label">{% trans "Seats" %}</label>
                             <input type="number" class="form-control" id="seat_number">
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Doors</label>
+                            <label class="form-label">{% trans "Doors" %}</label>
                             <input type="number" class="form-control" id="door_number">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Model Colour</label>
+                            <label class="form-label">{% trans "Model Colour" %}</label>
                             <input type="text" class="form-control" id="model_colour">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Model Range</label>
+                            <label class="form-label">{% trans "Model Range" %}</label>
                             <input type="number" class="form-control" id="model_range">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Model Year</label>
+                            <label class="form-label">{% trans "Model Year" %}</label>
                             <input type="number" class="form-control" id="model_year">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Fuel Type</label>
+                            <label class="form-label">{% trans "Fuel Type" %}</label>
                             <select class="form-control" id="fuel_type" name="fuel_type" required>
                                 {% for value, label in fuel_choices %}
-                                    <option value="{{ value }}">{{ label }}</option>
+                                <option value="{{ value }}">{{ label }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">CO2 Emission</label>
+                            <label class="form-label">{% trans "CO2 Emission" %}</label>
                             <input type="number" step="0.01" class="form-control" id="CO2_emission">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">CO2 Standard</label>
+                            <label class="form-label">{% trans "CO2 Standard" %}</label>
                             <input type="text" class="form-control" id="CO2_standard">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Transmission</label>
+                            <label class="form-label">{% trans "Transmission" %}</label>
                             <select class="form-control" id="model_transmission" name="model_transmission" required>
                                 {% for value, label in transmission_choices %}
-                                    <option value="{{ value }}">{{ label }}</option>
+                                <option value="{{ value }}">{{ label }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Power (kW)</label>
+                            <label class="form-label">{% trans "Power (kW)" %}</label>
                             <input type="number" step="0.01" class="form-control" id="model_power">
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Horse Power</label>
+                            <label class="form-label">{% trans "Horse Power" %}</label>
                             <input type="number" step="0.01" class="form-control" id="model_horse_power">
                         </div>
                         <div class="col-12 text-danger" id="vehicle-model-error"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Model</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "Cancel" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Add Model" %}</button>
                 </div>
             </div>
         </form>
@@ -544,31 +634,32 @@
 </div>
 
 <!-- License Plate Code Modal -->
-<div class="modal fade" id="addLicensePlateCodeModal" tabindex="-1" role="dialog" aria-labelledby="addLicensePlateCodeModalLabel" aria-hidden="true">
+<div class="modal fade" id="addLicensePlateCodeModal" tabindex="-1" role="dialog"
+    aria-labelledby="addLicensePlateCodeModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <form id="addLicensePlateCodeForm">
             {% csrf_token %}
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addLicensePlateCodeModalLabel">Add License Plate Code</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <h5 class="modal-title" id="addLicensePlateCodeModalLabel">{% trans "Add License Plate Code" %}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="{% trans 'Close' %}">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="license_code" class="form-label">Code</label>
+                        <label for="license_code" class="form-label">{% trans "Code" %}</label>
                         <input type="text" class="form-control" id="license_code" required>
                     </div>
                     <div class="mb-3">
-                        <label for="license_description" class="form-label">Description</label>
+                        <label for="license_description" class="form-label">{% trans "Description" %}</label>
                         <input type="text" class="form-control" id="license_description">
                     </div>
                     <div id="license-error" class="text-danger small mt-1"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "Cancel" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Add" %}</button>
                 </div>
             </div>
         </form>
@@ -580,7 +671,7 @@
     function readURL(input) {
         if (input.files && input.files[0]) {
             var reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 const img = document.getElementById('image-preview-box');
                 img.src = e.target.result;
                 img.style.display = 'block';
@@ -589,14 +680,14 @@
         }
     }
 
-    document.getElementById("id_vehicle_image").addEventListener("change", function() {
+    document.getElementById("id_vehicle_image").addEventListener("change", function () {
         readURL(this);
     });
 </script>
 
 <script>
     // Vehicle Category Modal
-    document.getElementById('addVehicleCategoryForm').addEventListener('submit', function(e) {
+    document.getElementById('addVehicleCategoryForm').addEventListener('submit', function (e) {
         e.preventDefault();
         const category_name = document.getElementById('vehicle_category_name').value.trim();
         const errorBox = document.getElementById('vehicle-category-error');
@@ -606,25 +697,25 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ category_name })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const select = document.getElementById('id_vehicle_category');
-                const newOption = new Option(data.text, data.id, true, true);
-                select.add(newOption);
-                $('#addVehicleCategoryModal').modal('hide');
-                document.getElementById('vehicle_category_name').value = '';
-                errorBox.textContent = '';
-            } else {
-                errorBox.textContent = data.error || "Error adding vehicle category.";
-            }
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const select = document.getElementById('id_vehicle_category');
+                    const newOption = new Option(data.text, data.id, true, true);
+                    select.add(newOption);
+                    $('#addVehicleCategoryModal').modal('hide');
+                    document.getElementById('vehicle_category_name').value = '';
+                    errorBox.textContent = '';
+                } else {
+                    errorBox.textContent = data.error || "Error adding vehicle category.";
+                }
+            });
     });
 </script>
 
 <script>
     // Vehicle Model Modal
-    document.getElementById('addVehicleModelForm').addEventListener('submit', function(e) {
+    document.getElementById('addVehicleModelForm').addEventListener('submit', function (e) {
         e.preventDefault();
         const data = {
             model_name: document.getElementById('model_name').value,
@@ -648,25 +739,25 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         })
-        .then(res => res.json())
-        .then(result => {
-            if (result.success) {
-                const select = document.getElementById('id_model');
-                const option = new Option(result.text, result.id, true, true);
-                select.add(option);
-                $('#addVehicleModelModal').modal('hide');
-                document.getElementById('vehicle-model-error').innerText = '';
-                document.getElementById('addVehicleModelForm').reset();
-            } else {
-                document.getElementById('vehicle-model-error').innerText = result.error || 'Something went wrong.';
-            }
-        });
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    const select = document.getElementById('id_model');
+                    const option = new Option(result.text, result.id, true, true);
+                    select.add(option);
+                    $('#addVehicleModelModal').modal('hide');
+                    document.getElementById('vehicle-model-error').innerText = '';
+                    document.getElementById('addVehicleModelForm').reset();
+                } else {
+                    document.getElementById('vehicle-model-error').innerText = result.error || 'Something went wrong.';
+                }
+            });
     });
 </script>
 
 <script>
     // License Plate Code Modal
-    document.getElementById('addLicensePlateCodeForm').addEventListener('submit', function(e) {
+    document.getElementById('addLicensePlateCodeForm').addEventListener('submit', function (e) {
         e.preventDefault();
         const code = document.getElementById('license_code').value.trim();
         const description = document.getElementById('license_description').value.trim();
@@ -680,25 +771,25 @@
             },
             body: JSON.stringify({ code, description })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const select = document.getElementById('id_license_plate_code');
-                const newOption = new Option(data.text, data.id, true, true);
-                select.add(newOption);
-                $('#addLicensePlateCodeModal').modal('hide');
-                errorBox.innerText = '';
-                document.getElementById('addLicensePlateCodeForm').reset();
-            } else {
-                errorBox.innerText = data.error || "Error saving.";
-            }
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const select = document.getElementById('id_license_plate_code');
+                    const newOption = new Option(data.text, data.id, true, true);
+                    select.add(newOption);
+                    $('#addLicensePlateCodeModal').modal('hide');
+                    errorBox.innerText = '';
+                    document.getElementById('addLicensePlateCodeForm').reset();
+                } else {
+                    errorBox.innerText = data.error || "Error saving.";
+                }
+            });
     });
 </script>
 
 <script>
     // Toggle supplier field
-    $(document).ready(function() {
+    $(document).ready(function () {
         const isOwnedCheckbox = $("#id_is_owned");
         const supplierField = $("#supplier-field");
 

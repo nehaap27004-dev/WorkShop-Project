@@ -1,5 +1,6 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
 <!-- Custom CSS -->
@@ -58,28 +59,28 @@
 </style>
 
 <div class="container mt-4 mb-5">
-    <h2 class="mb-4 text-center fw-bold text-primary">Vehicle Models</h2>
+    <h2 class="mb-4 text-center fw-bold text-primary">{% trans "Vehicle Models" %}</h2>
 
     <!-- Header with New Button -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div></div>
         <a href="{% url 'fleet_app:create_vehicle_model' %}" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-            <i class="bi bi-plus-circle me-2"></i>New
+            <i class="bi bi-plus-circle me-2"></i>{% trans "New" %}
         </a>
     </div>
 
     <!-- Filter Section -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">Filter Options</h5>
+            <h5 class="mb-0 fw-bold text-secondary">{% trans "Filter Options" %}</h5>
         </div>
         <div class="card-body">
             <!-- Manufacturer Filter -->
             <form method="get" class="row g-3">
                 <div class="col-md-4">
-                    <label for="manufacturer-select" class="form-label">Select Manufacturer</label>
+                    <label for="manufacturer-select" class="form-label">{% trans "Select Manufacturer" %}</label>
                     <select id="manufacturer-select" name="manufacturer_id" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Manufacturers</option>
+                        <option value="">{% trans "All Manufacturers" %}</option>
                         {% for manufacturer in manufacturers %}
                             <option value="{{ manufacturer.id }}"
                                 {% if request.GET.manufacturer_id == manufacturer.id|stringformat:"s" %}selected{% endif %}>
@@ -95,17 +96,17 @@
     <!-- Vehicle Models Table -->
     <div class="card shadow-sm">
         <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">Vehicle Models List</h5>
+            <h5 class="mb-0 fw-bold text-secondary">{% trans "Vehicle Models List" %}</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered table-hover align-middle text-center">
                     <thead class="table-dark">
                         <tr>
-                            <th><i class="bi bi-building me-2"></i>Manufacturer</th>
-                            <th><i class="bi bi-car-front me-2"></i>Model Name</th>
-                            <th><i class="bi bi-tag me-2"></i>Category</th>
-                            <th><i class="bi bi-gear me-2"></i>Actions</th>
+                            <th><i class="bi bi-building me-2"></i>{% trans "Manufacturer" %}</th>
+                            <th><i class="bi bi-car-front me-2"></i>{% trans "Model Name" %}</th>
+                            <th><i class="bi bi-tag me-2"></i>{% trans "Category" %}</th>
+                            <th><i class="bi bi-gear me-2"></i>{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -119,17 +120,17 @@
                                     <!-- Edit button -->
                                     <a href="{% url 'fleet_app:update_vehicle_model' vehicle_model.id %}"
                                        class="btn btn-sm btn-primary px-3 py-1">
-                                        <i class="bi bi-pencil-square me-1"></i>Edit
+                                        <i class="bi bi-pencil-square me-1"></i>{% trans "Edit" %}
                                     </a>
 
                                     <!-- Delete form -->
                                     <form method="post"
                                           action="{% url 'fleet_app:delete_vehicle_model' vehicle_model.id %}"
-                                          onsubmit="return confirm('Are you sure you want to delete {{ vehicle_model.model_name }}?');"
+                                          onsubmit="return confirm('{% trans "Are you sure you want to delete" %} {{ vehicle_model.model_name }}?');"
                                           style="display: inline;">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-sm btn-danger px-3 py-1">
-                                            <i class="bi bi-trash me-1"></i>Delete
+                                            <i class="bi bi-trash me-1"></i>{% trans "Delete" %}
                                         </button>
                                     </form>
                                 </div>
@@ -139,7 +140,7 @@
                         <tr>
                             <td colspan="4" class="text-center text-muted py-4">
                                 <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                No models found. Create your first model by clicking the "New" button above.
+                                {% trans 'No models found. Create your first model by clicking the "New" button above.' %}
                             </td>
                         </tr>
                         {% endfor %}

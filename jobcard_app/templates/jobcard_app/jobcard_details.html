@@ -1,0 +1,306 @@
+{% extends 'fleet_base1.html' %}
+{% block content %}
+<style>
+*{box-sizing:border-box}
+.wrap{max-width:1200px;margin:0 auto;padding:0 8px}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.page-title{font-size:17px;font-weight:700;color:#1e293b}
+.btn-back{background:#f1f5f9;color:#64748b;border:1px solid #d1d5db;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:16px;overflow:hidden}
+.card-hdr{background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:11px 18px;font-size:13px;font-weight:700;color:#334155;display:flex;align-items:center;gap:8px}
+.card-body{padding:18px}
+.g{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:700px){.g4,.g3{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}}
+.info-lbl{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.info-val{font-size:13px;font-weight:600;color:#1e293b}
+.badge{display:inline-block;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700}
+.badge-open{background:#dbeafe;color:#1d4ed8}
+.badge-in_progress{background:#fef3c7;color:#92400e}
+.badge-waiting{background:#fce7f3;color:#9d174d}
+.badge-completed{background:#d1fae5;color:#065f46}
+.badge-closed{background:#f1f5f9;color:#475569}
+.badge-cancelled{background:#fee2e2;color:#991b1b}
+.badge-normal{background:#f1f5f9;color:#475569}
+.badge-urgent{background:#fef3c7;color:#92400e}
+.badge-express{background:#fee2e2;color:#991b1b}
+.badge-clear{background:#d1fae5;color:#065f46}
+.badge-non_clear{background:#fef3c7;color:#92400e}
+.badge-pending{background:#fef3c7;color:#92400e}
+.badge-done{background:#d1fae5;color:#065f46}
+
+/* Complaint card */
+.comp-card{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.comp-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+
+/* Table */
+table.dt{width:100%;border-collapse:collapse}
+table.dt thead th{background:#f8fafc;color:#64748b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;border-bottom:1px solid #e2e8f0;text-align:left}
+table.dt tbody td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#1e293b}
+table.dt tbody tr:last-child td{border-bottom:none}
+table.dt tbody tr:hover{background:#fafbfd}
+
+/* Total bar */
+.total-bar{background:#f8fafc;border-top:2px solid #e2e8f0;padding:14px 18px;display:flex;justify-content:flex-end;gap:24px}
+.tl{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase}
+.tv{font-size:15px;font-weight:700;color:#1e293b;margin-top:2px}
+.tv.accent{color:#2563eb;font-size:18px}
+
+/* Checklist */
+.chk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:600px){.chk-grid{grid-template-columns:repeat(2,1fr)}}
+.chk-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:10px 12px;text-align:center}
+.chk-name{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.chk-val{font-size:12px;font-weight:700}
+.chk-ok{color:#16a34a}
+.chk-damaged{color:#d97706}
+.chk-missing{color:#dc2626}
+
+/* Action buttons */
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;border:none;cursor:pointer}
+.btn-edit{background:#2563eb;color:#fff}
+.btn-edit:hover{background:#1d4ed8;color:#fff}
+.btn-del{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5}
+.btn-status{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+</style>
+
+<div class="wrap">
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div>
+      <div class="page-title">🔧 {{ job.job_number }}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:2px">
+        {{ job.date|date:"d M Y" }} &nbsp;•&nbsp;
+        <span class="badge badge-{{ job.status }}">{{ job.get_status_display }}</span>
+        &nbsp;•&nbsp;
+        <span class="badge badge-{{ job.priority }}">{{ job.get_priority_display }}</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="{% url 'jobcard_app:jobcard_list' %}" class="btn-back">← Back</a>
+      <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="btn btn-edit">✏️ Edit</a>
+      <form method="post" action="{% url 'jobcard_app:jobcard_delete' job.pk %}"
+            onsubmit="return confirm('Delete {{ job.job_number }}?')" style="margin:0">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-del">🗑 Delete</button>
+      </form>
+    </div>
+  </div>
+
+  {% if messages %}{% for m in messages %}
+  <div style="padding:10px 16px;border-radius:8px;margin-bottom:12px;
+              background:#f0fdf4;border:1px solid #86efac;color:#15803d;font-size:13px">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <!-- Status update -->
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:700;color:#334155">Update Status:</span>
+    <form method="post" action="{% url 'jobcard_app:jobcard_status_update' job.pk %}" style="display:flex;gap:8px;flex-wrap:wrap;margin:0">
+      {% csrf_token %}
+      {% for val,lbl in job.STATUS_CHOICES %}
+      {% if job.status == val %}
+        {% with button_style="background:#2563eb;color:#fff;" %}
+      {% else %}
+        {% with button_style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;" %}
+      {% endif %}
+      <button type="submit" name="status" value="{{ val }}"
+              style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid transparent;{{ button_style }}">
+        {{ lbl }}
+      </button>
+      {% endwith %}
+      {% endfor %}
+    </form>
+  </div>
+
+  <!-- Job Info -->
+  <div class="card">
+    <div class="card-hdr">📋 Job Information</div>
+    <div class="card-body">
+      <div class="g g4">
+        <div><div class="info-lbl">Customer</div><div class="info-val">{{ job.customer.customer_name }}</div></div>
+        <div><div class="info-lbl">Mobile</div><div class="info-val">{{ job.customer.customer_mobile|default:"—" }}</div></div>
+        <div><div class="info-lbl">Vehicle</div><div class="info-val">{{ job.vehicle.vehicle_name|default:"—" }}</div></div>
+        <div><div class="info-lbl">Plate No</div>
+          <div class="info-val">
+            <span style="background:#f1f5f9;padding:3px 10px;border-radius:5px;font-family:monospace">
+              {{ job.vehicle.license_plate_number|default:"—" }}
+            </span>
+          </div>
+        </div>
+        <div><div class="info-lbl">Date</div><div class="info-val">{{ job.date|date:"d M Y" }}</div></div>
+        <div><div class="info-lbl">Expected Delivery</div><div class="info-val">{{ job.delivery_date|date:"d M Y"|default:"—" }}</div></div>
+        <div><div class="info-lbl">Mileage (km)</div><div class="info-val">{{ job.mileage|default:"—" }}</div></div>
+        <div><div class="info-lbl">Advisor</div><div class="info-val">{{ job.advisor.full_name|default:"—" }}</div></div>
+      </div>
+      {% if job.notes %}
+      <div style="margin-top:14px;padding:10px 14px;background:#f8fafc;border-radius:7px;font-size:13px;color:#475569">
+        📝 {{ job.notes }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Complaints -->
+  <div class="card">
+    <div class="card-hdr">
+      ⚠️ Complaints
+      <span style="background:#dbeafe;color:#1d4ed8;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:auto">
+        {{ job.complaints.count }}
+      </span>
+    </div>
+    <div class="card-body">
+      {% for comp in job.complaints.all %}
+      <div class="comp-card">
+        <div class="comp-hdr">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px;font-weight:700;color:#92400e">#{{ forloop.counter }}</span>
+            {% if comp.category %}
+            <span style="background:#fef3c7;color:#92400e;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">
+              {{ comp.category.name }}
+            </span>
+            {% endif %}
+            <span class="badge badge-{{ comp.type }}">{{ comp.get_type_display }}</span>
+          </div>
+          <span class="badge badge-{{ comp.status }}">{{ comp.get_status_display }}</span>
+        </div>
+        <div style="font-size:13px;color:#1e293b;margin-bottom:6px">{{ comp.description }}</div>
+        {% if comp.technician %}
+        <div style="font-size:11px;color:#64748b">👷 Assigned to: <strong>{{ comp.technician.full_name }}</strong></div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">No complaints recorded.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Parts & Labour side by side -->
+  <div class="g g2">
+
+    <!-- Parts -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-hdr">🔩 Spare Parts</div>
+      <table class="dt">
+        <thead><tr>
+          <th>#</th><th>Description</th><th>Qty</th><th>Price</th><th style="text-align:right">Total</th>
+        </tr></thead>
+        <tbody>
+          {% for part in job.parts.all %}
+          <tr>
+            <td style="color:#94a3b8">{{ forloop.counter }}</td>
+            <td>{{ part.description }}</td>
+            <td>{{ part.quantity }}</td>
+            <td>{{ part.unit_price }}</td>
+            <td style="text-align:right;font-weight:700">{{ part.total_price|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px">No parts added.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="total-bar">
+        <div><div class="tl">Parts Total</div><div class="tv accent">{{ job.get_total_parts|floatformat:2 }}</div></div>
+      </div>
+    </div>
+
+    <!-- Labour -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-hdr">👷 Labour</div>
+      <table class="dt">
+        <thead><tr>
+          <th>#</th><th>Description</th><th>Technician</th><th style="text-align:right">Amount</th>
+        </tr></thead>
+        <tbody>
+          {% for lab in job.labours.all %}
+          <tr>
+            <td style="color:#94a3b8">{{ forloop.counter }}</td>
+            <td>{{ lab.description }}</td>
+            <td>{{ lab.technician.full_name|default:"—" }}</td>
+            <td style="text-align:right;font-weight:700">{{ lab.amount|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:20px">No labour added.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="total-bar">
+        <div><div class="tl">Labour Total</div><div class="tv accent">{{ job.get_total_labour|floatformat:2 }}</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Grand Total -->
+  <div style="background:#fff;border:2px solid #2563eb;border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;justify-content:flex-end;gap:32px;flex-wrap:wrap">
+    <div><div class="tl">Parts</div><div class="tv">{{ job.get_total_parts|floatformat:2 }}</div></div>
+    <div><div class="tl">Labour</div><div class="tv">{{ job.get_total_labour|floatformat:2 }}</div></div>
+    <div><div class="tl">Grand Total</div><div class="tv accent" style="font-size:22px">{{ job.get_grand_total|floatformat:2 }}</div></div>
+  </div>
+
+  <!-- Inspection -->
+  {% if job.inspection %}
+  <div class="card">
+    <div class="card-hdr">🔍 Inspection Checklist</div>
+    <div class="card-body">
+      <div style="margin-bottom:12px">
+        <span style="font-size:13px;font-weight:700;color:#334155">Fuel Level: </span>
+        <span style="background:#dbeafe;color:#1d4ed8;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">
+          {{ job.inspection.fuel_level }}
+        </span>
+      </div>
+      <div class="chk-grid" style="margin-bottom:14px">
+        {% with insp=job.inspection %}
+        {% for name,val in insp.service_book,insp.spare_wheel,insp.tool_kit,insp.floor_mat,insp.safety_triangle,insp.remote_key,insp.audio_speakers %}
+        {% endfor %}
+        <div class="chk-box">
+          <div class="chk-name">Service Book</div>
+          <div class="chk-val chk-{{ insp.service_book }}">{{ insp.service_book|title }}</div>
+        </div>
+        <div class="chk-box">
+          <div class="chk-name">Spare Wheel</div>
+          <div class="chk-val chk-{{ insp.spare_wheel }}">{{ insp.spare_wheel|title }}</div>
+        </div>
+        <div class="chk-box">
+          <div class="chk-name">Tool Kit</div>
+          <div class="chk-val chk-{{ insp.tool_kit }}">{{ insp.tool_kit|title }}</div>
+        </div>
+        <div class="chk-box">
+          <div class="chk-name">Floor Mat</div>
+          <div class="chk-val chk-{{ insp.floor_mat }}">{{ insp.floor_mat|title }}</div>
+        </div>
+        <div class="chk-box">
+          <div class="chk-name">Safety Triangle</div>
+          <div class="chk-val chk-{{ insp.safety_triangle }}">{{ insp.safety_triangle|title }}</div>
+        </div>
+        <div class="chk-box">
+          <div class="chk-name">Remote Key</div>
+          <div class="chk-val chk-{{ insp.remote_key }}">{{ insp.remote_key|title }}</div>
+        </div>
+        <div class="chk-box">
+          <div class="chk-name">Audio/Speakers</div>
+          <div class="chk-val chk-{{ insp.audio_speakers }}">{{ insp.audio_speakers|title }}</div>
+        </div>
+        {% endwith %}
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+        {% if job.inspection.has_dents %}<span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">⚠ Dents</span>{% endif %}
+        {% if job.inspection.has_scratches %}<span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">⚠ Scratches</span>{% endif %}
+        {% if job.inspection.has_paint_damage %}<span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">⚠ Paint Damage</span>{% endif %}
+        {% if job.inspection.has_cuts %}<span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">⚠ Cuts</span>{% endif %}
+      </div>
+      {% if job.inspection.body_remarks %}
+      <div style="font-size:12px;color:#64748b">📝 Body: {{ job.inspection.body_remarks }}</div>
+      {% endif %}
+      {% if job.inspection.inspector_notes %}
+      <div style="font-size:12px;color:#64748b;margin-top:4px">🔍 Notes: {{ job.inspection.inspector_notes }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

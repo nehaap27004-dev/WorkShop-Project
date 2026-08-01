@@ -2,38 +2,57 @@
 {% block content %}
 
 <style>
-    /* Make form inputs smaller */
-    .small-input input,
+    /* 1. Only apply 100% width to text/select inputs, NOT checkboxes */
+    .small-input input[type="text"],
     .small-input select,
     .small-input textarea {
-        max-width: 250px;   /* reduce width – change to 200 or 180 if needed */
+        max-width: 250px;
         width: 100%;
         padding: 5px 8px;
         font-size: 14px;
+        display: block;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+
+    /* 2. Specific Checkbox Styling to ensure visibility */
+    .small-input .form-check-input {
+        width: 18px;
+        height: 18px;
+        margin-top: 0; /* Align vertically with text */
+        cursor: pointer;
     }
 
     .small-label {
         font-weight: 600;
-        margin-bottom: 3px;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    /* Override display:block for labels next to checkboxes */
+    .form-check-label {
+        font-weight: 600;
+        font-size: 14px;
+        margin-left: 8px;
+        cursor: pointer;
     }
 
     .role-card {
         max-width: 600px;
-        padding: 15px;
+        padding: 20px;
         border: 1px solid #ddd;
-        border-radius: 6px;
+        border-radius: 8px;
+        background-color: #ffffff;
     }
-
 </style>
 
 <h2 class="mb-3">User Roles</h2>
 
-<!-- Roles Table -->
 <table class="table table-bordered table-sm">
     <thead class="table-light">
         <tr>
             <th>Role</th>
-            <th>Super Admin</th>
+            <th>Admin</th>
             <th width="170">Actions</th>
         </tr>
     </thead>
@@ -62,7 +81,6 @@
 
 <hr>
 
-<!-- Role Form -->
 <h3 class="mt-4">
     {% if edit_role %}
         Edit Role: {{ edit_role.name }}
@@ -76,16 +94,36 @@
         {% csrf_token %}
 
         <div class="small-input">
-            {{ form.as_p }}
+            <div class="mb-3">
+                <label for="{{ form.name.id_for_label }}" class="small-label">
+                    {{ form.name.label }}
+                </label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <div class="text-danger small">{{ form.name.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3 d-flex align-items-center">
+                {{ form.is_admin }}
+                <label class="form-check-label" for="{{ form.is_admin.id_for_label }}">
+                    {{ form.is_admin.label }}
+                </label>
+                {% if form.is_admin.errors %}
+                    <div class="text-danger small ms-2">{{ form.is_admin.errors }}</div>
+                {% endif %}
+            </div>
         </div>
 
-        <button type="submit" class="btn btn-success">
-            {% if edit_role %}Update{% else %}Save{% endif %}
-        </button>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-success">
+                {% if edit_role %}Update{% else %}Save{% endif %}
+            </button>
 
-        {% if edit_role %}
-            <a href="{% url 'accounts_app:role_management' %}" class="btn btn-secondary">Cancel</a>
-        {% endif %}
+            {% if edit_role %}
+                <a href="{% url 'accounts_app:role_management' %}" class="btn btn-secondary">Cancel</a>
+            {% endif %}
+        </div>
     </form>
 </div>
 

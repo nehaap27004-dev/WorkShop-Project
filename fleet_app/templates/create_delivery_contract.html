@@ -1,0 +1,1242 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load privilege_tags %}
+{% load i18n %}
+
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2,
+    h3,
+    h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+    }
+
+    .btn-success {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+    }
+
+    .btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+
+    .form-check-input {
+        width: 1.2em;
+        height: 1.2em;
+        margin-top: 0.15em;
+    }
+
+    .form-check-label {
+        font-size: 1rem;
+        color: #495057;
+    }
+
+    #detailsTable tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Invoice type styles */
+    .invoice-type-selector {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .invoice-type-selector .form-check {
+        display: inline-block;
+        margin-right: 30px;
+    }
+
+    .invoice-type-selector .form-check-input {
+        width: 1.3em;
+        height: 1.3em;
+    }
+
+    .invoice-type-selector .form-check-label {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #333;
+        cursor: pointer;
+    }
+
+    /* Complex fields - hidden by default */
+    .complex-field {
+        display: none;
+    }
+
+    .complex-column {
+        display: none;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+
+    <!-- Title + View Button Row -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text-primary mb-0">
+            {% if is_edit_mode %}
+            {% trans "Edit Delivery Contract" %} #{{ contract_instance.voucher_no }}
+            {% else %}
+            {% trans "Create Delivery Contract" %}
+            {% endif %}
+        </h2>
+
+        {% has_priv request.user 13 "can_read" as can_read_contract %}
+        {% if can_read_contract %}
+        <a href="{% url 'fleet_app:delivery_contract_list' %}" class="btn btn-sm btn-primary">{% trans "View" %}</a>
+        {% endif %}
+    </div>
+
+    <form method="post" id="contractForm" class="needs-validation">
+        {% csrf_token %}
+
+        <!-- Contract Type Selector -->
+        <div class="invoice-type-selector">
+            <label class="fw-bold mb-2">{% trans "Select Contract Type" %}:</label>
+            <div class="d-flex align-items-center">
+                <div class="form-check me-4">
+                    <input class="form-check-input" type="radio" name="invoice_type" id="contractTypeSimple"
+                        value="simple" {% if contract_instance and contract_instance.invoice_type == 'simple' %}checked{% endif %}
+                        onchange="toggleContractType()">
+                    <label class="form-check-label" for="contractTypeSimple">
+                        📄 {% trans "Simple Contract" %}
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="invoice_type" id="contractTypeComplex"
+                    value="complex"
+                    {% if not contract_instance or contract_instance.invoice_type == 'complex' %}checked{% endif %}
+                    onchange="toggleContractType()">
+                    <label class="form-check-label" for="contractTypeComplex">
+                        📊 {% trans "Complex Contract" %}
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contract Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Contract Information" %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        {{ contract_form.voucher_no.label_tag }}
+                        {{ contract_form.voucher_no }}
+                        {% if contract_form.voucher_no.errors %}
+                        <div class="text-danger small">{{ contract_form.voucher_no.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-2">
+                        {{ contract_form.date.label_tag }}
+                        {{ contract_form.date }}
+                        {% if contract_form.date.errors %}
+                        <div class="text-danger small">{{ contract_form.date.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2" style="display: none;">
+                        {{ contract_form.voucherType.label_tag }}
+                        {{ contract_form.voucherType }}
+                        {% if contract_form.voucherType.errors %}
+                        <div class="text-danger small">{{ contract_form.voucherType.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {{ contract_form.customer.label_tag }}
+                        {{ contract_form.customer }}
+                        {% if contract_form.customer.errors %}
+                        <div class="text-danger small">{{ contract_form.customer.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {{ contract_form.payment_mode.label_tag }}
+                        {{ contract_form.payment_mode }}
+                        {% if contract_form.payment_mode.errors %}
+                        <div class="text-danger small">{{ contract_form.payment_mode.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Row 2 - Delivery Contract Specific Fields -->
+
+                    <div class="col-md-2">
+                        {{ contract_form.salesman.label_tag }}
+                        {{ contract_form.salesman }}
+                        {% if contract_form.salesman.errors %}
+                        <div class="text-danger small">{{ contract_form.salesman.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {{ contract_form.ref_no.label_tag }}
+                        {{ contract_form.ref_no }}
+                        {% if contract_form.ref_no.errors %}
+                        <div class="text-danger small">{{ contract_form.ref_no.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {{ contract_form.site_contact_person.label_tag }}
+                        {{ contract_form.site_contact_person }}
+                        {% if contract_form.site_contact_person.errors %}
+                        <div class="text-danger small">{{ contract_form.site_contact_person.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {{ contract_form.contact_no.label_tag }}
+                        {{ contract_form.contact_no }}
+                        {% if contract_form.contact_no.errors %}
+                        <div class="text-danger small">{{ contract_form.contact_no.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Row 3 - DateTime fields -->
+                    <div class="col-md-2">
+                        {{ contract_form.onhire_date_time.label_tag }}
+                        {{ contract_form.onhire_date_time }}
+                        {% if contract_form.onhire_date_time.errors %}
+                        <div class="text-danger small">{{ contract_form.onhire_date_time.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Complex Contract Fields -->
+                    <div class="col-md-2 complex-field">
+                        {{ contract_form.lpo_date.label_tag }}
+                        {{ contract_form.lpo_date }}
+                        {% if contract_form.lpo_date.errors %}
+                        <div class="text-danger small">{{ contract_form.lpo_date.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2 complex-field">
+                        {{ contract_form.location.label_tag }}
+                        {{ contract_form.location }}
+                        {% if contract_form.location.errors %}
+                        <div class="text-danger small">{{ contract_form.location.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2 complex-field">
+                        {{ contract_form.delivery_person.label_tag }}
+                        {{ contract_form.delivery_person }}
+                        {% if contract_form.delivery_person.errors %}
+                        <div class="text-danger small">{{ contract_form.delivery_person.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-2">
+                        {{ contract_form.supplier_ref.label_tag }}
+                        {{ contract_form.supplier_ref }}
+                        {% if contract_form.supplier_ref.errors %}
+                        <div class="text-danger small">{{ contract_form.supplier_ref.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {{ contract_form.other_ref.label_tag }}
+                        {{ contract_form.other_ref }}
+                        {% if contract_form.other_ref.errors %}
+                        <div class="text-danger small">{{ contract_form.other_ref.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {{ contract_form.buyer_order_no.label_tag }}
+                        {{ contract_form.buyer_order_no }}
+                        {% if contract_form.buyer_order_no.errors %}
+                        <div class="text-danger small">{{ contract_form.buyer_order_no.errors }}</div>
+                        {% endif %}
+                    </div>
+
+
+                    <div class="col-md-2">
+                        <div class="form-check mt-4">
+                            <input class="form-check-input" type="checkbox" name="is_taxable" id="is_taxable" checked
+                                onchange="toggleTaxFields()">
+                            <label class="form-check-label" for="is_taxable">
+                                <strong>{% trans "Tax Contract" %}</strong>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-check col-md-2">
+                        {{ contract_form.enable_header }}
+                        <label class="form-check-label" for="{{ contract_form.enable_header.id_for_label }}">
+                            {{ contract_form.enable_header.label }}
+                        </label>
+                    </div>
+
+                    <div class="form-check col-md-2">
+                        {{ contract_form.enable_footer }}
+                        <label class="form-check-label" for="{{ contract_form.enable_footer.id_for_label }}">
+                            {{ contract_form.enable_footer.label }}
+                        </label>
+                    </div>
+
+                    <div class="form-check col-md-2">
+                        {{ contract_form.enable_signature }}
+                        <label class="form-check-label" for="{{ contract_form.enable_signature.id_for_label }}">
+                            {{ contract_form.enable_signature.label }}
+                        </label>
+                    </div>
+                    <div class="col-md-2">
+                        {{ contract_form.terms_and_condition.label_tag }}
+                        {{ contract_form.terms_and_condition }}
+                        {% if contract_form.terms_and_condition.errors %}
+                        <div class="text-danger small">{{ contract_form.terms_and_condition.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contract Details Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Add Contract Details" %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 align-items-end mb-3">
+                    <!-- Vehicle - Always visible -->
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Vehicle" %}</label>
+                        <select id="vehicle" class="form-control" onchange="onVehicleChange()">
+                            <option value="" disabled selected>{% trans "Select vehicle" %}</option>
+                            {% for vehicle in vehicles %}
+                            <option value="{{ vehicle.id }}">{{ vehicle.vehicle_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Vehicle Model (auto-populated, read-only) -->
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Vehicle Model" %}</label>
+                        <input type="text" id="vehicle_model" class="form-control"
+                            placeholder="{% trans 'Auto-filled' %}" readonly>
+                    </div>
+
+                    <!-- Description (auto-populated, editable) -->
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "Description" %}</label>
+                        <textarea id="detail_description" class="form-control" rows="2"
+                            placeholder="{% trans 'Description (editable)' %}"></textarea>
+                    </div>
+
+                    <!-- Details - Always visible -->
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Details" %}</label>
+                        <input type="text" id="location" class="form-control" placeholder="{% trans 'Details' %}">
+                    </div>
+
+                    <!-- Complex Contract: Period -->
+                    <div class="col-md-2 complex-field">
+                        <label class="form-label">{% trans "Period" %}</label>
+                        <select id="period" class="form-control" onchange="fetchAndSetRate()">
+                            <option value="" disabled selected>{% trans "Select period" %}</option>
+                            <option value="hourly">{% trans "Hourly" %}</option>
+                            <option value="daily">{% trans "Daily" %}</option>
+                            <option value="monthly">{% trans "Monthly" %}</option>
+                        </select>
+                    </div>
+
+                    <!-- Complex Contract: Quantity -->
+                    <div class="col-md-2 complex-field">
+                        <label class="form-label">{% trans "Quantity" %}</label>
+                        <input type="number" id="quantity" class="form-control" placeholder="{% trans 'Quantity' %}"
+                            step="0.01" oninput="calculateAmount()">
+                    </div>
+
+                    <!-- Complex Contract: Unit Rate -->
+                    <div class="col-md-2 complex-field">
+                        <label class="form-label">{% trans "Unit Rate" %}</label>
+                        <input type="number" id="unit_rate" class="form-control" placeholder="{% trans 'Unit Rate' %}"
+                            step="0.001" oninput="calculateAmount()">
+                    </div>
+
+                    <!-- Complex Contract: From Date -->
+                    <div class="col-md-2 complex-field">
+                        <label class="form-label">{% trans "From Date" %}</label>
+                        <input type="date" id="from_date" class="form-control">
+                    </div>
+
+                    <!-- Complex Contract: To Date -->
+                    <div class="col-md-2 complex-field">
+                        <label class="form-label">{% trans "To Date" %}</label>
+                        <input type="date" id="to_date" class="form-control">
+                    </div>
+
+                    <!-- Simple Contract: Amount (visible only for simple) -->
+                    <div class="col-md-2 simple-field">
+                        <label class="form-label">{% trans "Amount (OMR)" %}</label>
+                        <input type="number" id="amount" class="form-control" placeholder="{% trans 'Amount' %}"
+                            step="0.001">
+                    </div>
+
+                    <!-- Tax % - Always visible when taxable -->
+                    <div class="col-md-2 tax-field">
+                        <label class="form-label">{% trans "Tax %" %}</label>
+                        <input type="number" id="tax" class="form-control" placeholder="{% trans 'Tax %' %}" step="0.01"
+                            value="5">
+                    </div>
+
+                    <!-- Add Button -->
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-success w-100" onclick="addDetail()">
+                            {% trans "Add" %}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Details Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center" id="detailsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 4%">#</th>
+                                <th style="width: 12%">{% trans "Vehicle" %}</th>
+                                <th style="width: 10%">{% trans "Model" %}</th>
+                                <th style="width: 12%">{% trans "Description" %}</th>
+                                <th style="width: 10%">{% trans "Details" %}</th>
+
+                                <!-- Complex columns -->
+                                <th style="width: 7%" class="complex-column">{% trans "Period" %}</th>
+                                <th style="width: 5%" class="complex-column">{% trans "Qty" %}</th>
+                                <th style="width: 7%" class="complex-column">{% trans "Rate" %}</th>
+                                <th style="width: 7%" class="complex-column">{% trans "From" %}</th>
+                                <th style="width: 7%" class="complex-column">{% trans "To" %}</th>
+
+                                <th style="width: 8%">{% trans "Amount" %}</th>
+                                <th style="width: 5%" class="tax-column">{% trans "Tax %" %}</th>
+                                <th style="width: 8%" class="tax-column">{% trans "Tax Amount" %}</th>
+                                <th style="width: 8%">{% trans "Total" %}</th>
+                                <th style="width: 6%">{% trans "Action" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr id="noDataRow">
+                                <td colspan="13" class="text-center text-muted">{% trans "No details added yet" %}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot id="totalRow" style="display: none;">
+                            <tr class="table-info">
+                                <th colspan="11" class="tax-label">{% trans "Grand Total" %}</th>
+                                <th colspan="8" class="no-tax-label" style="display:none;">{% trans "Grand Total" %}
+                                </th>
+                                <th id="grandTotal">0.000</th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Details Input Array -->
+        <div id="hiddenDetails"></div>
+        <!-- Hidden Grand Total Field -->
+        <input type="hidden" name="grand_total" id="id_grand_total">
+
+        <!-- Form Actions -->
+        <div class="text-end mt-4">
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                {% if is_edit_mode %}
+                💾 {% trans "Update Contract" %}
+                {% else %}
+                💾 {% trans "Save Contract" %}
+                {% endif %}
+            </button>
+            <button type="button" class="btn btn-secondary px-4 py-2 ms-3" onclick="window.history.back()">
+                ← {% trans "Back" %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script src="{% static 'js/delivery_contract.js' %}"></script>
+
+<script>
+    // Translation strings for JavaScript
+    const translations = {
+        selectVehicle: "{% trans 'Please select a vehicle.' %}",
+        enterLocation: "{% trans 'Please enter Details.' %}",
+        validAmount: "{% trans 'Please enter a valid amount.' %}",
+        validTax: "{% trans 'Please enter a valid tax percentage.' %}",
+        addDetail: "{% trans 'Please add at least one contract detail before saving.' %}",
+        fillField: "{% trans 'Please fill in the' %}",
+        field: "{% trans 'field.' %}",
+        loading: "{% trans 'Loading...' %}",
+        error: "{% trans 'Error' %}",
+        selectPeriod: "{% trans 'Please select a period.' %}",
+        validQuantity: "{% trans 'Please enter a valid quantity.' %}",
+        validRate: "{% trans 'Please enter a valid rate.' %}",
+    };
+
+    let details = [];
+    let grandTotalAmount = 0;
+    let isTaxable = true;
+    let isComplexContract = false;
+
+    // Toggle between Simple and Complex contract
+    function toggleContractType() {
+        const contractType = document.querySelector('input[name="invoice_type"]:checked').value;
+        isComplexContract = (contractType === 'complex');
+
+        console.log('Toggle Contract Type:', contractType, 'isComplex:', isComplexContract);
+
+        const complexFields = document.querySelectorAll('.complex-field');
+        const complexColumns = document.querySelectorAll('.complex-column');
+        const simpleFields = document.querySelectorAll('.simple-field');
+
+        if (isComplexContract) {
+            // Show complex fields
+            complexFields.forEach(el => {
+                el.style.display = 'block';
+            });
+            complexColumns.forEach(el => {
+                el.style.display = 'table-cell';
+            });
+            simpleFields.forEach(el => {
+                el.style.display = 'none';
+            });
+        } else {
+            // Hide complex fields
+            complexFields.forEach(el => {
+                el.style.display = 'none';
+            });
+            complexColumns.forEach(el => {
+                el.style.display = 'none';
+            });
+            simpleFields.forEach(el => {
+                el.style.display = 'block';
+            });
+        }
+
+        // Update colspan for noDataRow
+        updateNoDataRowColspan();
+
+        // Clear detail inputs when switching
+        clearDetailInputs();
+    }
+
+    function updateNoDataRowColspan() {
+        const noDataRow = document.getElementById('noDataRow');
+        if (noDataRow) {
+            let colspan = 7; // Base columns
+            if (isComplexContract) colspan += 5; // Add complex columns
+            if (isTaxable) colspan += 2; // Add tax columns
+            noDataRow.querySelector('td').setAttribute('colspan', colspan);
+        }
+    }
+
+    function toggleTaxFields() {
+        isTaxable = document.getElementById('is_taxable').checked;
+        const taxFields = document.querySelectorAll('.tax-field');
+        const taxColumns = document.querySelectorAll('.tax-column');
+        const taxLabels = document.querySelectorAll('.tax-label');
+        const noTaxLabels = document.querySelectorAll('.no-tax-label');
+
+        if (isTaxable) {
+            taxFields.forEach(el => el.style.display = 'block');
+            taxColumns.forEach(el => el.style.display = 'table-cell');
+            taxLabels.forEach(el => el.style.display = '');
+            noTaxLabels.forEach(el => el.style.display = 'none');
+        } else {
+            taxFields.forEach(el => el.style.display = 'none');
+            taxColumns.forEach(el => el.style.display = 'none');
+            taxLabels.forEach(el => el.style.display = 'none');
+            noTaxLabels.forEach(el => el.style.display = '');
+        }
+
+        updateNoDataRowColspan();
+    }
+
+    // Called when vehicle selection changes
+    function onVehicleChange() {
+        const vehicleId = document.getElementById('vehicle').value;
+        if (!vehicleId) return;
+
+        fetch(`/get-vehicle-rates/?vehicle_id=${vehicleId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('vehicle_model').value = data.vehicle_model || '';
+                    document.getElementById('detail_description').value = data.description || '';
+                    if (isComplexContract) {
+                        document.getElementById('period').selectedIndex = 0;
+                        document.getElementById('unit_rate').value = '';
+                        document.getElementById('quantity').value = '';
+                    }
+                }
+            })
+            .catch(err => console.error('Error fetching vehicle info:', err));
+    }
+
+    // Fetch vehicle rate based on selected period
+    function fetchAndSetRate() {
+        if (!isComplexContract) return;
+
+        const vehicleId = document.getElementById('vehicle').value;
+        const period = document.getElementById('period').value;
+
+        if (!vehicleId || !period) return;
+
+        // Fetch rates from server
+        fetch(`/get-vehicle-rates/?vehicle_id=${vehicleId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let rate = 0;
+                    if (period === 'hourly') {
+                        rate = parseFloat(data.rate_per_hr);
+                    } else if (period === 'daily') {
+                        rate = parseFloat(data.rate_per_day);
+                    } else if (period === 'monthly') {
+                        rate = parseFloat(data.rate_per_month);
+                    }
+
+                    document.getElementById('unit_rate').value = rate.toFixed(3);
+                    calculateAmount();
+                } else {
+                    console.error('Error fetching rates:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    // Calculate amount from quantity × unit_rate (for complex contract)
+    function calculateAmount() {
+        if (!isComplexContract) return;
+
+        const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+        const unitRate = parseFloat(document.getElementById('unit_rate').value) || 0;
+    }
+
+    function addDetail() {
+        const vehicleSelect = document.getElementById('vehicle');
+        const vehicleId = vehicleSelect.value;
+        const vehicleName = vehicleSelect.options[vehicleSelect.selectedIndex].text;
+        const location = document.getElementById('location').value.trim();
+        const vehicleModel = document.getElementById('vehicle_model').value.trim();
+        const detailDescription = document.getElementById('detail_description').value.trim();
+
+        let amount, tax, period, quantity, unitRate, fromDate, toDate;
+
+        // Validation
+        if (!vehicleId) {
+            alert(translations.selectVehicle);
+            vehicleSelect.focus();
+            return;
+        }
+        // ✅ CHECK FOR DUPLICATE VEHICLE
+        const isDuplicate = details.some(detail => {
+            const detailValue = detail.value;
+            const parts = detailValue.split('|');
+            const existingVehicleId = parts[0];
+            return existingVehicleId === vehicleId;
+        });
+
+        if (isDuplicate) {
+            alert(`⚠️ Vehicle "${vehicleName}" is already added to this contract. Please select a different vehicle.`);
+            vehicleSelect.focus();
+            return;
+        }
+        if (!location) {
+            alert(translations.enterLocation);
+            document.getElementById('location').focus();
+            return;
+        }
+
+        if (isComplexContract) {
+            // Complex contract validation
+            period = document.getElementById('period').value;
+            quantity = parseFloat(document.getElementById('quantity').value);
+            unitRate = parseFloat(document.getElementById('unit_rate').value);
+            fromDate = document.getElementById('from_date').value || '';
+            toDate = document.getElementById('to_date').value || '';
+
+
+            if (isNaN(quantity) || quantity <= 0) {
+                alert(translations.validQuantity);
+                document.getElementById('quantity').focus();
+                return;
+            }
+            if (isNaN(quantity) || quantity <= 0) {
+                alert(translations.validQuantity);
+                document.getElementById('quantity').focus();
+                return;
+            }
+
+
+            // Calculate amount
+            amount = quantity * unitRate;
+
+            tax = 0;
+            if (isTaxable) {
+                tax = parseFloat(document.getElementById('tax').value);
+                if (isNaN(tax) || tax < 0) {
+                    alert(translations.validTax);
+                    document.getElementById('tax').focus();
+                    return;
+                }
+            }
+        } else {
+            // Simple contract validation
+            amount = parseFloat(document.getElementById('amount').value);
+
+            if (isNaN(amount) || amount <= 0) {
+                alert(translations.validAmount);
+                document.getElementById('amount').focus();
+                return;
+            }
+
+            tax = 0;
+            if (isTaxable) {
+                tax = parseFloat(document.getElementById('tax').value);
+                if (isNaN(tax) || tax < 0) {
+                    alert(translations.validTax);
+                    document.getElementById('tax').focus();
+                    return;
+                }
+            }
+        }
+
+        const taxAmount = isTaxable ? (amount * tax / 100) : 0;
+        const total = amount + taxAmount;
+        const index = details.length + 1;
+
+        // Hide "no data" row if it exists
+        const noDataRow = document.getElementById('noDataRow');
+        if (noDataRow) {
+            noDataRow.style.display = 'none';
+        }
+
+        // Build row HTML
+        let row = `
+            <tr data-index="${index - 1}">
+                <td>${index}</td>
+                <td>${vehicleName}</td>
+                <td>${vehicleModel}</td>
+                <td>${detailDescription}</td>
+                <td>${location}</td>`;
+
+        // Complex contract columns
+        if (isComplexContract) {
+            const periodDisplay = period.charAt(0).toUpperCase() + period.slice(1);
+            let fromDateDisplay = '-';
+            let toDateDisplay = '-';
+
+            if (fromDate) {
+                const fromDateObj = new Date(fromDate);
+                fromDateDisplay = fromDateObj.toLocaleDateString('en-GB');
+            }
+
+            if (toDate) {
+                const toDateObj = new Date(toDate);
+                toDateDisplay = toDateObj.toLocaleDateString('en-GB');
+            }
+
+            row += `
+                <td class="complex-column" style="display: table-cell;">${periodDisplay}</td>
+                <td class="text-end complex-column" style="display: table-cell;">${quantity.toFixed(2)}</td>
+                <td class="text-end complex-column" style="display: table-cell;">${unitRate.toFixed(3)}</td>
+                <td class="complex-column" style="display: table-cell;">${fromDateDisplay}</td>
+                <td class="complex-column" style="display: table-cell;">${toDateDisplay}</td>`;
+        } else {
+            // Add hidden cells for simple contract
+            row += `
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>
+                <td class="complex-column" style="display: none;"></td>`;
+        }
+
+        row += `<td class="text-end">${amount.toFixed(3)}</td>`;
+
+        if (isTaxable) {
+            row += `
+                <td class="text-center tax-column" style="display: table-cell;">${tax.toFixed(2)}%</td>
+                <td class="text-end tax-column" style="display: table-cell;">${taxAmount.toFixed(3)}</td>`;
+        } else {
+            row += `
+                <td class="tax-column" style="display: none;"></td>
+                <td class="tax-column" style="display: none;"></td>`;
+        }
+
+        row += `
+                <td class="text-end">${total.toFixed(3)}</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeDetail(this)" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+
+        document.querySelector('#detailsTable tbody').insertAdjacentHTML('beforeend', row);
+
+        // Add to hidden inputs
+        const hiddenDiv = document.getElementById("hiddenDetails");
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "details[]";
+
+        if (isComplexContract) {
+            input.value = `${vehicleId}|${location}|${period}|${quantity}|${unitRate}|${tax}|${fromDate}|${toDate}|${vehicleModel}|${detailDescription}`;
+        } else {
+            input.value = `${vehicleId}|${location}|${amount}|${tax}|${vehicleModel}|${detailDescription}`;
+        }
+
+        input.setAttribute('data-index', index - 1);
+        hiddenDiv.appendChild(input);
+
+        // Push to array for tracking
+        details.push(input);
+
+        // Update grand total
+        grandTotalAmount += total;
+        updateGrandTotal();
+
+        // Clear fields
+        clearDetailInputs();
+
+        // Focus on vehicle select for next entry
+        vehicleSelect.focus();
+    }
+
+    function clearDetailInputs() {
+        document.getElementById('vehicle').selectedIndex = 0;
+        document.getElementById('vehicle_model').value = '';
+        document.getElementById('detail_description').value = '';
+        document.getElementById('location').value = "";
+
+        if (isComplexContract) {
+            const periodEl = document.getElementById('period');
+            const quantityEl = document.getElementById('quantity');
+            const unitRateEl = document.getElementById('unit_rate');
+            const fromDateEl = document.getElementById('from_date');
+            const toDateEl = document.getElementById('to_date');
+
+            if (periodEl) periodEl.selectedIndex = 0;
+            if (quantityEl) quantityEl.value = "";
+            if (unitRateEl) unitRateEl.value = "";
+            if (fromDateEl) fromDateEl.value = "";
+            if (toDateEl) toDateEl.value = "";
+        } else {
+            const amountEl = document.getElementById('amount');
+            if (amountEl) amountEl.value = "";
+        }
+
+        if (isTaxable) {
+            document.getElementById('tax').value = "5";
+        }
+    }
+
+    function removeDetail(button) {
+        const row = button.closest("tr");
+        const rowIndex = parseInt(row.getAttribute('data-index'));
+
+        // Get the total amount from the row to subtract from grand total
+        const cells = row.cells;
+        let totalCellIndex;
+
+        if (isComplexContract) {
+            totalCellIndex = isTaxable ? 11 : 9;
+        } else {
+            totalCellIndex = isTaxable ? 6 : 4;
+        }
+
+        const totalAmount = parseFloat(cells[totalCellIndex].textContent);
+        grandTotalAmount -= totalAmount;
+
+        row.remove();
+
+        // Remove from hidden inputs and array
+        if (details[rowIndex]) {
+            details[rowIndex].remove();
+            details.splice(rowIndex, 1);
+        }
+
+        // Re-number rows and update data-index
+        const rows = document.querySelectorAll('#detailsTable tbody tr:not(#noDataRow)');
+        if (rows.length === 0) {
+            const noDataRow = document.getElementById('noDataRow');
+            if (noDataRow) {
+                noDataRow.style.display = '';
+            }
+            grandTotalAmount = 0;
+        } else {
+            rows.forEach((r, i) => {
+                r.querySelector("td").textContent = i + 1;
+                r.setAttribute('data-index', i);
+            });
+        }
+
+        updateGrandTotal();
+    }
+
+    function updateGrandTotal() {
+        const totalRow = document.getElementById('totalRow');
+        const grandTotalCell = document.getElementById('grandTotal');
+        const grandTotalInput = document.getElementById('id_grand_total');
+
+        if (grandTotalAmount > 0) {
+            totalRow.style.display = '';
+            grandTotalCell.textContent = grandTotalAmount.toFixed(3);
+            if (grandTotalInput) grandTotalInput.value = grandTotalAmount.toFixed(3);
+        } else {
+            totalRow.style.display = 'none';
+            if (grandTotalInput) grandTotalInput.value = '';
+        }
+    }
+
+    // Form validation before submit
+    document.getElementById('contractForm').addEventListener('submit', function (e) {
+        if (details.length === 0) {
+            e.preventDefault();
+            alert(translations.addDetail);
+            return false;
+        }
+
+        // Check required contract fields
+        const requiredFields = ['voucher_no', 'date', 'customer'];
+        for (let field of requiredFields) {
+            const input = document.querySelector(`[name="${field}"]`);
+            if (!input || !input.value.trim()) {
+                e.preventDefault();
+                alert(`${translations.fillField} ${field.replace('_', ' ')} ${translations.field}`);
+                if (input) input.focus();
+                return false;
+            }
+        }
+    });
+
+    // Set default date to today and initialize
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('🚀 Page loaded, initializing...');
+
+        const dateInput = document.querySelector('input[name="date"]');
+        if (dateInput && !dateInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+
+        // Set initial contract type from radio buttons
+        const checkedType = document.querySelector('input[name="invoice_type"]:checked');
+        if (checkedType) {
+            isComplexContract = (checkedType.value === 'complex');
+            console.log('Initial contract type:', checkedType.value, 'isComplex:', isComplexContract);
+        }
+
+        // Initialize visibility based on contract type
+        toggleContractType();
+        toggleTaxFields();
+
+        console.log('✅ Initialization complete');
+    });
+</script>
+
+<!-- Pre-populate Contract Details for EDIT Mode -->
+{% if is_edit_mode %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        {% if existing_details %}
+        console.log("📝 Edit mode detected - loading existing details...");
+
+        // Check if contract is taxable and set checkbox
+        {% if contract_instance.is_taxable %}
+        document.getElementById('is_taxable').checked = true;
+        isTaxable = true;
+        {% else %}
+        document.getElementById('is_taxable').checked = false;
+        isTaxable = false;
+        {% endif %}
+
+        // Set contract type
+        {% if contract_instance.invoice_type == 'complex' %}
+        document.getElementById('contractTypeComplex').checked = true;
+        isComplexContract = true;
+        {% else %}
+        document.getElementById('contractTypeSimple').checked = true;
+        isComplexContract = false;
+        {% endif %}
+
+        // Toggle visibility
+        toggleContractType();
+        toggleTaxFields();
+
+        // Load each existing detail
+        {% for detail in existing_details %}
+        preloadDetail(
+            {{ detail.vehicle.id }},
+        "{{ detail.vehicle.vehicle_name|escapejs }}",
+        "{{ detail.location|escapejs }}",
+        {{ detail.amount }},
+        {{ detail.tax }},
+        {{ detail.tax_amount }},
+        {{ detail.total_amount }},
+        "{{ detail.period|default:'' }}",
+        {{ detail.quantity|default:'0' }},
+        {{ detail.unit_rate|default:'0' }},
+        "{% if detail.from_date %}{{ detail.from_date|date:'Y-m-d' }}{% endif %}",
+        "{% if detail.to_date %}{{ detail.to_date|date:'Y-m-d' }}{% endif %}",
+        "{{ detail.vehicle_model|default:''|escapejs }}",
+        "{{ detail.description|default:''|escapejs }}"
+    );
+    {% endfor %}
+
+    console.log("✅ Loaded {{ existing_details|length }} contract details");
+    {% endif %}
+});
+
+    function preloadDetail(vehicleId, vehicleName, location, amount, tax, taxAmount, totalAmount, period, quantity, unitRate, fromDate, toDate, vehicleModel, description) {
+        vehicleModel = vehicleModel || '';
+        description = description || '';
+        const index = details.length + 1;
+
+        const noDataRow = document.getElementById('noDataRow');
+        if (noDataRow) {
+            noDataRow.style.display = 'none';
+        }
+
+        let row = `
+        <tr data-index="${index - 1}">
+            <td>${index}</td>
+            <td>${vehicleName}</td>
+            <td>${vehicleModel}</td>
+            <td>${description}</td>
+            <td>${location}</td>`;
+
+        if (isComplexContract && period) {
+            const periodDisplay = period.charAt(0).toUpperCase() + period.slice(1);
+
+            let fromDateDisplay = '-';
+            let toDateDisplay = '-';
+
+            if (fromDate && fromDate.trim() !== '') {
+                try {
+                    const fromDateObj = new Date(fromDate);
+                    if (!isNaN(fromDateObj.getTime())) {
+                        fromDateDisplay = fromDateObj.toLocaleDateString('en-GB');
+                    }
+                } catch (e) {
+                    console.error('Error parsing from_date:', e);
+                }
+            }
+
+            if (toDate && toDate.trim() !== '') {
+                try {
+                    const toDateObj = new Date(toDate);
+                    if (!isNaN(toDateObj.getTime())) {
+                        toDateDisplay = toDateObj.toLocaleDateString('en-GB');
+                    }
+                } catch (e) {
+                    console.error('Error parsing to_date:', e);
+                }
+            }
+
+            row += `
+            <td class="complex-column" style="display: table-cell;">${periodDisplay}</td>
+            <td class="text-end complex-column" style="display: table-cell;">${parseFloat(quantity).toFixed(2)}</td>
+            <td class="text-end complex-column" style="display: table-cell;">${parseFloat(unitRate).toFixed(3)}</td>
+            <td class="complex-column" style="display: table-cell;">${fromDateDisplay}</td>
+            <td class="complex-column" style="display: table-cell;">${toDateDisplay}</td>`;
+        } else {
+            row += `
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>`;
+        }
+
+        row += `<td class="text-end">${parseFloat(amount).toFixed(3)}</td>`;
+
+        if (isTaxable) {
+            row += `
+            <td class="text-center tax-column" style="display: table-cell;">${parseFloat(tax).toFixed(2)}%</td>
+            <td class="text-end tax-column" style="display: table-cell;">${parseFloat(taxAmount).toFixed(3)}</td>`;
+        } else {
+            row += `
+            <td class="tax-column" style="display: none;"></td>
+            <td class="tax-column" style="display: none;"></td>`;
+        }
+
+        row += `
+            <td class="text-end">${parseFloat(totalAmount).toFixed(3)}</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeDetail(this)" title="Remove">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+
+        document.querySelector('#detailsTable tbody').insertAdjacentHTML('beforeend', row);
+
+        const hiddenDiv = document.getElementById("hiddenDetails");
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "details[]";
+
+        if (isComplexContract && period && period.trim() !== '') {
+            const fromDateValue = (fromDate && fromDate.trim() !== '') ? fromDate : '';
+            const toDateValue = (toDate && toDate.trim() !== '') ? toDate : '';
+            input.value = `${vehicleId}|${location}|${period}|${quantity}|${unitRate}|${tax}|${fromDateValue}|${toDateValue}|${vehicleModel}|${description}`;
+        } else {
+            input.value = `${vehicleId}|${location}|${amount}|${tax}|${vehicleModel}|${description}`;
+        }
+
+        input.setAttribute('data-index', index - 1);
+        hiddenDiv.appendChild(input);
+
+        details.push(input);
+
+        grandTotalAmount += parseFloat(totalAmount);
+        updateGrandTotal();
+    }
+</script>
+{% endif %}
+
+<!-- Admin Override -->
+<!-- Admin Override -->
+<script>
+    $(document).on("submit", "#contractForm", function (e) {
+        e.preventDefault();
+
+        window.pendingFormId = "contractForm";
+        window.pendingFormAction = this.action;
+        window.afterSuccessRedirect = "{% url 'fleet_app:delivery_contract_list' %}";
+
+        let formData = new FormData(this);
+
+        $.ajax({
+            url: window.pendingFormAction,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+
+            success: function (response) {
+                if (response.admin_required) {
+                    $("#admin_error").text(response.message || "");
+                    $("#adminOverrideModal").modal("show");
+                    return;
+                }
+
+                if (response.success) {
+                    alert(response.message);
+
+                    // Open PDF in new tab if available
+                    if (response.pdf_url) {
+                        window.open(response.pdf_url, "_blank");
+                    }
+
+                    setTimeout(function () {
+                        window.location.href = window.afterSuccessRedirect;
+                    }, 1000);
+                }
+            },
+
+            error: function (xhr) {
+                if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                    $("#admin_error").text(xhr.responseJSON.message || "");
+                    $("#adminOverrideModal").modal("show");
+                } else {
+                    const errMsg = xhr.responseJSON?.message || "Something went wrong";
+                    alert("Error: " + errMsg);
+                }
+            }
+        });
+    });
+</script>
+
+<!-- Get Next Voucher_no -->
+{% if not is_edit_mode %}
+<script>
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
+
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = data.voucher_number;
+                    } else {
+                        input.value = "{% trans 'Error' %}";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching voucher number:', error);
+                    input.value = "{% trans 'Error' %}";
+                });
+        } else if (input) {
+            input.value = '';
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
+{% endblock %}

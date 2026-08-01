@@ -1,0 +1,215 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if vehicle %}Edit{% else %}Add{% endif %} Vehicle</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 30px; max-width: 900px; margin: auto; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: bold; margin-bottom: 4px; }
+        input, select, textarea {
+            width: 100%; padding: 8px; box-sizing: border-box;
+            border: 1px solid #ccc; border-radius: 4px;
+        }
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 4px;
+            cursor: pointer; color: white; text-decoration: none;
+            display: inline-block; margin-right: 8px;
+        }
+        .btn-primary   { background: #007bff; }
+        .btn-secondary { background: #6c757d; }
+        h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 24px; }
+        .customer-badge {
+            background: #e8f4fd; border: 1px solid #007bff;
+            padding: 10px; border-radius: 6px; margin-top: 8px;
+            display: none; font-size: 0.9em;
+        }
+        .alert {
+            padding: 10px 16px; border-radius: 4px;
+            margin-bottom: 16px; background: #d4edda;
+            border: 1px solid #c3e6cb; color: #155724;
+        }
+    </style>
+</head>
+<body>
+
+<h2>
+    {% if vehicle %}
+        ✏️ Edit Vehicle — {{ vehicle.vehicle_name }}
+    {% else %}
+        ➕ Add New Vehicle
+    {% endif %}
+</h2>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="form-grid">
+
+        <!-- Customer -->
+        <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Customer <span style="color:red;">*</span></label>
+            <select name="customer" id="customer" required>
+                <option value="">— Select Customer —</option>
+                {% for c in customers %}
+                    <option value="{{ c.id }}"
+                        data-phone="{{ c.customer_mobile }}"
+                        data-email="{{ c.customer_email }}"
+                        {% if vehicle and vehicle.customer.id == c.id %}selected{% endif %}>
+                        {{ c.customer_name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <!-- Info badge shown after customer selected -->
+            <div class="customer-badge" id="customerBadge">
+                👤 <strong id="badgeName"></strong> &nbsp;|&nbsp;
+                📞 <span id="badgePhone"></span> &nbsp;|&nbsp;
+                ✉️ <span id="badgeEmail"></span>
+            </div>
+        </div>
+
+        <!-- Vehicle Name -->
+        <div class="form-group">
+            <label>Vehicle Name <span style="color:red;">*</span></label>
+            <input type="text" name="vehicle_name"
+                value="{{ vehicle.vehicle_name|default:'' }}"
+                placeholder="e.g. Toyota Land Cruiser" required>
+        </div>
+
+        <!-- Vehicle Category -->
+        <div class="form-group">
+            <label>Vehicle Category</label>
+            <select name="vehicle_category">
+                <option value="">— Select Category —</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.category_name }}"
+                        {% if vehicle and vehicle.vehicle_category == cat.category_name %}selected{% endif %}>
+                        {{ cat.category_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- License Plate Code -->
+        <div class="form-group">
+            <label>Plate Code</label>
+            <select name="license_plate_code">
+                <option value="">— Select Code —</option>
+                {% for code in plate_codes %}
+                    <option value="{{ code.code }}"
+                        {% if vehicle and vehicle.license_plate_code == code.code %}selected{% endif %}>
+                        {{ code.code }} {% if code.description %}— {{ code.description }}{% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- License Plate Number -->
+        <div class="form-group">
+            <label>Plate Number</label>
+            <input type="text" name="license_plate_number"
+                value="{{ vehicle.license_plate_number|default:'' }}"
+                placeholder="e.g. 12345">
+        </div>
+
+        <!-- Driver -->
+        <div class="form-group">
+            <label>Driver Name</label>
+            <input type="text" name="vehicle_driver"
+                value="{{ vehicle.vehicle_driver|default:'' }}"
+                placeholder="Driver name">
+        </div>
+
+        <!-- RC Number -->
+        <div class="form-group">
+            <label>RC Number</label>
+            <input type="text" name="RC_number"
+                value="{{ vehicle.RC_number|default:'' }}"
+                placeholder="Registration certificate number">
+        </div>
+
+        <!-- Contract No -->
+        <div class="form-group">
+            <label>Contract No</label>
+            <input type="text" name="contract_no"
+                value="{{ vehicle.contract_no|default:'' }}"
+                placeholder="e.g. CONT-0001">
+        </div>
+
+        <!-- Contract Start Date -->
+        <div class="form-group">
+            <label>Contract Start Date</label>
+            <input type="date" name="contract_start_date"
+                value="{{ vehicle.contract_start_date|default:'' }}">
+        </div>
+
+        <!-- Contract End Date -->
+        <div class="form-group">
+            <label>Contract End Date</label>
+            <input type="date" name="contract_end_date"
+                value="{{ vehicle.contract_end_date|default:'' }}">
+        </div>
+
+        <!-- Vehicle Image -->
+        <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Vehicle Image</label>
+            <input type="file" name="vehicle_image" accept="image/*">
+            {% if vehicle and vehicle.vehicle_image %}
+                <small style="display:block; margin-top:6px;">
+                    Current image:
+                    <a href="{{ vehicle.vehicle_image.url }}" target="_blank">View</a>
+                </small>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <br>
+    <button type="submit" class="btn btn-primary">
+        {% if vehicle %}💾 Update Vehicle{% else %}💾 Save Vehicle{% endif %}
+    </button>
+    <a href="{% url 'fleet_app:vehicle_master_list' %}" class="btn btn-secondary">
+        ✕ Cancel
+    </a>
+</form>
+
+<script>
+    const customerSelect = document.getElementById('customer');
+    const badge          = document.getElementById('customerBadge');
+    const badgeName      = document.getElementById('badgeName');
+    const badgePhone     = document.getElementById('badgePhone');
+    const badgeEmail     = document.getElementById('badgeEmail');
+
+    function showBadge() {
+        const selected = customerSelect.options[customerSelect.selectedIndex];
+        if (selected && selected.value) {
+            badgeName.textContent  = selected.text.trim();
+            badgePhone.textContent = selected.dataset.phone || '—';
+            badgeEmail.textContent = selected.dataset.email || '—';
+            badge.style.display    = 'block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    customerSelect.addEventListener('change', showBadge);
+
+    // Show badge on page load if a customer is already selected (edit mode)
+    document.addEventListener('DOMContentLoaded', function () {
+        if (customerSelect.value) {
+            showBadge();
+        }
+    });
+</script>
+
+</body>
+</html>

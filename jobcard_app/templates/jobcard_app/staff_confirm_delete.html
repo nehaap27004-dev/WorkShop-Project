@@ -1,0 +1,24 @@
+{% extends 'fleet_base1.html' %}
+{% block content %}
+<div style="max-width:460px;margin:80px auto;padding:0 16px">
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:32px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.07)">
+    <div style="font-size:44px;margin-bottom:14px">👷</div>
+    <h3 style="font-size:17px;font-weight:700;color:#1a1a2e;margin-bottom:8px">Remove Staff Member?</h3>
+    <p style="color:#111827;font-size:14px;font-weight:600;margin-bottom:4px">{{ s.full_name }}</p>
+    <p style="color:#6b7280;font-size:13px;margin-bottom:4px">{{ s.staff_id }} · {{ s.get_role_display }}</p>
+    <p style="color:#6b7280;font-size:13px;margin-bottom:24px">📞 {{ s.phone }}</p>
+    <p style="color:#9ca3af;font-size:12px;margin-bottom:24px">The staff member will be deactivated. All linked job cards will be kept.</p>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <a href="{% url 'jobcard_app:staff_detail' s.pk %}"
+         style="background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;border-radius:7px;padding:9px 20px;font-size:13px;font-weight:600;text-decoration:none">
+        Cancel
+      </a>
+      <form method="post" style="margin:0">{% csrf_token %}
+        <button type="submit" style="background:#dc2626;color:#fff;border:none;border-radius:7px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer">
+          Yes, Remove
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

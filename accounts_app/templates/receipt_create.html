@@ -1,123 +1,37 @@
 {% extends "fleet_base1.html" %}
 {% load static %}
+{% load i18n %}
+{% load privilege_tags %}
+
 
 {% block content %}
-<style>
-    .btn-custom {
-        background-color: #5A8DEE;
-        border-color: #5A8DEE;
-        color: white;
-    }
-    
-    .btn-custom:hover {
-        background-color: #4a7dd4;
-        border-color: #4a7dd4;
-        color: white;
-    }
-    
-    .form-label {
-        font-size: 0.875rem;
-        color: #495057;
-        margin-bottom: 0.375rem;
-        font-weight: 600;
-    }
-    
-    .form-control, select {
-        font-size: 0.875rem;
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-        width: 100%;
-    }
-    
-    input[type="text"],
-    input[type="number"],
-    input[type="date"],
-    input[type="email"],
-    textarea,
-    select {
-        display: block;
-        width: 100%;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.875rem;
-        line-height: 1.5;
-        color: #495057;
-        background-color: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-    }
-    
-    input:focus,
-    textarea:focus,
-    select:focus {
-        border-color: #5A8DEE;
-        outline: 0;
-        box-shadow: 0 0 0 0.2rem rgba(90, 141, 238, 0.25);
-    }
-    
-    input[type="checkbox"] {
-        width: auto;
-        height: 18px;
-        cursor: pointer;
-    }
-    
-    .form-check {
-        display: flex;
-        align-items: center;
-        padding-top: 0.5rem;
-    }
-    
-    .form-check-label {
-        cursor: pointer;
-        font-size: 0.875rem;
-        margin-bottom: 0;
-    }
-    
-    #detailsTable tbody tr {
-        vertical-align: middle;
-    }
-    
-    .card {
-        border: none;
-        border-radius: 0.5rem;
-    }
-    
-    .card-header {
-        padding: 1.25rem 1.5rem;
-        border-radius: 0.5rem 0.5rem 0 0 !important;
-    }
-    
-    .table-hover tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    #displayTotal {
-        font-weight: bold;
-        font-size: 1.1rem;
-        color: #28a745;
-    }
-</style>
-
 <div class="container-fluid mt-4">
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="close" data-dismiss="alert">
-                    <span>&times;</span>
-                </button>
-            </div>
-        {% endfor %}
-    {% endif %}
+    <div class="d-flex justify-content-end mb-3">
+        {% has_priv request.user 7 "can_read" as can_read_receipt %}
+{% if can_read_receipt %}
+<a href="{% url 'accounts_app:list_receipt' %}" class="btn btn-custom">
+    <i class="bi bi-list"></i> {% trans "View" %}
+</a>
+{% endif %}
+
+    </div>
+
+    <!-- Messages -->
 
     <div class="card shadow-sm">
         <div class="card-header bg-white border-bottom">
-            <h4 class="mb-0 text-dark">Create Receipt</h4>
+            <h4 class="mb-0 text-dark">
+                {% if is_edit_mode %}
+                    {% trans "Edit Receipt" %}
+                {% else %}
+                    {% trans "Create Receipt" %}
+                {% endif %}
+            </h4>
         </div>
         <div class="card-body">
             <form method="POST" id="receiptForm">
                 {% csrf_token %}
-                
+
                 <!-- Receipt Information -->
                 <div class="row">
                     <!-- Voucher No -->
@@ -125,7 +39,7 @@
                         <label class="form-label">{{ form.voucher_no.label }}</label>
                         {{ form.voucher_no }}
                         {% if form.voucher_no.errors %}
-                            <div class="text-danger small mt-1">{{ form.voucher_no.errors }}</div>
+                        <div class="text-danger small mt-1">{{ form.voucher_no.errors }}</div>
                         {% endif %}
                     </div>
 
@@ -140,7 +54,7 @@
                         <label class="form-label">{{ form.Date.label }}</label>
                         {{ form.Date }}
                         {% if form.Date.errors %}
-                            <div class="text-danger small mt-1">{{ form.Date.errors }}</div>
+                        <div class="text-danger small mt-1">{{ form.Date.errors }}</div>
                         {% endif %}
                     </div>
 
@@ -149,7 +63,7 @@
                         <label class="form-label">{{ form.Ledger.label }}</label>
                         {{ form.Ledger }}
                         {% if form.Ledger.errors %}
-                            <div class="text-danger small mt-1">{{ form.Ledger.errors }}</div>
+                        <div class="text-danger small mt-1">{{ form.Ledger.errors }}</div>
                         {% endif %}
                     </div>
 
@@ -158,7 +72,7 @@
                         <label class="form-label">{{ form.ReceivedFrom.label }}</label>
                         {{ form.ReceivedFrom }}
                         {% if form.ReceivedFrom.errors %}
-                            <div class="text-danger small mt-1">{{ form.ReceivedFrom.errors }}</div>
+                        <div class="text-danger small mt-1">{{ form.ReceivedFrom.errors }}</div>
                         {% endif %}
                     </div>
 
@@ -166,14 +80,14 @@
                     <div class="col-md-3 mb-3">
                         <label class="form-label d-block">&nbsp;</label>
                         <div class="form-check">
-                            {{ form.IsPDC }}
-                            <label class="form-check-label ml-2" for="{{ form.IsPDC.id_for_label }}">
-    {{ form.IsPDC.label }}
-</label>
-
+                            <input type="checkbox" name="{{ form.IsPDC.name }}" id="{{ form.IsPDC.id_for_label }}"
+                                class="form-check-input" {% if form.IsPDC.value %}checked{% endif %}>
+                            <label class="form-check-label" for="{{ form.IsPDC.id_for_label }}">
+                                {{ form.IsPDC.label }}
+                            </label>
                         </div>
                         {% if form.IsPDC.errors %}
-                            <div class="text-danger small mt-1">{{ form.IsPDC.errors }}</div>
+                        <div class="text-danger small mt-1">{{ form.IsPDC.errors }}</div>
                         {% endif %}
                     </div>
 
@@ -182,7 +96,7 @@
                         <label class="form-label">{{ form.ChequeDate.label }}</label>
                         {{ form.ChequeDate }}
                         {% if form.ChequeDate.errors %}
-                            <div class="text-danger small mt-1">{{ form.ChequeDate.errors }}</div>
+                        <div class="text-danger small mt-1">{{ form.ChequeDate.errors }}</div>
                         {% endif %}
                     </div>
 
@@ -191,64 +105,65 @@
                         <label class="form-label">{{ form.ChequeNo.label }}</label>
                         {{ form.ChequeNo }}
                         {% if form.ChequeNo.errors %}
-                            <div class="text-danger small mt-1">{{ form.ChequeNo.errors }}</div>
+                        <div class="text-danger small mt-1">{{ form.ChequeNo.errors }}</div>
                         {% endif %}
                     </div>
                 </div>
 
                 <!-- Receipt Details Section -->
                 <div class="mb-3 mt-4">
-                    <h5 class="text-dark mb-3">Receipt Details</h5>
-                    
+                    <h5 class="text-dark mb-3">{% trans "Receipt Details" %}</h5>
+
                     <!-- Static Input Row -->
                     <div class="card mb-3">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-4 mb-2">
-                                    <label class="form-label">Ledger Account</label>
+                                    <label class="form-label">{% trans "Ledger Account" %}</label>
                                     <select class="form-control" id="inputLedger">
                                         <option value="">---------</option>
                                         {% if formset.empty_form.Ledger.field.queryset %}
-                                            {% for option in formset.empty_form.Ledger.field.queryset %}
-                                                <option value="{{ option.id }}">{{ option }}</option>
-                                            {% endfor %}
+                                        {% for option in formset.empty_form.Ledger.field.queryset %}
+                                        <option value="{{ option.id }}">{{ option }}</option>
+                                        {% endfor %}
                                         {% endif %}
                                     </select>
                                 </div>
                                 <div class="col-md-3 mb-2">
-                                    <label class="form-label">Amount</label>
-                                    <input type="number" class="form-control" id="inputAmount" step="0.01" placeholder="0.00">
+                                    <label class="form-label">{% trans "Amount" %}</label>
+                                    <input type="number" class="form-control" id="inputAmount" step="0.01"
+                                        placeholder="0.00">
                                 </div>
                                 <div class="col-md-4 mb-2">
-                                    <label class="form-label">Description</label>
-                                    <input type="text" class="form-control" id="inputDesc" placeholder="Enter description">
+                                    <label class="form-label">{% trans "Description" %}</label>
+                                    <input type="text" class="form-control" id="inputDesc"
+                                        placeholder="{% trans 'Enter description' %}">
                                 </div>
                                 <div class="col-md-1 mb-2 d-flex align-items-end">
                                     <button type="button" id="addRow" class="btn btn-custom btn-block">
-                                        Add
+                                        {% trans "Add" %}
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Data Table -->
                     <div class="table-responsive">
                         <table class="table table-hover table-bordered" id="detailsTable">
                             <thead class="thead-light">
                                 <tr>
-                                    <th width="35%">Ledger</th>
-                                    <th width="20%">Amount</th>
-                                    <th width="35%">Description</th>
-                                    <th width="10%" class="text-center">Action</th>
+                                    <th width="35%">{% trans "Ledger" %}</th>
+                                    <th width="20%">{% trans "Amount" %}</th>
+                                    <th width="35%">{% trans "Description" %}</th>
+                                    <th width="10%" class="text-center">{% trans "Action" %}</th>
                                 </tr>
                             </thead>
                             <tbody id="tableBody">
-                                <!-- Dynamic rows will be added here -->
                             </tbody>
                             <tfoot>
                                 <tr class="table-info">
-                                    <th colspan="1" class="text-right">Total Amount:</th>
+                                    <th colspan="1" class="text-right">{% trans "Total Amount:" %}</th>
                                     <th id="displayTotal">0.00</th>
                                     <th colspan="2"></th>
                                 </tr>
@@ -260,21 +175,26 @@
                 <!-- Total Amount Field -->
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <label class="form-label">Total Amount</label>
-                        <input type="number" step="0.01" name="TotalAmount" id="id_TotalAmount" 
-                               class="form-control" readonly style="background-color: #e9ecef; font-weight: bold;">
+                        <label class="form-label">{% trans "Total Amount" %}</label>
+                        <input type="number" step="0.01" name="TotalAmount" id="id_TotalAmount" class="form-control"
+                            readonly style="background-color: #e9ecef; font-weight: bold;">
                     </div>
                 </div>
 
-                <!-- Hidden formset management -->
-                {{ formset.management_form }}
+                <!-- Formset Management Forms -->
+                <input type="hidden" name="details-TOTAL_FORMS" id="id_details-TOTAL_FORMS" value="0">
+                <input type="hidden" name="details-INITIAL_FORMS" id="id_details-INITIAL_FORMS" value="0">
+                <input type="hidden" name="details-MIN_NUM_FORMS" id="id_details-MIN_NUM_FORMS" value="0">
+                <input type="hidden" name="details-MAX_NUM_FORMS" id="id_details-MAX_NUM_FORMS" value="1000">
+
+                <!-- Hidden formset details -->
                 <div id="hiddenForms"></div>
 
                 <!-- Action Buttons -->
                 <div class="d-flex justify-content-end mt-4">
-                    <a href="javascript:history.back()" class="btn btn-secondary mr-2">Cancel</a>
+                    <a href="javascript:history.back()" class="btn btn-secondary mr-2">{% trans "Cancel" %}</a>
                     <button type="submit" class="btn btn-custom">
-                        <i class="bi bi-save"></i> Save Receipt
+                        <i class="bi bi-save"></i> {% trans "Save Receipt" %}
                     </button>
                 </div>
             </form>
@@ -282,184 +202,440 @@
     </div>
 </div>
 
+<style>
+    .btn-custom {
+        background-color: #5A8DEE;
+        border-color: #5A8DEE;
+        color: white;
+    }
+
+    .btn-custom:hover {
+        background-color: #4a7dd4;
+        border-color: #4a7dd4;
+        color: white;
+    }
+
+    .form-label {
+        font-size: 0.875rem;
+        color: #495057;
+        margin-bottom: 0.375rem;
+        font-weight: 600;
+    }
+
+    .form-control, select {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        width: 100%;
+    }
+
+    input[type="text"], input[type="number"], input[type="date"],
+    input[type="email"], textarea, select {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+
+    input:focus, textarea:focus, select:focus {
+        border-color: #5A8DEE;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(90, 141, 238, 0.25);
+    }
+
+    input[type="checkbox"] {
+        width: auto;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        padding-top: 0.5rem;
+    }
+
+    .form-check-label {
+        cursor: pointer;
+        font-size: 0.875rem;
+        margin-bottom: 0;
+    }
+
+    #detailsTable tbody tr {
+        vertical-align: middle;
+    }
+
+    .card {
+        border: none;
+        border-radius: 0.5rem;
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    #displayTotal {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #28a745;
+    }
+</style>
+
 <script>
-$(document).ready(function() {
-    var formIndex = 0;
-    var $totalAmountField = $('#id_TotalAmount');
-    var $displayTotal = $('#displayTotal');
-    
-    // Update initial form count
-    $('#id_details-TOTAL_FORMS').val(formIndex);
-    
-    // Function to calculate total
-    function calculateTotal() {
-        var total = 0;
-        $('#tableBody .amount-cell').each(function() {
-            var amount = parseFloat($(this).text()) || 0;
-            total += amount;
-        });
-        
-        $displayTotal.text(total.toFixed(2));
-        $totalAmountField.val(total.toFixed(2));
-        
-        console.log('Total calculated:', total.toFixed(2));
-    }
-    
-    // Validation check before submit
-    $('#receiptForm').submit(function(e) {
-        console.log('TOTAL_FORMS value:', $('#id_details-TOTAL_FORMS').val());
-        console.log('Total Amount:', $totalAmountField.val());
-        
-        if (formIndex === 0) {
-            alert('Please add at least one receipt detail.');
-            e.preventDefault();
-            return false;
+    $(document).ready(function () {
+        const translations = {
+            addDetail: "{% trans 'Please add at least one receipt detail.' %}",
+            selectLedger: "{% trans 'Please select a Ledger.' %}",
+            validAmount: "{% trans 'Please enter a valid Amount.' %}"
+        };
+
+        // Parse existing data for edit mode
+        const existingData = {{ existing_details_json|default:"[]"|safe }};
+
+        class ReceiptFormManager {
+            constructor() {
+                this.formIndex = 0;
+                this.$totalForms = $('#id_details-TOTAL_FORMS');
+                this.$initialForms = $('#id_details-INITIAL_FORMS');
+                this.$tableBody = $('#tableBody');
+                this.$hiddenFormsContainer = $('#hiddenForms');
+                this.$inputLedger = $('#inputLedger');
+                this.$inputAmount = $('#inputAmount');
+                this.$inputDesc = $('#inputDesc');
+                this.$totalAmountField = $('#id_TotalAmount');
+                this.$displayTotal = $('#displayTotal');
+
+                if (this.$totalForms.length === 0) {
+                    console.error('ERROR: Could not find id_details-TOTAL_FORMS!');
+                    alert('ERROR: Management form not found. Please refresh the page.');
+                    return;
+                }
+
+                console.log('=== ReceiptFormManager Initialized ===');
+                
+                this.initEventListeners();
+                this.loadExistingData();
+                this.updateTotalForms();
+                this.calculateTotal();
+            }
+
+            initEventListeners() {
+                $('#addRow').on('click', this.addRow.bind(this));
+                this.$tableBody.on('click', '.remove-row', this.removeRow.bind(this));
+                $('#receiptForm').on('submit', this.onFormSubmit.bind(this));
+            }
+
+            loadExistingData() {
+                if (existingData && existingData.length > 0) {
+                    console.log('Loading existing data:', existingData);
+                    existingData.forEach(item => {
+                        this.appendRowToTable(item.ledger_name, item.amount, item.desc, this.formIndex);
+                        this.appendHiddenFields(item.ledger_id, item.amount, item.desc, this.formIndex);
+                        this.formIndex++;
+                    });
+                }
+            }
+
+            onFormSubmit(e) {
+                console.log('\n=== FORM SUBMISSION ===');
+                console.log('Form Index:', this.formIndex);
+                console.log('TOTAL_FORMS value:', this.$totalForms.val());
+                console.log('Number of rows in table:', this.$tableBody.find('tr.detail-row').length);
+                console.log('Total Amount:', this.$totalAmountField.val());
+
+                const totalRows = this.$tableBody.find('tr.detail-row').length;
+                
+                if (totalRows === 0) {
+                    alert(translations.addDetail);
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (parseInt(this.$totalForms.val()) !== totalRows) {
+                    console.warn('TOTAL_FORMS mismatch, updating...');
+                    this.$totalForms.val(totalRows);
+                }
+
+                console.log('✅ Validation passed, submitting form...');
+                return true;
+            }
+
+            addRow() {
+                var ledger = this.$inputLedger.val();
+                var ledgerText = this.$inputLedger.find('option:selected').text();
+                var amount = this.$inputAmount.val();
+                var desc = this.$inputDesc.val();
+
+                console.log('Adding row:', { ledger, ledgerText, amount, desc });
+
+                if (!ledger || ledger === "") {
+                    alert(translations.selectLedger);
+                    this.$inputLedger.focus();
+                    return;
+                }
+                
+                if (!amount || parseFloat(amount) <= 0) {
+                    alert(translations.validAmount);
+                    this.$inputAmount.focus();
+                    return;
+                }
+
+                this.appendRowToTable(ledgerText, amount, desc, this.formIndex);
+                this.appendHiddenFields(ledger, amount, desc, this.formIndex);
+
+                this.formIndex++;
+                this.updateTotalForms();
+                this.calculateTotal();
+                this.clearInputFields();
+                this.$inputLedger.focus();
+
+                console.log('Row added successfully. New formIndex:', this.formIndex);
+            }
+
+            removeRow(event) {
+                var $row = $(event.target).closest('tr');
+                var rowIndex = $row.data('form-index');
+
+                console.log('Removing row with index:', rowIndex);
+
+                var $hiddenFormRow = this.$hiddenFormsContainer.find(`.hidden-form-row[data-index="${rowIndex}"]`);
+                if ($hiddenFormRow.length) {
+                    $hiddenFormRow.remove();
+                    $row.remove();
+                }
+
+                this.reindexForms();
+                this.updateTotalForms();
+                this.calculateTotal();
+            }
+
+            appendRowToTable(ledgerText, amount, desc, index) {
+                var newRow = `
+                <tr class="detail-row" data-form-index="${index}">
+                    <td>${ledgerText}</td>
+                    <td class="amount-cell">${parseFloat(amount).toFixed(2)}</td>
+                    <td>${desc || '-'}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-sm remove-row">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </td>
+                </tr>
+                `;
+                this.$tableBody.append(newRow);
+            }
+
+            appendHiddenFields(ledger, amount, desc, index) {
+                var hiddenFields = `
+                <div class="hidden-form-row" data-index="${index}">
+                    <input type="hidden" name="details-${index}-Ledger" value="${ledger}">
+                    <input type="hidden" name="details-${index}-Amount" value="${amount}">
+                    <input type="hidden" name="details-${index}-Desc" value="${desc || ''}">
+                </div>
+                `;
+                this.$hiddenFormsContainer.append(hiddenFields);
+            }
+
+            reindexForms() {
+                let currentIndex = 0;
+                
+                this.$tableBody.find('tr.detail-row').each(function () {
+                    $(this).attr('data-form-index', currentIndex);
+                    currentIndex++;
+                });
+
+                currentIndex = 0;
+                this.$hiddenFormsContainer.find('.hidden-form-row').each(function () {
+                    $(this).attr('data-index', currentIndex);
+                    $(this).find('input').each(function () {
+                        var name = $(this).attr('name');
+                        if (name) {
+                            name = name.replace(/details-\d+-/, `details-${currentIndex}-`);
+                            $(this).attr('name', name);
+                        }
+                    });
+                    currentIndex++;
+                });
+
+                this.formIndex = currentIndex;
+                console.log('Forms reindexed. New formIndex:', this.formIndex);
+            }
+
+            updateTotalForms() {
+                const actualRowCount = this.$tableBody.find('tr.detail-row').length;
+                this.$totalForms.val(actualRowCount);
+                console.log('TOTAL_FORMS updated to:', actualRowCount);
+            }
+
+            calculateTotal() {
+                var total = 0;
+                this.$tableBody.find('.amount-cell').each(function () {
+                    var amount = parseFloat($(this).text()) || 0;
+                    total += amount;
+                });
+
+                this.$displayTotal.text(total.toFixed(2));
+                this.$totalAmountField.val(total.toFixed(2));
+
+                console.log('Total calculated:', total.toFixed(2));
+            }
+
+            clearInputFields() {
+                this.$inputLedger.val('');
+                this.$inputAmount.val('');
+                this.$inputDesc.val('');
+            }
         }
+
+        new ReceiptFormManager();
     });
-    
-    // Add Row Function
-    $('#addRow').click(function() {
-        var ledger = $('#inputLedger').val();
-        var ledgerText = $('#inputLedger option:selected').text();
-        var amount = $('#inputAmount').val();
-        var desc = $('#inputDesc').val();
-        
-        // Validation
-        if (!ledger) {
-            alert('Please select a Ledger');
-            $('#inputLedger').focus();
-            return;
-        }
-        if (!amount || amount <= 0) {
-            alert('Please enter a valid Amount');
-            $('#inputAmount').focus();
-            return;
-        }
-        
-        // Create table row with display data
-        var newRow = `
-            <tr class="detail-row">
-                <td>${ledgerText}</td>
-                <td class="amount-cell">${parseFloat(amount).toFixed(2)}</td>
-                <td>${desc || '-'}</td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-danger btn-sm remove-row">
-                        <i class="bi bi-x"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-        
-        // Create hidden form fields for Django
-        var hiddenFields = `
-            <div class="hidden-form-row" data-index="${formIndex}">
-                <input type="hidden" name="details-${formIndex}-Ledger" value="${ledger}">
-                <input type="hidden" name="details-${formIndex}-Amount" value="${amount}">
-                <input type="hidden" name="details-${formIndex}-Desc" value="${desc || ''}">
-            </div>
-        `;
-        
-        // Add to table and hidden forms
-        $('#tableBody').append(newRow);
-        $('#hiddenForms').append(hiddenFields);
-        
-        // Update form count
-        formIndex++;
-        $('#id_details-TOTAL_FORMS').val(formIndex);
-        
-        // Calculate total
-        calculateTotal();
-        
-        // Clear input fields
-        $('#inputLedger').val('');
-        $('#inputAmount').val('');
-        $('#inputDesc').val('');
-        
-        // Focus back to ledger
-        $('#inputLedger').focus();
-    });
-    
-    // Remove Row Function
-    $(document).on('click', '.remove-row', function() {
-        var row = $(this).closest('tr');
-        var rowIndex = $('#tableBody tr').index(row);
-        
-        // Remove table row
-        row.remove();
-        
-        // Remove corresponding hidden fields
-        $('.hidden-form-row').eq(rowIndex).remove();
-        
-        // Re-index remaining forms
-        reindexForms();
-        
-        // Recalculate total
-        calculateTotal();
-    });
-    
-    // Function to re-index forms after removal
-    function reindexForms() {
-        $('.hidden-form-row').each(function(index) {
-            $(this).attr('data-index', index);
-            $(this).find('input').each(function() {
-                var name = $(this).attr('name');
-                name = name.replace(/details-\d+-/, 'details-' + index + '-');
-                $(this).attr('name', name);
-            });
-        });
-        
-        // Update total forms and formIndex
-        var totalCount = $('.hidden-form-row').length;
-        $('#id_details-TOTAL_FORMS').val(totalCount);
-        formIndex = totalCount;
-    }
-    
-    // Allow Enter key to add row
-    $('#inputDesc').keypress(function(e) {
-        if (e.which == 13) {
-            e.preventDefault();
-            $('#addRow').click();
-        }
-    });
-    
-    // Initialize total on page load
-    calculateTotal();
-});
 </script>
 
 <!-- Get Next Voucher_no -->
+{% if not is_edit_mode %}
 <script>
-function updateVoucherNumber() {
-    const select = document.getElementById('id_voucherType');
-    const input = document.getElementById('id_voucher_no');
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
 
-    if (select && input && select.value) {
-        input.value = 'Loading...';
-        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    input.value = data.voucher_number;
-                } else {
-                    input.value = 'Error';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching voucher number:', error);
-                input.value = 'Error';
-            });
-    } else if (input) {
-        input.value = '';
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = data.voucher_number;
+                    } else {
+                        input.value = "{% trans 'Error' %}";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching voucher number:', error);
+                    input.value = "{% trans 'Error' %}";
+                });
+        } else if (input) {
+            input.value = '';
+        }
     }
-}
 
-window.addEventListener('DOMContentLoaded', function() {
-    const voucherSelect = document.getElementById('id_voucherType');
-    if (voucherSelect) {
-        voucherSelect.addEventListener('change', updateVoucherNumber);
-        updateVoucherNumber();
-    }
-});
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
+<!-- Hide Add button if PDC is True -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const isPdc = document.getElementById("id_IsPDC");
+        const addBtn = document.getElementById("addRow");
+
+        function updateAddButton() {
+            const rows = document.querySelectorAll("tr.detail-row");
+            const count = rows.length;
+
+            if (isPdc.checked && count >= 1) {
+                addBtn.style.display = "none";
+            } else {
+                addBtn.style.display = "block";
+            }
+        }
+
+        isPdc.addEventListener("change", updateAddButton);
+        addBtn.addEventListener("click", function () {
+            setTimeout(updateAddButton, 50);
+        });
+
+        updateAddButton();
+    });
 </script>
 
+<!-- Admin Override  -->
+<script>
+$(document).on("submit", "#receiptForm", function (e) {
+    e.preventDefault();
+
+    console.log("RECEIPT FORM SUBMIT");
+
+    window.pendingFormId = "receiptForm";
+    window.pendingFormAction = this.action;
+    window.afterSuccessRedirect = "{% url 'accounts_app:list_receipt' %}";
+
+    let formData = new FormData(this);
+
+    $.ajax({
+        url: window.pendingFormAction,
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',  // ✅ ADD THIS - ensures response is parsed as JSON
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+
+        success: function (response) {
+            console.log("RECEIPT SUCCESS:", response);
+
+            if (response.admin_required) {
+                console.log("Admin required - showing modal");
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+                window.location.href = window.afterSuccessRedirect;
+            } else {
+                alert(response.message || "Operation failed");
+            }
+        },
+
+        error: function (xhr) {
+    console.log("RECEIPT ERROR:", xhr.status, xhr.responseJSON);
+    console.log("Response Text:", xhr.responseText);  // ✅ Show raw response
+
+    if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+        console.log("403 with admin_required - showing modal");
+        $("#admin_error").text(xhr.responseJSON.message || "");
+        $("#adminOverrideModal").modal("show");
+        return;
+    }
+
+    if (xhr.status === 400 && xhr.responseJSON) {
+        console.log("400 validation error");
+        alert(xhr.responseJSON?.message || "Validation error");
+        return;
+    }
+
+    // ✅ Handle 500 errors
+    if (xhr.status === 500) {
+        console.log("500 server error");
+        if (xhr.responseJSON) {
+            alert("Server error: " + xhr.responseJSON.message);
+        } else {
+            alert("Server error - check Django console for details");
+        }
+        return;
+    }
+
+    alert(xhr.responseJSON?.message || "Something went wrong");
+}
+    });
+});
+</script>
 {% endblock %}

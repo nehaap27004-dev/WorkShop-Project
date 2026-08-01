@@ -1,0 +1,164 @@
+{% extends 'fleet_base1.html' %}
+{% load i18n %}
+
+{% block title %}{{ action_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-credit-card"></i> {{ action_title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.vehicle.id_for_label }}" class="form-label">
+                                    <strong>{{ form.vehicle.label }}</strong>
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.vehicle }}
+                                {% if form.vehicle.errors %}
+                                    <div class="text-danger small">{{ form.vehicle.errors }}</div>
+                                {% endif %}
+                                {% if form.vehicle.help_text %}
+                                    <small class="form-text text-muted">{{ form.vehicle.help_text }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.title.id_for_label }}" class="form-label">
+                                    <strong>{{ form.title.label }}</strong>
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                    <div class="text-danger small">{{ form.title.errors }}</div>
+                                {% endif %}
+                                {% if form.title.help_text %}
+                                    <small class="form-text text-muted">{{ form.title.help_text }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.start_date.id_for_label }}" class="form-label">
+                                    <strong>{{ form.start_date.label }}</strong>
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.start_date }}
+                                {% if form.start_date.errors %}
+                                    <div class="text-danger small">{{ form.start_date.errors }}</div>
+                                {% endif %}
+                                {% if form.start_date.help_text %}
+                                    <small class="form-text text-muted">{{ form.start_date.help_text }}</small>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.end_date.id_for_label }}" class="form-label">
+                                    <strong>{{ form.end_date.label }}</strong>
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.end_date }}
+                                {% if form.end_date.errors %}
+                                    <div class="text-danger small">{{ form.end_date.errors }}</div>
+                                {% endif %}
+                                {% if form.end_date.help_text %}
+                                    <small class="form-text text-muted">{{ form.end_date.help_text }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.reminder_day.id_for_label }}" class="form-label">
+                                    <strong>{{ form.reminder_day.label }}</strong>
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.reminder_day }}
+                                {% if form.reminder_day.errors %}
+                                    <div class="text-danger small">{{ form.reminder_day.errors }}</div>
+                                {% endif %}
+                                {% if form.reminder_day.help_text %}
+                                    <small class="form-text text-muted">{{ form.reminder_day.help_text }}</small>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.amount.id_for_label }}" class="form-label">
+                                    <strong>{{ form.amount.label }}</strong>
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.amount }}
+                                {% if form.amount.errors %}
+                                    <div class="text-danger small">{{ form.amount.errors }}</div>
+                                {% endif %}
+                                {% if form.amount.help_text %}
+                                    <small class="form-text text-muted">{{ form.amount.help_text }}</small>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.reminder_days_before.id_for_label }}" class="form-label">
+                                    <strong>{{ form.reminder_days_before.label }}</strong>
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.reminder_days_before }}
+                                {% if form.reminder_days_before.errors %}
+                                    <div class="text-danger small">{{ form.reminder_days_before.errors }}</div>
+                                {% endif %}
+                                {% if form.reminder_days_before.help_text %}
+                                    <small class="form-text text-muted">{{ form.reminder_days_before.help_text }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if emi_instance %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Note:</strong> Editing will update the EMI details and adjust amounts for unpaid installments.
+                        </div>
+                        {% else %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i>
+                            <strong>Note:</strong> Installments will be automatically created from start date to end date.
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'fleet_app:emi_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Save EMI Plan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control, .form-select {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.5rem;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+</style>
+{% endblock %}

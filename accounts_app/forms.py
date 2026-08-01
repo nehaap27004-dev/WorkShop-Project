@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from fleet_app.common import filter_voucher_types , get_ledgers_by_group_ids
 from .models import *
@@ -6,7 +7,19 @@ from django.forms import inlineformset_factory
 from django.forms import modelformset_factory
 from django.contrib.auth.forms import UserCreationForm
 
+from django import forms
+from .models import LedgerCreation
 
+class SimpleCustomerForm(forms.ModelForm):
+
+    class Meta:
+        model = LedgerCreation
+        fields = [
+            'ledger_name',
+            'mobile',
+            'email',
+            'address1'
+        ]
 
 class MainGroupForm(forms.ModelForm):
     class Meta:
@@ -66,13 +79,13 @@ class LedgerCreationForm(forms.ModelForm):
         }
         
         labels = {
-            'ledger_name': 'Ledger Name',
-            'groups': 'Groups',
-            'sub_group': 'Sub Group',
-            'opening_balance': 'Opening Balance',
-            'types': 'Type',
-            'remark': 'Remark',
-            'trn_number': 'TRN No',
+            'ledger_name': _('Ledger Name'),
+            'groups': _('Groups'),
+            'sub_group': _('Sub Group'),
+            'opening_balance': _('Opening Balance'),
+            'types': _('Type'),
+            'remark': _('Remark'),
+            'trn_number': _('TRN No'),
         }
         
 class CustomerForm(forms.ModelForm):
@@ -81,13 +94,14 @@ class CustomerForm(forms.ModelForm):
         fields = [
             'ledger_name', 'opening_balance', 'remark', 'trn_number',
             'email', 'mobile', 'phone_no', 'address1', 'country', 'state',
-            'city', 'zipcode', 'description'
+            'city', 'zipcode', 'description', 'cr_no',
         ]
         widgets = {
             'ledger_name': forms.TextInput(attrs={'class': 'form-control'}),
             'opening_balance': forms.NumberInput(attrs={'class': 'form-control'}),
             'remark': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'trn_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'cr_no': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'mobile': forms.TextInput(attrs={'class': 'form-control'}),
             'phone_no': forms.TextInput(attrs={'class': 'form-control'}),
@@ -98,26 +112,27 @@ class CustomerForm(forms.ModelForm):
             'zipcode': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
-        
+
         labels = {
-            'ledger_name': 'Client Name',
-            'opening_balance': 'Opening Balance',
-            'remark': 'Remark',
-            'trn_number': 'TR No',
-            'email': 'Email',
-            'mobile': 'Mobile',
-            'phone_no': 'Phone No',
-            'address1': 'Address',
-            'country': 'Country',
-            'state': 'State',
-            'city': 'City',
-            'zipcode': 'Zipcode',
-            'description': 'Description',
+            'ledger_name': _('Client Name'),
+            'opening_balance': _('Opening Balance'),
+            'remark': _('Remark'),
+            'trn_number': _('VATIN'),
+            'cr_no': _('CR No'),
+            'email': _('Email'),
+            'mobile': _('Mobile'),
+            'phone_no': _('Phone No'),
+            'address1': _('Address'),
+            'country': _('Country'),
+            'state': _('State'),
+            'city': _('City'),
+            'zipcode': _('Zipcode'),
+            'description': _('Description'),
         }
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        instance.groups_id = 29  # sundry DR - Automatically assign Group ID 
+        instance.groups_id = 2  # sundry DR - Automatically assign Group ID 
         instance.types = 'DR'    # Always DR
         if commit:
             instance.save()
@@ -130,13 +145,14 @@ class VendorForm(forms.ModelForm):
         fields = [
             'ledger_name', 'opening_balance', 'remark', 'trn_number',
             'email', 'mobile', 'phone_no', 'address1', 'country', 'state',
-            'city', 'zipcode', 'description'
+            'city', 'zipcode', 'description', 'cr_no',
         ]
         widgets = {
             'ledger_name': forms.TextInput(attrs={'class': 'form-control',}),
             'opening_balance': forms.NumberInput(attrs={'class': 'form-control'}),
             'remark': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'trn_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'cr_no': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'mobile': forms.TextInput(attrs={'class': 'form-control'}),
             'phone_no': forms.TextInput(attrs={'class': 'form-control'}),
@@ -149,19 +165,20 @@ class VendorForm(forms.ModelForm):
         }
         
         labels = {
-            'ledger_name': 'Supplier Name',
-            'opening_balance': 'Opening Balance',
-            'remark': 'Remark',
-            'trn_number': 'TR No',
-            'email': 'Email',
-            'mobile': 'Mobile',
-            'phone_no': 'Phone No',
-            'address1': 'Address',
-            'country': 'Country',
-            'state': 'State',
-            'city': 'City',
-            'zipcode': 'Zipcode',
-            'description': 'Description',
+            'ledger_name': _('Supplier Name'),
+            'opening_balance': _('Opening Balance'),
+            'remark': _('Remark'),
+            'trn_number': _('VATIN'),
+            'cr_no': _('CR No'),
+            'email': _('Email'),
+            'mobile': _('Mobile'),
+            'phone_no': _('Phone No'),
+            'address1': _('Address'),
+            'country': _('Country'),
+            'state': _('VAT No'),
+            'city': _('City'),
+            'zipcode': _('Zipcode'),
+            'description': _('Description'),
         }
 
     def save(self, commit=True):
@@ -175,11 +192,12 @@ class VendorForm(forms.ModelForm):
 class LocalPaymentForm(forms.ModelForm):
     class Meta:
         model = LocalPayment
-        fields = ['date', 'voucher_no', 'payment_mode', 'party', 'reference_no', 
-                 'party_VAT_no', 'remark', 'note', 'taxable_amount', 'VAT_amount', 'net_amount', 'voucherType']
+        fields = ['date', 'voucher_no', 'payment_mode', 'party', 'reference_no',
+                 'party_VAT_no', 'remark', 'note', 'taxable_amount', 'VAT_amount', 'net_amount', 'voucherType',  "IsPDC",
+                   "ChequeDate", "ChequeNo",]
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'voucher_no': forms.TextInput(attrs={'class': 'form-control'}),
+            'voucher_no': forms.TextInput(attrs={'class': 'form-control' , 'readonly': True}),
             'payment_mode': forms.Select(attrs={'class': 'form-control'}),
             'party': forms.TextInput(attrs={'class': 'form-control'}),
             'reference_no': forms.TextInput(attrs={'class': 'form-control'}),
@@ -189,6 +207,10 @@ class LocalPaymentForm(forms.ModelForm):
             'taxable_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'VAT_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'net_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'voucherType': forms.HiddenInput(),
+            "IsPDC": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "ChequeDate": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "ChequeNo": forms.TextInput(attrs={"class": "form-control"}),
         }
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -201,6 +223,8 @@ class LocalPaymentForm(forms.ModelForm):
                 self.fields['voucher_no'].initial = voucher_type.get_next_voucher_number()
             except:
                 pass
+            
+        self.fields['payment_mode'].queryset = get_ledgers_by_group_ids(8, 5)    
 
         # Voucher type filter 
         filter_voucher_types(self, [11])     
@@ -459,6 +483,7 @@ class PaymentForm(forms.ModelForm):
             
         ]
         widgets = {
+            "voucher_no": forms.TextInput(attrs={'class': 'form-control', 'readonly': True}),
             "Date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "IsPDC": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "Cleared": forms.CheckboxInput(attrs={"class": "form-check-input"}),
@@ -490,13 +515,15 @@ class PaymentForm(forms.ModelForm):
 class ReceiptBillMasterForm(forms.ModelForm):
     class Meta:
         model = ReceiptBillMaster
-        fields = ['Date', 'Customer', 'Ledger', 'Remark', 'TrnNo', 'ChequeNo', 'ChequeDate', 'ChequeStatus']
+        fields = ['Date', 'Customer', 'Ledger', 'Remark', 'TrnNo', 'IsPDC', 'ChequeNo', 'ChequeDate', 'ChequeStatus']
         widgets = {
+            
             'Date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'Customer': forms.Select(attrs={'class': 'form-control', 'id': 'id_customer'}),
             'Ledger': forms.Select(attrs={'class': 'form-control'}),
             'Remark': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'TrnNo': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'IsPDC': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'ChequeNo': forms.TextInput(attrs={'class': 'form-control'}),
             'ChequeDate': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'ChequeStatus': forms.Select(attrs={'class': 'form-control'}),
@@ -507,7 +534,8 @@ class ReceiptBillMasterForm(forms.ModelForm):
             'Customer': 'Customer',
             'Ledger': 'Ledger',
             'Remark': 'Remark',
-            'TrnNo': 'Tr No',
+            'TrnNo': 'TR No',
+            'IsPDC': 'Is PDC',
             'ChequeNo': 'Cheque No',
             'ChequeDate': 'Cheque Date',
             'ChequeStatus': 'Cheque Status',
@@ -528,12 +556,12 @@ class ReceiptBillDetailsForm(forms.ModelForm):
             'voucherType': forms.HiddenInput(),
             'VoucherNo': forms.HiddenInput(),
             'CurrentAmount': forms.HiddenInput(),
-            'Amount': forms.NumberInput(attrs={'class': 'form-control amount-input', 'step': '0.01'}),
+            'Amount': forms.NumberInput(attrs={'class': 'form-control'}),
         }
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Voucher type filter 
-        filter_voucher_types(self, [5])    
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     # Voucher type filter 
+    #     filter_voucher_types(self, [5])    
 
 
 ReceiptBillDetailsFormSet = inlineformset_factory(
@@ -546,13 +574,14 @@ ReceiptBillDetailsFormSet = inlineformset_factory(
 class PaymentBillMasterForm(forms.ModelForm):
     class Meta:
         model = PaymentBillMaster
-        fields = ['Date', 'Supplier', 'Ledger', 'Remark', 'TrnNo', 'ChequeNo', 'ChequeDate', 'ChequeStatus']
+        fields = ['Date', 'Supplier', 'Ledger', 'Remark', 'TrnNo', 'IsPDC', 'ChequeNo', 'ChequeDate', 'ChequeStatus']
         widgets = {
             'Date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'Supplier': forms.Select(attrs={'class': 'form-control', 'id': 'id_supplier'}),
             'Ledger': forms.Select(attrs={'class': 'form-control'}),
             'Remark': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'TrnNo': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'IsPDC': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'ChequeNo': forms.TextInput(attrs={'class': 'form-control'}),
             'ChequeDate': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'ChequeStatus': forms.Select(attrs={'class': 'form-control'}),
@@ -563,7 +592,8 @@ class PaymentBillMasterForm(forms.ModelForm):
             'Supplier': 'Supplier',
             'Ledger': 'Ledger',
             'Remark': 'Remark',
-            'TrnNo': 'Tr No',
+            'TrnNo': 'TR No',
+            'IsPDC': 'Is PDC',
             'ChequeNo': 'Cheque No',
             'ChequeDate': 'Cheque Date',
             'ChequeStatus': 'Cheque Status',
@@ -583,13 +613,13 @@ class PaymentBillDetailsForm(forms.ModelForm):
         widgets = {
             'voucherType': forms.HiddenInput(),
             'VoucherNo': forms.HiddenInput(),
-            'Amount': forms.NumberInput(attrs={'class': 'form-control amount-input', 'step': '0.01'}),
+            'Amount': forms.NumberInput(attrs={'class': 'form-control'}),
         }
         
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Voucher type filter 
-        filter_voucher_types(self, [6])     
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     # Voucher type filter 
+    #     filter_voucher_types(self, [6])     
 
 
 PaymentBillDetailsFormSet = inlineformset_factory(
@@ -606,17 +636,18 @@ class PaymentMasterForm(forms.ModelForm):
                   "ChequeDate", "ChequeNo", "TotalAmount"]
 
         labels = {
-            "voucher_no": "Voucher Number",
-            "Date": "Date",
-            "Ledger": "Cash/Bank",
-            "PaidTo": "Paid To",
-            "IsPDC": "PDC",
-            "ChequeDate": "Cheque Date",
-            "ChequeNo": "Cheque Number",
+            "voucher_no": _("Voucher Number"),
+            "Date": _("Date"),
+            "Ledger": _("Cash/Bank"),
+            "PaidTo": _("Paid To"),
+            "IsPDC": _("PDC"),
+            "ChequeDate": _("Cheque Date"),
+            "ChequeNo": _("Cheque Number"),
+            "TotalAmount": _("Total Amount"),
         }
 
         widgets = {
-            "voucher_no": forms.TextInput(attrs={"class": "form-control"}),
+            "voucher_no": forms.TextInput(attrs={"class": "form-control" , 'readonly': True}),
             "voucherType": forms.HiddenInput(),
             "Date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "Ledger": forms.Select(attrs={"class": "form-control"}),
@@ -629,7 +660,7 @@ class PaymentMasterForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Ledger filter by Groups cash account & sundry Sundry Creditors 
+        # Ledger filter by Groups cash account & Bank account
         self.fields['Ledger'].queryset = get_ledgers_by_group_ids(8, 5)
         # Voucher type filter 
         filter_voucher_types(self, [3])    
@@ -638,18 +669,20 @@ class PaymentMasterForm(forms.ModelForm):
 class PaymentDetailsForm(forms.ModelForm):
     class Meta:
         model = PaymentDetails
-        fields = ["Ledger", "Amount", "Desc"]
+        fields = ["Ledger", "Amount", "Desc", "Vehicle"]
 
         labels = {
-            "Ledger": "Ledger Account",
-            "Amount": "Amount",
-            "Desc": "Description",
+            "Ledger": _("Ledger Account"),
+            "Amount": _("Amount"),
+            "Desc": _("Description"),
+            "Vehicle": _("Vehicle"),
         }
 
         widgets = {
             "Ledger": forms.Select(attrs={"class": "form-control"}),
             "Amount": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
             "Desc": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "Vehicle": forms.Select(attrs={"class": "form-control"}),
         }
 
 
@@ -669,17 +702,18 @@ class ReceiptMasterForm(forms.ModelForm):
                    "ChequeDate", "ChequeNo" , "TotalAmount"]
 
         labels = {
-            "voucher_no": "Voucher Number",
-            "Date": "Date",
-            "Ledger": "Cash/Bank",
-            "ReceivedFrom": "Received From",
-            "IsPDC": "PDC",
-            "ChequeDate": "Cheque Date",
-            "ChequeNo": "Cheque Number",
+            "voucher_no": _("Voucher Number"),
+            "Date": _("Date"),
+            "Ledger": _("Cash/Bank"),
+            "ReceivedFrom": _("Received From"),
+            "IsPDC": _("PDC"),
+            "ChequeDate": _("Cheque Date"),
+            "ChequeNo": _("Cheque Number"),
+            "TotalAmount": _("Total Amount"),
         }
 
         widgets = {
-            "voucher_no": forms.TextInput(attrs={"class": "form-control"}),
+            "voucher_no": forms.TextInput(attrs={"class": "form-control" , 'readonly': True}),
             "voucherType": forms.HiddenInput(),
             "Date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "Ledger": forms.Select(attrs={"class": "form-control"}),
@@ -705,9 +739,9 @@ class ReceiptDetailsForm(forms.ModelForm):
         fields = ["Ledger", "Amount", "Desc"]
 
         labels = {
-            "Ledger": "Ledger Account",
-            "Amount": "Amount",
-            "Desc": "Description",
+            "Ledger": _("Ledger Account"),
+            "Amount": _("Amount"),
+            "Desc": _("Description"),
         }
 
         widgets = {

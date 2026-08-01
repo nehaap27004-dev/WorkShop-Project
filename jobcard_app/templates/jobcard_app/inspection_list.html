@@ -1,0 +1,815 @@
+{% extends 'fleet_base1.html' %}
+{% block content %}
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: #f4f6f9;
+    font-family: 'Segoe UI', sans-serif;
+    color: #111827;
+}
+
+.wrap {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+}
+
+/* ───────────── TOP BAR ───────────── */
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 2px;
+}
+
+.page-sub {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.btn-new {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.btn-new:hover {
+    background: #1d4ed8;
+    color: #fff;
+}
+
+
+/* ───────────── STATS ───────────── */
+
+.stats-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.stat {
+    background: #ffffff;
+    border: 1px solid #d9dee7;
+    border-radius: 10px;
+    padding: 14px 20px;
+    flex: 1;
+    min-width: 120px;
+}
+
+.stat-num {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 2px;
+}
+
+.stat-lbl {
+    font-size: 10px;
+    color: #6b7280;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+
+/* ───────────── SEARCH BAR ───────────── */
+
+.search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.srch-wrap {
+    flex: 1;
+    position: relative;
+    min-width: 220px;
+}
+
+.srch-wrap input {
+    width: 100%;
+    border: 1px solid #cfd6e1;
+    border-radius: 7px;
+    padding: 9px 12px 9px 36px;
+    font-size: 13px;
+    color: #111827;
+    background: #ffffff;
+    outline: none;
+}
+
+.srch-wrap input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, .08);
+}
+
+.srch-wrap input::placeholder {
+    color: #9ca3af;
+}
+
+.srch-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+.fsel {
+    border: 1px solid #cfd6e1;
+    border-radius: 7px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: #111827;
+    background: #ffffff;
+    outline: none;
+    cursor: pointer;
+    min-width: 180px;
+}
+
+.fsel:focus {
+    border-color: #2563eb;
+}
+
+.fsel option {
+    background: #ffffff;
+    color: #111827;
+}
+
+.btn-clear {
+    background: #ffffff;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.btn-clear:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+
+/* ───────────── TABLE CARD ───────────── */
+
+.tcard {
+    background: #ffffff;
+    border: 1px solid #d5dae3;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.tbl-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead th {
+    padding: 11px 16px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    background: #f8f9fb;
+    white-space: nowrap;
+}
+
+tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background .12s;
+}
+
+tbody tr:last-child {
+    border-bottom: none;
+}
+
+tbody tr:hover {
+    background: #f8fafc;
+}
+
+tbody td {
+    padding: 13px 16px;
+    vertical-align: middle;
+    color: #111827;
+}
+
+
+/* ───────────── CELL STYLES ───────────── */
+
+.insp-no {
+    font-size: 13px;
+    font-weight: 700;
+    color: #111827;
+    font-family: monospace;
+}
+
+.insp-date {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.reg-chip {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: .5px;
+    display: inline-block;
+}
+
+.veh-name {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 3px;
+}
+
+.cust-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.insp-by {
+    font-size: 13px;
+    color: #374151;
+}
+
+
+/* ───────────── FUEL GAUGE ───────────── */
+
+.fuel-cell {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.fuel-track-sm {
+    width: 48px;
+    height: 5px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.fuel-fill-sm {
+    height: 5px;
+    border-radius: 10px;
+    background: linear-gradient(
+        90deg,
+        #ef4444,
+        #f59e0b,
+        #22c55e
+    );
+}
+
+.fuel-txt {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+
+/* ───────────── DAMAGE TAGS ───────────── */
+
+.dtags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+
+.dtag {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.dt-dent {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.dt-scratch {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.dt-paint {
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+.dt-crack {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.dt-missing {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.dt-none {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+
+/* ───────────── SIGNED ───────────── */
+
+.signed-y {
+    color: #16a34a;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.signed-n {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+
+/* ───────────── ACTION BUTTONS ───────────── */
+
+.act-wrap {
+    display: flex;
+    gap: 5px;
+    flex-wrap: nowrap;
+}
+
+.ab {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.ab-view {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #dbeafe;
+}
+
+.ab-view:hover {
+    background: #dbeafe;
+}
+
+.ab-edit {
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #dcfce7;
+}
+
+.ab-edit:hover {
+    background: #dcfce7;
+}
+
+.ab-jc {
+    background: #f5f3ff;
+    color: #7c3aed;
+    border-color: #ede9fe;
+}
+
+.ab-jc:hover {
+    background: #ede9fe;
+}
+
+.ab-del {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fee2e2;
+}
+
+.ab-del:hover {
+    background: #fee2e2;
+}
+
+
+/* ───────────── EMPTY STATE ───────────── */
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #9ca3af;
+}
+
+.empty-icon {
+    font-size: 44px;
+    margin-bottom: 12px;
+}
+
+.empty-text {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 16px;
+}
+
+
+/* ───────────── DELETE MODAL ───────────── */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .45);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.open {
+    display: flex;
+}
+
+.modal-box {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    margin: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, .12);
+}
+
+.modal-icon {
+    font-size: 40px;
+    margin-bottom: 14px;
+}
+
+.modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.modal-sub {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 6px;
+}
+
+.modal-warn {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-bottom: 24px;
+}
+
+.modal-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.mb-cancel {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    padding: 9px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mb-cancel:hover {
+    background: #e5e7eb;
+}
+
+.mb-del {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 9px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mb-del:hover {
+    background: #b91c1c;
+}
+</style>
+
+<div class="wrap">
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div>
+      <div class="page-title">Vehicle Inspections</div>
+      <div class="page-sub">{{ total }} inspection{{ total|pluralize }} recorded</div>
+    </div>
+    <a href="{% url 'jobcard_app:inspection_create' %}" class="btn-new">+ New Inspection</a>
+  </div>
+
+  {% if messages %}{% for m in messages %}
+  <div style="padding:10px 16px;border-radius:7px;margin-bottom:14px;
+    background:{% if 'error' in m.tags %}rgba(239,68,68,.1){% else %}rgba(34,197,94,.1){% endif %};
+    border:1px solid {% if 'error' in m.tags %}rgba(239,68,68,.25){% else %}rgba(34,197,94,.25){% endif %};
+    color:{% if 'error' in m.tags %}#f87171{% else %}#86efac{% endif %};font-size:13px">
+    {{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-num">{{ total }}</div>
+      <div class="stat-lbl">Total</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:#22c55e">{{ pass_count }}</div>
+      <div class="stat-lbl">Passed / Safe</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:#f59e0b">{{ attention_count }}</div>
+      <div class="stat-lbl">Needs Attention</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:#ef4444">{{ fail_count }}</div>
+      <div class="stat-lbl">Failed / Unsafe</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:#7c3aed">{{ with_jobcard }}</div>
+      <div class="stat-lbl">Job Cards Created</div>
+    </div>
+  </div>
+
+  <!-- Search + filters -->
+  <form method="get" class="search-bar" id="searchForm">
+    <div class="srch-wrap">
+      <span class="srch-icon">🔍</span>
+      <input type="text" name="q" value="{{ q }}" id="qInp"
+             placeholder="Search inspection no., plate, customer, driver..."
+             autocomplete="off">
+    </div>
+    <select name="vehicle" class="fsel" onchange="this.form.submit()">
+      <option value="">All Vehicles</option>
+      {% for v in vehicles %}
+      <option value="{{ v.id }}"
+        {% if vehicle_id == v.id|stringformat:"s" %}selected{% endif %}>
+        {{ v.registration_number }} — {{ v.make }} {{ v.model }}
+      </option>
+      {% endfor %}
+    </select>
+    <select name="status" class="fsel" onchange="this.form.submit()">
+      <option value="">All Inspection Statuses</option>
+      <option value="pass" {% if status_filter == 'pass' %}selected{% endif %}>✅ Pass / Safe</option>
+      <option value="attention" {% if status_filter == 'attention' %}selected{% endif %}>⚠️ Needs Attention</option>
+      <option value="fail" {% if status_filter == 'fail' %}selected{% endif %}>🚫 Failed / Unsafe</option>
+    </select>
+    <a href="{% url 'jobcard_app:inspection_list' %}" class="btn-clear">✕ Clear</a>
+  </form>
+
+  <!-- Table -->
+  <div class="tcard">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Inspection No.</th>
+            <th>Vehicle</th>
+            <th>Customer / Driver</th>
+            <th>Overall Status</th>
+            <th>Inspector</th>
+            <th>Fuel</th>
+            <th>Damage Zones</th>
+            <th>Signed</th>
+            <th style="text-align:center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for insp in inspections %}
+          <tr>
+            <!-- Inspection No + Date -->
+            <td>
+              <div class="insp-no">{{ insp.inspection_number }}</div>
+              <div class="insp-date">{{ insp.inspection_date|date:"d M Y" }}</div>
+            </td>
+
+            <!-- Vehicle -->
+            <td>
+              <span class="reg-chip">{{ insp.vehicle.registration_number }}</span>
+              <div class="veh-name">
+                {{ insp.vehicle.make }} {{ insp.vehicle.model }}
+                {% if insp.vehicle.year %}({{ insp.vehicle.year }}){% endif %}
+              </div>
+            </td>
+
+            <!-- Customer & Driver -->
+            <td>
+              <div class="cust-name">{{ insp.customer.ledger_name }}</div>
+              {% if insp.driver_name %}<div style="font-size:11px;color:#6b7280">Driver: <strong>{{ insp.driver_name }}</strong></div>{% endif %}
+            </td>
+
+            <!-- Overall Status -->
+            <td>
+              {% if insp.overall_status == 'pass' %}
+              <span style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700">✅ Pass</span>
+              {% elif insp.overall_status == 'attention' %}
+              <span style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700">⚠️ Attention</span>
+              {% else %}
+              <span style="background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700">🚫 Failed</span>
+              {% endif %}
+            </td>
+
+            <!-- Inspector -->
+            <td>
+              <div class="insp-by">{{ insp.inspector.full_name|default:"—" }}</div>
+            </td>
+
+            <!-- Fuel -->
+            <td>
+              <div class="fuel-cell">
+                <div class="fuel-track-sm">
+                  <div class="fuel-fill-sm"
+                    style="width:{% if insp.fuel_level == 'empty' %}2{% elif insp.fuel_level == '1/4' %}25{% elif insp.fuel_level == '1/2' %}50{% elif insp.fuel_level == '3/4' %}75{% else %}100{% endif %}%">
+                  </div>
+                </div>
+                <span class="fuel-txt">{{ insp.fuel_level }}</span>
+              </div>
+            </td>
+
+            <!-- Damage -->
+            <td>
+              {% if insp.exterior_damages.all %}
+              <div class="dtags">
+                {% for d in insp.exterior_damages.all|slice:":3" %}
+                <span class="dtag dt-{{ d.damage_type }}">{{ d.get_zone_display }}</span>
+                {% endfor %}
+                {% if insp.exterior_damages.count > 3 %}
+                <span class="dtag" style="background:#2d2d4e;color:#6b7280">
+                  +{{ insp.exterior_damages.count|add:"-3" }} more
+                </span>
+                {% endif %}
+              </div>
+              {% else %}
+              <span class="dt-none">None</span>
+              {% endif %}
+            </td>
+
+            <!-- Signed -->
+            <td>
+              {% if insp.customer_signed %}
+              <span class="signed-y">✅ Yes</span>
+              {% else %}
+              <span class="signed-n">—</span>
+              {% endif %}
+            </td>
+
+            <!-- Actions -->
+            <td>
+              <div class="act-wrap">
+                <!-- View -->
+                <a href="{% url 'jobcard_app:inspection_detail' insp.pk %}"
+                   class="ab ab-view" title="View">
+                  👁 View
+                </a>
+
+                <!-- Edit -->
+                <a href="{% url 'jobcard_app:inspection_edit' insp.pk %}"
+                   class="ab ab-edit" title="Edit">
+                  ✏️ Edit
+                </a>
+
+                <!-- Create Job Card (only if not linked) -->
+                {% if not insp.jobcard %}
+                <a href="{% url 'jobcard_app:jobcard_create' %}?from_inspection={{ insp.pk }}"
+                   class="ab ab-jc" title="Create Job Card">
+                  🔧 Job
+                </a>
+                {% endif %}
+
+                <!-- Delete -->
+                <button type="button" class="ab ab-del"
+                        onclick="confirmDelete('{{ insp.pk }}','{{ insp.inspection_number }}','{{ insp.vehicle.registration_number }}')"
+                        title="Delete">
+                  🗑 Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9">
+              <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <div class="empty-text">No inspections recorded yet</div>
+                <a href="{% url 'jobcard_app:inspection_create' %}"
+                   style="background:#2563eb;color:#fff;border-radius:7px;
+                          padding:9px 20px;text-decoration:none;
+                          font-size:13px;font-weight:600;display:inline-block">
+                  Record First Inspection
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Delete confirmation modal ── -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <div class="modal-icon">🗑</div>
+    <div class="modal-title">Delete Inspection?</div>
+    <div class="modal-sub" id="modalInspNo" style="color:#60a5fa;font-family:monospace;font-weight:700"></div>
+    <div class="modal-sub" id="modalVehReg"></div>
+    <div class="modal-warn">
+      All related damage records, interior, mechanical, accessories<br>
+      and findings will be permanently deleted.
+    </div>
+    <div class="modal-btns">
+      <button type="button" class="mb-cancel" onclick="closeModal()">Cancel</button>
+      <form id="deleteForm" method="post" style="margin:0">
+        {% csrf_token %}
+        <button type="submit" class="mb-del">Yes, Delete</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Live search
+let timer;
+document.getElementById('qInp').addEventListener('input', function() {
+  clearTimeout(timer);
+  timer = setTimeout(() => document.getElementById('searchForm').submit(), 450);
+});
+
+// ── Delete modal
+function confirmDelete(pk, inspNo, reg) {
+  document.getElementById('modalInspNo').textContent = inspNo;
+  document.getElementById('modalVehReg').textContent = 'Vehicle: ' + reg;
+  document.getElementById('deleteForm').action =
+    '/jobcard/inspection/' + pk + '/delete/';
+  document.getElementById('deleteModal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('deleteModal').classList.remove('open');
+}
+// Close on overlay click
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+{% endblock %}

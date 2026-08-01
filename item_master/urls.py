@@ -1,5 +1,6 @@
 from django.urls import path
-from item_master.views import *
+
+from .views import *
 
 app_name = 'item_master'
 
@@ -137,7 +138,6 @@ urlpatterns = [
     
     path("filter-ledgers-purchase/", filter_ledgers_view_purchase, name="filter_ledgers_purchase"),
     path("filter-ledgers-sales/", filter_ledgers_sales_view, name="filter_ledgers_sales"),
-
 
     
 

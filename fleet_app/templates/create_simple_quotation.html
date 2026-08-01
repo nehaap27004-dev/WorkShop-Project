@@ -1,11 +1,14 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
 {% load privilege_tags %}
+{% load i18n %}
 
 {% block content %}
 <!-- Custom CSS -->
 <style>
-    h2, h3, h5 {
+    h2,
+    h3,
+    h5 {
         font-family: 'Segoe UI', sans-serif;
     }
 
@@ -14,7 +17,9 @@
         color: #444;
     }
 
-    input, select, textarea {
+    input,
+    select,
+    textarea {
         width: 100% !important;
         border: 1px solid #ced4da;
         border-radius: 6px;
@@ -22,13 +27,16 @@
         font-size: 0.95rem;
     }
 
-    input:focus, select:focus, textarea:focus {
+    input:focus,
+    select:focus,
+    textarea:focus {
         border-color: #5A8DEE;
         box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
         outline: none;
     }
 
-    .btn-primary, .btn-secondary {
+    .btn-primary,
+    .btn-secondary {
         background-color: #5A8DEE !important;
         border-color: #5A8DEE !important;
     }
@@ -60,34 +68,45 @@
         opacity: 0.9;
         transition: 0.2s ease-in-out;
     }
+
+    .tax-column {
+        display: none;
+    }
+
+    .tax-column.show {
+        display: table-cell;
+    }
+
+    #id_terms_and_condition {
+        height: 110px !important;
+    }
 </style>
 
 <div class="container mt-4 mb-5">
     <h2 class="mb-4 text-center fw-bold text-primary">
-    {% if is_edit_mode %}
-        Edit Quotation #{{ quotation_instance.quotation_no }}
-    {% else %}
-        Create Simple Quotation
-    {% endif %}
-</h2>
-<div class="d-flex justify-content-end mb-2">
+        {% if is_edit_mode %}
+        {% trans "Edit Quotation" %} #{{ quotation_instance.quotation_no }}
+        {% else %}
+        {% trans "Create Simple Quotation" %}
+        {% endif %}
+    </h2>
+    <div class="d-flex justify-content-end mb-2">
         {% has_priv request.user 2 "can_read" as can_read_simple_quotation %}
         {% if can_read_simple_quotation %}
-        <a href="{% url 'fleet_app:simple_quotation_list' %}"
-        class="btn btn-outline-primary btn-sm">
-            View
+        <a href="{% url 'fleet_app:simple_quotation_list' %}" class="btn btn-outline-primary btn-sm">
+            {% trans "View" %}
         </a>
         {% endif %}
 
     </div>
-    
+
     <form method="post" id="quotationForm" class="needs-validation">
         {% csrf_token %}
 
         <!-- Quotation Info -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Quotation Info</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Quotation Info" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -96,32 +115,57 @@
                         {{ form.voucher_no.label_tag }}
                         {{ form.voucher_no }}
                         {% if form.voucher_no.help_text %}
-                            <small class="form-text text-muted">{{ form.voucher_no.help_text }}</small>
+                        <small class="form-text text-muted">{{ form.voucher_no.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.quotation_no.label_tag }}
+                        {{ form.quotation_no }}
+                        {% if form.quotation_no.help_text %}
+                        <small class="form-text text-muted">{{ form.quotation_no.help_text }}</small>
                         {% endif %}
                     </div>
                     <div class="col-md-4" style="display: none">
                         {{ form.voucherType.label_tag }}
                         {{ form.voucherType }}
                         {% if form.voucherType.help_text %}
-                            <small class="form-text text-muted">{{ form.voucherType.help_text }}</small>
+                        <small class="form-text text-muted">{{ form.voucherType.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.terms_and_condition.label_tag }}
+                        {{ form.terms_and_condition }}
+                        {% if form.terms_and_condition.help_text %}
+                        <small class="form-text text-muted">{{ form.terms_and_condition.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.remark.label_tag }}
+                        {{ form.remark }}
+                        {% if form.remark.help_text %}
+                        <small class="form-text text-muted">{{ form.remark.help_text }}</small>
                         {% endif %}
                     </div>
                     <div class="col-md-4">
                         {{ form.date.label_tag }}
                         {{ form.date }}
                         {% if form.date.help_text %}
-                            <small class="form-text text-muted">{{ form.date.help_text }}</small>
+                        <small class="form-text text-muted">{{ form.date.help_text }}</small>
                         {% endif %}
                     </div>
                     <div class="col-md-4">
                         {{ form.customer.label_tag }}
                         <div class="d-flex align-items-center">
                             {{ form.customer }}
-                            <a href="{% url 'accounts_app:manage_customers' %}" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
-                                Manage Client
+                            <a href="{% url 'accounts_app:manage_customers' %}" target="_blank"
+                                class="btn btn-sm btn-outline-primary ms-2">
+                                {% trans "Manage Client" %}
                             </a>
                         </div>
                     </div>
+
+
+                    <!-- Row 2 -->
                     <div class="form-check col-md-4">
                         {{ form.enable_header }}
                         <label class="form-check-label" for="{{ form.enable_header.id_for_label }}">
@@ -142,39 +186,82 @@
                             {{ form.enable_signature.label }}
                         </label>
                     </div>
+                    <div class="col-md-4">
+                        {{ form.staff.label_tag }}
+                        {{ form.staff }}
+                        {% if form.staff.help_text %}
+                        <small class="form-text text-muted">{{ form.staff.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.attention.label_tag }}
+                        {{ form.attention }}
+                        {% if form.attention.help_text %}
+                        <small class="form-text text-muted">{{ form.attention.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.attention_contact.label_tag }}
+                        {{ form.attention_contact }}
+                        {% if form.attention_contact.help_text %}
+                        <small class="form-text text-muted">{{ form.attention_contact.help_text }}</small>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Quotation Details -->
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Add Quotation Details</h5>
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Add Quotation Details" %}</h5>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="enableTax" onchange="toggleTax()">
+                    <label class="form-check-label" for="enableTax">
+                        {% trans "Enable Tax (5%)" %}
+                    </label>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row g-3 align-items-end mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Description</label>
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "Fleet " %}</label>
+                        <select class="form-select" id="vehicle">
+                            <option value="">{% trans "Select Fleet" %}</option>
+                            {% for vehicle in vehicles %}
+                            <option value="{{ vehicle.id }}" data-rate-hr="{{ vehicle.rate_per_hr|default:'0' }}"
+                                data-rate-day="{{ vehicle.rate_per_day|default:'0' }}"
+                                data-rate-week="{{ vehicle.rate_per_week|default:'0' }}"
+                                data-rate-month="{{ vehicle.rate_per_month|default:'0' }}">
+                                {{ vehicle.vehicle_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "Description" %}</label>
                         <textarea class="form-control" id="description" rows="1"></textarea>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Quantity</label>
-                        <input type="number" class="form-control" id="quantity" min="1">
+                    <div class="col-md-1">
+                        <label class="form-label">{% trans "Quantity" %}</label>
+                        <input type="number" class="form-control" id="quantity" min="1" oninput="calculateAmounts()">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">{% trans "Rent" %}</label>
+                        <input type="number" class="form-control" id="rent" step="0.001" oninput="calculateAmounts()">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Rent</label>
-                        <input type="number" class="form-control" id="rent" step="0.001">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Period</label>
-                        <select class="form-select" id="period">
-                            <option value="Hour">Hour</option>
-                            <option value="Day">Day</option>
-                            <option value="Month">Month</option>
+                        <label class="form-label">{% trans "Period" %}</label>
+                        <select class="form-select" id="period" onchange="populateRateFromVehicle()">
+                            <option value="Hour">{% trans "Hour" %}</option>
+                            <option value="Day">{% trans "Day" %}</option>
+                            <option value="Week">{% trans "Week" %}</option>
+                            <option value="Month">{% trans "Month" %}</option>
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <button type="button" class="btn text-white w-100" style="background-color:#5A8DEE;" onclick="addItem()">Add</button>
+                        <button type="button" class="btn text-white w-100" style="background-color:#5A8DEE;"
+                            onclick="addItem()">{% trans "Add" %}</button>
                     </div>
                 </div>
 
@@ -182,11 +269,14 @@
                     <table class="table table-bordered align-middle text-center" id="detailsTable">
                         <thead class="table-light">
                             <tr>
-                                <th>Description</th>
-                                <th>Quantity</th>
-                                <th>Rent</th>
-                                <th>Period</th>
-                                <th>Action</th>
+                                <th>{% trans "Fleet " %}</th>
+                                <th>{% trans "Description" %}</th>
+                                <th>{% trans "Quantity" %}</th>
+                                <th>{% trans "Rent" %}</th>
+                                <th>{% trans "Period" %}</th>
+                                <th class="tax-column" id="taxHeader">{% trans "Tax Amount" %}</th>
+                                <th>{% trans "Total Amount" %}</th>
+                                <th>{% trans "Action" %}</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -200,65 +290,180 @@
 
         <div class="text-end mt-4">
             <button type="submit" class="btn btn-success px-4 py-2">
-    {% if is_edit_mode %}
-        💾 Update Quotation
-    {% else %}
-        💾 Save Quotation
-    {% endif %}
-</button>
+                {% if is_edit_mode %}
+                💾 {% trans "Update Quotation" %}
+                {% else %}
+                💾 {% trans "Save Quotation" %}
+                {% endif %}
+            </button>
         </div>
     </form>
 </div>
 
 <script>
+    // Translation strings for JavaScript
+    const translations = {
+        fillAllFields: "{% trans 'Please fill in all fields.' %}",
+        validQuantity: "{% trans 'Please enter a valid quantity.' %}",
+        validRent: "{% trans 'Please enter a valid rent amount.' %}",
+        remove: "{% trans 'Remove' %}",
+        noDetails: "{% trans 'No details added. Continue anyway?' %}",
+        loading: "{% trans 'Loading...' %}",
+        error: "{% trans 'Error' %}"
+    };
+
     let details = [];
+    let taxEnabled = false;
 
     // ✅ PRELOAD EXISTING DETAILS IN EDIT MODE
     {% if existing_details %}
-        console.log("📝 Edit mode - preloading {{ existing_details|length }} existing details...");
-        
-        {% for detail in existing_details %}
-            details.push({
-                rowId: Date.now() + {{ forloop.counter }},  // Unique ID
-                description: "{{ detail.description|escapejs }}",
-                quantity: "{{ detail.quantity }}",
-                rent: "{{ detail.rent }}",
-                period: "{{ detail.period }}"
-            });
-        {% endfor %}
-        
-        console.log("✅ Preloaded details:", details);
-        
-        // Update table immediately
-        updateTable();
+    console.log("📝 Edit mode - preloading {{ existing_details|length }} existing details...");
+
+    {% for detail in existing_details %}
+    details.push({
+        rowId: Date.now() + {{ forloop.counter }},
+        vehicle_id: "{{ detail.vehicle.id|default:'' }}",
+        vehicle_name: "{{ detail.vehicle.vehicle_name|default:'N/A'|escapejs }}",
+        description: "{{ detail.description|escapejs }}",
+        quantity: "{{ detail.quantity }}",
+        rent: "{{ detail.rent }}",
+        period: "{{ detail.period }}",
+        tax_amount: "{{ detail.tax_amount|default:'0' }}",
+        total_amount: "{{ detail.total_amount|default:'0' }}"
+    });
+    {% endfor %}
+
+    console.log("✅ Preloaded details:", details);
+
+    // Check if any detail has tax_amount > 0 to enable tax checkbox
+    const hasTax = details.some(item => parseFloat(item.tax_amount) > 0);
+    if (hasTax) {
+        document.getElementById('enableTax').checked = true;
+        taxEnabled = true;
+        toggleTax();
+    }
+
+    updateTable();
     {% endif %}
 
+    function toggleTax() {
+        taxEnabled = document.getElementById('enableTax').checked;
+        const taxColumns = document.querySelectorAll('.tax-column');
+
+        if (taxEnabled) {
+            taxColumns.forEach(col => col.classList.add('show'));
+        } else {
+            taxColumns.forEach(col => col.classList.remove('show'));
+        }
+
+        // Recalculate all items
+        details.forEach(item => {
+            const quantity = parseFloat(item.quantity) || 0;
+            const rent = parseFloat(item.rent) || 0;
+            const baseAmount = quantity * rent;
+
+            if (taxEnabled) {
+                item.tax_amount = (baseAmount * 0.05).toFixed(3);
+            } else {
+                item.tax_amount = '0';
+            }
+            item.total_amount = (baseAmount + parseFloat(item.tax_amount)).toFixed(3);
+        });
+
+        updateTable();
+    }
+
+    function populateRateFromVehicle() {
+        const vehicleSelect = document.getElementById('vehicle');
+        const selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
+        const period = document.getElementById('period').value;
+        const rentInput = document.getElementById('rent');
+
+        if (selectedOption && selectedOption.value) {
+            let rate = 0;
+            if (period === 'Hour') {
+                rate = selectedOption.getAttribute('data-rate-hr') || 0;
+            } else if (period === 'Day') {
+                rate = selectedOption.getAttribute('data-rate-day') || 0;
+            } else if (period === 'Week') {
+                rate = selectedOption.getAttribute('data-rate-week') || 0;
+            } else if (period === 'Month') {
+                rate = selectedOption.getAttribute('data-rate-month') || 0;
+            }
+            rentInput.value = parseFloat(rate).toFixed(3);
+        }
+    }
+
+    function calculateAmounts() {
+        const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+        const rent = parseFloat(document.getElementById('rent').value) || 0;
+
+        // Just trigger validation, actual calculation happens in addItem()
+        if (quantity > 0 && rent > 0) {
+            // Values are valid
+        }
+    }
+
     function addItem() {
+        const vehicleSelect = document.getElementById('vehicle');
+        const vehicleId = vehicleSelect.value;
+        const vehicleName = vehicleSelect.options[vehicleSelect.selectedIndex]?.text || 'N/A';
         const description = document.getElementById('description').value.trim();
         const quantity = document.getElementById('quantity').value.trim();
         const rent = document.getElementById('rent').value.trim();
         const period = document.getElementById('period').value.trim();
 
         if (!description || !quantity || !rent || !period) {
-            alert("Please fill in all fields.");
+            alert(translations.fillAllFields);
             return;
         }
 
         if (isNaN(quantity) || quantity <= 0) {
-            alert("Please enter a valid quantity.");
+            alert(translations.validQuantity);
             return;
         }
 
         if (isNaN(rent) || rent <= 0) {
-            alert("Please enter a valid rent amount.");
+            alert(translations.validRent);
             return;
         }
 
+        const quantityNum = parseFloat(quantity);
+        const rentNum = parseFloat(rent);
+        const baseAmount = quantityNum * rentNum;
+
+        let taxAmount = 0;
+        if (taxEnabled) {
+            taxAmount = baseAmount * 0.05;
+        }
+
+        const totalAmount = baseAmount + taxAmount;
+
         const rowId = Date.now();
-        details.push({ rowId, description, quantity, rent, period });
-        
-        console.log("Added new detail:", { rowId, description, quantity, rent, period });
-        
+        details.push({
+            rowId,
+            vehicle_id: vehicleId,
+            vehicle_name: vehicleName,
+            description,
+            quantity,
+            rent,
+            period,
+            tax_amount: taxAmount.toFixed(3),
+            total_amount: totalAmount.toFixed(3)
+        });
+
+        console.log("Added new detail:", {
+            rowId,
+            vehicle_id: vehicleId,
+            vehicle_name: vehicleName,
+            description,
+            quantity,
+            rent,
+            period,
+            tax_amount: taxAmount.toFixed(3),
+            total_amount: totalAmount.toFixed(3)
+        });
+
         updateTable();
         clearInputs();
     }
@@ -277,86 +482,142 @@
 
         details.forEach((item, index) => {
             const tr = document.createElement("tr");
+
+            let taxCell = '';
+            if (taxEnabled) {
+                taxCell = `<td class="tax-column show">${parseFloat(item.tax_amount).toFixed(3)}</td>`;
+            } else {
+                taxCell = `<td class="tax-column">${parseFloat(item.tax_amount).toFixed(3)}</td>`;
+            }
+
             tr.innerHTML = `
+                <td>${item.vehicle_name || 'N/A'}</td>
                 <td>${item.description}</td>
                 <td>${item.quantity}</td>
                 <td>${item.rent}</td>
                 <td>${item.period}</td>
-                <td><button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${item.rowId})">Remove</button></td>
+                ${taxCell}
+                <td>${parseFloat(item.total_amount).toFixed(3)}</td>
+                <td><button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${item.rowId})">${translations.remove}</button></td>
             `;
             tbody.appendChild(tr);
 
             const hiddenInput = document.createElement("input");
             hiddenInput.type = "hidden";
             hiddenInput.name = "details[]";
-            hiddenInput.value = `${item.description}|${item.quantity}|${item.rent}|${item.period}`;
+            hiddenInput.value = `${item.vehicle_id || ''}|${item.description}|${item.quantity}|${item.rent}|${item.period}|${item.tax_amount}|${item.total_amount}`;
             hiddenContainer.appendChild(hiddenInput);
         });
-        
+
         console.log("Table updated. Total details:", details.length);
     }
 
     function clearInputs() {
+        document.getElementById('vehicle').selectedIndex = 0;
         document.getElementById('description').value = '';
         document.getElementById('quantity').value = '';
         document.getElementById('rent').value = '';
         document.getElementById('period').selectedIndex = 0;
     }
 
-    // Debug: Log form data before submission
-    document.getElementById('quotationForm').addEventListener('submit', function(e) {
-        const formData = new FormData(this);
-        const detailsArray = formData.getAll('details[]');
-        
-        console.log('\n=== FORM SUBMISSION ===');
-        console.log('Total details:', detailsArray.length);
-        detailsArray.forEach((detail, index) => {
-            console.log(`  Detail ${index}: ${detail}`);
-        });
-        
-        if (detailsArray.length === 0) {
-            if (!confirm('No details added. Continue anyway?')) {
-                e.preventDefault();
-                return false;
-            }
-        }
-    });
 </script>
 
 <!-- Get Next Voucher_no -->
+{% if not is_edit_mode %}
 <script>
-function updateVoucherNumber() {
-    const select = document.getElementById('id_voucherType');
-    const input = document.getElementById('id_voucher_no');
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
 
-    if (select && input && select.value) {
-        input.value = 'Loading...';
-        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    input.value = data.voucher_number;
-                } else {
-                    input.value = 'Error';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching voucher number:', error);
-                input.value = 'Error';
-            });
-    } else if (input) {
-        input.value = '';
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = data.voucher_number;
+                    } else {
+                        input.value = "{% trans 'Error' %}";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching voucher number:', error);
+                    input.value = "{% trans 'Error' %}";
+                });
+        } else if (input) {
+            input.value = '';
+        }
     }
-}
 
-window.addEventListener('DOMContentLoaded', function() {
-    const voucherSelect = document.getElementById('id_voucherType');
-    if (voucherSelect) {
-        voucherSelect.addEventListener('change', updateVoucherNumber);
-        updateVoucherNumber(); // also run once on load
-    }
-});
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
 </script>
+{% endif %}
 
+<!-- Admin Override  -->
+<script>
+    $(document).on("submit", "#quotationForm", function (e) {
+        e.preventDefault();
+
+        // 🔎 VALIDATE DETAILS COUNT HERE
+        let formData = new FormData(this);
+        let detailsArray = formData.getAll("details[]");
+
+        if (detailsArray.length === 0) {
+            if (!confirm("{% trans 'No details added. Continue anyway?' %}")) {
+                return;
+            }
+        }
+
+        // ✅ SET PENDING ACTION (CRITICAL)
+        window.pendingFormAction = this.action;
+        window.pendingFormId = "quotationForm";
+        window.afterSuccessRedirect = "{% url 'fleet_app:simple_quotation_list' %}";
+
+        $.ajax({
+            url: window.pendingFormAction,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+
+            success: function (response) {
+
+                if (response.admin_required) {
+                    $("#admin_error").text(response.message || "");
+                    $("#adminOverrideModal").modal("show");
+                    return;
+                }
+
+                if (response.success) {
+                    alert(response.message);
+
+                    if (response.pdf_url) {
+                        window.open(response.pdf_url, "_blank");
+                    }
+
+                    setTimeout(function () {
+                        window.location.href = window.afterSuccessRedirect;
+                    }, 1000);
+                }
+            },
+
+            error: function (xhr) {
+                if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                    $("#admin_error").text(xhr.responseJSON.message || "");
+                    $("#adminOverrideModal").modal("show");
+                } else {
+                    alert("Something went wrong");
+                }
+            }
+        });
+    });
+</script>
 
 {% endblock %}

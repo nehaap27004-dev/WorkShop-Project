@@ -1,0 +1,112 @@
+{% extends "fleet_base1.html" %}
+{% load privilege_tags %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Payment Vouchers</h4>
+        </div>
+        <div class="card-body">
+            {% csrf_token %}
+            
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="paymentTable">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Voucher No</th>
+                            <th>Date</th>
+                            <th>Ledger</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr id="row-{{ payment.id }}">
+                            <td>{{ payment.voucher_no }}</td>
+                            <td>{{ payment.Date|date:"d-m-Y" }}</td>
+                            <td>{{ payment.Ledger.ledger_name }}</td>
+                            <td>{{ payment.TotalAmount }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if payment.Cleared == 'Cleared' %}badge-success{% elif payment.Cleared == 'Bounced' %}badge-danger{% else %}badge-warning{% endif %}">
+                                    {{ payment.Cleared }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'accounts_app:payment_edit' payment.id %}" 
+                                class="btn btn-sm btn-primary">
+                                    Edit
+                                </a>
+
+                               <button onclick="deletePayment({{ payment.id }}, '{{ payment.voucher_no }}')" 
+        class="btn btn-sm btn-danger">
+    Delete
+</button>
+
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No payment vouchers found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deletePayment(id, voucherNo) {
+    
+    if (!confirm(`Delete Payment ${voucherNo}?`)) {
+        return;
+    }
+
+    // ✅ STORE DELETE URL
+    window.pendingDeleteId = "{% url 'accounts_app:payment_master_delete' 0 %}".replace('/0/', `/${id}/`);
+
+    $.ajax({
+        url: window.pendingDeleteId,
+        type: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        dataType: 'json',
+
+        success: function (response) {
+            console.log("DELETE SUCCESS:", response);
+
+            if (response.admin_required) {
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+                location.reload();
+            } else {
+                alert(response.message || "Delete failed");
+            }
+        },
+
+        error: function (xhr) {
+            console.log("DELETE ERROR:", xhr.status, xhr.responseJSON);
+
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+            } else {
+                alert(xhr.responseJSON?.message || "Delete failed");
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

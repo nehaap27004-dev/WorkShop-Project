@@ -127,7 +127,8 @@
                 <table class="table table-bordered table-hover align-middle text-center">
                     <thead class="table-dark">
                         <tr>
-                            <th>ID</th>
+                            <th>#</th>
+                            <th>ID</th> 
                             <th>Name</th>
                             <th>Parent</th>
                             <th>Nature</th>
@@ -138,7 +139,8 @@
                     <tbody>
                         {% for group in groups %}
                             <tr>
-                                <td>{{ group.id }}</td>
+                                <td>{{ forloop.counter }}</td>
+                                 <td>{{ group.id }}</td> 
                                 <td><strong>{{ group.groupName }}</strong></td>
                                 <td>
                                     {% if group.groupId %}

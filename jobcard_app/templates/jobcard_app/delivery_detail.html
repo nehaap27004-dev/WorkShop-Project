@@ -1,0 +1,261 @@
+<!-- ═══════════════════════════════════════════════════════════
+     delivery_detail.html
+     Save to: jobcard_app/templates/jobcard_app/delivery_detail.html
+═══════════════════════════════════════════════════════════ -->
+{% extends 'fleet_base1.html' %}
+{% block content %}
+<style>
+*{box-sizing:border-box}
+body{background:#f5f6fa;font-family:'Segoe UI',sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px}
+.top-bar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.back-link{color:#2563eb;text-decoration:none;font-size:13px;font-weight:600}
+.page-title{font-size:20px;font-weight:700;color:#1a1a2e;margin-bottom:2px;margin-top:6px}
+.page-sub{font-size:12px;color:#6b7280}
+.hbtns{display:flex;gap:8px;flex-wrap:wrap}
+.hbtn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;border-radius:7px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid transparent;cursor:pointer;white-space:nowrap}
+.hb-edit {background:#f0fdf4;color:#16a34a;border-color:#bbf7d0}
+.hb-print{background:#eff6ff;color:#2563eb;border-color:#bfdbfe}
+.hb-inv  {background:#f5f3ff;color:#7c3aed;border-color:#ddd6fe}
+.hb-del  {background:#fef2f2;color:#dc2626;border-color:#fecaca}
+.sec{background:#fff;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.sec-hdr{padding:13px 18px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between}
+.sec-title{font-size:13px;font-weight:700;color:#111827}
+.sec-body{padding:18px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mb{margin-bottom:14px}
+@media(max-width:700px){.g4,.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.il{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.iv{font-size:13px;font-weight:600;color:#111827}
+.iv-sm{font-size:12px;color:#374151}
+.sbadge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700}
+.sb-draft    {background:#f3f4f6;color:#374151}
+.sb-delivered{background:#dcfce7;color:#16a34a}
+.sb-completed{background:#dcfce7;color:#16a34a}
+.sb-pending  {background:#fef3c7;color:#d97706}
+.sb-cancelled{background:#fee2e2;color:#dc2626}
+.ref-chip{display:inline-block;border-radius:4px;padding:2px 8px;font-size:12px;font-family:monospace;font-weight:700}
+.ref-green{background:#f0fdf4;color:#16a34a}
+.ref-blue {background:#eff6ff;color:#2563eb}
+table.it{width:100%;border-collapse:collapse}
+table.it thead th{padding:9px 14px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #f3f4f6;text-align:left;background:#f9fafb}
+table.it tbody td{padding:10px 14px;border-bottom:1px solid #f9fafb;font-size:13px;color:#111827}
+table.it tbody tr:last-child td{border-bottom:none}
+.empty-sm{text-align:center;padding:20px;color:#9ca3af;font-size:13px}
+.flash-ok{padding:10px 16px;border-radius:7px;margin-bottom:14px;font-size:13px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+.sum-box{margin-top:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;max-width:340px;margin-left:auto}
+.sum-line{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;color:#475569}
+.sum-line.total{border-top:2px solid #cbd5e1;padding-top:8px;font-weight:700;font-size:15px;color:#0f172a}
+@media print{.hbtns,.back-link{display:none}body{background:#fff}.sec{box-shadow:none}}
+</style>
+
+<div class="wrap">
+  <div class="top-bar">
+    <div>
+      <a href="{% url 'jobcard_app:delivery_list' %}" class="back-link">← Delivery Notes</a>
+      <div class="page-title">{{ dn.delivery_number }}</div>
+      <div class="page-sub">
+        {{ dn.date|date:"d M Y" }}
+        &nbsp;·&nbsp; {{ dn.customer.ledger_name }}
+        {% if dn.vehicle %}&nbsp;·&nbsp; {{ dn.vehicle.registration_number }}{% endif %}
+      </div>
+    </div>
+    <div class="hbtns">
+      <button onclick="window.print()" class="hbtn hb-print">🖨 Print</button>
+      <a href="{% url 'jobcard_app:delivery_edit' dn.pk %}" class="hbtn hb-edit">✏️ Edit</a>
+      <a href="{% url 'jobcard_app:invoice_create' %}?from_jobcard={% if dn.jobcard %}{{ dn.jobcard_id }}{% endif %}"
+         class="hbtn hb-inv">Create Invoice</a>
+      <form method="post" action="{% url 'jobcard_app:delivery_delete' dn.pk %}"
+            onsubmit="return confirm('Delete {{ dn.delivery_number }}?')" style="margin:0">
+        {% csrf_token %}
+        <button type="submit" class="hbtn hb-del">🗑 Delete</button>
+      </form>
+    </div>
+  </div>
+
+  {% if messages %}{% for m in messages %}<div class="flash-ok">{{ m }}</div>{% endfor %}{% endif %}
+
+  <!-- Details -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-title">Delivery Information</div>
+      <span class="sbadge sb-{{ dn.status }}">{{ dn.get_status_display }}</span>
+    </div>
+    <div class="sec-body">
+      <div class="g4 mb">
+        <div><div class="il">Delivery No</div><div class="iv" style="color:#2563eb;font-family:monospace">{{ dn.delivery_number }}</div></div>
+        <div><div class="il">Date</div><div class="iv">{{ dn.date|date:"d M Y" }}</div></div>
+        <div><div class="il">Driver</div><div class="iv">{{ dn.driver_name|default:"—" }}</div></div>
+        <div><div class="il">Odometer Out</div><div class="iv">{% if dn.odometer_out %}{{ dn.odometer_out }} km{% else %}—{% endif %}</div></div>
+      </div>
+      <div class="g3 mb">
+        <div><div class="il">Customer</div><div class="iv">{{ dn.customer.ledger_name }}</div></div>
+        <div>
+          <div class="il">Vehicle</div>
+          {% if dn.vehicle %}
+          <div class="iv">{{ dn.vehicle.registration_number }}</div>
+          <div class="iv-sm">{{ dn.vehicle.make }} {{ dn.vehicle.model }}</div>
+          {% else %}<div class="iv">—</div>{% endif %}
+        </div>
+        <div><div class="il">Fuel Level Out</div><div class="iv">{{ dn.fuel_level_out|default:"—" }}</div></div>
+      </div>
+      <div class="g3 mb">
+        <div>
+          <div class="il">Job Card</div>
+          {% if dn.jobcard %}
+          <a href="{% url 'jobcard_app:jobcard_detail' dn.jobcard_id %}"
+             style="text-decoration:none"><span class="ref-chip ref-green">{{ dn.jobcard.job_number }}</span></a>
+          {% else %}<div class="iv">—</div>{% endif %}
+        </div>
+        <div>
+          <div class="il">Quotation</div>
+          {% if dn.quotation %}
+          <span class="ref-chip ref-blue">{{ dn.quotation.quotation_number }}</span>
+          {% else %}<div class="iv">—</div>{% endif %}
+        </div>
+        <div><div class="il">Advisor</div><div class="iv">{{ dn.advisor.full_name|default:"—" }}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f9fafb;border-radius:7px;border:1px solid #f3f4f6">
+        {% if dn.customer_signed %}
+        <span style="color:#16a34a;font-size:16px">✅</span>
+        <span style="font-size:13px;font-weight:600;color:#16a34a">Customer has signed and accepted this delivery</span>
+        {% else %}
+        <span style="color:#d1d5db;font-size:16px">⬜</span>
+        <span style="font-size:13px;color:#9ca3af">Customer signature pending</span>
+        {% endif %}
+      </div>
+      {% if dn.notes %}
+      <div style="margin-top:12px;padding:10px 14px;background:#f9fafb;border:1px solid #f3f4f6;border-radius:7px;font-size:13px;color:#6b7280">
+        📝 {{ dn.notes }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 1. Completed Services -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-title">Delivery Note Details — Completed Services</div>
+      <span style="font-size:12px;color:#6b7280;font-weight:600">{{ dn.services.count }} service{{ dn.services.count|pluralize }}</span>
+    </div>
+    <table class="it">
+      <thead>
+        <tr>
+          <th style="width:40px">#</th>
+          <th>Service / Work Description</th>
+          <th style="width:80px">Qty</th>
+          <th style="width:120px">Status</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for svc in dn.services.all %}
+        <tr>
+          <td style="color:#9ca3af;font-size:12px">{{ forloop.counter }}</td>
+          <td style="font-weight:500">{{ svc.description }}</td>
+          <td>{{ svc.quantity }}</td>
+          <td><span class="sbadge sb-{{ svc.status|slugify }}">{{ svc.status }}</span></td>
+          <td style="color:#6b7280">{{ svc.remarks|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="empty-sm">No completed services recorded</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 2. Spare Parts Used -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-title">Spare Parts Used</div>
+      <span style="font-size:12px;color:#6b7280;font-weight:600">{{ dn.parts.count }} part{{ dn.parts.count|pluralize }}</span>
+    </div>
+    <table class="it">
+      <thead>
+        <tr>
+          <th style="width:40px">#</th>
+          <th>Item / Part</th>
+          <th style="width:80px">Qty</th>
+          <th style="width:90px">Unit</th>
+          <th style="width:110px;text-align:right">Rate</th>
+          <th style="width:130px;text-align:right">Amount </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in dn.parts.all %}
+        <tr>
+          <td style="color:#9ca3af;font-size:12px">{{ forloop.counter }}</td>
+          <td style="font-weight:500">{{ p.name }}</td>
+          <td>{{ p.quantity }}</td>
+          <td>{{ p.unit }}</td>
+          <td style="text-align:right">{{ p.rate|floatformat:3 }}</td>
+          <td style="text-align:right;font-weight:600">{{ p.amount|floatformat:3 }} </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="empty-sm">No spare parts recorded</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 3. Labour Charges -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-title">Labour Charges</div>
+      <span style="font-size:12px;color:#6b7280;font-weight:600">{{ dn.labours.count }} item{{ dn.labours.count|pluralize }}</span>
+    </div>
+    <table class="it">
+      <thead>
+        <tr>
+          <th style="width:40px">#</th>
+          <th>Labour Description</th>
+          <th style="width:80px">Hours</th>
+          <th style="width:110px;text-align:right">Rate/Hr </th>
+          <th style="width:130px;text-align:right">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in dn.labours.all %}
+        <tr>
+          <td style="color:#9ca3af;font-size:12px">{{ forloop.counter }}</td>
+          <td style="font-weight:500">{{ l.description }}</td>
+          <td>{{ l.hours }}</td>
+          <td style="text-align:right">{{ l.rate|floatformat:3 }}</td>
+          <td style="text-align:right;font-weight:600">{{ l.amount|floatformat:3 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="empty-sm">No labour charges recorded</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Summary Financials -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-title">Delivery Note Summary</div>
+    </div>
+    <div class="sec-body">
+      <div class="sum-box">
+        <div class="sum-line"><span>Parts Subtotal:</span><span>{{ dn.get_parts_total|floatformat:3 }} </span></div>
+        <div class="sum-line"><span>Labour Subtotal:</span><span>{{ dn.get_labour_total|floatformat:3 }} </span></div>
+        <div class="sum-line"><span>Subtotal:</span><span>{{ dn.get_subtotal|floatformat:3 }} </span></div>
+        {% if dn.discount > 0 %}
+        <div class="sum-line"><span>Discount:</span><span>- {{ dn.discount|floatformat:3 }} </span></div>
+        {% endif %}
+        {% if dn.tax_percent > 0 %}
+        <div class="sum-line"><span>Tax ({{ dn.tax_percent }}%):</span><span>+ {{ dn.get_tax_amount|floatformat:3 }} </span></div>
+        {% endif %}
+        <div class="sum-line total"><span>Grand Total:</span><span>{{ dn.get_grand_total|floatformat:3 }} </span></div>
+        {% if dn.advance_received > 0 %}
+        <div class="sum-line"><span>Advance Received:</span><span>- {{ dn.advance_received|floatformat:3 }} </span></div>
+        {% endif %}
+        <div class="sum-line" style="font-weight:700;color:#2563eb"><span>Balance:</span><span>{{ dn.get_balance|floatformat:3 }} </span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

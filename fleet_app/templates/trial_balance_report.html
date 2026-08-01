@@ -1,0 +1,397 @@
+{% extends "fleet_base1.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- HEADER -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="font-weight-bold mb-1">
+                <i class="bi bi-journal-text"></i> Trial Balance
+            </h2>
+            <p class="text-muted mb-0">Ledger-wise debit and credit summary</p>
+        </div>
+    </div>
+
+    <!-- DATE FILTER -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body py-3">
+            <form method="get">
+                <div class="form-row align-items-end">
+                    <div class="col-auto">
+                        <label class="mb-1 small text-muted">From</label>
+                        <input type="date" name="start_date" class="form-control form-control-sm"
+                               value="{{ start_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-auto">
+                        <label class="mb-1 small text-muted">To</label>
+                        <input type="date" name="end_date" class="form-control form-control-sm"
+                               value="{{ end_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-funnel"></i> Filter
+                        </button>
+                    </div>
+                    <div class="col-auto ml-2 d-flex align-items-end">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle mr-1"></i>
+                            Click any ledger to expand postings
+                        </small>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-white border-right-0">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                </div>
+                <input type="text" id="tbSearch"
+                       class="form-control border-left-0"
+                       placeholder="Search particulars..."
+                       autocomplete="off">
+            </div>
+        </div>
+        <div class="col-md-8 d-flex align-items-center">
+            <small class="text-muted" id="tbResultCount"></small>
+        </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table mb-0" id="tbTable">
+
+                    <thead class="thead-dark">
+                        <tr>
+                            <th width="40">#</th>
+                            <th>Particulars</th>
+                            <th class="text-right">Debit</th>
+                            <th class="text-right">Credit</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="tbBody">
+                        {% for row in ledger_rows %}
+
+                        <!-- LEDGER SUMMARY ROW -->
+                        <!--
+                            data-debit / data-credit carry the NET display values
+                            (one will be 0 since only one side is populated).
+                            The footer JS sums these to give correct net totals.
+                        -->
+                        <tr class="ledger-row"
+                            data-ledger-id="{{ row.ledger_id }}"
+                            data-name="{{ row.ledger_name }}"
+                            data-debit="{{ row.debit|default:'0' }}"
+                            data-credit="{{ row.credit|default:'0' }}"
+                            style="cursor:pointer;">
+
+                            <td class="row-counter text-muted">{{ forloop.counter }}</td>
+
+                            <td>
+                                <i class="bi bi-chevron-right toggle-icon mr-1 small text-primary"></i>
+                                <span class="font-weight-bold text-primary">{{ row.ledger_name }}</span>
+                            </td>
+
+                            <!-- NET Debit — only shown when ledger has a debit balance -->
+                            <td class="text-right">
+                                {% if row.debit %}
+                                    <span class="text-success font-weight-bold">{{ row.debit|floatformat:3 }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- NET Credit — only shown when ledger has a credit balance -->
+                            <td class="text-right">
+                                {% if row.credit %}
+                                    <span class="text-danger font-weight-bold">{{ row.credit|floatformat:3 }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- POSTINGS DETAIL ROW (raw transactions — intentionally not netted) -->
+                        <tr class="detail-row" id="detail-{{ row.ledger_id }}" style="display:none;">
+                            <td colspan="4" class="p-0 border-top-0">
+                                <div class="border-left border-primary bg-light px-3 py-2"
+                                     style="border-left-width:3px !important;">
+
+                                    <!-- Spinner -->
+                                    <div class="detail-loader text-center py-3">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="sr-only">Loading...</span>
+                                        </div>
+                                        <span class="ml-2 text-muted small">Loading postings…</span>
+                                    </div>
+
+                                    <!-- Postings table -->
+                                    <div class="detail-content" style="display:none;">
+                                        <p class="text-muted small mb-1 mt-1">
+                                            <i class="bi bi-info-circle mr-1"></i>
+                                            Individual transaction lines — gross amounts before netting.
+                                        </p>
+                                        <table class="table table-sm table-bordered bg-white mb-1">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th width="35">#</th>
+                                                    <th>Date</th>
+                                                    <th>Ledger</th>
+                                                    <th class="text-right">Debit</th>
+                                                    <th class="text-right">Credit</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="detail-tbody"></tbody>
+                                            <tfoot class="font-weight-bold">
+                                                <tr class="bg-light">
+                                                    <td colspan="3" class="text-right">Gross Total:</td>
+                                                    <td class="text-right text-success detail-total-debit"></td>
+                                                    <td class="text-right text-danger detail-total-credit"></td>
+                                                </tr>
+                                                <tr class="bg-light">
+                                                    <td colspan="3" class="text-right text-muted small">Net Balance:</td>
+                                                    <td colspan="2" class="text-right detail-net-balance small font-weight-bold"></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+
+                                    <!-- Empty state -->
+                                    <div class="detail-empty text-center py-3" style="display:none;">
+                                        <i class="bi bi-inbox text-muted" style="font-size:1.5rem;"></i>
+                                        <p class="text-muted small mb-0 mt-1">No postings found for this period.</p>
+                                    </div>
+
+                                </div>
+                            </td>
+                        </tr>
+
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-5">
+                                No postings found for this period
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                    <!-- FOOTER: sums of net debit / net credit columns -->
+                    <tfoot class="bg-light">
+                        <tr class="font-weight-bold border-top">
+                            <td colspan="2" class="text-right">TOTAL:</td>
+                            <td class="text-right text-success" id="footDebit">0.000</td>
+                            <td class="text-right text-danger" id="footCredit">0.000</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" class="text-right text-muted small">Difference:</td>
+                            <td colspan="2" class="text-right small font-weight-bold" id="footDiff"></td>
+                        </tr>
+                    </tfoot>
+
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<span id="ajaxUrl" data-url="{% url 'fleet_app:trial_balance_postings_ajax' %}" style="display:none;"></span>
+
+<script>
+(function () {
+
+    const tbBody      = document.getElementById('tbBody');
+    const searchInput = document.getElementById('tbSearch');
+    const resultCount = document.getElementById('tbResultCount');
+    const footDebit   = document.getElementById('footDebit');
+    const footCredit  = document.getElementById('footCredit');
+    const footDiff    = document.getElementById('footDiff');
+    const AJAX_URL    = document.getElementById('ajaxUrl').dataset.url;
+    const urlParams   = new URLSearchParams(window.location.search);
+    const fetched     = {};
+
+    // ── TOTALS ────────────────────────────────────────────────────────
+    // data-debit / data-credit are already net values from the view,
+    // so summing them here gives the correct trial balance totals.
+    function updateTotals() {
+        let sumD = 0, sumC = 0;
+        tbBody.querySelectorAll('tr.ledger-row').forEach(function (row) {
+            if (row.style.display === 'none') return;
+            sumD += parseFloat(row.dataset.debit)  || 0;
+            sumC += parseFloat(row.dataset.credit) || 0;
+        });
+
+        footDebit.textContent  = sumD.toFixed(3);
+        footCredit.textContent = sumC.toFixed(3);
+
+        const diff = sumD - sumC;
+        footDiff.textContent = diff.toFixed(3);
+        footDiff.className   = 'text-right small font-weight-bold ' +
+            (Math.abs(diff) < 0.001 ? 'text-success' : 'text-danger');
+    }
+
+    updateTotals();
+
+    // ── SEARCH ────────────────────────────────────────────────────────
+    searchInput.addEventListener('input', function () {
+        const query      = this.value.trim().toLowerCase();
+        const ledgerRows = tbBody.querySelectorAll('tr.ledger-row');
+        let visible = 0;
+
+        ledgerRows.forEach(function (row) {
+            const name  = (row.dataset.name || '').toLowerCase();
+            const match = !query || name.includes(query);
+
+            row.style.display = match ? '' : 'none';
+
+            const detailRow = document.getElementById('detail-' + row.dataset.ledgerId);
+            if (detailRow) {
+                if (!match) {
+                    detailRow.style.display = 'none';
+                } else if (detailRow.dataset.open === '1') {
+                    detailRow.style.display = '';
+                }
+            }
+
+            if (match) visible++;
+        });
+
+        // Renumber visible rows
+        let counter = 1;
+        ledgerRows.forEach(function (row) {
+            if (row.style.display !== 'none') {
+                row.querySelector('.row-counter').textContent = counter++;
+            }
+        });
+
+        resultCount.textContent = query
+            ? visible + ' result' + (visible !== 1 ? 's' : '') + ' found'
+            : '';
+
+        updateTotals();
+    });
+
+    // ── DRILL-DOWN ────────────────────────────────────────────────────
+    tbBody.addEventListener('click', function (e) {
+        const summaryRow = e.target.closest('tr.ledger-row');
+        if (!summaryRow) return;
+
+        const ledgerId  = summaryRow.dataset.ledgerId;
+        const detailRow = document.getElementById('detail-' + ledgerId);
+        const icon      = summaryRow.querySelector('.toggle-icon');
+        if (!detailRow) return;
+
+        const isOpen = detailRow.dataset.open === '1';
+
+        if (isOpen) {
+            detailRow.style.display = 'none';
+            detailRow.dataset.open  = '0';
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-right');
+            return;
+        }
+
+        // Expand
+        detailRow.style.display = '';
+        detailRow.dataset.open  = '1';
+        icon.classList.remove('bi-chevron-right');
+        icon.classList.add('bi-chevron-down');
+
+        if (fetched[ledgerId]) return;
+
+        // Fetch raw postings for this ledger
+        const params = new URLSearchParams({
+            ledger_id:  ledgerId,
+            start_date: urlParams.get('start_date') || '',
+            end_date:   urlParams.get('end_date')   || '',
+        });
+
+        fetch(AJAX_URL + '?' + params.toString())
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function (data) {
+                const loader     = detailRow.querySelector('.detail-loader');
+                const content    = detailRow.querySelector('.detail-content');
+                const empty      = detailRow.querySelector('.detail-empty');
+                const tbody      = detailRow.querySelector('.detail-tbody');
+                const totalD     = detailRow.querySelector('.detail-total-debit');
+                const totalC     = detailRow.querySelector('.detail-total-credit');
+                const netBalance = detailRow.querySelector('.detail-net-balance');
+
+                loader.style.display = 'none';
+                fetched[ledgerId]    = true;
+
+                if (!data.postings || data.postings.length === 0) {
+                    empty.style.display = '';
+                    return;
+                }
+
+                let sumD = 0, sumC = 0;
+
+                data.postings.forEach(function (p, idx) {
+                    const d = parseFloat(p.debit)  || 0;
+                    const c = parseFloat(p.credit) || 0;
+                    sumD += d;
+                    sumC += c;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML =
+                        '<td class="text-muted">' + (idx + 1) + '</td>' +
+                        '<td>' + p.date + '</td>' +
+                        '<td>' + p.ledger_name + '</td>' +
+                        '<td class="text-right">' +
+                            (d > 0 ? '<span class="text-success">' + d.toFixed(3) + '</span>'
+                                   : '<span class="text-muted">—</span>') +
+                        '</td>' +
+                        '<td class="text-right">' +
+                            (c > 0 ? '<span class="text-danger">' + c.toFixed(3) + '</span>'
+                                   : '<span class="text-muted">—</span>') +
+                        '</td>';
+                    tbody.appendChild(tr);
+                });
+
+                // Gross totals in the detail footer
+                totalD.textContent = sumD.toFixed(3);
+                totalC.textContent = sumC.toFixed(3);
+
+                // Net balance line (matches what the summary row shows)
+                const net = sumD - sumC;
+                if (net > 0) {
+                    netBalance.textContent  = 'Dr  ' + net.toFixed(3);
+                    netBalance.className    = 'text-right detail-net-balance small font-weight-bold text-success';
+                } else if (net < 0) {
+                    netBalance.textContent  = 'Cr  ' + Math.abs(net).toFixed(3);
+                    netBalance.className    = 'text-right detail-net-balance small font-weight-bold text-danger';
+                } else {
+                    netBalance.textContent  = 'Nil  0.000';
+                    netBalance.className    = 'text-right detail-net-balance small font-weight-bold text-muted';
+                }
+
+                content.style.display = '';
+            })
+            .catch(function (err) {
+                const loader = detailRow.querySelector('.detail-loader');
+                const empty  = detailRow.querySelector('.detail-empty');
+                loader.style.display = 'none';
+                empty.style.display  = '';
+                console.error('Postings fetch failed:', err);
+            });
+    });
+
+})();
+</script>
+
+{% endblock %}

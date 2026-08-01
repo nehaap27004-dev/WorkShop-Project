@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import include, path
+
 from .views import *
 
 app_name = 'accounts_app'
@@ -31,6 +32,8 @@ urlpatterns = [
     path('local-payment/<int:pk>/', local_payment_view, name='update_local_payment'),  # For updating   
     path('local_payment_list/', local_payment_list, name='local_payment_list'),  # URL for the voucher list
     path('local_payment_details/<int:pk>/', local_payment_detail, name='local_payment_detail'),  # URL for voucher details
+    path('local-payment/edit/<int:payment_id>/', local_payment_view, name='local_payment_edit'),
+    path('delete-local-payment/<int:id>/', delete_local_payment, name='delete_local_payment'),
     
     path('create-ledger/', create_ledger, name='create_ledger'),
     
@@ -75,19 +78,25 @@ urlpatterns = [
     path('receiptbill/edit/<int:pk>/', create_ReceiptBillClearance, name='edit_receiptbill'),
     path('receiptbill/list/', list_receiptbill, name='list_receiptbill'),
     path('receiptbill/delete/<int:pk>/', receiptbill_delete, name='receiptbill_delete'),
-    path('get-customer-invoices/', get_customer_invoices, name='get_customer_invoices'),
+    path('ajax/get-customer-invoices-openings/', 
+         get_customer_invoices_and_openings, 
+         name='get_customer_invoices_and_openings'),
     
     path('create-paymentbill/', create_PaymentBillClearance, name='create_paymentbill'),
     path('paymentbill/edit/<int:pk>/', create_PaymentBillClearance, name='edit_paymentbill'),
     path('paymentbill/list/', list_paymentbill, name='list_paymentbill'),
     path('paymentbill/delete/<int:pk>/', paymentbill_delete, name='paymentbill_delete'),
-    path('get_supplier_fleethires/', get_supplier_hires, name='get_supplier_fleethires'),
+    path('get-supplier-hires-and-openings/', get_supplier_hires_and_openings, name='get_supplier_hires_and_openings'),
     
     path("payment-create/", payment_create, name="payment_create"),
+    path('payments-master/', list_payment, name='list_payment'),
+    path('payment_master_delete/<int:pk>/', payment_master_delete, name='payment_master_delete'),
+    path('payment/edit/<int:pk>/', payment_create, name='payment_edit'),
     
     path("receipt/create/", receipt_create, name="receipt_create"),
     path("receipt/list/", list_receipt, name="list_receipt"),
     path("receipt/delete/<int:pk>/", receipt_delete, name="receipt_delete"),
+    path('receipt/edit/<int:pk>/', receipt_create, name='edit_receipt'),
     
     path('ledger-postings/', ledger_posting_list, name='ledger_posting_list'),
 
@@ -95,5 +104,9 @@ urlpatterns = [
     path('cheque-clearance/bills/', get_cheque_clearance_bills, name='get_cheque_clearance_bills'),
     path('cheque-clearance/update/', update_cheque_status, name='update_cheque_status'),
 
+    path('receipt-bill-outstanding-report/', client_outstanding_report, name='client_outstanding_report'),
+    path('supplier-outstanding-report/', supplier_outstanding_report, name='supplier_outstanding_report'),
+
+    
     
 ]

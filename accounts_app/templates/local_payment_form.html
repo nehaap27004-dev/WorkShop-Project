@@ -1,95 +1,240 @@
 {% extends 'fleet_base1.html' %}
+{% load i18n %}
+{% load privilege_tags %}
 
 {% block content %}
 <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
-    .form-section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px;}
-    .form-section h3 { margin-bottom: 15px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px;}
-    .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;}
-    .form-group { flex: 1; min-width: 200px;}
-    .form-group label { display: block; margin-bottom: 5px; color: #555;}
-    .form-control { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;}
-    .form-control:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 2px rgba(0,123,255,0.25);}
-    button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;}
-    .btn-primary { background: #007bff; color: white;}
-    .btn-danger { background: #dc3545; color: white;}
-    .btn-success { background: #28a745; color: white;}
-    table { width: 100%; border-collapse: collapse; margin-bottom: 15px;}
-    table th, table td { padding: 8px; border: 1px solid #ddd; text-align: left;}
-    table th { background: #f8f9fa;}
-    .items-table { margin-top: 15px;}
-    .hidden { display: none;}
-    .messages { margin-bottom: 20px;}
-    .messages .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px;}
-    .messages .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px;}
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .form-section h3 {
+        margin-bottom: 15px;
+        color: #333;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 5px;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+    .form-group {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+    }
+
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: #007bff;
+        color: white;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+
+    table th,
+    table td {
+        padding: 8px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    table th {
+        background: #f8f9fa;
+    }
+
+    .items-table {
+        margin-top: 15px;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .messages {
+        margin-bottom: 20px;
+    }
+
+    .messages .success {
+        background: #d4edda;
+        color: #155724;
+        padding: 10px;
+        border-radius: 4px;
+    }
+
+    .messages .error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 4px;
+    }
 </style>
 
 <div class="container">
-    {% if messages %}
-    <div class="messages">
-        {% for message in messages %}
-            <div class="{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    </div>
-    {% endif %}
+    <h2 style="text-align: center; margin-bottom: 20px; color: #333;">
+        {% if is_edit_mode %}
+            {% trans "Edit Local Payment" %} #{{ payment_instance.voucher_no }}
+        {% else %}
+            {% trans "Create Local Payment" %}
+        {% endif %}
+    </h2>
 
-    <form method="post" id="localPaymentForm">
+{% has_priv request.user 9 "can_read" as can_read_local_payment %}
+{% if can_read_local_payment %}
+<a href="{% url 'accounts_app:local_payment_list' %}" 
+   class="btn-primary"
+   style="padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-flex; align-items: center; gap: 8px;">
+    {% trans "View" %}
+</a>
+{% endif %}
+
+<form method="post" id="localPaymentForm">
         {% csrf_token %}
-        
+
         <!-- Payment Details Section -->
         <div class="form-section">
-            <h3>Payment Details</h3>
+            <h3>{% trans " Local Payment " %}</h3>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="{{ payment_form.date.id_for_label }}">Date</label>
+                    <label for="{{ payment_form.date.id_for_label }}">{% trans "Date" %}</label>
                     {{ payment_form.date }}
                 </div>
                 <div class="form-group">
-                    <label for="{{ payment_form.voucher_no.id_for_label }}">Voucher No</label>
+                    <label for="{{ payment_form.voucher_no.id_for_label }}">{% trans "Voucher No" %}</label>
                     {{ payment_form.voucher_no }}
                 </div>
                 <div class="form-group" style="display: none">
-                    <label for="{{ payment_form.voucherType.id_for_label }}">Voucher No</label>
+                    <label for="{{ payment_form.voucherType.id_for_label }}">{% trans "Voucher No" %}</label>
                     {{ payment_form.voucherType }}
                 </div>
                 <div class="form-group">
-                    <label for="{{ payment_form.payment_mode.id_for_label }}">Payment Mode</label>
+                    <label for="{{ payment_form.payment_mode.id_for_label }}">{% trans "Payment Mode" %}</label>
                     {{ payment_form.payment_mode }}
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="{{ payment_form.party.id_for_label }}">Party</label>
+                    <label for="{{ payment_form.party.id_for_label }}">{% trans "Party" %}</label>
                     {{ payment_form.party }}
                 </div>
                 <div class="form-group">
-                    <label for="{{ payment_form.reference_no.id_for_label }}">Reference No</label>
+                    <label for="{{ payment_form.reference_no.id_for_label }}">{% trans "Reference No" %}</label>
                     {{ payment_form.reference_no }}
                 </div>
                 <div class="form-group">
-                    <label for="{{ payment_form.party_VAT_no.id_for_label }}">Party VAT No</label>
+                    <label for="{{ payment_form.party_VAT_no.id_for_label }}">{% trans "Party VAT No" %}</label>
                     {{ payment_form.party_VAT_no }}
                 </div>
             </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        {{ payment_form.IsPDC }}
+                        <label for="{{ payment_form.IsPDC.id_for_label }}" style="margin-bottom: 0;">{% trans "PDC" %}</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="{{ payment_form.ChequeNo.id_for_label }}">{% trans "Cheque No" %}</label>
+                    {{ payment_form.ChequeNo }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ payment_form.ChequeDate.id_for_label }}">{% trans "Cheque Date" %}</label>
+                    {{ payment_form.ChequeDate }}
+                </div>
+            </div>
+
         </div>
 
         <!-- Payment Items Section -->
         <div class="form-section">
-            <h3>Payment Items</h3>
+            <h3>{% trans "Local Payment Details" %}</h3>
             {{ items_formset.management_form }}
-            
+
             <!-- Static Row for Adding Items -->
             <div class="form-row" id="staticItemRow">
                 <div class="form-group">
                     <input type="date" class="form-control" id="static_invoice_date">
                 </div>
                 <div class="form-group">
-                    <input type="text" class="form-control" id="static_invoice_no" placeholder="Invoice No">
+                    <input type="text" class="form-control" id="static_invoice_no"
+                        placeholder="{% trans 'Invoice No' %}">
                 </div>
                 <div class="form-group">
                     <select class="form-control" id="static_ledger">
-                        <option value="">Select Ledger</option>
+                        <option value="">{% trans "Select Ledger" %}</option>
                         {% for choice in items_formset.forms.0.fields.ledger.choices %}
                         <option value="{{ choice.0 }}">{{ choice.1 }}</option>
                         {% endfor %}
@@ -98,21 +243,33 @@
 
                 <div class="form-group">
                     <select class="form-control" id="static_vat_type">
-                        <option value="1">No VAT</option>
-                        <option value="2">Inclusive VAT (5%)</option>
-                        <option value="3">Exclusive VAT (5%)</option>
+                        <option value="1">{% trans "No VAT" %}</option>
+                        <option value="2">{% trans "Inclusive VAT (5%)" %}</option>
+                        <option value="3">{% trans "Exclusive VAT (5%)" %}</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
-                    <input type="number" class="form-control" id="static_amount" placeholder="Amount" step="0.01">
+                    <input type="number" class="form-control" id="static_amount" placeholder="{% trans 'Amount' %}"
+                        step="0.01">
                 </div>
-                
+
                 <div class="form-group">
-                    <input type="text" class="form-control" id="static_description" placeholder="Description">
+                    <input type="number" class="form-control" id="static_taxable_display"
+                        placeholder="{% trans 'Taxable' %}" step="0.01" readonly>
+                </div>
+
+                <div class="form-group">
+                    <input type="number" class="form-control" id="static_vat_display" placeholder="{% trans 'VAT' %}"
+                        step="0.01" readonly>
+                </div>
+
+                <div class="form-group">
+                    <input type="text" class="form-control" id="static_description"
+                        placeholder="{% trans 'Description' %}">
                 </div>
                 <div class="form-group">
-                    <button type="button" id="addItemBtn" class="btn-primary">Add Item</button>
+                    <button type="button" id="addItemBtn" class="btn-primary">{% trans "Add Item" %}</button>
                 </div>
             </div>
 
@@ -120,13 +277,15 @@
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th>Invoice Date</th>
-                        <th>Invoice No</th>
-                        <th>Ledger</th>
-                        <th>Description</th>
-                        <th>Amount</th>
-                        <th>VAT Type</th>
-                        <th>Action</th>
+                        <th>{% trans "Invoice Date" %}</th>
+                        <th>{% trans "Invoice No" %}</th>
+                        <th>{% trans "Ledger" %}</th>
+                        <th>{% trans "Description" %}</th>
+                        <th>{% trans "Amount" %}</th>
+                        <th>{% trans "Taxable" %}</th>
+                        <th>{% trans "VAT" %}</th>
+                        <th>{% trans "VAT Type" %}</th>
+                        <th>{% trans "Action" %}</th>
                     </tr>
                 </thead>
                 <tbody id="itemsTableBody"></tbody>
@@ -135,192 +294,428 @@
 
         <!-- Cheque Details Section -->
         <div class="form-section hidden" id="chequeSection">
-            <h3>Cheque Details</h3>
+            <h3>{% trans "Cheque Details" %}</h3>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="{{ cheque_form.cheque_no.id_for_label }}">Cheque No</label>
+                    <label for="{{ cheque_form.cheque_no.id_for_label }}">{% trans "Cheque No" %}</label>
                     {{ cheque_form.cheque_no }}
                 </div>
                 <div class="form-group">
-                    <label for="{{ cheque_form.cheque_date.id_for_label }}">Cheque Date</label>
+                    <label for="{{ cheque_form.cheque_date.id_for_label }}">{% trans "Cheque Date" %}</label>
                     {{ cheque_form.cheque_date }}
                 </div>
                 <div class="form-group">
-                    <label for="{{ cheque_form.issuing_bank_name.id_for_label }}">Bank Name</label>
+                    <label for="{{ cheque_form.issuing_bank_name.id_for_label }}">{% trans "Bank Name" %}</label>
                     {{ cheque_form.issuing_bank_name }}
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="{{ cheque_form.cheque_status.id_for_label }}">Status</label>
+                    <label for="{{ cheque_form.cheque_status.id_for_label }}">{% trans "Status" %}</label>
                     {{ cheque_form.cheque_status }}
                 </div>
                 <div class="form-group">
-                    <label for="{{ cheque_form.reference_no.id_for_label }}">Reference No</label>
+                    <label for="{{ cheque_form.reference_no.id_for_label }}">{% trans "Reference No" %}</label>
                     {{ cheque_form.reference_no }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Remarks Section -->
+        <div class="form-section">
+            <h3>{% trans "Additional Information" %}</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ payment_form.remark.id_for_label }}">{% trans "Remark" %}</label>
+                    {{ payment_form.remark }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ payment_form.note.id_for_label }}">{% trans "Note" %}</label>
+                    {{ payment_form.note }}
                 </div>
             </div>
         </div>
 
         <!-- Totals Section -->
         <div class="form-section">
-            <h3>Totals</h3>
+            <h3>{% trans "Totals" %}</h3>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="{{ payment_form.taxable_amount.id_for_label }}">Taxable Amount</label>
+                    <label for="{{ payment_form.taxable_amount.id_for_label }}">{% trans "Taxable Amount" %}</label>
                     {{ payment_form.taxable_amount }}
                 </div>
                 <div class="form-group">
-                    <label for="{{ payment_form.VAT_amount.id_for_label }}">VAT Amount</label>
+                    <label for="{{ payment_form.VAT_amount.id_for_label }}">{% trans "VAT Amount" %}</label>
                     {{ payment_form.VAT_amount }}
                 </div>
                 <div class="form-group">
-                    <label for="{{ payment_form.net_amount.id_for_label }}">Net Amount</label>
+                    <label for="{{ payment_form.net_amount.id_for_label }}">{% trans "Net Amount" %}</label>
                     {{ payment_form.net_amount }}
                 </div>
             </div>
         </div>
 
-        <button type="submit" class="btn-success">Save Payment</button>
+        <button type="submit" class="btn-success">
+            {% if is_edit_mode %}
+                {% trans "Update Payment" %}
+            {% else %}
+                {% trans "Save Payment" %}
+            {% endif %}
+        </button>
     </form>
 </div>
 
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const paymentMode = document.getElementById('id_payment_mode');
-    const chequeSection = document.getElementById('chequeSection');
-    const addItemBtn = document.getElementById('addItemBtn');
-    const itemsTableBody = document.getElementById('itemsTableBody');
-    const formsetTotal = document.getElementById('id_form-TOTAL_FORMS');
-    const formsetInitial = document.getElementById('id_form-INITIAL_FORMS');
-    let itemCount = parseInt(formsetInitial.value || 0);
+    document.addEventListener('DOMContentLoaded', function () {
+        const paymentMode = document.getElementById('id_payment_mode');
+        const chequeSection = document.getElementById('chequeSection');
+        const addItemBtn = document.getElementById('addItemBtn');
+        const itemsTableBody = document.getElementById('itemsTableBody');
+        const formsetTotal = document.getElementById('id_form-TOTAL_FORMS');
+        const formsetInitial = document.getElementById('id_form-INITIAL_FORMS');
+        let itemCount = parseInt(formsetInitial.value || 0);
 
-    if (!formsetTotal.value) formsetTotal.value = '0';
-    if (!formsetInitial.value) formsetInitial.value = '0';
+        const translations = {
+            fillAllFields: "{% trans 'Please fill all required fields' %}",
+            delete: "{% trans 'Delete' %}",
+            noVat: "{% trans 'No VAT' %}",
+            inclusiveVat: "{% trans 'Inclusive VAT (5%)' %}",
+            exclusiveVat: "{% trans 'Exclusive VAT (5%)' %}"
+        };
 
-    // Toggle cheque details
-    paymentMode.addEventListener('change', function() {
-        chequeSection.classList.toggle('hidden', this.value !== 'cheque');
-    });
+        if (!formsetTotal.value) formsetTotal.value = '0';
+        if (!formsetInitial.value) formsetInitial.value = '0';
 
-    // Add new item row
-    addItemBtn.addEventListener('click', function() {
-        const invoiceDate = document.getElementById('static_invoice_date').value;
-        const invoiceNo = document.getElementById('static_invoice_no').value;
-        const ledger = document.getElementById('static_ledger');
-        const description = document.getElementById('static_description').value;
-        const amount = parseFloat(document.getElementById('static_amount').value) || 0;
-        const vatType = parseInt(document.getElementById('static_vat_type').value);
-
-        if (!invoiceDate || !invoiceNo || !ledger.value || !amount) {
-            alert('Please fill all required fields');
-            return;
-        }
-
-        let taxableAmount = 0, vatAmount = 0, netAmount = 0;
-        switch(vatType) {
-            case 1: taxableAmount = amount; vatAmount = 0; netAmount = amount; break;
-            case 2: netAmount = amount; taxableAmount = amount / 1.05; vatAmount = amount - taxableAmount; break;
-            case 3: taxableAmount = amount; vatAmount = amount * 0.05; netAmount = amount + vatAmount; break;
-        }
-
-        const vatTypeText = {1: 'No VAT', 2: 'Inclusive VAT (5%)', 3: 'Exclusive VAT (5%)'};
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="date" name="form-${itemCount}-invoice_date" value="${invoiceDate}" class="form-control" readonly></td>
-            <td><input type="text" name="form-${itemCount}-invoice_no" value="${invoiceNo}" class="form-control" readonly></td>
-            <td><input type="hidden" name="form-${itemCount}-ledger" value="${ledger.value}">${ledger.options[ledger.selectedIndex].text}</td>
-            <td><input type="text" name="form-${itemCount}-description" value="${description}" class="form-control" readonly></td>
-            <td>
-                <input type="number" name="form-${itemCount}-amount" value="${amount.toFixed(2)}" class="form-control item-amount" readonly>
-                <input type="hidden" name="form-${itemCount}-vat_amount" value="${vatAmount.toFixed(2)}">
-                <input type="hidden" class="item-taxable-amount" value="${taxableAmount.toFixed(2)}">
-                <input type="hidden" class="item-vat-amount" value="${vatAmount.toFixed(2)}">
-                <input type="hidden" class="item-net-amount" value="${netAmount.toFixed(2)}">
-            </td>
-            <td><input type="hidden" name="form-${itemCount}-vat_type" value="${vatType}">${vatTypeText[vatType]}</td>
-            <td>
-                <button type="button" class="btn-danger delete-row">Delete</button>
-                <input type="hidden" name="form-${itemCount}-DELETE" value="" class="delete-flag">
-            </td>
-        `;
-
-        itemsTableBody.appendChild(tr);
-        itemCount++;
-        formsetTotal.value = itemCount;
-
-        // reset static row
-        document.getElementById('static_invoice_date').value = '';
-        document.getElementById('static_invoice_no').value = '';
-        document.getElementById('static_ledger').value = '';
-        document.getElementById('static_description').value = '';
-        document.getElementById('static_amount').value = '';
-        document.getElementById('static_vat_type').value = '1';
-
-        calculateTotals();
-    });
-
-    // Delete handler
-    itemsTableBody.addEventListener('click', function(e) {
-        if (e.target.classList.contains('delete-row')) {
-            const row = e.target.closest('tr');
-            row.style.display = 'none';
-            row.querySelector('.delete-flag').value = 'on';
+        // ✅ PRELOAD EXISTING ITEMS IN EDIT MODE
+        {% if existing_items %}
+            console.log("📝 Edit mode - preloading {{ existing_items|length }} existing items...");
+            
+            {% for item in existing_items %}
+                preloadItem(
+                    {{ item.id }},
+                    "{{ item.invoice_date|date:'Y-m-d' }}",
+                    "{{ item.invoice_no|escapejs }}",
+                    {{ item.ledger.id }},
+                    "{{ item.ledger.ledger_name|escapejs }}",
+                    "{{ item.description|escapejs }}",
+                    "{{ item.amount }}",
+                    {{ item.vat_type }},
+                    "{{ item.vat_amount }}"
+                );
+            {% endfor %}
+            
+            console.log("✅ Preloaded {{ existing_items|length }} items");
             calculateTotals();
+        {% endif %}
+
+        // Function to preload existing item
+        function preloadItem(itemId, invoiceDate, invoiceNo, ledgerId, ledgerName, description, amount, vatType, vatAmount) {
+            const result = calculateVATAmounts(amount, vatType);
+            const vatTypeText = { 
+                1: translations.noVat, 
+                2: translations.inclusiveVat, 
+                3: translations.exclusiveVat 
+            };
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <input type="date" name="form-${itemCount}-invoice_date" value="${invoiceDate}" class="form-control" readonly>
+                </td>
+                <td>
+                    <input type="text" name="form-${itemCount}-invoice_no" value="${invoiceNo}" class="form-control" readonly>
+                </td>
+                <td>
+                    <input type="hidden" name="form-${itemCount}-id" value="${itemId}">
+                    <input type="hidden" name="form-${itemCount}-ledger" value="${ledgerId}">
+                    ${ledgerName}
+                </td>
+                <td>
+                    <input type="text" name="form-${itemCount}-description" value="${description}" class="form-control" readonly>
+                </td>
+                <td>
+                    <input type="number" name="form-${itemCount}-amount" value="${parseFloat(amount).toFixed(2)}" class="form-control item-amount" readonly>
+                    <input type="hidden" name="form-${itemCount}-vat_amount" value="${result.vat}">
+                    <input type="hidden" class="item-taxable-amount" value="${result.taxable}">
+                    <input type="hidden" class="item-vat-amount" value="${result.vat}">
+                    <input type="hidden" class="item-net-amount" value="${result.net}">
+                </td>
+                <td>${result.taxable}</td>
+                <td>${result.vat}</td>
+                <td>
+                    <input type="hidden" name="form-${itemCount}-vat_type" value="${vatType}">
+                    ${vatTypeText[vatType]}
+                </td>
+                <td>
+                    <button type="button" class="btn-danger delete-row">${translations.delete}</button>
+                    <input type="hidden" name="form-${itemCount}-DELETE" value="" class="delete-flag">
+                </td>
+            `;
+
+            itemsTableBody.appendChild(tr);
+            itemCount++;
+            formsetTotal.value = itemCount;
+            
+            console.log(`Preloaded item ${itemCount}: ${invoiceNo}`);
+        }
+
+        // Toggle cheque details
+        paymentMode.addEventListener('change', function () {
+            chequeSection.classList.toggle('hidden', this.value !== 'cheque');
+        });
+        
+        // Show cheque section if payment mode is cheque (for edit mode)
+        if (paymentMode.value === 'cheque') {
+            chequeSection.classList.remove('hidden');
+        }
+
+        // Dynamic VAT calculation
+        function calculateVATAmounts(amount, vatType) {
+            let taxableAmount = 0, vatAmount = 0, netAmount = 0;
+            amount = parseFloat(amount) || 0;
+
+            switch (parseInt(vatType)) {
+                case 1: // No VAT
+                    taxableAmount = amount;
+                    vatAmount = 0;
+                    netAmount = amount;
+                    break;
+                case 2: // Inclusive VAT
+                    netAmount = amount;
+                    taxableAmount = amount / 1.05;
+                    vatAmount = amount - taxableAmount;
+                    break;
+                case 3: // Exclusive VAT
+                    taxableAmount = amount;
+                    vatAmount = amount * 0.05;
+                    netAmount = amount + vatAmount;
+                    break;
+            }
+
+            return {
+                taxable: taxableAmount.toFixed(2),
+                vat: vatAmount.toFixed(2),
+                net: netAmount.toFixed(2)
+            };
+        }
+
+        // Update display fields when amount or VAT type changes
+        function updateStaticCalculations() {
+            const amount = document.getElementById('static_amount').value;
+            const vatType = document.getElementById('static_vat_type').value;
+            const result = calculateVATAmounts(amount, vatType);
+
+            document.getElementById('static_taxable_display').value = result.taxable;
+            document.getElementById('static_vat_display').value = result.vat;
+        }
+
+        document.getElementById('static_amount').addEventListener('input', updateStaticCalculations);
+        document.getElementById('static_vat_type').addEventListener('change', updateStaticCalculations);
+
+        // Add new item row
+        addItemBtn.addEventListener('click', function () {
+            const invoiceDate = document.getElementById('static_invoice_date').value;
+            const invoiceNo = document.getElementById('static_invoice_no').value;
+            const ledger = document.getElementById('static_ledger');
+            const description = document.getElementById('static_description').value;
+            const amount = parseFloat(document.getElementById('static_amount').value) || 0;
+            const vatType = parseInt(document.getElementById('static_vat_type').value);
+
+            if (!invoiceDate || !invoiceNo || !ledger.value || !amount) {
+                alert(translations.fillAllFields);
+                return;
+            }
+
+            const result = calculateVATAmounts(amount, vatType);
+            const vatTypeText = { 
+                1: translations.noVat, 
+                2: translations.inclusiveVat, 
+                3: translations.exclusiveVat 
+            };
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <input type="date" name="form-${itemCount}-invoice_date" value="${invoiceDate}" class="form-control" readonly>
+                </td>
+                <td>
+                    <input type="text" name="form-${itemCount}-invoice_no" value="${invoiceNo}" class="form-control" readonly>
+                </td>
+                <td>
+                    <input type="hidden" name="form-${itemCount}-id" value="">
+                    <input type="hidden" name="form-${itemCount}-ledger" value="${ledger.value}">
+                    ${ledger.options[ledger.selectedIndex].text}
+                </td>
+                <td>
+                    <input type="text" name="form-${itemCount}-description" value="${description}" class="form-control" readonly>
+                </td>
+                <td>
+                    <input type="number" name="form-${itemCount}-amount" value="${amount.toFixed(2)}" class="form-control item-amount" readonly>
+                    <input type="hidden" name="form-${itemCount}-vat_amount" value="${result.vat}">
+                    <input type="hidden" class="item-taxable-amount" value="${result.taxable}">
+                    <input type="hidden" class="item-vat-amount" value="${result.vat}">
+                    <input type="hidden" class="item-net-amount" value="${result.net}">
+                </td>
+                <td>${result.taxable}</td>
+                <td>${result.vat}</td>
+                <td>
+                    <input type="hidden" name="form-${itemCount}-vat_type" value="${vatType}">
+                    ${vatTypeText[vatType]}
+                </td>
+                <td>
+                    <button type="button" class="btn-danger delete-row">${translations.delete}</button>
+                    <input type="hidden" name="form-${itemCount}-DELETE" value="" class="delete-flag">
+                </td>
+            `;
+
+            itemsTableBody.appendChild(tr);
+            itemCount++;
+            formsetTotal.value = itemCount;
+
+            // reset static row
+            document.getElementById('static_invoice_date').value = '';
+            document.getElementById('static_invoice_no').value = '';
+            document.getElementById('static_ledger').value = '';
+            document.getElementById('static_description').value = '';
+            document.getElementById('static_amount').value = '';
+            document.getElementById('static_vat_type').value = '1';
+            document.getElementById('static_taxable_display').value = '';
+            document.getElementById('static_vat_display').value = '';
+
+            calculateTotals();
+        });
+
+        // Delete handler
+        itemsTableBody.addEventListener('click', function (e) {
+            if (e.target.classList.contains('delete-row')) {
+                const row = e.target.closest('tr');
+                row.style.display = 'none';
+                row.querySelector('.delete-flag').value = 'on';
+                calculateTotals();
+            }
+        });
+
+        function calculateTotals() {
+            let totalTaxable = 0, totalVat = 0, totalNet = 0;
+            [...itemsTableBody.querySelectorAll('tr')].forEach(row => {
+                if (row.style.display === 'none' || row.querySelector('.delete-flag').value) return;
+                totalTaxable += parseFloat(row.querySelector('.item-taxable-amount').value) || 0;
+                totalVat += parseFloat(row.querySelector('.item-vat-amount').value) || 0;
+                totalNet += parseFloat(row.querySelector('.item-net-amount').value) || 0;
+            });
+            document.getElementById('id_taxable_amount').value = totalTaxable.toFixed(2);
+            document.getElementById('id_VAT_amount').value = totalVat.toFixed(2);
+            document.getElementById('id_net_amount').value = totalNet.toFixed(2);
         }
     });
-
-    function calculateTotals() {
-        let totalTaxable = 0, totalVat = 0, totalNet = 0;
-        [...itemsTableBody.querySelectorAll('tr')].forEach(row => {
-            if (row.style.display === 'none' || row.querySelector('.delete-flag').value) return;
-            totalTaxable += parseFloat(row.querySelector('.item-taxable-amount').value) || 0;
-            totalVat += parseFloat(row.querySelector('.item-vat-amount').value) || 0;
-            totalNet += parseFloat(row.querySelector('.item-net-amount').value) || 0;
-        });
-        document.getElementById('id_taxable_amount').value = totalTaxable.toFixed(2);
-        document.getElementById('id_VAT_amount').value = totalVat.toFixed(2);
-        document.getElementById('id_net_amount').value = totalNet.toFixed(2);
-    }
-});
 </script>
 
 <!-- Get Next Voucher_no -->
+<!-- Get Next Voucher_no (only in create mode) -->
+{% if not is_edit_mode %}
 <script>
-function updateVoucherNumber() {
-    const select = document.getElementById('id_voucherType');
-    const input = document.getElementById('id_voucher_no');
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
 
-    if (select && input && select.value) {
-        input.value = 'Loading...';
-        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    input.value = data.voucher_number;
-                } else {
-                    input.value = 'Error';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching voucher number:', error);
-                input.value = 'Error';
-            });
-    } else if (input) {
-        input.value = '';
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = data.voucher_number;
+                    } else {
+                        input.value = "{% trans 'Error' %}";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching voucher number:', error);
+                    input.value = "{% trans 'Error' %}";
+                });
+        } else if (input) {
+            input.value = '';
+        }
     }
-}
 
-window.addEventListener('DOMContentLoaded', function() {
-    const voucherSelect = document.getElementById('id_voucherType');
-    if (voucherSelect) {
-        voucherSelect.addEventListener('change', updateVoucherNumber);
-        updateVoucherNumber(); // also run once on load
-    }
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
+
+<!-- Admin Override -->
+<script>
+$(document).on("submit", "#localPaymentForm", function (e) {
+    e.preventDefault();
+
+    console.log("LOCAL PAYMENT FORM SUBMIT");
+
+    window.pendingFormId = "localPaymentForm";
+    window.pendingFormAction = this.action;
+    window.afterSuccessRedirect = "{% url 'accounts_app:local_payment_list' %}";
+
+    let formData = new FormData(this);
+
+    $.ajax({
+        url: window.pendingFormAction,
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+
+        success: function (response) {
+            console.log("LOCAL PAYMENT SUCCESS:", response);
+
+            if (response.admin_required) {
+                console.log("Admin required - showing modal");
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+                window.location.href = window.afterSuccessRedirect;
+            } else {
+                alert(response.message || "Operation failed");
+            }
+        },
+
+        error: function (xhr) {
+            console.log("LOCAL PAYMENT ERROR:", xhr.status, xhr.responseJSON);
+            console.log("Response Text:", xhr.responseText);
+
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                console.log("403 with admin_required - showing modal");
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (xhr.status === 400 && xhr.responseJSON) {
+                console.log("400 validation error");
+                alert(xhr.responseJSON?.message || "Validation error");
+                return;
+            }
+
+            if (xhr.status === 500) {
+                console.log("500 server error");
+                alert(xhr.responseJSON?.message || "Server error - check console");
+                return;
+            }
+
+            alert(xhr.responseJSON?.message || "Something went wrong");
+        }
+    });
 });
 </script>
-
-
 {% endblock %}

@@ -1,6 +1,6 @@
 from .models import UserPrivilege, Menu
-
-
+from django.contrib.auth import authenticate
+from django.http import JsonResponse
 
 
 
@@ -43,45 +43,61 @@ def check_privilege(user, menu_ids, privilege_fields):
 
     return False  # ❌ none matched
 
-
-# from django.http import HttpResponseForbidden
-# from functools import wraps
-# from .models import Menu, UserPrivilege
-
-# def require_privilege(privilege_field):
+# def check_admin_override(request):
 #     """
-#     Decorator that checks user privilege based on Menu.url matching request.path.
-#     ✅ Superusers automatically bypass privilege checks.
-#     Example: @require_privilege("can_read")
+#     Checks admin username & password sent in POST
 #     """
-#     def decorator(view_func):
-#         @wraps(view_func)
-#         def wrapper(request, *args, **kwargs):
-#             # must be logged in
-#             if not request.user.is_authenticated:
-#                 return HttpResponseForbidden("🚫 Please log in.")
+#     admin_username = request.POST.get("admin_username")
+#     admin_password = request.POST.get("admin_password")
 
-#             # ✅ superuser bypass
-#             if request.user.is_superuser:
-#                 return view_func(request, *args, **kwargs)
+#     if not admin_username or not admin_password:
+#         return False, "Admin credentials required"
 
-#             role = getattr(request.user, "user_role", None)
-#             if not role:
-#                 return HttpResponseForbidden("🚫 No role assigned.")
+#     admin_user = authenticate(
+#         request,
+#         username=admin_username,
+#         password=admin_password
+#     )
 
-#             try:
-#                 # find menu by url (request.path gives exact matched path)
-#                 menu = Menu.objects.get(url=request.path)
+#     if not admin_user:
+#         return False, "Invalid admin credentials"
 
-#                 # check privilege
-#                 privilege = UserPrivilege.objects.get(user_role=role, menu=menu)
+#     if not getattr(admin_user.user_role, "is_admin", False):
+#         return False, "User is not an admin"
 
-#                 if getattr(privilege, privilege_field, False):
-#                     return view_func(request, *args, **kwargs)
-#                 else:
-#                     return HttpResponseForbidden("🚫 You are not authorized.")
-#             except (Menu.DoesNotExist, UserPrivilege.DoesNotExist):
-#                 return HttpResponseForbidden("🚫 Menu or privilege not found.")
+#     return True, admin_user
 
-#         return wrapper
-#     return decorator
+
+
+
+def check_admin_override(request):
+    """
+    Allows override by:
+    - Django superuser
+    - Custom admin role (user_role.is_admin)
+    """
+
+    admin_username = request.POST.get("admin_username")
+    admin_password = request.POST.get("admin_password")
+
+    if not admin_username or not admin_password:
+        return False, "Admin credentials required"
+
+    admin_user = authenticate(
+        request,
+        username=admin_username,
+        password=admin_password
+    )
+
+    if not admin_user:
+        return False, "Invalid admin credentials"
+
+    # ✅ ALLOW DJANGO SUPERUSER
+    if admin_user.is_superuser:
+        return True, admin_user
+
+    # ✅ ALLOW CUSTOM ADMIN ROLE
+    if getattr(admin_user.user_role, "is_admin", False):
+        return True, admin_user
+
+    return False, "User is not authorized as admin"
