@@ -7,6 +7,8 @@ from item_master.models import Item
 from django.contrib.auth.models import User
 from django.conf import settings
 from decimal import Decimal
+
+
 class ServiceCategory(models.Model):
     name        = models.CharField(max_length=150, unique=True)
     description = models.TextField(blank=True)
@@ -26,57 +28,7 @@ class ServiceCategory(models.Model):
         ordering   = ['name']
         verbose_name        = 'Service Category'
         verbose_name_plural = 'Service Categories'
-
-
-class WorkshopStaff(models.Model):
-
-    ROLE_CHOICES = [
-        ('technician',      'Technician'),
-        ('service_advisor', 'Service Advisor'),
-        ('Inspector',        'Inspector'),
-        ('receptionist',    'Receptionist'),
-        ('manager',         'Manager'),
-        ('accountant',      'Accountant'),
-        ('driver',          'Driver'),
-        ('helper',          'Helper'),
-        ('other',           'Other'),
-    ]
-
-    STATUS_CHOICES = [
-        ('active',   'Active'),
-        ('inactive', 'Inactive'),
-        ('resigned', 'Resigned'),
-        ('on_leave', 'On Leave'),
-    ]
-
-    staff_id  = models.CharField(max_length=20, unique=True, blank=True)
-    full_name = models.CharField(max_length=150)
-    role      = models.CharField(max_length=30, choices=ROLE_CHOICES)
-    phone     = models.CharField(max_length=20)
-    email     = models.EmailField(blank=True, null=True)
-    join_date = models.DateField()
-    status    = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    photo     = models.ImageField(upload_to='staff/photos/', blank=True, null=True)
-    notes     = models.TextField(blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-    created_on = models.DateTimeField(auto_now_add=True)
-    updated_on = models.DateTimeField(auto_now=True)
-    created_by = models.IntegerField(null=True, blank=True)
-
-    def save(self, *args, **kwargs):
-        if not self.staff_id:
-            last = WorkshopStaff.objects.order_by('id').last()
-            next_id = (last.id + 1) if last else 1
-            self.staff_id = f"STF-{next_id:05d}"
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.staff_id} — {self.full_name}"
-
-    class Meta:
-        ordering = ['full_name']
-        verbose_name = 'Workshop Staff'
-        verbose_name_plural = 'Workshop Staff'
+      
 
 
 class WorkshopVehicle(models.Model):
@@ -339,7 +291,7 @@ class JobCard(models.Model):
         verbose_name='Vehicle'
     )
     advisor = models.ForeignKey(
-        'WorkshopStaff',
+        'fleet_app.Staff',
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='jobcards_advised',
@@ -412,8 +364,8 @@ class JobCardComplaint(models.Model):
     type                 = models.CharField(
         max_length=20, choices=TYPE_CHOICES, default='Mechanical'
     )
-    technician           = models.ForeignKey(
-        'WorkshopStaff', on_delete=models.SET_NULL,
+    technician = models.ForeignKey(
+        'fleet_app.Staff', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='assigned_complaints'
     )
     status               = models.CharField(
@@ -448,8 +400,8 @@ class JobCardFinding(models.Model):
         related_name='findings'
     )
     description = models.CharField(max_length=400)
-    technician  = models.ForeignKey(
-        'WorkshopStaff', on_delete=models.SET_NULL,
+    technician = models.ForeignKey(
+        'fleet_app.Staff', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='assigned_findings'
     )
     status      = models.CharField(
@@ -509,9 +461,10 @@ class JobCardPart(models.Model):
 class JobCardLabour(models.Model):
 
     jobcard    = models.ForeignKey(JobCard, on_delete=models.CASCADE, related_name='labours')
-    technician  = models.ForeignKey(
-        'WorkshopStaff', on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='labour_entries')
+    technician = models.ForeignKey(
+        'fleet_app.Staff', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='labour_entries'
+    )
     description = models.CharField(max_length=300, blank=True)
     hours       = models.DecimalField(max_digits=6, decimal_places=2, default=1)
     rate        = models.DecimalField(max_digits=10, decimal_places=3, default=0)
@@ -573,8 +526,8 @@ class Estimate(models.Model):
     vin        = models.CharField(max_length=50, blank=True, null=True,
                      verbose_name='VIN / Chassis No')
 
-    advisor    = models.ForeignKey(
-        'WorkshopStaff', on_delete=models.SET_NULL,
+    advisor = models.ForeignKey(
+        'fleet_app.Staff', on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='estimates_advised')
 
@@ -646,8 +599,7 @@ class EstimateItem(models.Model):
     item_code   = models.CharField(max_length=100, blank=True)
     unit        = models.CharField(max_length=30, blank=True)
     description = models.CharField(max_length=300)
-    technician  = models.ForeignKey('WorkshopStaff', on_delete=models.SET_NULL,
-                      null=True, blank=True, related_name='estimate_items')
+    technician = models.ForeignKey('fleet_app.Staff', on_delete=models.SET_NULL,null=True, blank=True, related_name='estimate_items')
     quantity    = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     hours       = models.DecimalField(max_digits=6, decimal_places=2, default=1)
     unit_price  = models.DecimalField(max_digits=12, decimal_places=3, default=0)
@@ -725,8 +677,8 @@ class Quotation(models.Model):
                            choices=STATUS_CHOICES, default='draft')
     mileage          = models.PositiveIntegerField(null=True, blank=True)
     vin              = models.CharField(max_length=50, blank=True, null=True, verbose_name='VIN / Chassis No')
-    advisor    = models.ForeignKey(
-                'WorkshopStaff', on_delete=models.SET_NULL,
+    advisor = models.ForeignKey(
+                'fleet_app.Staff', on_delete=models.SET_NULL,
                 null=True, blank=True,
                 related_name='quotation_advised')
     tax_percent      = models.DecimalField(max_digits=5, decimal_places=2,
@@ -804,7 +756,7 @@ class QuotationItem(models.Model):
 
     unit = models.CharField(max_length=30,blank=True)
     description = models.CharField(max_length=300)
-    technician = models.ForeignKey('WorkshopStaff',on_delete=models.SET_NULL,null=True,blank=True,related_name='quotation_items')
+    technician = models.ForeignKey('fleet_app.Staff',on_delete=models.SET_NULL,null=True,blank=True,related_name='quotation_items')
     quantity = models.DecimalField(max_digits=10,decimal_places=2,default=1)
     hours = models.DecimalField(max_digits=6,decimal_places=2,default=1)
     unit_price = models.DecimalField(max_digits=12,decimal_places=3,default=0)
@@ -901,7 +853,7 @@ class VehicleInspection(models.Model):
     # General
     inspection_date = models.DateField()
     inspector       = models.ForeignKey(
-        'WorkshopStaff', 
+        'fleet_app.Staff', 
         on_delete=models.SET_NULL,
         null=True, blank=True, 
         related_name='inspections_done',
@@ -1199,12 +1151,12 @@ class DeliveryNote(models.Model):
     vehicle   = models.ForeignKey(
         'WorkshopVehicle', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='delivery_notes')
-    advisor   = models.ForeignKey(
-        'WorkshopStaff', on_delete=models.SET_NULL,
+    advisor = models.ForeignKey(
+        'fleet_app.Staff', on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='delivery_notes_advised')
     technician = models.ForeignKey(
-        'WorkshopStaff', on_delete=models.SET_NULL,
+        'fleet_app.Staff', on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='delivery_notes_tech')
 
@@ -1370,8 +1322,8 @@ class DeliveryLabour(models.Model):
     delivery_note = models.ForeignKey(
         DeliveryNote, on_delete=models.CASCADE,
         related_name='labours')
-    technician  = models.ForeignKey(
-        'WorkshopStaff', on_delete=models.SET_NULL,
+    technician = models.ForeignKey(
+        'fleet_app.Staff', on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='delivery_labour_entries')
     description = models.CharField(max_length=300)
@@ -1424,7 +1376,7 @@ class Invoice(models.Model):
 
     # ── Links ─────────────────────────────────────────────────
     jobcard      = models.ForeignKey(
-        'Jobcard', on_delete=models.SET_NULL,
+        'JobCard', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='invoices')
     quotation     = models.ForeignKey(
         'Quotation', on_delete=models.SET_NULL,
@@ -1442,8 +1394,8 @@ class Invoice(models.Model):
     vehicle       = models.ForeignKey(
         'WorkshopVehicle', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='invoices')
-    advisor       = models.ForeignKey(
-        'WorkshopStaff', on_delete=models.SET_NULL,
+    advisor = models.ForeignKey(
+        'fleet_app.Staff', on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='invoices_advised')
 
@@ -1593,8 +1545,8 @@ class InvoiceLabour(models.Model):
     invoice     = models.ForeignKey(
         Invoice, on_delete=models.CASCADE, related_name='labours')
     description = models.CharField(max_length=300)
-    technician  = models.ForeignKey(
-        'WorkshopStaff', on_delete=models.SET_NULL,
+    technician = models.ForeignKey(
+        'fleet_app.Staff', on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='invoice_labours')
     hours       = models.DecimalField(max_digits=6, decimal_places=2, default=1)

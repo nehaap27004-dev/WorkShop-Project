@@ -62,7 +62,14 @@ urlpatterns = [
     path('quotation/<int:pk>/delete/',
          views.quotation_delete,
          name='quotation_delete'),
+    path('quotation/<int:pk>/delete/',
+          views.quotation_delete,
+          name='quotation_delete'),
 
+    path('quotation/<int:pk>/status-update/',
+          views.quotation_status_update,
+          name='quotation_status_update'),
+   
 
   
 
@@ -108,13 +115,7 @@ urlpatterns = [
     # AJAX
     path('ajax/inspection-vehicles/',views.insp_get_vehicles,name='insp_get_vehicles'),
 
-    path('staff/',                   views.staff_list,   name='staff_list'),
-    path('staff/create/',            views.staff_create, name='staff_create'),
-    path('staff/<int:pk>/',          views.staff_detail, name='staff_detail'),
-    path('staff/<int:pk>/edit/',     views.staff_edit,   name='staff_edit'),
-    path('staff/<int:pk>/delete/',   views.staff_delete, name='staff_delete'),
-    # ── ADD THESE TO jobcard_app/urls.py inside urlpatterns = [...] ──────────────
-    
+   
     path('estimate/',
          views.estimate_list,
          name='estimate_list'),

@@ -7,12 +7,16 @@ from django.db.models import Q
 from django.db import transaction
 from django.utils import timezone
 from sklearn import inspection
+import logging
 from .models import (
    Estimate, EstimateItem, InvoiceLabour, InvoiceOtherCharge, InvoicePart,Quotation, QuotationItem, ServiceCategory
 )
-from fleet_app.models import FleetCustomer, Vehicle, Staff
+from fleet_app.models import FleetCustomer, Vehicle
 from item_master.models import Item
-from accounts_app.models import LedgerCreation
+from accounts_app   .models import LedgerCreation
+from audit_app.common import log_activity
+from fleet_app.models import FleetCustomer, Vehicle, Staff, StaffCategory
+
 from datetime import datetime
 from .models import (
     VehicleInspection, ExteriorDamage, InteriorInspection,
@@ -21,8 +25,6 @@ from .models import (
 )
 from .models import (
     JobCard,
-  
-    WorkshopStaff,
     WorkshopVehicle,
 )
 from .models import (
@@ -31,230 +33,108 @@ from .models import (
     
 )
 # ─────────────────────────────────────────────────────────────
-# SERVICE CATEGORY — combined manage/list/create/edit/delete view
+# SERVICE CATEGORY
 # ─────────────────────────────────────────────────────────────
+@login_required
 def service_category_list(request):
-    from .models import ServiceCategory
-    categories = ServiceCategory.objects.all()
-    total      = categories.count()
-    active     = categories.filter(is_active=True).count()
-    inactive   = categories.filter(is_active=False).count()
+    categories = ServiceCategory.objects.all().order_by('name')
     return render(request, 'jobcard_app/service_category_list.html', {
         'categories': categories,
-        'total':      total,
-        'active':     active,
-        'inactive':   inactive,
+        'total':      categories.count(),
+        'active':     categories.filter(is_active=True).count(),
+        'inactive':   categories.filter(is_active=False).count(),
     })
 
 
+@login_required
 def service_category_create(request):
-    from .models import ServiceCategory
     if request.method == 'POST':
         name        = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
-        is_active   = request.POST.get('is_active') == 'true'
+        is_active   = request.POST.get('is_active', 'true') == 'true'
 
         if not name:
             messages.error(request, 'Category name is required.')
-            return render(request, 'jobcard_app/service_category_form.html', {
-                'post': request.POST
-            })
+            return render(request, 'jobcard_app/service_category_form.html',
+                          {'post': request.POST})
 
         if ServiceCategory.objects.filter(name__iexact=name).exists():
-            messages.error(request, f"Category '{name}' already exists.")
-            return render(request, 'jobcard_app/service_category_form.html', {
-                'post': request.POST
-            })
+            messages.error(request, f'A category named "{name}" already exists.')
+            return render(request, 'jobcard_app/service_category_form.html',
+                          {'post': request.POST})
 
-        cat = ServiceCategory.objects.create(
+        ServiceCategory.objects.create(
             name        = name,
             description = description,
             is_active   = is_active,
             created_by  = request.user.id if request.user.is_authenticated else None,
         )
-        messages.success(request, f"Service category '{cat.name}' created successfully.")
+        messages.success(request, f'Service category "{name}" created.')
         return redirect('jobcard_app:service_category_list')
 
-    return render(request, 'jobcard_app/service_category_form.html')
+    return render(request, 'jobcard_app/service_category_form.html', {})
 
 
+@login_required
 def service_category_edit(request, pk):
-    from .models import ServiceCategory
     cat = get_object_or_404(ServiceCategory, pk=pk)
 
     if request.method == 'POST':
         name        = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
-        is_active   = request.POST.get('is_active') == 'true'
+        is_active   = request.POST.get('is_active', 'true') == 'true'
 
         if not name:
             messages.error(request, 'Category name is required.')
-            return render(request, 'jobcard_app/service_category_form.html', {
-                'cat': cat, 'post': request.POST
-            })
+            return render(request, 'jobcard_app/service_category_form.html',
+                          {'cat': cat, 'post': request.POST})
 
-        if ServiceCategory.objects.filter(name__iexact=name).exclude(pk=pk).exists():
-            messages.error(request, f"Category '{name}' already exists.")
-            return render(request, 'jobcard_app/service_category_form.html', {
-                'cat': cat, 'post': request.POST
-            })
+        if ServiceCategory.objects.filter(name__iexact=name).exclude(pk=cat.pk).exists():
+            messages.error(request, f'A category named "{name}" already exists.')
+            return render(request, 'jobcard_app/service_category_form.html',
+                          {'cat': cat, 'post': request.POST})
 
         cat.name        = name
         cat.description = description
         cat.is_active   = is_active
         cat.updated_by  = request.user.id if request.user.is_authenticated else None
         cat.save()
-        messages.success(request, f"Service category '{cat.name}' updated.")
+        messages.success(request, f'Service category "{cat.name}" updated.')
         return redirect('jobcard_app:service_category_list')
 
     return render(request, 'jobcard_app/service_category_form.html', {'cat': cat})
 
 
+@login_required
 def service_category_delete(request, pk):
-    from .models import ServiceCategory
     cat = get_object_or_404(ServiceCategory, pk=pk)
 
     if request.method == 'POST':
-        # Block delete if linked to services
         if cat.service_count() > 0:
-            messages.error(
-                request,
-                f"Cannot delete '{cat.name}' — it is linked to "
-                f"{cat.service_count()} service(s). Remove them first."
-            )
+            messages.error(request, 'Cannot delete a category linked to services.')
             return redirect('jobcard_app:service_category_list')
         name = cat.name
         cat.delete()
-        messages.success(request, f"Service category '{name}' deleted.")
+        messages.success(request, f'Service category "{name}" deleted.')
         return redirect('jobcard_app:service_category_list')
 
     return render(request, 'jobcard_app/service_category_confirm_delete.html', {'cat': cat})
-
-
-# ── AJAX — get categories for dropdowns ──────────────────────────────────────
+@login_required
 def get_service_categories(request):
-    from .models import ServiceCategory
-    cats = ServiceCategory.objects.filter(is_active=True).values('id', 'name')
-    return JsonResponse({'categories': list(cats)})
+    """AJAX: return active service categories as {id, name} pairs."""
+    categories = ServiceCategory.objects.filter(
+        is_active=True
+    ).order_by('name').values('id', 'name')
+    return JsonResponse({'categories': list(categories)})
+ 
+ 
 @login_required
 def ajax_get_categories(request):
-    q = request.GET.get('q', '').strip()
-    qs = ServiceCategory.objects.filter(is_active=True)
-    if q:
-        qs = qs.filter(name__icontains=q)
-    result = [{'id': c.id, 'name': c.name} for c in qs[:20]]
-    return JsonResponse({'categories': result})
-    
-def staff_list(request):
-    from django.db.models import Q
-    q      = request.GET.get('q', '').strip()
-    role   = request.GET.get('role', '')
-    status = request.GET.get('status', '')
-    qs = WorkshopStaff.objects.filter(is_active=True)
-    if q:
-        qs = qs.filter(
-            Q(staff_id__icontains=q) |
-            Q(full_name__icontains=q) |
-            Q(phone__icontains=q) |
-            Q(email__icontains=q)
-        )
-    if role:   qs = qs.filter(role=role)
-    if status: qs = qs.filter(status=status)    
-    all_s = WorkshopStaff.objects.filter(is_active=True)
-    return render(request, 'jobcard_app/staff_list.html', {
-        'staff_list':     qs,
-        'q':              q,
-        'role_filter':    role,
-        'status_filter':  status,
-        'role_choices':   WorkshopStaff.ROLE_CHOICES,
-        'status_choices': WorkshopStaff.STATUS_CHOICES,
-        'counts': {
-            'total':    all_s.count(),
-            'active':   all_s.filter(status='active').count(),
-            'inactive': all_s.filter(status='inactive').count(),
-            'on_leave': all_s.filter(status='on_leave').count(),
-        },
-    })
-
-
-def staff_create(request):
-    from django.utils import timezone
-    if request.method == 'POST':
-        name      = request.POST.get('full_name', '').strip()
-        role      = request.POST.get('role', '')
-        phone     = request.POST.get('phone', '').strip()
-        join_date = request.POST.get('join_date', '')
-        if not name or not role or not phone or not join_date:
-            messages.error(request, 'Name, Role, Phone and Join Date are required.')
-            return render(request, 'jobcard_app/staff_form.html', {
-                'role_choices':   WorkshopStaff.ROLE_CHOICES,
-                'status_choices': WorkshopStaff.STATUS_CHOICES,
-                'today':          timezone.now().date(),
-                'post':           request.POST,
-            })
-        s = WorkshopStaff(
-            full_name  = name,
-            role       = role,
-            phone      = phone,
-            email      = request.POST.get('email') or None,
-            join_date  = join_date,
-            status     = request.POST.get('status', 'active'),
-            notes      = request.POST.get('notes', ''),
-            created_by = request.user.id,
-        )
-        if request.FILES.get('photo'):
-            s.photo = request.FILES['photo']
-        s.save()
-        messages.success(request, f"Staff {s.staff_id} — {s.full_name} added!")
-        return redirect('jobcard_app:staff_detail', pk=s.pk)
-    from django.utils import timezone
-    return render(request, 'jobcard_app/staff_form.html', {
-        'role_choices':   WorkshopStaff.ROLE_CHOICES,
-        'status_choices': WorkshopStaff.STATUS_CHOICES,
-        'today':          timezone.now().date(),
-    })
-
-
-def staff_detail(request, pk):
-    s = get_object_or_404(WorkshopStaff, pk=pk)
-    return render(request, 'jobcard_app/staff_detail.html', {'s': s})
-
-
-def staff_edit(request, pk):
-    from django.utils import timezone
-    s = get_object_or_404(WorkshopStaff, pk=pk)
-    if request.method == 'POST':
-        s.full_name  = request.POST.get('full_name', '').strip()
-        s.role       = request.POST.get('role', '')
-        s.phone      = request.POST.get('phone', '').strip()
-        s.email      = request.POST.get('email') or None
-        s.join_date  = request.POST.get('join_date') or s.join_date
-        s.status     = request.POST.get('status', s.status)
-        s.notes      = request.POST.get('notes', '')
-        if request.FILES.get('photo'):
-            s.photo  = request.FILES['photo']
-        s.save()
-        messages.success(request, f"Staff {s.staff_id} updated.")
-        return redirect('jobcard_app:staff_detail', pk=pk)
-    return render(request, 'jobcard_app/staff_form.html', {
-        's':              s,
-        'role_choices':   WorkshopStaff.ROLE_CHOICES,
-        'status_choices': WorkshopStaff.STATUS_CHOICES,
-        'today':          timezone.now().date(),
-        'edit_mode':      True,
-    })
-
-
-def staff_delete(request, pk):
-    s = get_object_or_404(WorkshopStaff, pk=pk)
-    if request.method == 'POST':
-        s.is_active = False
-        s.save()
-        messages.success(request, f"Staff {s.staff_id} removed.")
-        return redirect('jobcard_app:staff_list')
-    return render(request, 'jobcard_app/staff_confirm_delete.html', {'s': s}) 
-
-
+    """AJAX: return active service categories as {id, name} pairs."""
+    categories = ServiceCategory.objects.filter(
+        is_active=True
+    ).order_by('name').values('id', 'name')
+    return JsonResponse({'categories': list(categories)})
 def _inspection_context():
     return {
         'interior_items': [
@@ -441,10 +321,9 @@ def inspection_list(request):
 def inspection_create(request, vehicle_id=None):
     customers = LedgerCreation.objects.filter(
         groups_id=2).order_by('ledger_name')
-    inspectors = WorkshopStaff.objects.filter(
-        is_active=True,
-        status='active',
-        role__in=['Inspector', 'inspector', 'service_advisor', 'technician']
+    inspectors = Staff.objects.filter(
+        status='Active',
+        staff_category__name__in=['Inspector', 'Technician']
     ).order_by('full_name')
     vehicles  = WorkshopVehicle.objects.filter(is_active=True)
  
@@ -469,7 +348,7 @@ def inspection_create(request, vehicle_id=None):
  
         inspector = None
         if inspector_id:
-            inspector = WorkshopStaff.objects.filter(id=inspector_id).first()
+            inspector = Staff.objects.filter(pk=inspector_id).first()
 
         insp_no = request.POST.get("inspection_number", "").strip() or None
  
@@ -548,11 +427,11 @@ def inspection_edit(request, pk):
     insp      = get_object_or_404(VehicleInspection, pk=pk)
     customers = LedgerCreation.objects.filter(
         groups_id=2).order_by('ledger_name')
-    inspectors = WorkshopStaff.objects.filter(
-        is_active=True,
-        status='active',
-        role__in=['Inspector', 'inspector', 'service_advisor', 'technician']
+    inspectors = Staff.objects.filter(
+        status='Active',
+        staff_category__name__in=['Inspector', 'Technician']
     ).order_by('full_name')
+
     vehicles  = WorkshopVehicle.objects.filter(is_active=True)
 
     try:    interior    = insp.interior
@@ -571,7 +450,6 @@ def inspection_edit(request, pk):
         insp.odometer        = request.POST.get('odometer') or None
         insp.fuel_level      = request.POST.get('fuel_level', '1/2')
         inspector_id         = request.POST.get('inspector')
-        insp.inspector       = WorkshopStaff.objects.filter(id=inspector_id).first() if inspector_id else None
         insp.save()
         _save_inspection(request, insp)
         messages.success(request, f"Inspection {insp.inspection_number} updated successfully.")
@@ -665,7 +543,6 @@ def jobcard_list(request):
 def _common_context(job=None):
     return {
         'customers': LedgerCreation.objects.all().order_by('ledger_name'),
-        'inspector': WorkshopStaff.objects.filter(is_active=True).order_by('full_name'),
         'categories': ServiceCategory.objects.filter(is_active=True).order_by('name'),
         'today': timezone.now().date(),
         'job': job,
@@ -677,35 +554,23 @@ def _common_context(job=None):
 def jobcard_create(request):
     from django.utils import timezone
     from accounts_app.models import LedgerCreation
-    from .models import WorkshopStaff, WorkshopVehicle, VehicleInspection
+    from .models import WorkshopVehicle, VehicleInspection
     from .models import ServiceCategory
 
     customers = LedgerCreation.objects.filter(
         groups_id=2).order_by('ledger_name')
 
-    # ── Filtered by role ──────────────────────────────────
-    technicians = WorkshopStaff.objects.filter(
-        is_active=True,
-        status='active',
-        role__in=['technician', 'Technician']
-    ).order_by('full_name')
 
-    advisors = WorkshopStaff.objects.filter(
-        is_active=True,
-        status='active',
-        role__in=['service_advisor', 'Service Advisor']
-    ).order_by('full_name')
-
-    all_staff = WorkshopStaff.objects.filter(
-        is_active=True,
-        status='active'
-    ).order_by('full_name')
 
     items = Item.objects.filter(isDeleted=False).order_by('item_name')
     categories = ServiceCategory.objects.filter(
                      is_active=True).order_by('name')
     inspections = VehicleInspection.objects.select_related('vehicle', 'customer').order_by('-inspection_date', '-created_on')
-
+    technicians = Staff.objects.filter(
+                  status='Active',
+                  staff_category__name='Technician').order_by('full_name')
+    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
+    all_staff   = Staff.objects.filter(status='Active').order_by('full_name')
     inspection      = None
     insp_complaints = []
     insp_findings   = []
@@ -765,14 +630,12 @@ def jobcard_edit(request, pk):
     from .models import ServiceCategory
     customers   = LedgerCreation.objects.filter(
                       groups_id=2).order_by('ledger_name')
-    technicians = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='technician').order_by('full_name')
-    advisors    = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='service_advisor').order_by('full_name')
+    
     categories = ServiceCategory.objects.filter(is_active=True).order_by('name')
-
+    technicians = Staff.objects.filter(
+                    status='Active',
+                    staff_category__name='Technician').order_by('full_name')
+    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
     return render(request, 'jobcard_app/jobcard_form.html', {
         'job':          job,
         'jobcard':      job,
@@ -793,45 +656,37 @@ def _save_jobcard(request, job=None):
     from accounts_app.models import LedgerCreation
     from .models import (JobCard, JobCardComplaint, JobCardFinding,
                          JobCardPart, JobCardLabour,
-                         WorkshopVehicle, WorkshopStaff, VehicleInspection,ServiceCategory)
+                         WorkshopVehicle, VehicleInspection, ServiceCategory)
 
     cid      = request.POST.get('customer')
     vid      = request.POST.get('vehicle')
-    cat_texts    = request.POST.getlist('complaint_category[]')
-    cat_ids      = request.POST.getlist('complaint_category_id[]')
-    
-    descriptions = request.POST.getlist('complaint_description[]')
-    types        = request.POST.getlist('complaint_type[]')
-    tech_ids     = request.POST.getlist('complaint_technician[]')
-    statuses     = request.POST.getlist('complaint_status[]')
 
-    date     = request.POST.get('date') or timezone.now().date()
+    date       = request.POST.get('date') or timezone.now().date()
     advisor_id = request.POST.get('advisor')
+    advisor    = Staff.objects.filter(pk=advisor_id).first() if advisor_id else None
 
     if not cid:
         messages.error(request, 'Customer is required.')
         return redirect('jobcard_app:jobcard_create')
-    
 
     customer = get_object_or_404(LedgerCreation, pk=cid)
     vehicle  = WorkshopVehicle.objects.filter(pk=vid).first() if vid else None
-    advisor  = WorkshopStaff.objects.filter(pk=advisor_id).first() if advisor_id else None
 
     # ── Create or update JobCard ──────────────────────────
     if job is None:
         job = JobCard(created_by=request.user.id)
 
-    job.customer         = customer
-    job.customer_phone = request.POST.get('customer_phone', '')
-    job.vehicle_model  = request.POST.get('vehicle_model', '')
-    job.workshop_vehicle = vehicle
-    job.advisor          = advisor
-    job.date             = date
-    job.voucher_number   = request.POST.get('voucher_number', '') or None
-    job.priority         = request.POST.get('priority', 'normal')
-    job.status           = request.POST.get('status', 'open')
-    job.delivery_date    = request.POST.get('delivery_date') or None
-    job.mileage          = request.POST.get('mileage') or None
+    job.customer          = customer
+    job.customer_phone    = request.POST.get('customer_phone', '')
+    job.vehicle_model     = request.POST.get('vehicle_model', '')
+    job.workshop_vehicle  = vehicle
+    job.advisor            = advisor
+    job.date               = date
+    job.voucher_number      = request.POST.get('voucher_number', '') or None
+    job.priority            = request.POST.get('priority', 'normal')
+    job.status               = request.POST.get('status', 'open')
+    job.delivery_date         = request.POST.get('delivery_date') or None
+    job.mileage                = request.POST.get('mileage') or None
     job.save()
 
     source_insp_id = request.POST.get('source_inspection_id') or request.POST.get('from_inspection')
@@ -850,11 +705,6 @@ def _save_jobcard(request, job=None):
     # ── Complaints ────────────────────────────────────────
     categories    = request.POST.getlist('complaint_category_id[]')
     cat_texts     = request.POST.getlist('complaint_category[]')     # text fallback
-    cat_ids      = request.POST.getlist('complaint_category_id[]')
-    descriptions = request.POST.getlist('complaint_description[]')
-    types        = request.POST.getlist('complaint_type[]')
-    tech_ids     = request.POST.getlist('complaint_technician[]')
-    statuses     = request.POST.getlist('complaint_status[]')
     descriptions  = request.POST.getlist('complaint_description[]')
     types         = request.POST.getlist('complaint_type[]')
     tech_ids      = request.POST.getlist('complaint_technician[]')
@@ -863,11 +713,14 @@ def _save_jobcard(request, job=None):
     for i, desc in enumerate(descriptions):
         if not desc.strip():
             continue
-        tech_id = tech_ids[i] if i < len(tech_ids) and tech_ids[i] else None
-        tech = WorkshopStaff.objects.filter(pk=tech_id).first() if tech_id else None
+
         cat_id  = categories[i] if i < len(categories) else None
         cat_obj = ServiceCategory.objects.filter(pk=cat_id).first() if cat_id else None
         cat_txt = cat_texts[i] if i < len(cat_texts) else ''
+
+        tech_id = tech_ids[i] if i < len(tech_ids) else None
+        tech    = Staff.objects.filter(pk=tech_id).first() if tech_id else None
+
         JobCardComplaint.objects.create(
             jobcard            = job,
             service_category   = cat_obj,
@@ -886,8 +739,10 @@ def _save_jobcard(request, job=None):
     for i, desc in enumerate(f_descriptions):
         if not desc.strip():
             continue
-        tech_id = f_tech_ids[i] if i < len(f_tech_ids) and f_tech_ids[i] else None
-        tech = WorkshopStaff.objects.filter(pk=tech_id).first() if tech_id else None
+
+        f_tech_id = f_tech_ids[i] if i < len(f_tech_ids) else None
+        tech      = Staff.objects.filter(pk=f_tech_id).first() if f_tech_id else None
+
         JobCardFinding.objects.create(
             jobcard    = job,
             description = desc.strip(),
@@ -896,10 +751,7 @@ def _save_jobcard(request, job=None):
         )
 
     # ── Parts ─────────────────────────────────────────────
-    job.parts.all().delete()
-
     part_items   = request.POST.getlist('part_item[]')
-    part_ids     = request.POST.getlist('part_item_id[]')
     part_numbers = request.POST.getlist('part_number[]')
     part_qtys    = request.POST.getlist('part_qty[]')
     part_rates   = request.POST.getlist('part_rate[]')
@@ -910,7 +762,7 @@ def _save_jobcard(request, job=None):
         qty  = float(part_qtys[i])  if i < len(part_qtys)  else 1
         rate = float(part_rates[i]) if i < len(part_rates) else 0
         JobCardPart.objects.create(
-            job_card    = job,
+            jobcard    = job,
             description = desc.strip(),
             part_number = part_numbers[i] if i < len(part_numbers) else '',
             quantity    = qty,
@@ -927,8 +779,10 @@ def _save_jobcard(request, job=None):
     for i, desc in enumerate(l_descs):
         if not desc.strip():
             continue
-        tech_id = l_tech_ids[i] if i < len(l_tech_ids) and l_tech_ids[i] else None
-        tech = WorkshopStaff.objects.filter(pk=tech_id).first() if tech_id else None
+
+        l_tech_id = l_tech_ids[i] if i < len(l_tech_ids) else None
+        tech      = Staff.objects.filter(pk=l_tech_id).first() if l_tech_id else None
+
         hrs   = float(l_hours[i]) if i < len(l_hours) else 1
         rate  = float(l_rates[i]) if i < len(l_rates) else 0
         JobCardLabour.objects.create(
@@ -1012,8 +866,7 @@ def _save_jobcard_complaints(request, jobcard):
         cat_id = cat_ids[i] if i < len(cat_ids) else ''
         category = ServiceCategory.objects.filter(pk=cat_id).first() if cat_id else None
  
-        tech_id = tech_ids[i] if i < len(tech_ids) else ''
-        tech    = WorkshopStaff.objects.filter(pk=tech_id).first() if tech_id else None
+        
  
         insp_id = insp_ids[i] if i < len(insp_ids) else ''
         from .models import VehicleInspection
@@ -1025,7 +878,7 @@ def _save_jobcard_complaints(request, jobcard):
             category           = cat_texts[i] if i < len(cat_texts) else '',
             description        = desc.strip(),
             type               = types[i]    if i < len(types)    else 'Mechanical',
-            technician         = tech,
+          
             status             = statuses[i] if i < len(statuses) else 'Open',
             source_inspection  = insp,
             order              = i,
@@ -1040,9 +893,7 @@ def _save_jobcard_complaints(request, jobcard):
     for i, desc in enumerate(f_descriptions):
         if not desc.strip():
             continue
- 
-        tech_id = f_tech_ids[i] if i < len(f_tech_ids) else ''
-        tech    = WorkshopStaff.objects.filter(pk=tech_id).first() if tech_id else None
+
  
         insp_id = f_insp_ids[i] if i < len(f_insp_ids) else ''
         from .models import VehicleInspection
@@ -1127,7 +978,7 @@ from django.db.models import Q
 from accounts_app.models import LedgerCreation
 from .models import (
     Estimate, EstimateItem, EstimateComplaint,
-    JobCard, WorkshopStaff, WorkshopVehicle,
+    JobCard, WorkshopVehicle,
 )
 
 
@@ -1173,7 +1024,7 @@ def estimate_list(request):
 def _common_context(estimate=None):
     return {
         'customers':      LedgerCreation.objects.all().order_by('ledger_name'),
-        'staff':          WorkshopStaff.objects.filter(is_active=True).order_by('full_name'),
+     
         'jobcard':      JobCard.objects.filter(
                               status__in=['open', 'in_progress', 'completed']
                           ).order_by('-created_on'),
@@ -1197,7 +1048,7 @@ def _save_estimate(request, estimate=None):
     customer = get_object_or_404(LedgerCreation, pk=cid)
     vehicle  = WorkshopVehicle.objects.filter(pk=vid).first() if vid else None
     jobcard  = JobCard.objects.filter(pk=jid).first() if jid else None
-    advisor  = WorkshopStaff.objects.filter(pk=aid).first() if aid else None
+    advisor  = Staff.objects.filter(pk=aid).first() if aid else None
  
     if estimate is None:
         estimate = Estimate(created_by=request.user.id)
@@ -1284,8 +1135,8 @@ def _save_estimate(request, estimate=None):
     for i, desc in enumerate(labour_descs):
         if not desc.strip():
             continue
-        tech = WorkshopStaff.objects.filter(
-            pk=labour_techs[i] if i < len(labour_techs) else None).first()
+        tech = Staff.objects.filter(
+                pk=labour_techs[i] if i < len(labour_techs) else None).first()
         EstimateItem.objects.create(
             estimate    = estimate,
             item_type   = 'labour',
@@ -1364,14 +1215,10 @@ def estimate_list(request):
 def estimate_create(request):
     customers   = LedgerCreation.objects.filter(
                       groups_id=2).order_by('ledger_name')
-    technicians = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='technician').order_by('full_name')
-    advisors = WorkshopStaff.objects.filter(
-                    is_active=True,
-                    status='active',
-                    role__in=['service_advisor', 'Service Advisor']
-                ).order_by('full_name')
+    technicians = Staff.objects.filter(
+                    status='Active',
+                    staff_category__name='Technician').order_by('full_name')
+    advisors = Staff.objects.filter(status='Active').order_by('full_name')
     categories = ServiceCategory.objects.filter(
                     is_active=True
                 ).order_by('name')
@@ -1437,9 +1284,9 @@ def estimate_edit(request, pk):
     est         = get_object_or_404(Estimate, pk=pk)
     customers   = LedgerCreation.objects.filter(
                       groups_id=2).order_by('ledger_name')
-    technicians = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='technician').order_by('full_name')
+    technicians = Staff.objects.filter(
+                    status='Active',
+                    staff_category__name='Technician').order_by('full_name')
  
     if request.method == 'POST':
         updated = _save_estimate(request, estimate=est)
@@ -1689,7 +1536,7 @@ def _save_quotation(request, quotation=None):
     vehicle   = WorkshopVehicle.objects.filter(pk=vid).first() if vid else None
     estimate  = Estimate.objects.filter(pk=eid).first()        if eid else None
     jobcard  = JobCard.objects.filter(pk=jid).first()         if jid else None
-    advisor   = WorkshopStaff.objects.filter(pk=aid).first()   if aid else None
+    advisor   = Staff.objects.filter(pk=aid).first()   if aid else None
 
     if quotation is None:
         quotation = Quotation(created_by=request.user.id)
@@ -1746,7 +1593,7 @@ def _save_quotation(request, quotation=None):
     for i, desc in enumerate(labour_descs):
         if not desc.strip():
             continue
-        tech = WorkshopStaff.objects.filter(
+        tech = Staff.objects.filter(
             pk=labour_techs[i] if i < len(labour_techs) else None
         ).first()
         QuotationItem.objects.create(
@@ -1934,9 +1781,10 @@ def quotation_list(request):
 def quotation_create(request):
     customers   = LedgerCreation.objects.filter(
         groups_id=2).order_by('ledger_name')
-    technicians = WorkshopStaff.objects.filter(
-        is_active=True, status='active',
-        role='technician').order_by('full_name')
+    technicians = Staff.objects.filter(
+        status='Active',
+        staff_category__name='Technician').order_by('full_name')
+    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
     estimates   = Estimate.objects.filter(
         is_active=True).select_related('customer').order_by('-created_on')[:50]
 
@@ -1964,8 +1812,7 @@ def quotation_create(request):
                 f"Quotation {quot.quotation_number} saved!")
             return redirect('jobcard_app:quotation_detail', pk=quot.pk)
 
-    advisors    = WorkshopStaff.objects.filter(
-        is_active=True, status='active').order_by('full_name')
+    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
     categories  = ServiceCategory.objects.filter(is_active=True).order_by('name')
     from jobcard_app.utils import generate_voucher_number
     return render(request, 'jobcard_app/quotation_form.html', {
@@ -1990,10 +1837,10 @@ def quotation_detail(request, pk):
         Quotation.objects.select_related(
             'customer', 'vehicle', 'estimate', 'jobcard', 'advisor'
         ).prefetch_related('items__technician', 'complaints'),
-        pk=pk, is_active=True
+        pk=pk
     )
     return render(request, 'jobcard_app/quotation_detail.html', {
-        'quot':       quot,
+        'quotation':       quot,
         'parts':      quot.parts(),
         'labour':     quot.labour(),
         'complaints': quot.complaints_customer(),
@@ -2006,12 +1853,12 @@ def quotation_detail(request, pk):
 # ─────────────────────────────────────────────────────────────────────────────
 @login_required
 def quotation_edit(request, pk):
-    quot        = get_object_or_404(Quotation, pk=pk, is_active=True)
+    quot        = get_object_or_404(Quotation, pk=pk)
     customers   = LedgerCreation.objects.filter(
         groups_id=2).order_by('ledger_name')
-    technicians = WorkshopStaff.objects.filter(
-        is_active=True, status='active',
-        role='technician').order_by('full_name')
+    technicians = Staff.objects.filter(
+        status='Active',
+        staff_category__name='Technician').order_by('full_name')
     estimates   = Estimate.objects.filter(
         is_active=True).select_related('customer').order_by('-created_on')[:50]
 
@@ -2047,15 +1894,26 @@ def quotation_delete(request, pk):
     quot = get_object_or_404(Quotation, pk=pk)
     if request.method == 'POST':
         num = quot.quotation_number
-        quot.is_active = False
-        quot.save()
+        quot.delete()
         messages.success(request, f"Quotation {num} deleted.")
         return redirect('jobcard_app:quotation_list')
     return render(request, 'jobcard_app/quotation_confirm_delete.html',
                   {'quot': quot})
 
 
-
+@login_required
+def quotation_status_update(request, pk):
+    quot = get_object_or_404(Quotation, pk=pk)
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        valid_statuses = dict(Quotation.STATUS_CHOICES)
+        if new_status in valid_statuses:
+            quot.status = new_status
+            quot.save(update_fields=['status'])
+            messages.success(request, f"Quotation {quot.quotation_number} marked as {valid_statuses[new_status]}.")
+        else:
+            messages.error(request, 'Invalid status value.')
+    return redirect('jobcard_app:quotation_detail', pk=pk)
 # ─────────────────────────────────────────────────────────────
 # VEHICLE LIST
 # ─────────────────────────────────────────────────────────────
@@ -2415,13 +2273,13 @@ def _save_delivery(request, dn=None):
     estimate = None
     if estimate_id:
         estimate = Estimate.objects.filter(id=estimate_id).first()
-    advisor     = WorkshopStaff.objects.filter(
-                      pk=request.POST.get('advisor')).first()
+    advisor_id = request.POST.get('advisor')
+    advisor    = Staff.objects.filter(pk=advisor_id).first() if advisor_id else None
     technician_id = request.POST.get('technician')
 
     technician = None
     if technician_id:
-        technician = WorkshopStaff.objects.filter(
+        technician = Staff.objects.filter(
             id=technician_id
         ).first()
    
@@ -2584,8 +2442,7 @@ def _save_delivery(request, dn=None):
             tech_id = lab_techs[i] if i < len(lab_techs) and lab_techs[i] else None
             tech_obj = None
             if tech_id:
-                from jobcard_app.models import WorkshopStaff
-                tech_obj = WorkshopStaff.objects.filter(id=tech_id).first()
+                tech_obj = Staff.objects.filter(id=tech_id).first()
             DeliveryLabour.objects.create(
                 delivery_note = dn,
                 technician    = tech_obj,
@@ -2645,13 +2502,10 @@ def delivery_list(request):
 def delivery_create(request):
     customers   = LedgerCreation.objects.filter(
                       groups_id=2).order_by('ledger_name')
-    advisors    = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='service_advisor').order_by('full_name')
-    technicians = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='technician').order_by('full_name')
-
+    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
+    technicians = Staff.objects.filter(
+                      status='Active',
+                      staff_category__name='Technician').order_by('full_name')
     # Pre-fill from job card
     prefill_jc = None
     jcid = request.GET.get('from_jobcard')
@@ -2702,12 +2556,11 @@ def delivery_edit(request, pk):
     dn          = get_object_or_404(DeliveryNote, pk=pk)
     customers   = LedgerCreation.objects.filter(
                       groups_id=2).order_by('ledger_name')
-    advisors    = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='service_advisor').order_by('full_name')
-    technicians = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='technician').order_by('full_name')
+    advisors    = Staff.objects.filter(
+                      status='Active',)
+    technicians = Staff.objects.filter(
+                      status='Active',
+                      staff_category__name='Technician').order_by('full_name')
 
     if request.method == 'POST':
         updated = _save_delivery(request, dn=dn)
@@ -3141,7 +2994,7 @@ def _save_invoice(request, invoice=None):
               if jc_id and jc_id.isdigit() else None
 
     adv_id  = request.POST.get('advisor', '').strip()
-    advisor = WorkshopStaff.objects.filter(pk=adv_id).first() if adv_id else None
+    advisor = Staff.objects.filter(pk=adv_id).first() if adv_id else None
 
     if invoice is None:
         invoice = Invoice(created_by=request.user.id)
@@ -3241,7 +3094,7 @@ def _save_invoice(request, invoice=None):
             continue
 
         tech_id = lab_techs[i].strip() if i < len(lab_techs) else ''
-        tech    = WorkshopStaff.objects.filter(pk=tech_id).first() if tech_id else None
+        tech    = Staff.objects.filter(pk=tech_id).first() if tech_id else None
 
         try:
             hrs  = float(lab_hrs[i])   if i < len(lab_hrs)   and lab_hrs[i]   else 1
@@ -3375,13 +3228,13 @@ def invoice_list(request):
 def invoice_create(request):
     customers   = LedgerCreation.objects.filter(
                       groups_id=2).order_by('ledger_name')
-    technicians = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='technician').order_by('full_name')
-    advisors    = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='service_advisor').order_by('full_name')
+    technicians = Staff.objects.filter(
+                      status='Active',
+                      staff_category__name='Technician').order_by('full_name')
+    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
+  
  
+    # Pre-fill from job card
     # Pre-fill from job card
     prefill_jc = None
     jcid = request.GET.get('from_jobcard')
@@ -3427,12 +3280,11 @@ def invoice_edit(request, pk):
     inv         = get_object_or_404(Invoice, pk=pk)
     customers   = LedgerCreation.objects.filter(
                       groups_id=2).order_by('ledger_name')
-    technicians = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='technician').order_by('full_name')
-    advisors    = WorkshopStaff.objects.filter(
-                      is_active=True, status='active',
-                      role='service_advisor').order_by('full_name')
+    technicians = Staff.objects.filter(
+                      status='Active',
+                      staff_category__name='Technician').order_by('full_name')
+    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
+
  
     if request.method == 'POST':
         updated = _save_invoice(request, invoice=inv)

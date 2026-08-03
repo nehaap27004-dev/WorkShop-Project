@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.http import HttpResponse
-from django.forms import modelformset_factory
+from django.forms import modelformset_factory, modelform_factory
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
@@ -43,7 +43,8 @@ from datetime import date
 from .accounting_utils import *
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from .models import FleetCustomer, VehicleCategory, LicensePlateCode, Staff
+from .models import  FleetCustomer, VehicleCategory, LicensePlateCode, Staff
+
 
 # Create your views here.
 

@@ -295,6 +295,21 @@
                                     <a href="{% url 'fleet_app:staff_edit' staff.pk %}" class="btn btn-sm btn-primary">{% trans "Edit" %}</a>
                                     <form method="post" style="display:inline;">
                                         {% csrf_token %}
+                                        {% if form.errors %}
+                                        <div class="alert alert-danger">
+                                            <strong>{% trans "Please fix the following errors:" %}</strong>
+                                            <ul class="mb-0">
+                                                {% for field in form %}
+                                                    {% for error in field.errors %}
+                                                        <li>{{ field.label }}: {{ error }}</li>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                                {% for error in form.non_field_errors %}
+                                                    <li>{{ error }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                        {% endif %}
                                         <input type="hidden" name="delete" value="{{ staff.pk }}">
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('{% trans 'Are you sure to delete?' %}')">{% trans "Delete" %}</button>
                                     </form>

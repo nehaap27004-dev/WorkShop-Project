@@ -1,15 +1,63 @@
-<!DOCTYPE html>
-<html>
-<head><title>Delete Vehicle</title></head>
-<body style="font-family:Arial;padding:30px;max-width:500px;margin:auto;">
-    <h2>Delete Vehicle</h2>
-    <p>Are you sure you want to delete <strong>{{ vehicle.vehicle_name }}</strong>?</p>
-    <form method="POST">
-        {% csrf_token %}
-        <button type="submit" style="background:#dc3545;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;">
-            Yes, Delete
-        </button>
-        <a href="{% url 'fleet_app:vehicle_master_list' %}" style="margin-left:10px;">Cancel</a>
-    </form>
-</body>
-</html>
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block content %}
+<style>
+    .module-title {
+        color: #5A8DEE;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 26px;
+        font-weight: 500;
+    }
+    .card-banner-header {
+        background-color: #dce4ec !important;
+        padding: 12px 20px;
+        border-bottom: none;
+    }
+    .card-banner-title {
+        color: #7b8b9a;
+        font-weight: 500;
+        font-size: 15px;
+    }
+    .custom-btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+        color: #ffffff !important;
+        border-radius: 4px;
+        font-size: 14px;
+        padding: 6px 24px;
+    }
+</style>
+
+<div class="container-fluid mt-3 mb-5" style="max-width: 600px;">
+
+    <!-- Top Bar: Title -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="module-title mb-0">{% trans "Delete Vehicle" %}</h2>
+    </div>
+
+    <!-- Confirm Delete Card -->
+    <div class="card shadow-sm border-0" style="border-radius: 8px; overflow: hidden; background: #ffffff;">
+        <div class="card-header card-banner-header">
+            <span class="card-banner-title">{% trans "Confirmation" %}</span>
+        </div>
+        <div class="card-body p-4 text-center">
+            <p class="mb-4" style="font-size: 15px; color: #444;">
+                {% trans "Are you sure you want to delete vehicle" %} 
+                <strong style="color: #333;">{{ vehicle.vehicle_name }}</strong>?
+            </p>
+            <form method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn custom-btn-danger mr-2">
+                    {% trans "Delete" %}
+                </button>
+                <a href="{% url 'fleet_app:vehicle_master_list' %}" class="btn btn-secondary" style="border-radius: 4px; padding: 6px 20px; font-size: 14px;">
+                    {% trans "Cancel" %}
+                </a>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
