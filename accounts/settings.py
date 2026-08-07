@@ -26,7 +26,11 @@ SECRET_KEY = 'django-insecure-ssssz_b7togntoc(au7r(q6lq4ohy5hn!v1j$zme$^1m%1&mzt
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    'azurbusinessllc.pythonanywhere.com',
+]
 
 
 # Application definition
@@ -39,8 +43,8 @@ INSTALLED_APPS = [
     'settings',
     'asset_app',
     'jobcard_app',
-    
-   
+
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -108,12 +112,12 @@ WSGI_APPLICATION = 'accounts.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql', 
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'erp_db',
-        'HOST': 'localhost',  
-        'PORT': '5432', 
-        'USER': 'postgres',  
-        'PASSWORD': 'Admin', 
+        'HOST': 'Azurbusinessllc-5406.postgres.pythonanywhere-services.com',
+        'PORT': '15406',
+        'USER': 'erp_user',
+        'PASSWORD': 'Pass@@Azur26%',
     }
 }
 
@@ -149,7 +153,7 @@ USE_I18N = True
 USE_TZ = True
 
 # 1. Set this to your local timezone
-TIME_ZONE = 'Asia/Kolkata' 
+TIME_ZONE = 'Asia/Kolkata'
 
 
 # Static files (CSS, JavaScript, Images)
