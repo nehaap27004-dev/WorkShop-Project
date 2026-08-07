@@ -245,6 +245,7 @@
                             <a class="dropdown-item" href="{% url 'fleet_app:vehicle_model_list' %}"><i class="ti-more"></i> {% trans "V.Models" %}</a>
                             <a class="dropdown-item" href="{% url 'fleet_app:vehicle_list' %}"><i class="ti-more"></i> {% trans "Create Vehicle" %}</a>
                             <a class="dropdown-item" href="{% url 'jobcard_app:wv_list' %}"><i class="ti-more"></i> Vehicle Register</a>
+                            <a class="dropdown-item" href="{% url 'jobcard_app:service_category_list' %}"><i class="ti-more"></i> {% trans "Service Categories" %}</a>
 
                             <a class="dropdown-item" href="{% url 'accounts_app:manage_vendors' %}"><i class="ti-more"></i> {% trans "Supplier" %}</a>
                             <a class="dropdown-item" href="{% url 'accounts_app:manage_customers' %}"><i class="ti-more"></i> {% trans "Client" %}</a>
@@ -260,7 +261,6 @@
                         </a>
                         <div class="dropdown-menu">
                             <h6 class="dropdown-header">{% trans "Master" %}</h6>
-                            <a class="dropdown-item" href="{% url 'jobcard_app:service_category_list' %}"><i class="ti-more"></i> {% trans "Service Categories" %}</a>
                             <a class="dropdown-item" href="{% url 'item_master:item_category_create_update_list' %}"><i class="ti-more"></i> {% trans "Item Category" %}</a>
                             <a class="dropdown-item" href="{% url 'item_master:item_manufacturer_create_update_list' %}"><i class="ti-more"></i> {% trans "Item Manufacturer" %}</a>
                             <a class="dropdown-item" href="{% url 'item_master:unit_manage' %}"><i class="ti-more"></i> {% trans "Unit" %}</a>
@@ -297,7 +297,6 @@
                             <a class="dropdown-item" href="{% url 'jobcard_app:jobcard_list' %}"><i class="ti-more"></i>  Job Cards</a>
                             <a class="dropdown-item" href="{% url 'jobcard_app:estimate_list' %}"><i class="ti-more"></i> Estimates</a>
                             <a class="dropdown-item" href="{% url 'jobcard_app:quotation_list' %}"><i class="ti-more"></i> Quotations</a>
-                            <a class="dropdown-item" href="{% url 'jobcard_app:inspection_list' %}"><i class="ti-more"></i> Inspections</a>
                             <a class="dropdown-item" href="{% url 'jobcard_app:delivery_list' %}"><i class="ti-more"></i> Delivery Notes</a>
                             <a class="dropdown-item" href="{% url 'jobcard_app:invoice_list' %}"><i class="ti-more"></i> Invoices</a>
                             <a class="dropdown-item" href="{% url 'accounts_app:receipt_create' %}"><i class="ti-more"></i> {% trans "Receipt" %}</a>

@@ -106,9 +106,8 @@ def format_dr_cr(amount):
 
 @login_required(login_url='accounts_app:admin_login')
 def manufacturer_list(request):
-    manufacturers = Manufacturer.objects.all().order_by('manufacturer_name')
+    manufacturers = Manufacturer.objects.select_related('vehicle_type').order_by('manufacturer_name')
     return render(request, 'manufacturer_list.html', {'manufacturers': manufacturers})
-
 
 @login_required(login_url='accounts_app:admin_login')
 def manufacturer_create(request):
@@ -158,22 +157,31 @@ def manufacturer_edit(request, pk):
         'manufacturer': manufacturer
     })
 
+from django.db.models import ProtectedError
+@login_required(login_url='accounts_app:admin_login')
 def manufacturer_delete(request, pk):
     manufacturer = get_object_or_404(Manufacturer, pk=pk)
 
     if request.method == "POST":
-        name = manufacturer.name
-        manufacturer.delete()
+        name = manufacturer.manufacturer_name
 
-        # ✅ DELETE LOG
-        log_activity(
-            user=request.user,
-            screen_name="Manufacturer Master",
-            action_type="DELETE",
-            remark=f"Manufacturer '{manufacturer_name}' deleted"
-        )
+        try:
+            manufacturer.delete()
 
-        messages.success(request, "Manufacturer deleted successfully!")
+            log_activity(
+                user=request.user,
+                screen_name="Manufacturer Master",
+                action_type="DELETE",
+                remark=f"Manufacturer '{name}' deleted"
+            )
+
+            messages.success(request, "Manufacturer deleted successfully!")
+        except ProtectedError:
+            messages.error(
+                request,
+                f"Cannot delete '{name}' because it has vehicle models linked to it. "
+                f"Delete or reassign those vehicle models first."
+            )
 
     return redirect("fleet_app:manufacturer_list")
 
@@ -238,7 +246,7 @@ def vehicle_category_delete(request, pk):
     category = get_object_or_404(VehicleCategory, pk=pk)
 
     if request.method == 'POST':
-        name = category.name
+        name = category.category_name
         category.delete()
 
         # ✅ DELETE LOG
@@ -246,7 +254,7 @@ def vehicle_category_delete(request, pk):
             user=request.user,
             screen_name="Vehicle Category Master",
             action_type="DELETE",
-            remark=f"Vehicle category '{category_name}' deleted"
+            remark=f"Vehicle category '{name}' deleted"
         )
 
         messages.success(request, "Vehicle category deleted successfully!")
@@ -287,28 +295,145 @@ def get_models_by_manufacturer(request):
 
 
 @login_required(login_url='accounts_app:admin_login')
+def get_manufacturers_by_vehicle_type(request):
+    category_id = request.GET.get('vehicle_category_id')
+    if category_id:
+        manufacturers = Manufacturer.objects.filter(vehicle_type_id=category_id)
+    else:
+        manufacturers = Manufacturer.objects.all()
+
+    data = manufacturers.values('id', 'manufacturer_name').order_by('manufacturer_name')
+    return JsonResponse(list(data), safe=False)
+
+
+@login_required(login_url='accounts_app:admin_login')
+def add_manufacturer_ajax(request):
+    if request.method == 'POST':
+        manufacturer_name = request.POST.get('manufacturer_name', '').strip()
+        manufacturer_logo = request.FILES.get('manufacturer_logo')
+        vehicle_type_id = request.POST.get('vehicle_type')
+
+        if not manufacturer_name:
+            return JsonResponse({'success': False, 'error': 'Manufacturer name is required.'})
+        if Manufacturer.objects.filter(manufacturer_name__iexact=manufacturer_name).exists():
+            return JsonResponse({'success': False, 'error': 'This manufacturer already exists.'})
+
+        manufacturer = Manufacturer.objects.create(
+            manufacturer_name=manufacturer_name,
+            manufacturer_logo=manufacturer_logo,
+            vehicle_type_id=vehicle_type_id if vehicle_type_id else None
+        )
+
+        log_activity(
+            user=request.user,
+            screen_name="Manufacturer Master",
+            action_type="CREATE",
+            remark=f"Manufacturer '{manufacturer.manufacturer_name}' created via AJAX"
+        )
+        return JsonResponse({
+            'success': True,
+            'manufacturer_id': manufacturer.id,
+            'manufacturer_name': manufacturer.manufacturer_name
+        })
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'})
+
+@login_required(login_url='accounts_app:admin_login')
+def add_vehicle_category_ajax(request):
+    if request.method == 'POST':
+        category_name = request.POST.get('category_name', '').strip()
+        if not category_name:
+            return JsonResponse({'success': False, 'error': 'Category name is required.'})
+        if VehicleCategory.objects.filter(category_name__iexact=category_name).exists():
+            return JsonResponse({'success': False, 'error': 'This category already exists.'})
+
+        category = VehicleCategory.objects.create(category_name=category_name)
+
+        log_activity(
+            user=request.user,
+            screen_name="Vehicle Category Master",
+            action_type="CREATE",
+            remark=f"Vehicle category '{category.category_name}' created via AJAX"
+        )
+        return JsonResponse({'success': True, 'category_id': category.id, 'category_name': category.category_name})
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'})
+
+
+@login_required(login_url='accounts_app:admin_login')
+def add_manufacturer_ajax(request):
+    if request.method == 'POST':
+        manufacturer_name = request.POST.get('manufacturer_name', '').strip()
+        manufacturer_logo = request.FILES.get('manufacturer_logo')
+        vehicle_category_ids = request.POST.getlist('vehicle_categories')  # from checkboxes
+
+        if not manufacturer_name:
+            return JsonResponse({'success': False, 'error': 'Manufacturer name is required.'})
+        if Manufacturer.objects.filter(manufacturer_name__iexact=manufacturer_name).exists():
+            return JsonResponse({'success': False, 'error': 'This manufacturer already exists.'})
+
+        manufacturer = Manufacturer.objects.create(
+            manufacturer_name=manufacturer_name,
+            manufacturer_logo=manufacturer_logo
+        )
+        if vehicle_category_ids:
+            manufacturer.vehicle_categories.set(vehicle_category_ids)
+
+        log_activity(
+            user=request.user,
+            screen_name="Manufacturer Master",
+            action_type="CREATE",
+            remark=f"Manufacturer '{manufacturer.manufacturer_name}' created via AJAX"
+        )
+        return JsonResponse({
+            'success': True,
+            'manufacturer_id': manufacturer.id,
+            'manufacturer_name': manufacturer.manufacturer_name
+        })
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'})
+
+@login_required(login_url='accounts_app:admin_login')
+def get_variants_by_model(request):
+    model_id = request.GET.get('model_id')
+    if model_id:
+        variants = VehicleVariant.objects.filter(vehicle_model_id=model_id)
+    else:
+        variants = VehicleVariant.objects.all()
+
+    data = variants.values('id', 'variant_name')
+    return JsonResponse(list(data), safe=False)
+
+
+@login_required(login_url='accounts_app:admin_login')
+def get_registrations_by_variant(request):
+    variant_id = request.GET.get('variant_id')
+    if variant_id:
+        registrations = VehicleRegistration.objects.filter(variant_id=variant_id)
+    else:
+        registrations = VehicleRegistration.objects.all()
+
+    data = registrations.values('id', 'registration_number')
+    return JsonResponse(list(data), safe=False)
+
+
+@login_required(login_url='accounts_app:admin_login')
 def create_vehicle_model(request):
     if request.method == 'POST':
         form = VehicleModelForm(request.POST)
         if form.is_valid():
             vehicle_model = form.save()
-
-            # ✅ CREATE LOG
             log_activity(
                 user=request.user,
                 screen_name="Vehicle Model Master",
                 action_type="CREATE",
                 remark=f"Vehicle model '{vehicle_model.model_name}' created"
             )
-
             return redirect('fleet_app:vehicle_model_list')
     else:
         form = VehicleModelForm()
 
     return render(request, 'vehicle_model_form.html', {
-        'form': form
+        'form': form,
+        'vehicle_categories': VehicleCategory.objects.all(),   # NEW
     })
-
 
 @login_required(login_url='accounts_app:admin_login')
 def update_vehicle_model(request, model_id):

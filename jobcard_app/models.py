@@ -62,9 +62,16 @@ class WorkshopVehicle(models.Model):
     vehicle_number = models.CharField(
         max_length=20,
         unique=True,
-        blank=True,
         verbose_name='Vehicle Number',
         help_text='Auto-generated: VH-00001'
+    )
+    vehicle_type = models.ForeignKey(
+        'fleet_app.VehicleCategory',
+        on_delete=models.PROTECT,
+        null=True,      
+        blank=True,
+        related_name='workshop_vehicles',
+        verbose_name='Vehicle Type'
     )
     registration_number = models.CharField(
         max_length=30,
@@ -83,15 +90,21 @@ class WorkshopVehicle(models.Model):
         null=True,
         verbose_name='Engine Number'
     )
-    make = models.CharField(
-        max_length=100,
-        verbose_name='Make / Brand',
-        help_text='e.g. Toyota, Honda, Maruti'
+    manufacturer = models.ForeignKey(
+        'fleet_app.Manufacturer',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='workshop_vehicles',
+        verbose_name='Manufacturer'
     )
-    model = models.CharField(
-        max_length=100,
-        verbose_name='Model',
-        help_text='e.g. Camry, Civic, Swift'
+    vehicle_model = models.ForeignKey(
+        'fleet_app.VehicleModel',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='workshop_vehicles',
+        verbose_name='Model'
     )
     year = models.PositiveIntegerField(
         blank=True,
@@ -183,14 +196,6 @@ class WorkshopVehicle(models.Model):
     updated_on = models.DateTimeField(auto_now=True)
     created_by = models.IntegerField(null=True, blank=True)
 
-    # ── Auto-generate Vehicle Number ──────────────────────────
-    def save(self, *args, **kwargs):
-        if not self.vehicle_number:
-            last = WorkshopVehicle.objects.order_by('id').last()
-            next_id = (last.id + 1) if last else 1
-            self.vehicle_number = f"VH-{next_id:05d}"
-        super().save(*args, **kwargs)
-
     # ── Status Helpers ────────────────────────────────────────
     def get_service_status(self):
         from django.utils import timezone
@@ -229,7 +234,9 @@ class WorkshopVehicle(models.Model):
         return 'ok'
 
     def __str__(self):
-        return f"{self.registration_number} — {self.make} {self.model}"
+        mfr = self.manufacturer.manufacturer_name if self.manufacturer else ''
+        mdl = self.vehicle_model.model_name if self.vehicle_model else ''
+        return f"{self.registration_number} — {mfr} {mdl}".strip()
 
     class Meta:
         ordering            = ['-created_on']

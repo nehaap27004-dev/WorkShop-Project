@@ -5,10 +5,7 @@
 {% block content %}
 <!-- Custom CSS -->
 <style>
-    h2,
-    h3,
-    h4,
-    h5 {
+    h2, h3, h4, h5 {
         font-family: 'Segoe UI', sans-serif;
     }
 
@@ -17,9 +14,7 @@
         color: #444;
     }
 
-    input,
-    select,
-    textarea {
+    input, select, textarea {
         width: 100% !important;
         border: 1px solid #ced4da;
         border-radius: 6px;
@@ -27,9 +22,7 @@
         font-size: 0.95rem;
     }
 
-    input:focus,
-    select:focus,
-    textarea:focus {
+    input:focus, select:focus, textarea:focus {
         border-color: #5A8DEE;
         box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
         outline: none;
@@ -82,6 +75,22 @@
                         {{ form.model_name.label_tag }}
                         {{ form.model_name }}
                     </div>
+
+                    <!-- Vehicle Type FIRST -->
+                    <div class="col-md-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            {{ form.vehicle_category.label_tag }}
+                            <button type="button"
+                                class="btn btn-primary btn-sm rounded-circle d-flex align-items-center justify-content-center"
+                                id="addVehicleCategoryBtn" style="width: 24px; height: 24px; padding: 0;"
+                                title="{% trans 'Add New Vehicle Type' %}">
+                                <i class="fas fa-plus" style="font-size: 12px;"></i>
+                            </button>
+                        </div>
+                        {{ form.vehicle_category }}
+                    </div>
+
+                    <!-- Manufacturer SECOND, filtered by Vehicle Type -->
                     <div class="col-md-2">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             {{ form.manufacturer.label_tag }}
@@ -94,18 +103,7 @@
                         </div>
                         {{ form.manufacturer }}
                     </div>
-                    <div class="col-md-2">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            {{ form.vehicle_category.label_tag }}
-                            <button type="button"
-                                class="btn btn-primary btn-sm rounded-circle d-flex align-items-center justify-content-center"
-                                id="addVehicleCategoryBtn" style="width: 24px; height: 24px; padding: 0;"
-                                title="{% trans 'Add New Vehicle Category' %}">
-                                <i class="fas fa-plus" style="font-size: 12px;"></i>
-                            </button>
-                        </div>
-                        {{ form.vehicle_category }}
-                    </div>
+
                     <div class="col-md-2">
                         {{ form.model_colour.label_tag }}
                         {{ form.model_colour }}
@@ -179,27 +177,23 @@
 </div>
 
 <!-- Manufacturer Modal -->
-<div class="modal fade" id="manufacturerModal" tabindex="-1" aria-labelledby="manufacturerModalLabel"
-    aria-hidden="true">
+<div class="modal fade" id="manufacturerModal" tabindex="-1" aria-labelledby="manufacturerModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="manufacturerModalLabel">{% trans "Add New Manufacturer" %}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                    aria-label="{% trans 'Close' %}"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
             </div>
             <div class="modal-body">
                 <form id="manufacturerForm" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="manufacturer_name" class="form-label">{% trans "Manufacturer Name" %}</label>
-                        <input type="text" class="form-control" id="manufacturer_name" name="manufacturer_name"
-                            required>
+                        <input type="text" class="form-control" id="manufacturer_name" name="manufacturer_name" required>
                     </div>
                     <div class="mb-3">
                         <label for="manufacturer_logo" class="form-label">{% trans "Manufacturer Logo" %}</label>
-                        <input type="file" class="form-control" id="manufacturer_logo" name="manufacturer_logo"
-                            accept="image/*">
+                        <input type="file" class="form-control" id="manufacturer_logo" name="manufacturer_logo" accept="image/*">
                     </div>
                     <div id="manufacturerError" class="alert alert-danger d-none"></div>
                 </form>
@@ -213,14 +207,12 @@
 </div>
 
 <!-- Vehicle Category Modal -->
-<div class="modal fade" id="vehicleCategoryModal" tabindex="-1" aria-labelledby="vehicleCategoryModalLabel"
-    aria-hidden="true">
+<div class="modal fade" id="vehicleCategoryModal" tabindex="-1" aria-labelledby="vehicleCategoryModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="vehicleCategoryModalLabel">{% trans "Add New Vehicle Category" %}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                    aria-label="{% trans 'Close' %}"></button>
+                <h5 class="modal-title" id="vehicleCategoryModalLabel">{% trans "Add New Vehicle Type" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
             </div>
             <div class="modal-body">
                 <form id="vehicleCategoryForm">
@@ -241,7 +233,6 @@
 </div>
 
 <script>
-    // Translation strings for JavaScript
     const translations = {
         successMessage: "{% trans 'Manufacturer added successfully!' %}",
         errorMessage: "{% trans 'An error occurred' %}",
@@ -249,48 +240,74 @@
     };
 
     document.addEventListener('DOMContentLoaded', function () {
+        const vehicleCategorySelect = document.getElementById('{{ form.vehicle_category.id_for_label }}');
+        const manufacturerSelect = document.getElementById('{{ form.manufacturer.id_for_label }}');
+        const currentManufacturerId = "{{ form.manufacturer.value|default_if_none:'' }}";
+
+        function loadManufacturers(categoryId, selectedId) {
+            manufacturerSelect.innerHTML = '<option value="">---------</option>';
+            if (!categoryId) return;
+
+            fetch(`{% url 'fleet_app:get_manufacturers_by_vehicle_type' %}?vehicle_category_id=${categoryId}`)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(m => {
+                        const opt = new Option(m.manufacturer_name, m.id);
+                        if (selectedId && String(m.id) === String(selectedId)) {
+                            opt.selected = true;
+                        }
+                        manufacturerSelect.add(opt);
+                    });
+                })
+                .catch(err => console.error('Failed to load manufacturers:', err));
+        }
+
+        // Pre-fill on load (edit mode / validation re-render)
+        if (vehicleCategorySelect.value) {
+            loadManufacturers(vehicleCategorySelect.value, currentManufacturerId);
+        }
+
+        // Re-filter on change
+        vehicleCategorySelect.addEventListener('change', function () {
+            loadManufacturers(this.value, null);
+        });
+
+        // --- Manufacturer modal ---
         const addManufacturerBtn = document.getElementById('addManufacturerBtn');
         const manufacturerModal = new bootstrap.Modal(document.getElementById('manufacturerModal'));
         const saveManufacturerBtn = document.getElementById('saveManufacturerBtn');
         const manufacturerForm = document.getElementById('manufacturerForm');
-        const manufacturerSelect = document.getElementById('{{ form.manufacturer.id_for_label }}');
         const manufacturerError = document.getElementById('manufacturerError');
 
-        // Open modal when + button is clicked
         addManufacturerBtn.addEventListener('click', function (e) {
             e.preventDefault();
+            if (!vehicleCategorySelect.value) {
+                alert("{% trans 'Please select a Vehicle Type first' %}");
+                return;
+            }
             manufacturerForm.reset();
             manufacturerError.classList.add('d-none');
             manufacturerModal.show();
         });
 
-        // Save manufacturer via AJAX
         saveManufacturerBtn.addEventListener('click', function () {
             const formData = new FormData(manufacturerForm);
+            formData.append('vehicle_type', vehicleCategorySelect.value);
 
             fetch("{% url 'fleet_app:add_manufacturer_ajax' %}", {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                }
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Add new manufacturer to the select dropdown
-                        const option = new Option(data.manufacturer_name, data.manufacturer_id, true, true);
-                        manufacturerSelect.add(option);
-
-                        // Close modal and reset form
                         manufacturerModal.hide();
                         manufacturerForm.reset();
                         manufacturerError.classList.add('d-none');
-
-                        // Show success message
+                        loadManufacturers(vehicleCategorySelect.value, data.manufacturer_id);
                         alert(translations.successMessage);
                     } else {
-                        // Show error message
                         manufacturerError.textContent = data.error || translations.errorMessage;
                         manufacturerError.classList.remove('d-none');
                     }
@@ -302,14 +319,13 @@
                 });
         });
 
+        // --- Vehicle Category modal ---
         const addVehicleCategoryBtn = document.getElementById('addVehicleCategoryBtn');
         const vehicleCategoryModal = new bootstrap.Modal(document.getElementById('vehicleCategoryModal'));
         const saveVehicleCategoryBtn = document.getElementById('saveVehicleCategoryBtn');
         const vehicleCategoryForm = document.getElementById('vehicleCategoryForm');
-        const vehicleCategorySelect = document.getElementById('{{ form.vehicle_category.id_for_label }}');
         const vehicleCategoryError = document.getElementById('vehicleCategoryError');
 
-        // Open modal when + button is clicked
         addVehicleCategoryBtn.addEventListener('click', function (e) {
             e.preventDefault();
             vehicleCategoryForm.reset();
@@ -317,33 +333,26 @@
             vehicleCategoryModal.show();
         });
 
-        // Save category via AJAX
         saveVehicleCategoryBtn.addEventListener('click', function () {
             const formData = new FormData(vehicleCategoryForm);
 
             fetch("{% url 'fleet_app:add_vehicle_category_ajax' %}", {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                }
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Add new category to the select dropdown
                         const option = new Option(data.category_name, data.category_id, true, true);
                         vehicleCategorySelect.add(option);
 
-                        // Close modal and reset form
                         vehicleCategoryModal.hide();
                         vehicleCategoryForm.reset();
                         vehicleCategoryError.classList.add('d-none');
 
-                        // Show success message
-                        alert("{% trans 'Vehicle category added successfully!' %}");
+                        alert("{% trans 'Vehicle type added successfully!' %}");
                     } else {
-                        // Show error message
                         vehicleCategoryError.textContent = data.error || translations.errorMessage;
                         vehicleCategoryError.classList.remove('d-none');
                     }

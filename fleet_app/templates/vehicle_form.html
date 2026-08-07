@@ -225,8 +225,8 @@
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="id_vehicle_name" class="form-label">{% trans "Fleet No" %}</label>
-                        {{ form.vehicle_name }}
+                        <label for="id_manufacturer" class="form-label">{% trans "Manufacturer" %}</label>
+                        {{ form.manufacturer }}
                     </div>
                     <div class="col-md-3 mb-3">
                         <label for="id_model" class="form-label">{% trans "Vehicle Model" %}</label>
@@ -237,6 +237,18 @@
                                     data-target="#addVehicleModelModal">+</button>
                             </div>
                         </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="id_variant" class="form-label">{% trans "Vehicle Variant" %}</label>
+                        {{ form.variant }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="id_registration" class="form-label">{% trans "Vehicle Registration" %}</label>
+                        {{ form.registration }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="id_vehicle_name" class="form-label">{% trans "Fleet No" %}</label>
+                        {{ form.vehicle_name }}
                     </div>
                     <div class="col-md-3 mb-3">
                         <label for="id_vehicle_image" class="form-label">{% trans "Fleet Image" %}</label>
@@ -756,6 +768,112 @@
 </script>
 
 <script>
+    const vehicleCategorySelect = document.getElementById('id_vehicle_category');
+    const manufacturerSelect = document.getElementById('id_manufacturer');
+    const modelSelect = document.getElementById('id_model');
+    const variantSelect = document.getElementById('id_variant');
+    const registrationSelect = document.getElementById('id_registration');
+
+    function clearSelect(selectElement) {
+        if (!selectElement) return;
+        selectElement.innerHTML = '<option value="">---------</option>';
+    }
+
+    function populateSelect(selectElement, items, textKey = 'text') {
+        if (!selectElement) return;
+        clearSelect(selectElement);
+        items.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.text = item[textKey];
+            selectElement.appendChild(option);
+        });
+    }
+
+    function loadManufacturers(vehicleTypeId) {
+        if (!vehicleTypeId) {
+            clearSelect(manufacturerSelect);
+            clearSelect(modelSelect);
+            clearSelect(variantSelect);
+            clearSelect(registrationSelect);
+            return;
+        }
+        fetch(`{% url 'fleet_app:get_manufacturers_by_vehicle_type' %}?vehicle_type_id=${vehicleTypeId}`)
+            .then(res => res.json())
+            .then(data => {
+                populateSelect(manufacturerSelect, data, 'manufacturer_name');
+                clearSelect(modelSelect);
+                clearSelect(variantSelect);
+                clearSelect(registrationSelect);
+            });
+    }
+
+    function loadModels(manufacturerId) {
+        if (!manufacturerId) {
+            clearSelect(modelSelect);
+            clearSelect(variantSelect);
+            clearSelect(registrationSelect);
+            return;
+        }
+        fetch(`{% url 'fleet_app:get_models_by_manufacturer' %}?manufacturer_id=${manufacturerId}`)
+            .then(res => res.json())
+            .then(data => {
+                populateSelect(modelSelect, data, 'model_name');
+                clearSelect(variantSelect);
+                clearSelect(registrationSelect);
+            });
+    }
+
+    function loadVariants(modelId) {
+        if (!modelId) {
+            clearSelect(variantSelect);
+            clearSelect(registrationSelect);
+            return;
+        }
+        fetch(`{% url 'fleet_app:get_variants_by_model' %}?model_id=${modelId}`)
+            .then(res => res.json())
+            .then(data => {
+                populateSelect(variantSelect, data, 'variant_name');
+                clearSelect(registrationSelect);
+            });
+    }
+
+    function loadRegistrations(variantId) {
+        if (!variantId) {
+            clearSelect(registrationSelect);
+            return;
+        }
+        fetch(`{% url 'fleet_app:get_registrations_by_variant' %}?variant_id=${variantId}`)
+            .then(res => res.json())
+            .then(data => {
+                populateSelect(registrationSelect, data, 'registration_number');
+            });
+    }
+
+    if (vehicleCategorySelect) {
+        vehicleCategorySelect.addEventListener('change', function () {
+            loadManufacturers(this.value);
+        });
+    }
+
+    if (manufacturerSelect) {
+        manufacturerSelect.addEventListener('change', function () {
+            loadModels(this.value);
+        });
+    }
+
+    if (modelSelect) {
+        modelSelect.addEventListener('change', function () {
+            loadVariants(this.value);
+        });
+    }
+
+    if (variantSelect) {
+        variantSelect.addEventListener('change', function () {
+            loadRegistrations(this.value);
+        });
+    }
+</script>
     // License Plate Code Modal
     document.getElementById('addLicensePlateCodeForm').addEventListener('submit', function (e) {
         e.preventDefault();
