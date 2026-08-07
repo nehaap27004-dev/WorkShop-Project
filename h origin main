@@ -1,0 +1,8 @@
+[33m90ae75e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Initial commit from VS Code
+[33m40cdb5f[m Updated quotation module and bug fixes
+[33m7a5f029[m Fixed bootstrap path
+[33m5833bdb[m Add requirements file
+[33ma77051e[m Initial commit after moving project
+[33m5cc0549[m Docs: Explain why media, staticfiles, venv folders are ignored
+[33md1ed45b[m Docs: Add GitHub setup and git quick reference guides
+[33m8211a82[m Initial commit: RABWA accounting system - Django 5.0 ERP with fleet management
