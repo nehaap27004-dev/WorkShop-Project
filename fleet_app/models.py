@@ -26,19 +26,31 @@ class Company(models.Model):
 class Manufacturer(models.Model):
     manufacturer_name = models.CharField(max_length=100, unique=True)
     manufacturer_logo = models.ImageField(upload_to='manufacturer_logos/', null=True, blank=True)
-    
+
+    # single Vehicle Type per manufacturer
+    vehicle_type = models.ForeignKey(
+        'VehicleCategory',
+        on_delete=models.PROTECT,
+        related_name='manufacturers',
+        null=True,
+        blank=True,
+        verbose_name="Vehicle Type"
+    )
+
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
-    created_by = models.IntegerField(null=True, blank=True)   
+    created_by = models.IntegerField(null=True, blank=True)
     updated_by = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return self.manufacturer_name
 
     class Meta:
-        verbose_name = "manufacturer_name"
-        verbose_name_plural = "manufacturer_name"
+        verbose_name = "Manufacturer"
+        verbose_name_plural = "Manufacturers"
         ordering = ['manufacturer_name']
+
+ 
         
 class VehicleCategory(models.Model):
     category_name = models.CharField(max_length=100, unique=True)
@@ -102,10 +114,58 @@ class VehicleModel(models.Model):
     
     class Meta:
         verbose_name = "Vehicle Model"
-        verbose_name_plural = "Vehicle Model" 
-        ordering = ['model_name']  
+        verbose_name_plural = "Vehicle Models" 
+        ordering = ['model_name']
+        constraints = [
+            models.UniqueConstraint(fields=['manufacturer', 'model_name'], name='unique_model_per_manufacturer')
+        ]
 
-    
+
+class VehicleVariant(models.Model):
+    variant_name = models.CharField(max_length=255)
+    vehicle_model = models.ForeignKey(VehicleModel, on_delete=models.PROTECT, related_name='variants')
+    engine_code = models.CharField(max_length=100, blank=True, null=True)
+    trim = models.CharField(max_length=100, blank=True, null=True)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.vehicle_model.manufacturer.manufacturer_name} {self.vehicle_model.model_name} {self.variant_name}"
+
+    class Meta:
+        verbose_name = "Vehicle Variant"
+        verbose_name_plural = "Vehicle Variants"
+        ordering = ['variant_name']
+        constraints = [
+            models.UniqueConstraint(fields=['vehicle_model', 'variant_name'], name='unique_variant_per_model')
+        ]
+
+
+class VehicleRegistration(models.Model):
+    variant = models.ForeignKey(VehicleVariant, on_delete=models.PROTECT, related_name='registrations')
+    registration_number = models.CharField(max_length=30, unique=True)
+    registration_date = models.DateField(blank=True, null=True)
+    expiry_date = models.DateField(blank=True, null=True)
+    chassis_number = models.CharField(max_length=50, blank=True, null=True)
+    engine_number = models.CharField(max_length=50, blank=True, null=True)
+    document = models.FileField(upload_to='vehicle_docs/registrations/', blank=True, null=True)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.registration_number
+
+    class Meta:
+        verbose_name = "Vehicle Registration"
+        verbose_name_plural = "Vehicle Registrations"
+        ordering = ['registration_number']
+        constraints = [
+            models.UniqueConstraint(fields=['variant', 'registration_number'], name='unique_registration_per_variant')
+        ]
+
+
 class FleetCustomer(models.Model):
     customer_name = models.CharField(max_length=255, help_text="Name of the customer")
     customer_mobile = models.CharField(max_length=20, help_text="Primary contact person")
@@ -302,6 +362,30 @@ class Vehicle(models.Model):
         null=True, blank=True,
         related_name='vehicles',
         verbose_name="Customer / Owner"
+    )
+    manufacturer = models.ForeignKey(
+        Manufacturer,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='vehicles',
+        verbose_name='Manufacturer'
+    )
+    variant = models.ForeignKey(
+        'VehicleVariant',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='vehicles',
+        verbose_name='Vehicle Variant'
+    )
+    registration = models.ForeignKey(
+        'VehicleRegistration',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='vehicles',
+        verbose_name='Vehicle Registration'
     )
     FUEL_CHOICES = [
         ('petrol',   'Petrol'),

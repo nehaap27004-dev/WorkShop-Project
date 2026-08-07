@@ -2,23 +2,18 @@ from django.contrib import admin
 from fleet_app.models import *
 
 class ManufacturerAdmin(admin.ModelAdmin):
-    list_display = ('manufacturer_name', 'manufacturer_logo_preview')
+    list_display = ('manufacturer_name', 'vehicle_type', 'manufacturer_logo_preview')
     search_fields = ('manufacturer_name',)
-    list_filter = ('manufacturer_name',)
-    
-    # Method to display a preview of the logo in the admin interface
+    list_filter = ('vehicle_type',)
+
     def manufacturer_logo_preview(self, obj):
         if obj.manufacturer_logo:
             return '<img src="{}" width="100" height="50" style="object-fit:contain;" />'.format(obj.manufacturer_logo.url)
-        else:
-            return "No logo"
-    
+        return "No logo"
     manufacturer_logo_preview.short_description = 'Logo'
     manufacturer_logo_preview.allow_tags = True
 
-# Register the Manufacturer model
 admin.site.register(Manufacturer, ManufacturerAdmin)
-
 
 
 @admin.register(VehicleCategory)

@@ -65,6 +65,14 @@
     <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
         {% csrf_token %}
 
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- Manufacturer Information -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
@@ -72,18 +80,35 @@
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label for="{{ form.manufacturer_name.id_for_label }}" class="form-label">
                             {{ form.manufacturer_name.label }}
                         </label>
                         {{ form.manufacturer_name }}
+                        {% if form.manufacturer_name.errors %}
+                        <div class="text-danger small mt-1">{{ form.manufacturer_name.errors.0 }}</div>
+                        {% endif %}
                     </div>
-                    <div class="col-md-6">
+
+                    <div class="col-md-4">
                         <label for="{{ form.manufacturer_logo.id_for_label }}" class="form-label">
                             {{ form.manufacturer_logo.label }}
                         </label>
                         {{ form.manufacturer_logo }}
                         <img id="logo-preview" src="" alt="{% trans 'Logo preview' %}" class="mt-2 img-thumbnail d-none" style="max-width: 200px; max-height: 100px;">
+                        {% if form.manufacturer_logo.errors %}
+                        <div class="text-danger small mt-1">{{ form.manufacturer_logo.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="{{ form.vehicle_type.id_for_label }}" class="form-label">
+                            {{ form.vehicle_type.label }}
+                        </label>
+                        {{ form.vehicle_type }}
+                        {% if form.vehicle_type.errors %}
+                        <div class="text-danger small mt-1">{{ form.vehicle_type.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

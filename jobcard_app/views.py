@@ -32,6 +32,8 @@ from .models import (
     Invoice,
     
 )
+from fleet_app.models import  Manufacturer, VehicleModel
+from fleet_app.models import VehicleCategory
 # ─────────────────────────────────────────────────────────────
 # SERVICE CATEGORY
 # ─────────────────────────────────────────────────────────────
@@ -112,11 +114,12 @@ def service_category_delete(request, pk):
     if request.method == 'POST':
         if cat.service_count() > 0:
             messages.error(request, 'Cannot delete a category linked to services.')
-            return redirect('jobcard_app:service_category_list')
-        name = cat.name
-        cat.delete()
-        messages.success(request, f'Service category "{name}" deleted.')
-        return redirect('jobcard_app:service_category_list')
+        else:
+            name = cat.name
+            cat.delete()
+            messages.success(request, f'Service category "{name}" deleted.')
+
+    return redirect('jobcard_app:service_category_list')
 
     return render(request, 'jobcard_app/service_category_confirm_delete.html', {'cat': cat})
 @login_required
@@ -1923,14 +1926,15 @@ def wv_list(request):
     fuel_filter = request.GET.get('fuel', '')
 
     vehicles = WorkshopVehicle.objects.select_related(
-        'customer').filter(is_active=True)
+        'customer', 'vehicle_type', 'manufacturer', 'vehicle_model'
+    ).filter(is_active=True)
 
     if q:
         vehicles = vehicles.filter(
             Q(registration_number__icontains=q) |
             Q(vehicle_number__icontains=q)      |
-            Q(make__icontains=q)                |
-            Q(model__icontains=q)               |
+            Q(manufacturer__manufacturer_name__icontains=q) |
+            Q(vehicle_model__model_name__icontains=q)       |
             Q(chassis_number__icontains=q)      |
             Q(engine_number__icontains=q)       |
             Q(customer__ledger_name__icontains=q)
@@ -1971,29 +1975,35 @@ def wv_list(request):
 # customer_id optional — comes from "Add Vehicle" in customer list
 # ─────────────────────────────────────────────────────────────
 def wv_create(request, customer_id=None):
-    customers = LedgerCreation.objects.filter(
-        groups_id=2).order_by('ledger_name')
+    customers     = LedgerCreation.objects.filter(groups_id=2).order_by('ledger_name')
+    vehicle_types = VehicleCategory.objects.all().order_by('category_name')
 
     preselected = None
     if customer_id:
         preselected = get_object_or_404(LedgerCreation, id=customer_id)
 
     if request.method == 'POST':
-        # ── Validate required fields ──────────────────────────
-        cid = request.POST.get('customer')
-        reg = request.POST.get('registration_number', '').strip()
-        make = request.POST.get('make', '').strip()
-        model = request.POST.get('model', '').strip()
+        cid   = request.POST.get('customer')
+        vnum  = request.POST.get('vehicle_number', '').strip()
+        vtype = request.POST.get('vehicle_type') or None
+        mfr_id = request.POST.get('manufacturer') or None
+        model_id = request.POST.get('vehicle_model') or None
+        reg   = request.POST.get('registration_number', '').strip()
 
         errors = []
         if not cid:
             errors.append('Please select a customer.')
+        if not vnum:
+            errors.append('Vehicle number is required.')
+        elif WorkshopVehicle.objects.filter(
+                vehicle_number__iexact=vnum, is_active=True).exists():
+            errors.append(f"Vehicle number '{vnum}' already exists.")
+        if not mfr_id:
+            errors.append('Manufacturer is required.')
+        if not model_id:
+            errors.append('Model is required.')
         if not reg:
             errors.append('Registration number is required.')
-        if not make:
-            errors.append('Make / Brand is required.')
-        if not model:
-            errors.append('Model is required.')
         if WorkshopVehicle.objects.filter(
                 registration_number__iexact=reg, is_active=True).exists():
             errors.append(f"Vehicle with plate '{reg}' already exists.")
@@ -2002,22 +2012,25 @@ def wv_create(request, customer_id=None):
             for e in errors:
                 messages.error(request, e)
             return render(request, 'jobcard_app/wv_form.html', {
-                'customers':   customers,
-                'preselected': preselected,
-                'fuel_choices': WorkshopVehicle.FUEL_CHOICES,
-                'today':       timezone.now().date(),
-                'post':        request.POST,
+                'customers':     customers,
+                'vehicle_types': vehicle_types,
+                'preselected':   preselected,
+                'fuel_choices':  WorkshopVehicle.FUEL_CHOICES,
+                'today':         timezone.now().date(),
+                'post':          request.POST,
             })
 
         customer = get_object_or_404(LedgerCreation, id=cid)
 
         v = WorkshopVehicle(
             customer             = customer,
+            vehicle_number       = vnum,
+            vehicle_type_id      = vtype,
+            manufacturer_id      = mfr_id,
+            vehicle_model_id     = model_id,
             registration_number  = reg,
             chassis_number       = request.POST.get('chassis_number')       or None,
             engine_number        = request.POST.get('engine_number')        or None,
-            make                 = make,
-            model                = model,
             year                 = request.POST.get('year')                 or None,
             color                = request.POST.get('color')                or None,
             fuel_type            = request.POST.get('fuel_type')            or None,
@@ -2042,44 +2055,45 @@ def wv_create(request, customer_id=None):
         messages.success(
             request,
             f"Vehicle {v.vehicle_number} — {v.registration_number} registered successfully!")
-        return redirect('jobcard_app:wv_list', pk=v.pk)
+        return redirect('jobcard_app:wv_list')
 
     return render(request, 'jobcard_app/wv_form.html', {
-        'customers':    customers,
-        'preselected':  preselected,
-        'fuel_choices': WorkshopVehicle.FUEL_CHOICES,
-        'today':        timezone.now().date(),
+        'customers':     customers,
+        'vehicle_types': vehicle_types,
+        'preselected':   preselected,
+        'fuel_choices':  WorkshopVehicle.FUEL_CHOICES,
+        'today':         timezone.now().date(),
     })
-
-
 
 # ─────────────────────────────────────────────────────────────
 # VEHICLE EDIT
 # ─────────────────────────────────────────────────────────────
 def wv_edit(request, pk):
-    v         = get_object_or_404(WorkshopVehicle, pk=pk)
-    customers = LedgerCreation.objects.filter(
-        groups_id=2).order_by('ledger_name')
+    v             = get_object_or_404(WorkshopVehicle, pk=pk)
+    customers     = LedgerCreation.objects.filter(groups_id=2).order_by('ledger_name')
+    vehicle_types = VehicleCategory.objects.all().order_by('category_name')
 
     if request.method == 'POST':
-        make  = request.POST.get('make', '').strip()
-        model = request.POST.get('model', '').strip()
+        mfr_id   = request.POST.get('manufacturer') or None
+        model_id = request.POST.get('vehicle_model') or None
 
-        if not make or not model:
-            messages.error(request, 'Make and Model are required.')
+        if not mfr_id or not model_id:
+            messages.error(request, 'Manufacturer and Model are required.')
             return render(request, 'jobcard_app/wv_form.html', {
-                'v':            v,
-                'customers':    customers,
-                'fuel_choices': WorkshopVehicle.FUEL_CHOICES,
-                'today':        timezone.now().date(),
-                'edit_mode':    True,
-                'post':         request.POST,
+                'v':             v,
+                'customers':     customers,
+                'vehicle_types': vehicle_types,
+                'fuel_choices':  WorkshopVehicle.FUEL_CHOICES,
+                'today':         timezone.now().date(),
+                'edit_mode':     True,
+                'post':          request.POST,
             })
 
+        v.vehicle_type_id      = request.POST.get('vehicle_type') or None
+        v.manufacturer_id      = mfr_id
+        v.vehicle_model_id     = model_id
         v.chassis_number       = request.POST.get('chassis_number')       or None
         v.engine_number        = request.POST.get('engine_number')        or None
-        v.make                 = make
-        v.model                = model
         v.year                 = request.POST.get('year')                 or None
         v.color                = request.POST.get('color')                or None
         v.fuel_type            = request.POST.get('fuel_type')            or None
@@ -2103,13 +2117,13 @@ def wv_edit(request, pk):
         return redirect('jobcard_app:wv_list')
 
     return render(request, 'jobcard_app/wv_form.html', {
-        'v':            v,
-        'customers':    customers,
-        'fuel_choices': WorkshopVehicle.FUEL_CHOICES,
-        'today':        timezone.now().date(),
-        'edit_mode':    True,
+        'v':             v,
+        'customers':     customers,
+        'vehicle_types': vehicle_types,
+        'fuel_choices':  WorkshopVehicle.FUEL_CHOICES,
+        'today':         timezone.now().date(),
+        'edit_mode':     True,
     })
-
 
 # ─────────────────────────────────────────────────────────────
 # VEHICLE DELETE

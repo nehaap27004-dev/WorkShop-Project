@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
 from fleet_app.common import filter_voucher_types, get_ledgers_by_group_ids
 from .models import *
@@ -9,16 +10,19 @@ from django.utils.translation import gettext_lazy as _
 
 
 class ManufacturerForm(forms.ModelForm):
-    class Meta: 
+    class Meta:
         model = Manufacturer
-        fields = ['manufacturer_name', 'manufacturer_logo']
-
+        fields = ['manufacturer_name', 'manufacturer_logo', 'vehicle_type']
         labels = {
             'manufacturer_name': _("Manufacturer Name"),
             'manufacturer_logo': _("Manufacturer Logo"),
+            'vehicle_type': _("Vehicle Type"),
         }
-
-
+        widgets = {
+            'vehicle_type': forms.Select(attrs={'class': 'form-select'}),
+            'vehicle_categories': forms.CheckboxSelectMultiple(),
+        }
+        
 class VehicleCategoryForm(forms.ModelForm):
     class Meta:
         model = VehicleCategory
@@ -153,8 +157,8 @@ class VehicleForm(forms.ModelForm):
         model = Vehicle
         fields = [
             'is_owned', 'supplier', 'customer',
-            'vehicle_category', 'vehicle_name', 'model', 'vehicle_image',
-            'license_plate_code', 'license_plate_number', 'status',
+            'vehicle_category', 'manufacturer', 'model', 'variant', 'vehicle_name', 'vehicle_image',
+            'license_plate_code', 'license_plate_number', 'registration', 'status',
             
             'insurance_policy_number', 'insurance_expiry_date', 'insurance_certificate',
             'registration_renewed_date', 'registration_expiry_date', 'registration_document',
@@ -170,8 +174,11 @@ class VehicleForm(forms.ModelForm):
         labels = {
             'customer': _('Customer / Owner'),
             'vehicle_category': _('Vehicle Category'),
-            'vehicle_name': _('Fleet No'),
+            'manufacturer': _('Manufacturer'),
             'model': _('Vehicle Model'),
+            'variant': _('Vehicle Variant'),
+            'registration': _('Vehicle Registration'),
+            'vehicle_name': _('Fleet No'),
             'vehicle_image': _('Fleet Image'),
             'license_plate_code': _('Reg-Plate Code'),
             'license_plate_number': _('Reg-Plate No'),
@@ -207,8 +214,11 @@ class VehicleForm(forms.ModelForm):
             'service_interval_km':        forms.NumberInput(attrs={'class': 'form-control'}),
             'customer': forms.Select(attrs={ 'class': 'form-control','placeholder': 'Select customer (optional)',}),
             'vehicle_category': forms.Select(attrs={'placeholder': 'Select vehicle category', 'class': 'form-control'}),
-            'vehicle_name': forms.TextInput(attrs={'placeholder': 'Enter Vehicle Name', 'class': 'form-control'}),
+            'manufacturer': forms.Select(attrs={'placeholder': 'Select manufacturer', 'class': 'form-control'}),
             'model': forms.Select(attrs={'placeholder': 'Select vehicle model', 'class': 'form-control'}),
+            'variant': forms.Select(attrs={'placeholder': 'Select vehicle variant', 'class': 'form-control'}),
+            'registration': forms.Select(attrs={'placeholder': 'Select registration', 'class': 'form-control'}),
+            'vehicle_name': forms.TextInput(attrs={'placeholder': 'Enter Vehicle Name', 'class': 'form-control'}),
             'vehicle_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'license_plate_code': forms.Select(attrs={'placeholder': 'License plate code', 'class': 'form-control'}),
             'license_plate_number': forms.TextInput(attrs={'placeholder': 'License plate number', 'class': 'form-control'}),
@@ -235,14 +245,86 @@ class VehicleForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.fields['supplier'].queryset = get_ledgers_by_group_ids(28) 
-         # ── ADD THIS ──
+        self.fields['supplier'].queryset = get_ledgers_by_group_ids(28)
         self.fields['customer'].queryset = LedgerCreation.objects.filter(
             groups_id=2, types='DR'
         ).order_by('ledger_name')
         self.fields['customer'].label_from_instance = lambda obj: obj.ledger_name
         self.fields['customer'].required = False
         self.fields['customer'].empty_label = '— No Customer —'
+
+        self.fields['manufacturer'].queryset = Manufacturer.objects.all().order_by('manufacturer_name')
+        self.fields['model'].queryset = VehicleModel.objects.none()
+        self.fields['variant'].queryset = VehicleVariant.objects.none()
+        self.fields['registration'].queryset = VehicleRegistration.objects.none()
+
+
+        if self.data.get('manufacturer'):
+            try:
+                manufacturer_id = int(self.data.get('manufacturer'))
+            except (TypeError, ValueError):
+                manufacturer_id = None
+            if manufacturer_id:
+                self.fields['model'].queryset = VehicleModel.objects.filter(
+                    manufacturer_id=manufacturer_id
+                ).order_by('model_name')
+
+        elif self.instance.pk and self.instance.manufacturer:
+            self.fields['model'].queryset = VehicleModel.objects.filter(
+                manufacturer=self.instance.manufacturer
+            ).order_by('model_name')
+
+        if self.data.get('model'):
+            try:
+                model_id = int(self.data.get('model'))
+            except (TypeError, ValueError):
+                model_id = None
+            if model_id:
+                self.fields['variant'].queryset = VehicleVariant.objects.filter(
+                    vehicle_model_id=model_id
+                ).order_by('variant_name')
+
+        elif self.instance.pk and self.instance.model:
+            self.fields['variant'].queryset = VehicleVariant.objects.filter(
+                vehicle_model=self.instance.model
+            ).order_by('variant_name')
+
+        if self.data.get('variant'):
+            try:
+                variant_id = int(self.data.get('variant'))
+            except (TypeError, ValueError):
+                variant_id = None
+            if variant_id:
+                self.fields['registration'].queryset = VehicleRegistration.objects.filter(
+                    variant_id=variant_id
+                ).order_by('registration_number')
+
+        elif self.instance.pk and self.instance.variant:
+            self.fields['registration'].queryset = VehicleRegistration.objects.filter(
+                variant=self.instance.variant
+            ).order_by('registration_number')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        vehicle_category = cleaned_data.get('vehicle_category')
+        manufacturer = cleaned_data.get('manufacturer')
+        model = cleaned_data.get('model')
+        variant = cleaned_data.get('variant')
+        registration = cleaned_data.get('registration')
+
+        if model and manufacturer and model.manufacturer != manufacturer:
+            raise ValidationError('Selected model does not belong to the selected manufacturer.')
+
+        if model and vehicle_category and model.vehicle_category != vehicle_category:
+            raise ValidationError('Selected model does not belong to the selected vehicle type.')
+
+        if variant and model and variant.vehicle_model != model:
+            raise ValidationError('Selected variant does not belong to the selected model.')
+
+        if registration and variant and registration.variant != variant:
+            raise ValidationError('Selected registration does not belong to the selected variant.')
+
+        return cleaned_data
         
 
 

@@ -86,67 +86,44 @@ textarea.fc{resize:vertical}
 
   <!-- Vehicle Information -->
   <div class="section">
-    <div class="section-hdr">🚗 Vehicle Information</div>
+    <div class="section-hdr">Vehicle Info</div>
     <div class="section-body">
 
       <div class="g2 mb">
         <div class="field">
           <label>Vehicle Number <span class="req">*</span></label>
-          {% if edit_mode %}
-          <div class="auto-chip">{{ v.vehicle_number }}</div>
-          {% else %}
-          <div class="auto-chip">WS-001</div>
-          {% endif %}
+          <input type="text" name="vehicle_number" class="fc" required
+                placeholder="e.g. VH-00001"
+                value="{% if edit_mode %}{{ v.vehicle_number }}{% else %}{{ post.vehicle_number|default:'' }}{% endif %}">
         </div>
         <div class="field">
-          <label>Registration Number <span class="req">*</span></label>
-          <input type="text" name="registration_number" class="fc" required
-                 placeholder="MH02-AB-1234"
-                 value="{% if edit_mode %}{{ v.registration_number }}{% endif %}"
-                 {% if edit_mode %}readonly{% endif %}>
+          <label>Vehicle Type</label>
+          <select name="vehicle_type" id="id_vehicle_type" class="fc">
+            <option value="">— Select Vehicle Type —</option>
+            {% for vt in vehicle_types %}
+            <option value="{{ vt.id }}" {% if edit_mode and v.vehicle_type_id == vt.id %}selected{% endif %}>
+              {{ vt.category_name }}
+            </option>
+            {% endfor %}
+          </select>
         </div>
       </div>
+      
 
       <div class="g2 mb">
         <div class="field">
-          <label>Chassis Number</label>
-          <input type="text" name="chassis_number" class="fc" placeholder="MA3EWD..."
-                 value="{% if edit_mode %}{{ v.chassis_number|default:'' }}{% endif %}">
-        </div>
-        <div class="field">
-          <label>Engine Number</label>
-          <input type="text" name="engine_number" class="fc" placeholder="G13BB..."
-                 value="{% if edit_mode %}{{ v.engine_number|default:'' }}{% endif %}">
-        </div>
-      </div>
-
-      <div class="g2 mb">
-        <div class="field">
-          <label>Make <span class="req">*</span></label>
-          <input type="text" name="make" class="fc" required placeholder="Maruti Suzuki"
-                 value="{% if edit_mode %}{{ v.make }}{% endif %}">
+          <label>Manufacturer <span class="req">*</span></label>
+          <select name="manufacturer" id="id_manufacturer" class="fc" required>
+            <option value="">---------</option>
+          </select>
         </div>
         <div class="field">
           <label>Model <span class="req">*</span></label>
-          <input type="text" name="model" class="fc" required placeholder="Swift"
-                 value="{% if edit_mode %}{{ v.model }}{% endif %}">
+          <select name="vehicle_model" id="id_vehicle_model" class="fc" required>
+            <option value="">---------</option>
+          </select>
         </div>
       </div>
-
-      <div class="g2 mb">
-        <div class="field">
-          <label>Year <span class="req">*</span></label>
-          <input type="number" name="year" class="fc" required
-                 min="1980" max="2100" placeholder="2026"
-                 value="{% if edit_mode %}{{ v.year|default:'' }}{% endif %}">
-        </div>
-        <div class="field">
-          <label>Color</label>
-          <input type="text" name="color" class="fc" placeholder="Pearl Arctic White"
-                 value="{% if edit_mode %}{{ v.color|default:'' }}{% endif %}">
-        </div>
-      </div>
-
       <div class="g2 mb">
         <div class="field">
           <label>Fuel Type <span class="req">*</span></label>
@@ -161,6 +138,41 @@ textarea.fc{resize:vertical}
           <label>Current Odometer (km)</label>
           <input type="number" name="odometer" class="fc" min="0" placeholder="e.g. 54320"
                  value="{% if edit_mode %}{{ v.odometer|default:'' }}{% endif %}">
+        </div>
+      </div>
+      <div class="g2 mb">
+        <div class="field">
+          <label>Year <span class="req">*</span></label>
+          <input type="number" name="year" class="fc" required
+                min="1980" max="2100" placeholder="2026"
+                value="{% if edit_mode %}{{ v.year|default:'' }}{% endif %}">
+        </div>
+        <div class="field">
+          <label>Color</label>
+          <input type="text" name="color" class="fc" placeholder="Pearl Arctic White"
+                 value="{% if edit_mode %}{{ v.color|default:'' }}{% endif %}">
+        </div>
+      </div>
+
+      
+      <div class="g3 mb">
+        <div class="field">
+          <label>Chassis Number</label>
+          <input type="text" name="chassis_number" class="fc" placeholder="MA3EWD..."
+                 value="{% if edit_mode %}{{ v.chassis_number|default:'' }}{% endif %}">
+        </div>
+        <div class="field">
+          <label>Engine Number</label>
+          <input type="text" name="engine_number" class="fc" placeholder="G13BB..."
+                 value="{% if edit_mode %}{{ v.engine_number|default:'' }}{% endif %}">
+        </div>
+        
+        <div class="field">
+          <label>Registration No. <span class="req">*</span></label>
+          <input type="text" name="registration_number" class="fc" required
+                 placeholder="MH02-AB-1234"
+                 value="{% if edit_mode %}{{ v.registration_number }}{% endif %}"
+                 {% if edit_mode %}readonly{% endif %}>
         </div>
       </div>
 
@@ -279,5 +291,66 @@ document.getElementById('imgInp')?.addEventListener('change', function() {
     reader.readAsDataURL(this.files[0]);
   }
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    const vehicleTypeSelect = document.getElementById('id_vehicle_type');
+    const manufacturerSelect = document.getElementById('id_manufacturer');
+    const modelSelect = document.getElementById('id_vehicle_model');
+
+    const currentManufacturerId = "{% if edit_mode %}{{ v.manufacturer_id|default:'' }}{% endif %}";
+    const currentModelId = "{% if edit_mode %}{{ v.vehicle_model_id|default:'' }}{% endif %}";
+
+    function loadManufacturers(categoryId, selectedId, thenLoadModels) {
+        manufacturerSelect.innerHTML = '<option value="">---------</option>';
+        modelSelect.innerHTML = '<option value="">---------</option>';
+        if (!categoryId) return;
+
+        fetch(`{% url 'fleet_app:get_manufacturers_by_vehicle_type' %}?vehicle_category_id=${categoryId}`)
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(m => {
+                    const opt = new Option(m.manufacturer_name, m.id);
+                    if (selectedId && String(m.id) === String(selectedId)) {
+                        opt.selected = true;
+                    }
+                    manufacturerSelect.add(opt);
+                });
+                if (thenLoadModels && manufacturerSelect.value) {
+                    loadModels(manufacturerSelect.value, currentModelId);
+                }
+            });
+    }
+
+    function loadModels(manufacturerId, selectedId) {
+        modelSelect.innerHTML = '<option value="">---------</option>';
+        if (!manufacturerId) return;
+
+        fetch(`{% url 'fleet_app:get_models_by_manufacturer' %}?manufacturer_id=${manufacturerId}`)
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(m => {
+                    const opt = new Option(m.model_name, m.id);
+                    if (selectedId && String(m.id) === String(selectedId)) {
+                        opt.selected = true;
+                    }
+                    modelSelect.add(opt);
+                });
+            });
+    }
+
+    // Pre-fill on edit / re-render
+    if (vehicleTypeSelect.value) {
+        loadManufacturers(vehicleTypeSelect.value, currentManufacturerId, true);
+    }
+
+    vehicleTypeSelect.addEventListener('change', function () {
+        loadManufacturers(this.value, null, false);
+    });
+
+    manufacturerSelect.addEventListener('change', function () {
+        loadModels(this.value, null);
+    });
+});
+
 </script>
 {% endblock %}

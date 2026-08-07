@@ -1,5 +1,6 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
 <!-- Custom CSS -->
@@ -58,37 +59,62 @@
 </style>
 
 <div class="container mt-4 mb-5">
-    <h2 class="mb-4 text-center fw-bold text-primary">Edit Manufacturer</h2>
+    <h2 class="mb-4 text-center fw-bold text-primary">{% trans "Edit Manufacturer" %}</h2>
 
     <!-- Form -->
     <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
         {% csrf_token %}
-        
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- Manufacturer Information -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">Manufacturer Information</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Manufacturer Information" %}</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label for="{{ form.manufacturer_name.id_for_label }}" class="form-label">
                             {{ form.manufacturer_name.label }}
                         </label>
                         {{ form.manufacturer_name }}
+                        {% if form.manufacturer_name.errors %}
+                        <div class="text-danger small mt-1">{{ form.manufacturer_name.errors.0 }}</div>
+                        {% endif %}
                     </div>
-                    <div class="col-md-6">
+
+                    <div class="col-md-4">
                         <label for="{{ form.manufacturer_logo.id_for_label }}" class="form-label">
                             {{ form.manufacturer_logo.label }}
                         </label>
                         {{ form.manufacturer_logo }}
-                        <img 
-                            id="logo-preview" 
-                            src="{% if manufacturer.manufacturer_logo %}{{ manufacturer.manufacturer_logo.url }}{% endif %}" 
-                            alt="Logo Preview" 
-                            class="img-thumbnail mt-2" 
+                        <img
+                            id="logo-preview"
+                            src="{% if manufacturer.manufacturer_logo %}{{ manufacturer.manufacturer_logo.url }}{% endif %}"
+                            alt="Logo Preview"
+                            class="img-thumbnail mt-2"
                             style="max-width: 200px; max-height: 100px; {% if not manufacturer.manufacturer_logo %}display: none;{% endif %}"
                         >
+                        {% if form.manufacturer_logo.errors %}
+                        <div class="text-danger small mt-1">{{ form.manufacturer_logo.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="{{ form.vehicle_type.id_for_label }}" class="form-label">
+                            {{ form.vehicle_type.label }}
+                        </label>
+                        {{ form.vehicle_type }}
+                        {% if form.vehicle_type.errors %}
+                        <div class="text-danger small mt-1">{{ form.vehicle_type.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -96,10 +122,10 @@
 
         <div class="d-flex justify-content-between mt-4">
             <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-                <i class="bi bi-check-circle me-2"></i>Update Manufacturer
+                <i class="bi bi-check-circle me-2"></i>{% trans "Update Manufacturer" %}
             </button>
             <a href="{% url 'fleet_app:manufacturer_list' %}" class="btn btn-secondary px-4 py-2">
-                <i class="bi bi-x-circle me-2"></i>Cancel
+                <i class="bi bi-x-circle me-2"></i>{% trans "Cancel" %}
             </a>
         </div>
     </form>

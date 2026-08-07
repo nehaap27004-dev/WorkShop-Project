@@ -144,9 +144,9 @@ tbody td{padding:13px 16px;vertical-align:middle}
             <div class="veh-no">{{ v.vehicle_number }}</div>
           </td>
           <td>
-            <div class="make">{{ v.make }}</div>
+            <div class="make">{{ v.manufacturer.manufacturer_name|default:"—" }}</div>
             <div class="model-color">
-              {{ v.model }}{% if v.color %} · {{ v.color }}{% endif %}
+              {{ v.vehicle_model.model_name|default:"—" }}{% if v.color %} · {{ v.color }}{% endif %}
             </div>
           </td>
           <td>

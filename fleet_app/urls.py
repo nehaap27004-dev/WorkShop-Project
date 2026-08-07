@@ -12,7 +12,8 @@ urlpatterns = [
     path('manufacturers/new/', manufacturer_create, name='manufacturer_create'),
     path('manufacturers/<int:pk>/edit/', manufacturer_edit, name='manufacturer_edit'),
     path("manufacturer/<int:pk>/delete/", manufacturer_delete, name="manufacturer_delete"),
-    
+    path('manufacturers/add-ajax/', add_manufacturer_ajax, name='add_manufacturer_ajax'),
+    path('vehicle-categories/add-ajax/', add_vehicle_category_ajax, name='add_vehicle_category_ajax'),
     path('vehicle-categories/', create_vehicle_category, name='create_vehicle_category'),
     path("vehicle-category/<int:pk>/edit/", vehicle_category_edit, name="vehicle_category_edit"),
     path("vehicle-category/<int:pk>/delete/", vehicle_category_delete, name="vehicle_category_delete"),
@@ -22,6 +23,9 @@ urlpatterns = [
     path('vehicle-models-list/', vehicle_model_list, name='vehicle_model_list'),
     path("vehicle-model/<int:pk>/delete/", delete_vehicle_model, name="delete_vehicle_model"),
     path('get-models-by-manufacturer/', get_models_by_manufacturer, name='get_models_by_manufacturer'),
+    path('get-manufacturers-by-vehicle-type/', get_manufacturers_by_vehicle_type, name='get_manufacturers_by_vehicle_type'),
+    path('get-variants-by-model/', get_variants_by_model, name='get_variants_by_model'),
+    path('get-registrations-by-variant/', get_registrations_by_variant, name='get_registrations_by_variant'),
     
     
     path('drivers/', driver_list, name='driver_list'),  

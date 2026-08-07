@@ -78,6 +78,30 @@
         justify-content: center;
         text-align: center;
     }
+    .vehicle-type-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    margin-bottom: 12px;
+    }
+
+    .vehicle-type-badge {
+        background-color: #eaf1fd;
+        color: #5A8DEE;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 10px;
+        white-space: nowrap;
+    }
+
+    .no-type-text {
+        font-size: 0.75rem;
+        color: #adb5bd;
+        font-style: italic;
+        margin-bottom: 12px;
+    }
 
     .action-buttons {
         margin-top: auto;
@@ -133,6 +157,35 @@
             max-width: 25%;
         }
     }
+    .alert-success {
+        background-color: #d1e7dd !important;
+        border: 1px solid #a3cfbb !important;
+        color: #0f5132 !important;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da !important;
+        border: 1px solid #f1aeb5 !important;
+        color: #842029 !important;
+    }
+
+    .alert-warning {
+        background-color: #fff3cd !important;
+        border: 1px solid #ffe69c !important;
+        color: #664d03 !important;
+    }
+
+    .alert-info {
+        background-color: #cff4fc !important;
+        border: 1px solid #9eeaf9 !important;
+        color: #055160 !important;
+    }
+
+    .alert {
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-weight: 500;
+    }
 </style>
 
 <div class="container mt-4 mb-5">
@@ -143,6 +196,16 @@
             <i class="bi bi-plus-circle me-2"></i>{% trans "New" %}
         </a>
     </div>
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <!-- Manufacturer List -->
     <div class="row justify-content-start">
@@ -166,6 +229,14 @@
                         <div class="manufacturer-name">
                             {{ manufacturer.manufacturer_name }}
                         </div>
+
+                        {% if manufacturer.vehicle_type %}
+                        <div class="vehicle-type-badges">
+                            <span class="vehicle-type-badge">{{ manufacturer.vehicle_type.category_name }}</span>
+                        </div>
+                        {% else %}
+                        <div class="no-type-text">{% trans "No vehicle type assigned" %}</div>
+                        {% endif %}
 
                         <!-- Action Buttons -->
                         <div class="action-buttons">
