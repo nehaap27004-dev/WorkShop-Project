@@ -6,18 +6,35 @@ from django.utils import timezone
 from item_master.models import Item, Unit
 from accounts_app.models import LedgerCreation
 
-from .models import WorkshopStaff, WorkshopVehicle, VehicleInspection, InspectionFinding, ServiceCategory, JobCard
+from fleet_app.models import Staff, StaffCategory, Manufacturer, VehicleModel, VehicleCategory
+from .models import WorkshopVehicle, VehicleInspection, InspectionFinding, ServiceCategory, JobCard
+
+
+def create_test_vehicle(customer, registration_number, make_name='Toyota', model_name='Corolla'):
+    cat, _ = VehicleCategory.objects.get_or_create(category_name='Sedan')
+    mfr, _ = Manufacturer.objects.get_or_create(manufacturer_name=make_name)
+    vmodel, _ = VehicleModel.objects.get_or_create(
+        manufacturer=mfr,
+        model_name=model_name,
+        defaults={'vehicle_category': cat}
+    )
+    return WorkshopVehicle.objects.create(
+        customer=customer,
+        registration_number=registration_number,
+        manufacturer=mfr,
+        vehicle_model=vmodel,
+    )
 
 
 class InspectionCreateViewTests(TestCase):
     def test_inspector_dropdown_includes_inspector_staff(self):
-        staff = WorkshopStaff.objects.create(
+        cat, _ = StaffCategory.objects.get_or_create(name='Inspector')
+        staff = Staff.objects.create(
+            staff_id='INS-001',
             full_name='John Inspector',
-            role='Inspector',
-            phone='1234567890',
-            join_date=timezone.now().date(),
-            status='active',
-            is_active=True,
+            staff_category=cat,
+            contact_number='1234567890',
+            status='Active',
         )
 
         response = self.client.get(reverse('jobcard_app:inspection_create'))
@@ -32,13 +49,13 @@ class JobCardCreateViewTests(TestCase):
         user = get_user_model().objects.create_user(username='tester', password='secret123')
         self.client.force_login(user)
 
-        staff = WorkshopStaff.objects.create(
+        cat, _ = StaffCategory.objects.get_or_create(name='Technician')
+        staff = Staff.objects.create(
+            staff_id='TECH-001',
             full_name='Ali Technician',
-            role='technician',
-            phone='1234567890',
-            join_date=timezone.now().date(),
-            status='active',
-            is_active=True,
+            staff_category=cat,
+            contact_number='1234567890',
+            status='Active',
         )
 
         response = self.client.get(reverse('jobcard_app:jobcard_create'))
@@ -82,12 +99,7 @@ class JobCardCreateViewTests(TestCase):
         self.client.force_login(user)
 
         customer = LedgerCreation.objects.create(ledger_name='Test Customer')
-        vehicle = WorkshopVehicle.objects.create(
-            customer=customer,
-            registration_number='ABC-1234',
-            make='Toyota',
-            model='Corolla',
-        )
+        vehicle = create_test_vehicle(customer, 'ABC-1234', 'Toyota', 'Corolla')
         inspection = VehicleInspection.objects.create(
             customer=customer,
             vehicle=vehicle,
@@ -106,12 +118,7 @@ class JobCardCreateViewTests(TestCase):
         self.client.force_login(user)
 
         customer = LedgerCreation.objects.create(ledger_name='Test Customer')
-        vehicle = WorkshopVehicle.objects.create(
-            customer=customer,
-            registration_number='ABC-9999',
-            make='Toyota',
-            model='Yaris',
-        )
+        vehicle = create_test_vehicle(customer, 'ABC-9999', 'Toyota', 'Yaris')
         inspection = VehicleInspection.objects.create(
             customer=customer,
             vehicle=vehicle,
@@ -136,12 +143,7 @@ class JobCardCreateViewTests(TestCase):
         self.client.force_login(user)
 
         customer = LedgerCreation.objects.create(ledger_name='Test Customer')
-        vehicle = WorkshopVehicle.objects.create(
-            customer=customer,
-            registration_number='ABC-1234',
-            make='Toyota',
-            model='Corolla',
-        )
+        vehicle = create_test_vehicle(customer, 'ABC-1234', 'Toyota', 'Corolla')
         inspection = VehicleInspection.objects.create(
             customer=customer,
             vehicle=vehicle,
@@ -168,12 +170,7 @@ class JobCardCreateViewTests(TestCase):
         self.client.force_login(user)
 
         customer = LedgerCreation.objects.create(ledger_name='Test Customer')
-        vehicle = WorkshopVehicle.objects.create(
-            customer=customer,
-            registration_number='ABC-7777',
-            make='Toyota',
-            model='Camry',
-        )
+        vehicle = create_test_vehicle(customer, 'ABC-7777', 'Toyota', 'Camry')
 
         response = self.client.post(reverse('jobcard_app:jobcard_create'), {
             'customer': customer.pk,
@@ -201,12 +198,7 @@ class JobCardCreateViewTests(TestCase):
         self.client.force_login(user)
 
         customer = LedgerCreation.objects.create(ledger_name='Test Customer')
-        vehicle = WorkshopVehicle.objects.create(
-            customer=customer,
-            registration_number='ABC-1235',
-            make='Honda',
-            model='Civic',
-        )
+        vehicle = create_test_vehicle(customer, 'ABC-1235', 'Honda', 'Civic')
         inspection = VehicleInspection.objects.create(
             customer=customer,
             vehicle=vehicle,
@@ -242,3 +234,130 @@ class JobCardCreateViewTests(TestCase):
         self.assertEqual(job_card.complaints.get().category, 'AC')
         inspection.refresh_from_db()
         self.assertEqual(inspection.job_card, job_card)
+
+
+class RelationalMappingTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username='tester_relational', password='secret123')
+        self.client.force_login(self.user)
+
+        from fleet_app.models import Staff, StaffCategory
+        from jobcard_app.models import ServiceCategory, SkillTag, ComplaintType, TechnicianSkill
+
+        self.category = ServiceCategory.objects.create(name='Electrical System', description='Electrical repair')
+        self.skill = SkillTag.objects.create(name='AC Diagnostics', description='AC skill tag')
+        self.complaint_type = ComplaintType.objects.create(
+            category=self.category,
+            complaint_name='AC Compressor Noise',
+            required_skill=self.skill
+        )
+
+        tech_cat, _ = StaffCategory.objects.get_or_create(name='Technician')
+        self.technician = Staff.objects.create(
+            staff_id='TECH-002',
+            full_name='Master Technician',
+            staff_category=tech_cat,
+            status='Active',
+            contact_number='123456'
+        )
+
+    def test_relational_mapping_ajax(self):
+        response = self.client.get(reverse('jobcard_app:ajax_get_relational_mapping'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('categories', data)
+        self.assertIn('technicians', data)
+        self.assertIn('skills', data)
+
+    def test_unqualified_technician_blocked_without_manual_override(self):
+        customer = LedgerCreation.objects.create(ledger_name='Customer X')
+        vehicle = create_test_vehicle(customer, 'REG-1001', 'Toyota', 'Corolla')
+
+        response = self.client.post(reverse('jobcard_app:jobcard_create'), {
+            'customer': customer.pk,
+            'date': timezone.now().date().strftime('%Y-%m-%d'),
+            'jc_vehicle_id[]': [vehicle.pk],
+            'jc_vehicle_mileage[]': ['5000'],
+            'jc_vehicle_fuel[]': ['1/2'],
+            'jc_vehicle_notes[]': [''],
+            'priority': 'normal',
+            'status': 'open',
+            'complaint_category_id[]': [str(self.category.pk)],
+            'complaint_category[]': [self.category.name],
+            'complaint_type_id[]': [str(self.complaint_type.pk)],
+            'complaint_description[]': ['AC noise'],
+            'complaint_type[]': [self.complaint_type.complaint_name],
+            'complaint_technician[]': [str(self.technician.pk)],
+            'complaint_status[]': ['Open'],
+            'complaint_manual_override[]': ['0'],
+        })
+
+        self.assertEqual(response.status_code, 302)
+        # JobCard should not have saved complaint due to validation error redirect
+        self.assertEqual(JobCard.objects.count(), 0)
+
+    def test_unqualified_technician_allowed_with_manual_override(self):
+        customer = LedgerCreation.objects.create(ledger_name='Customer Y')
+        vehicle = create_test_vehicle(customer, 'REG-1002', 'Honda', 'Civic')
+
+        response = self.client.post(reverse('jobcard_app:jobcard_create'), {
+            'customer': customer.pk,
+            'date': timezone.now().date().strftime('%Y-%m-%d'),
+            'jc_vehicle_id[]': [vehicle.pk],
+            'jc_vehicle_mileage[]': ['5000'],
+            'jc_vehicle_fuel[]': ['1/2'],
+            'jc_vehicle_notes[]': [''],
+            'priority': 'normal',
+            'status': 'open',
+            'complaint_category_id[]': [str(self.category.pk)],
+            'complaint_category[]': [self.category.name],
+            'complaint_type_id[]': [str(self.complaint_type.pk)],
+            'complaint_description[]': ['AC noise'],
+            'complaint_type[]': [self.complaint_type.complaint_name],
+            'complaint_technician[]': [str(self.technician.pk)],
+            'complaint_status[]': ['Open'],
+            'complaint_manual_override[]': ['1'],
+        })
+
+        self.assertEqual(response.status_code, 302)
+        job_card = JobCard.objects.order_by('-created_on').first()
+        self.assertIsNotNone(job_card)
+        complaint = job_card.complaints.first()
+        self.assertIsNotNone(complaint)
+        self.assertTrue(complaint.is_manual_override)
+        self.assertEqual(complaint.technician, self.technician)
+
+    def test_qualified_technician_allowed_without_override(self):
+        from jobcard_app.models import TechnicianSkill
+        TechnicianSkill.objects.create(technician=self.technician, skill=self.skill)
+
+        customer = LedgerCreation.objects.create(ledger_name='Customer Z')
+        vehicle = create_test_vehicle(customer, 'REG-1003', 'Nissan', 'Sunny')
+
+        response = self.client.post(reverse('jobcard_app:jobcard_create'), {
+            'customer': customer.pk,
+            'date': timezone.now().date().strftime('%Y-%m-%d'),
+            'jc_vehicle_id[]': [vehicle.pk],
+            'jc_vehicle_mileage[]': ['5000'],
+            'jc_vehicle_fuel[]': ['1/2'],
+            'jc_vehicle_notes[]': [''],
+            'priority': 'normal',
+            'status': 'open',
+            'complaint_category_id[]': [str(self.category.pk)],
+            'complaint_category[]': [self.category.name],
+            'complaint_type_id[]': [str(self.complaint_type.pk)],
+            'complaint_description[]': ['AC noise'],
+            'complaint_type[]': [self.complaint_type.complaint_name],
+            'complaint_technician[]': [str(self.technician.pk)],
+            'complaint_status[]': ['Open'],
+            'complaint_manual_override[]': ['0'],
+        })
+
+        self.assertEqual(response.status_code, 302)
+        job_card = JobCard.objects.order_by('-created_on').first()
+        self.assertIsNotNone(job_card)
+        complaint = job_card.complaints.first()
+        self.assertIsNotNone(complaint)
+        self.assertFalse(complaint.is_manual_override)
+        self.assertEqual(complaint.technician, self.technician)
+

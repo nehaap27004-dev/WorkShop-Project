@@ -28,6 +28,50 @@ class ServiceCategory(models.Model):
         ordering   = ['name']
         verbose_name        = 'Service Category'
         verbose_name_plural = 'Service Categories'
+
+
+class SkillTag(models.Model):
+    name        = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    is_active   = models.BooleanField(default=True)
+    created_on  = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Skill Tag'
+        verbose_name_plural = 'Skill Tags'
+
+
+class ComplaintType(models.Model):
+    category       = models.ForeignKey(ServiceCategory, on_delete=models.CASCADE, related_name='complaint_types')
+    complaint_name = models.CharField(max_length=200)
+    required_skill = models.ForeignKey(SkillTag, on_delete=models.SET_NULL, null=True, blank=True, related_name='complaint_types')
+    is_active      = models.BooleanField(default=True)
+    created_on     = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.category.name} — {self.complaint_name}"
+
+    class Meta:
+        ordering = ['category__name', 'complaint_name']
+        verbose_name = 'Complaint Type'
+        verbose_name_plural = 'Complaint Types'
+
+
+class TechnicianSkill(models.Model):
+    technician = models.ForeignKey('fleet_app.Staff', on_delete=models.CASCADE, related_name='technician_skills')
+    skill      = models.ForeignKey(SkillTag, on_delete=models.CASCADE, related_name='technician_skills')
+
+    def __str__(self):
+        return f"{self.technician.full_name} — {self.skill.name}"
+
+    class Meta:
+        unique_together = ('technician', 'skill')
+        verbose_name = 'Technician Skill'
+        verbose_name_plural = 'Technician Skills'
       
 
 
@@ -361,6 +405,9 @@ class JobCardComplaint(models.Model):
         'JobCard', on_delete=models.CASCADE,
         related_name='complaints'
     )
+    vehicle = models.ForeignKey(     # NEW
+        'WorkshopVehicle', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='jobcard_complaints')
     service_category     = models.ForeignKey(
         'ServiceCategory', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='complaints'
@@ -383,6 +430,11 @@ class JobCardComplaint(models.Model):
         'VehicleInspection', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='loaded_complaints'
     )
+    complaint_type_ref   = models.ForeignKey(
+        'ComplaintType', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='jobcard_complaints'
+    )
+    is_manual_override   = models.BooleanField(default=False)
     order                = models.PositiveIntegerField(default=0)
     created_on           = models.DateTimeField(auto_now_add=True)
 
@@ -391,7 +443,28 @@ class JobCardComplaint(models.Model):
 
     class Meta:
         ordering = ['order', 'id']
+class JobCardVehicle(models.Model):
+    """One row per vehicle attached to a Job Card"""
 
+    jobcard  = models.ForeignKey(
+        JobCard, on_delete=models.CASCADE, related_name='vehicles')
+    vehicle  = models.ForeignKey(
+        'WorkshopVehicle', on_delete=models.PROTECT, related_name='jobcard_entries')
+    mileage    = models.PositiveIntegerField(null=True, blank=True, verbose_name='Mileage (km)')
+    fuel_level = models.CharField(
+        max_length=10, choices=JobCard.FUEL_CHOICES, default='1/2')
+    notes      = models.CharField(max_length=255, blank=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.jobcard.job_number} — {self.vehicle.vehicle_number}"
+
+    class Meta:
+        ordering = ['id']
+        constraints = [
+            models.UniqueConstraint(fields=['jobcard', 'vehicle'], name='unique_vehicle_per_jobcard')
+        ]
+        verbose_name = 'Job Card Vehicle'
 
 class JobCardFinding(models.Model):
     """Technician-identified findings on the job card"""
@@ -444,6 +517,9 @@ class JobCardPart(models.Model):
     ]
 
     jobcard    = models.ForeignKey(JobCard, on_delete=models.CASCADE, related_name='parts')
+    vehicle = models.ForeignKey(     # NEW
+        'WorkshopVehicle', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='jobcard_parts')
     description = models.CharField(max_length=300, blank=True, verbose_name='Item')
     part_number = models.CharField(max_length=100, blank=True, null=True)
     quantity    = models.DecimalField(max_digits=10, decimal_places=2, default=1)
@@ -468,6 +544,9 @@ class JobCardPart(models.Model):
 class JobCardLabour(models.Model):
 
     jobcard    = models.ForeignKey(JobCard, on_delete=models.CASCADE, related_name='labours')
+    vehicle = models.ForeignKey(     # NEW
+        'WorkshopVehicle', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='jobcard_labours')
     technician = models.ForeignKey(
         'fleet_app.Staff', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='labour_entries'

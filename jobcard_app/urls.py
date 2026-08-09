@@ -36,7 +36,6 @@ urlpatterns = [
     path('create/', views.jobcard_create, name='jobcard_create'),
     path('edit/<int:pk>/', views.jobcard_edit, name='jobcard_edit'),
     path('delete/<int:pk>/', views.jobcard_delete, name='jobcard_delete'),
-    path('ajax/vehicles-by-customer/', views.ajax_wv_by_customer, name='ajax_wv_by_customer'),
     path('ajax/jc-get-vehicles/', views.jc_get_vehicles, name='jc_get_vehicles'),
     path('ajax/jc-get-items/', views.jc_get_items, name='jc_get_items'),
     path('ajax/jc-search-jobcards/', views.jc_search_jobcards, name='jc_search_jobcards'),
@@ -96,7 +95,6 @@ urlpatterns = [
          name='wv_delete'),
  
     # AJAX endpoints
-    path('ajax/vehicles-by-customer/',views.ajax_wv_by_customer,name='ajax_wv_by_customer'),
  
     path('ajax/vehicle-search/',views.ajax_wv_search,name='ajax_wv_search'),
  
@@ -223,7 +221,7 @@ urlpatterns = [
          views.ajax_search_deliveries,
          name='ajax_search_deliveries'),
 
-   
-
+    path('ajax/vehicles-by-customer/', views.ajax_wv_by_customer, name='ajax_wv_by_customer'),
+    path('ajax/relational-mapping/', views.ajax_get_relational_mapping, name='ajax_get_relational_mapping'),
 
 ]
