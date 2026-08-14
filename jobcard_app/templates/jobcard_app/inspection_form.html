@@ -449,6 +449,7 @@ textarea.fi{resize:vertical}
         </div>
       </div>
       <!-- Row 2: Customer Name | Vehicle -->
+      <!-- Row 2: Customer | Vehicle -->
       <div class="g2 mb">
         <div>
           <label class="lbl">Customer Name <span class="req">*</span></label>
@@ -469,24 +470,18 @@ textarea.fi{resize:vertical}
           {% endif %}
         </div>
         <div>
-          <label class="lbl">Vehicle (Make · Model · Year · Plate)</label>
+          <label class="lbl">Vehicle Number <span class="req">*</span></label>
           <select name="vehicle" class="fi" required id="vehicleSel"
             {% if edit_mode %}disabled{% endif %}
             onchange="onVehicleChange(this)">
             <option value="">— Select Vehicle —</option>
             {% if edit_mode %}
             <option value="{{ insp.vehicle_id }}" selected>
-              {{ insp.vehicle.make }} {{ insp.vehicle.model }}
-              {% if insp.vehicle.year %} {{ insp.vehicle.year }}{% endif %}
-              · {{ insp.vehicle.registration_number }}
+              {{ insp.vehicle.vehicle_number }}
             </option>
             {% elif preselected_vehicle %}
-            <option value="{{ preselected_vehicle.id }}" selected
-              data-odo="{{ preselected_vehicle.odometer|default:'' }}"
-              data-fuel="{{ preselected_vehicle.fuel_type|default:'' }}">
-              {{ preselected_vehicle.make }} {{ preselected_vehicle.model }}
-              {% if preselected_vehicle.year %} {{ preselected_vehicle.year }}{% endif %}
-              · {{ preselected_vehicle.registration_number }}
+            <option value="{{ preselected_vehicle.id }}" selected>
+              {{ preselected_vehicle.vehicle_number }}
             </option>
             {% endif %}
           </select>
@@ -496,14 +491,56 @@ textarea.fi{resize:vertical}
         </div>
       </div>
 
-      <!-- Row 3: Odometer | Fuel Level | Fuel Gauge -->
+      <!-- Row 3: Vehicle Type | Manufacturer | Model -->
       <div class="g3 mb">
+        <div>
+          <label class="lbl">Vehicle Type</label>
+          <select name="veh_type" id="vehTypeSel" class="fi" onchange="loadVehTypeManufacturers()">
+            <option value="">— Select —</option>
+            {% for vt in vehicle_types %}
+            <option value="{{ vt.id }}">{{ vt.category_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Manufacturer</label>
+          <select name="veh_manufacturer" id="vehMfrSel" class="fi" onchange="loadVehTypeModels()">
+            <option value="">— Select Vehicle Type first —</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Model</label>
+          <select name="veh_model" id="vehModelSel" class="fi">
+            <option value="">— Select Manufacturer first —</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 4: Fuel Type | Color | Odometer -->
+      <div class="g3 mb">
+        <div>
+          <label class="lbl">Fuel Type</label>
+          <select name="veh_fuel_type" id="vehFuelSel" class="fi">
+            <option value="">— Select —</option>
+            {% for val,lbl in vehicle_fuel_choices %}
+            <option value="{{ val }}">{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Color</label>
+          <input type="text" name="veh_color" id="vehColorInp" class="fi" placeholder="Pearl White">
+        </div>
         <div>
           <label class="lbl">Odometer (KM)</label>
           <input type="number" name="odometer" id="odoInp" class="fi"
             min="0" placeholder="52,310"
             value="{% if edit_mode %}{{ insp.odometer|default:'' }}{% elif preselected_vehicle %}{{ preselected_vehicle.odometer|default:'' }}{% endif %}">
         </div>
+      </div>
+
+      <!-- Row 5: Fuel Level | Fuel Gauge -->
+      <div class="g2 mb">
         <div>
           <label class="lbl">Fuel Level</label>
           <select name="fuel_level" id="fuelSel" class="fi"
@@ -1119,16 +1156,69 @@ function loadVehicles(cid) {
       });
     });
 }
+const MFR_URL   = "{% url 'fleet_app:get_manufacturers_by_vehicle_type' %}";
+const MODEL_URL = "{% url 'fleet_app:get_models_by_manufacturer' %}";
 
 function onVehicleChange(sel) {
   const o = sel.options[sel.selectedIndex];
   if (!o) return;
-  if (o.dataset.odo)  document.getElementById('odoInp').value = o.dataset.odo;
-  if (o.dataset.fuel) {
-    const fs = document.getElementById('fuelSel');
-    [...fs.options].forEach(fo => fo.selected = fo.value === o.dataset.fuel);
-    updateFuelGauge(o.dataset.fuel);
-  }
+  const cid = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
+
+  fetch(VEH_URL + '?customer_id=' + document.getElementById('custSel').value)
+    .then(r => r.json())
+    .then(d => {
+      const v = d.vehicles.find(x => String(x.id) === String(sel.value));
+      if (!v) return;
+
+      if (v.odometer) document.getElementById('odoInp').value = v.odometer;
+      document.getElementById('vehColorInp').value = v.color || '';
+
+      const fuelSel = document.getElementById('vehFuelSel');
+      [...fuelSel.options].forEach(fo => fo.selected = fo.value === v.fuel_type);
+
+      const typeSel = document.getElementById('vehTypeSel');
+      [...typeSel.options].forEach(to => to.selected = String(to.value) === String(v.vehicle_type_id));
+
+      loadVehTypeManufacturers(v.manufacturer_id, () => {
+        loadVehTypeModels(v.vehicle_model_id);
+      });
+    });
+}
+
+function loadVehTypeManufacturers(preselectId, callback) {
+  const typeId = document.getElementById('vehTypeSel').value;
+  const mfrSel = document.getElementById('vehMfrSel');
+  mfrSel.innerHTML = '<option value="">---------</option>';
+  document.getElementById('vehModelSel').innerHTML = '<option value="">---------</option>';
+  if (!typeId) return;
+
+  fetch(`${MFR_URL}?vehicle_category_id=${typeId}`)
+    .then(r => r.json())
+    .then(data => {
+      data.forEach(m => {
+        const opt = new Option(m.manufacturer_name, m.id);
+        if (preselectId && String(m.id) === String(preselectId)) opt.selected = true;
+        mfrSel.add(opt);
+      });
+      if (callback) callback();
+    });
+}
+
+function loadVehTypeModels(preselectId) {
+  const mfrId = document.getElementById('vehMfrSel').value;
+  const modelSel = document.getElementById('vehModelSel');
+  modelSel.innerHTML = '<option value="">---------</option>';
+  if (!mfrId) return;
+
+  fetch(`${MODEL_URL}?manufacturer_id=${mfrId}`)
+    .then(r => r.json())
+    .then(data => {
+      data.forEach(m => {
+        const opt = new Option(m.model_name, m.id);
+        if (preselectId && String(m.id) === String(preselectId)) opt.selected = true;
+        modelSel.add(opt);
+      });
+    });
 }
 
 /* ── Damage type selection ───────────────────────── */

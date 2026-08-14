@@ -1280,7 +1280,7 @@ def staff_manage(request, pk=None):
     else:
         form = StaffForm(instance=instance)
 
-    staffs = Staff.objects.all().select_related('staff_category')
+    staffs = Staff.objects.all().select_related('staff_category').prefetch_related('skills')
     return render(request, 'staff_manage.html', {
         'form': form,
         'staffs': staffs,

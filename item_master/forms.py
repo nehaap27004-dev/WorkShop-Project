@@ -2,7 +2,7 @@ from django import forms
 from accounts_app.models import Groups
 from item_master.models import *
 from django.forms import inlineformset_factory, modelformset_factory
-from fleet_app.common import get_ledgers_by_group_ids, filter_voucher_types
+from fleet_app.common import get_ledgers_by_group_ids, get_ledgers_by_group_names, filter_voucher_types
 
 
 
@@ -414,7 +414,7 @@ class PurchaseVoucherForm(forms.ModelForm):
 
             
         # Ledger filter by Groups cash account & sundry Sundry Creditors 
-        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 28)
+        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Sundry Creditors')
 
         # Voucher type filter 
         filter_voucher_types(self, [13])    
@@ -744,7 +744,7 @@ class PurchaseReturnVoucherForm(forms.ModelForm):
 
             
         # Ledger filter by Groups cash account & sundry Sundry Creditors 
-        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 28)
+        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Sundry Creditors')
 
         # Voucher type filter 
         filter_voucher_types(self, [17])    
@@ -1067,7 +1067,7 @@ class SalesVoucherForm(forms.ModelForm):
                 pass
         
         # Ledger filter by Groups cash account & sundry Sundry Debtors
-        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 29)
+        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Customer', 'Sundry Debtors')
 
         # Voucher type filter 
         filter_voucher_types(self, [14])    
@@ -1235,7 +1235,7 @@ class SalesReturnVoucherForm(forms.ModelForm):
                 pass
         
         # Ledger filter by Groups cash account & sundry Sundry Debtors
-        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 29)
+        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Customer', 'Sundry Debtors')
 
         # Voucher type filter 
         filter_voucher_types(self, [18])    

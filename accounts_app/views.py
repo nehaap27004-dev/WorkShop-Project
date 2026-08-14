@@ -893,9 +893,12 @@ def manage_customers(request, pk=None):
     
 def manage_vendors(request, pk=None):
     """Add, Edit, and List Vendors in one page"""
+    from accounts_app.models import Groups
+    vendor_group = Groups.objects.filter(groupName='Sundry Creditors').first()
+    vendor_group_id = vendor_group.id if vendor_group else None
 
     if pk:
-        vendor = get_object_or_404(LedgerCreation, pk=pk, groups_id=28, types='CR')
+        vendor = get_object_or_404(LedgerCreation, pk=pk, groups_id=vendor_group_id, types='CR')
         form = VendorForm(instance=vendor)
         edit_mode = True
         title = "Edit Vendor"
@@ -913,7 +916,7 @@ def manage_vendors(request, pk=None):
             del_vendor = get_object_or_404(
                 LedgerCreation,
                 pk=delete_id,
-                groups_id=28,
+                groups_id=vendor_group_id,
                 types='CR'
             )
 
@@ -953,7 +956,7 @@ def manage_vendors(request, pk=None):
             return redirect('accounts_app:manage_vendors')
 
     vendors = LedgerCreation.objects.filter(
-        groups_id=28,
+        groups_id=vendor_group_id,
         types='CR'
     ).order_by('ledger_name')
 

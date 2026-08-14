@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from fleet_app.common import filter_voucher_types, get_ledgers_by_group_ids
+from fleet_app.common import filter_voucher_types, get_ledgers_by_group_ids, get_ledgers_by_group_names
 from .models import *
 from django.forms import modelformset_factory
 from django.forms import inlineformset_factory
@@ -245,7 +245,7 @@ class VehicleForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.fields['supplier'].queryset = get_ledgers_by_group_ids(28)
+        self.fields['supplier'].queryset = get_ledgers_by_group_names('Sundry Creditors')
         self.fields['customer'].queryset = LedgerCreation.objects.filter(
             groups_id=2, types='DR'
         ).order_by('ledger_name')
@@ -667,7 +667,7 @@ class TimeSheetForm(forms.ModelForm):
         filter_voucher_types(self, [8]) 
     
         # client filter by Groups 
-        self.fields['client'].queryset = get_ledgers_by_group_ids(29)      
+        self.fields['client'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')      
         
         
 
@@ -754,7 +754,7 @@ class FleetQuotationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
     
     # customer filter by Groups 
-        self.fields['customer'].queryset = get_ledgers_by_group_ids(29)      
+        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')      
 
 
 class FleetQuotationItemForm(forms.ModelForm):
@@ -937,7 +937,7 @@ class FleetContractForm(forms.ModelForm):
         filter_voucher_types(self, [7]) 
     
         # customer filter by Groups 
-        self.fields['customer'].queryset = get_ledgers_by_group_ids(29)     
+        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')     
 
 
 
@@ -1044,8 +1044,22 @@ class StaffCategoryForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter category name'})
         }
-        
+from jobcard_app.models import SkillTag
 class StaffForm(forms.ModelForm):
+    skills = forms.ModelMultipleChoiceField(
+        queryset=SkillTag.objects.none(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+        label=_('Technical Skills')
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from jobcard_app.models import SkillTag
+        self.fields['skills'].queryset = SkillTag.objects.filter(is_active=True)
+        if self.instance and self.instance.pk:
+            self.fields['skills'].initial = self.instance.skills.all()
+
     class Meta:
         model = Staff
         fields = '__all__'
@@ -1096,35 +1110,7 @@ class StaffForm(forms.ModelForm):
             'address': forms.Textarea(attrs={'rows': 2}),
             'remarks': forms.Textarea(attrs={'rows': 2}),
             'staff_image': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
-        }
-        
-        
-'''class DocumentForm(forms.ModelForm):
-    class Meta:
-        model = Document
-        fields = ['title', 'description', 'file_path', 'staff', 'vehicle', 'status', 'expiry_date', 'reminder_date']
-        labels = {
-            'title': _('Title'),
-            'description': _('Description'),
-            'file_path': _('File'),
-            'staff': _('Staff'),
-            'vehicle': _('Vehicle'),
-            'status': _('Status'),
-            'expiry_date': _('Expiry Date'),
-            'reminder_date': _('Reminder Date'),
-        }
-        widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control'}),
-            'file_path': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'staff': forms.Select(attrs={'class': 'form-select'}),
-            'vehicle': forms.Select(attrs={'class': 'form-select'}),
-            'status': forms.Select(attrs={'class': 'form-select'}),
-            'expiry_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'reminder_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-        }        
-        
-'''     
+        }  
 class SimpleQuotationForm(forms.ModelForm):
     class Meta:
         model = SimpleQuotation
@@ -1176,7 +1162,7 @@ class SimpleQuotationForm(forms.ModelForm):
         filter_voucher_types(self, [9]) 
     
         # customer filter by Groups 
-        self.fields['customer'].queryset = get_ledgers_by_group_ids(29)       
+        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')       
 
 
 class SimpleQuotationDetailsForm(forms.ModelForm):
@@ -1301,7 +1287,7 @@ class DeliveryContractForm(forms.ModelForm):
         # Voucher type filter - only Delivery Contract (ID: 12)
         filter_voucher_types(self, [12])
         # customer filter by Groups
-        self.fields['customer'].queryset = get_ledgers_by_group_ids(29)
+        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')
         
 
 
@@ -1417,11 +1403,11 @@ class InvoiceForm(forms.ModelForm):
                 pass
         
         # Ledger filter by Groups cash account & Bank account
-        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 5, 29)
+        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Customer', 'Sundry Debtors')
         # Voucher type filter 
         filter_voucher_types(self, [2])
         # customer filter by Groups 
-        self.fields['customer'].queryset = get_ledgers_by_group_ids(29)
+        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')
         
            
 
@@ -1563,13 +1549,13 @@ class FleetHireForm(forms.ModelForm):
                 pass
 
         # Ledger filter by Groups cash account & Bank account
-        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 5, 28)
+        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Sundry Creditors')
 
         # Voucher type filter 
         filter_voucher_types(self, [1])    
         
        # supplier filter by Groups 
-        self.fields['supplier'].queryset = get_ledgers_by_group_ids(28)   
+        self.fields['supplier'].queryset = get_ledgers_by_group_names('Sundry Creditors')   
 
 
 class FleetHireDetailsForm(forms.ModelForm):
@@ -1769,7 +1755,7 @@ class OffHireForm(forms.ModelForm):
         # Voucher type filter 
         filter_voucher_types(self, [15])
         # customer filter by Groups
-        self.fields['customer'].queryset = get_ledgers_by_group_ids(29) 
+        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors') 
 
 
 class POMasterForm(forms.ModelForm):
@@ -1802,7 +1788,7 @@ class POMasterForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # supplier filter by Groups 
-        self.fields['supplier'].queryset = get_ledgers_by_group_ids(28)   
+        self.fields['supplier'].queryset = get_ledgers_by_group_names('Sundry Creditors')   
 
 
 class PODetailsForm(forms.ModelForm):

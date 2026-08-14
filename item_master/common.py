@@ -482,11 +482,12 @@ def create_ledger_postings_for_sale(sale):
     Creates LedgerPosting entries for a given SalesMaster instance.
     Handles debit entry for customer/Cash ledger,
     and credit entries for sales, tax, and discount allowed.
+    Ledgers are looked up by name (not hardcoded ID) for robustness.
     """
     try:
         # --- Common Data ---
         transaction_date = sale.transaction_date
-        voucher_type = Vouchers.objects.get(id=14)  # Sales VoucherType
+        voucher_type = Vouchers.objects.get(VoucherType="Sales")  # Sales VoucherType
         voucher_no = sale.id
         cost_center = sale.cost_center
         fy = None  # future FK (optional)
@@ -503,13 +504,14 @@ def create_ledger_postings_for_sale(sale):
             FY=fy,
             IsDeleted=False
         )
-        # Discount Allowed Ledger (id=19)
+        # Discount Allowed Ledger
         if sale.discount > 0:
+            discount_allowed_ledger = LedgerCreation.objects.get(ledger_name="Discount Allowed")
             LedgerPosting.objects.create(
                 date=transaction_date,
                 VoucherType=voucher_type,
                 VoucherNo=voucher_no,
-                ledger=LedgerCreation.objects.get(id=19), # Discount Allowed Ledger
+                ledger=discount_allowed_ledger,
                 debit=sale.discount,
                 credit=None,
                 CostCenter=cost_center,
@@ -518,12 +520,13 @@ def create_ledger_postings_for_sale(sale):
             )
 
         # ---------------------- CREDIT ENTRY 1 ----------------------
-        # Sales Ledger (id=7)
+        # Sales Account Ledger
+        sales_ledger = LedgerCreation.objects.get(ledger_name="Sales Account")
         LedgerPosting.objects.create(
             date=transaction_date,
             VoucherType=voucher_type,
             VoucherNo=voucher_no,
-            ledger=LedgerCreation.objects.get(id=7), # Sales Account Ledger
+            ledger=sales_ledger,
             debit=None,
             credit=sale.total_net_value,
             CostCenter=cost_center,
@@ -532,13 +535,14 @@ def create_ledger_postings_for_sale(sale):
         )
 
         # ---------------------- CREDIT ENTRY 2 ----------------------
-        # Tax Ledger (id=2)
+        # Output Tax Ledger
         if sale.total_tax_amount > 0:
+            output_tax_ledger = LedgerCreation.objects.get(ledger_name="Output Tax")
             LedgerPosting.objects.create(
                 date=transaction_date,
                 VoucherType=voucher_type,
                 VoucherNo=voucher_no,
-                ledger=LedgerCreation.objects.get(id=2), # Vat Payable Ledger
+                ledger=output_tax_ledger,
                 debit=None,
                 credit=sale.total_tax_amount,
                 CostCenter=cost_center,
@@ -547,34 +551,40 @@ def create_ledger_postings_for_sale(sale):
             )
         
         if sale.Freight > 0:
-            LedgerPosting.objects.create(
-                date=transaction_date,
-                VoucherType=voucher_type,
-                VoucherNo=voucher_no,
-                ledger=LedgerCreation.objects.get(id=13), # Freight Ledger
-                debit=None,
-                credit=sale.Freight,
-                CostCenter=cost_center,
-                FY=fy,
-                IsDeleted=False
-        )    
+            # Freight Ledger: look up by name; fall back gracefully if not yet created
+            freight_ledger = LedgerCreation.objects.filter(ledger_name="Freight").first()
+            if freight_ledger:
+                LedgerPosting.objects.create(
+                    date=transaction_date,
+                    VoucherType=voucher_type,
+                    VoucherNo=voucher_no,
+                    ledger=freight_ledger,
+                    debit=None,
+                    credit=sale.Freight,
+                    CostCenter=cost_center,
+                    FY=fy,
+                    IsDeleted=False
+                )
             
     except Exception as e:
         print(f"Error creating LedgerPosting for sale {sale.id}: {e}")
-        
-        
+        raise
+
+
 #LedgerPosting for Purchase
 import traceback
 
+
 def create_ledger_postings_for_purchase(purchase):
+    """
+    Creates LedgerPosting entries for a given PurchaseMaster instance.
+    Ledgers are looked up by name (not hardcoded ID) for robustness.
+    """
     try:
-        print("DEBUG: Entered ledger posting function")
+        # Fetch Purchase voucher type by VoucherType name
+        voucher_type = Vouchers.objects.get(VoucherType="Purchase")
 
-        print("DEBUG: Fetching Purchase voucher type...")
-        voucher_type = Vouchers.objects.get(id=13)
-        print("DEBUG: Voucher type found:", voucher_type)
-
-        print("DEBUG: Creating Supplier Credit entry...")
+        # Supplier Credit entry (Accounts Payable / Sundry Creditor)
         LedgerPosting.objects.create(
             date=purchase.transaction_date,
             VoucherType=voucher_type,
@@ -587,11 +597,9 @@ def create_ledger_postings_for_purchase(purchase):
             IsDeleted=False
         )
 
-        print("DEBUG: Checking discount...")
+        # Discount Received (credit — reducing the cost)
         if purchase.discount > 0:
-            print("DEBUG: Fetching Discount Ledger (id=20)...")
-            discount_ledger = LedgerCreation.objects.get(id=20)
-
+            discount_ledger = LedgerCreation.objects.get(ledger_name="Discount Received")
             LedgerPosting.objects.create(
                 date=purchase.transaction_date,
                 VoucherType=voucher_type,
@@ -604,9 +612,8 @@ def create_ledger_postings_for_purchase(purchase):
                 IsDeleted=False
             )
 
-        print("DEBUG: Fetching Purchase Ledger (id=6)...")
-        purchase_ledger = LedgerCreation.objects.get(id=6)
-
+        # Purchase Account Debit
+        purchase_ledger = LedgerCreation.objects.get(ledger_name="Purchase Account")
         LedgerPosting.objects.create(
             date=purchase.transaction_date,
             VoucherType=voucher_type,
@@ -619,11 +626,9 @@ def create_ledger_postings_for_purchase(purchase):
             IsDeleted=False
         )
 
-        print("DEBUG: Checking Tax...")
+        # Input Tax Debit
         if purchase.total_tax_amount > 0:
-            print("DEBUG: Fetching Tax Ledger (id=3)...")
-            tax_ledger = LedgerCreation.objects.get(id=3)
-
+            tax_ledger = LedgerCreation.objects.get(ledger_name="Input Tax")
             LedgerPosting.objects.create(
                 date=purchase.transaction_date,
                 VoucherType=voucher_type,
@@ -636,9 +641,6 @@ def create_ledger_postings_for_purchase(purchase):
                 IsDeleted=False
             )
 
-        print("DEBUG: Ledger posting completed successfully")
-
     except Exception as e:
-        print("ERROR OCCURRED:")
         traceback.print_exc()
         raise e

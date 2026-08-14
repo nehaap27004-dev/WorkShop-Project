@@ -1,0 +1,180 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block content %}
+<style>
+    .module-title {
+        color: #5A8DEE;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 26px;
+        font-weight: 500;
+    }
+    .card-banner-header {
+        background-color: #dce4ec !important;
+        padding: 12px 20px;
+        border-bottom: none;
+    }
+    .card-banner-title {
+        color: #7b8b9a;
+        font-weight: 500;
+        font-size: 15px;
+    }
+    .custom-btn-primary {
+        background-color: #5A8DEE !important;
+        border-color: #5A8DEE !important;
+        color: #ffffff !important;
+        border-radius: 4px;
+        font-size: 14px;
+        padding: 6px 18px;
+    }
+    .table-custom-header th {
+        background-color: #f4f7fb !important;
+        color: #6c7a89;
+        font-weight: 600;
+        font-size: 13.5px;
+        border-color: #e2e8f0 !important;
+    }
+    .stat-card-custom {
+        background: #ffffff;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 10px 16px;
+        flex: 1;
+        min-width: 150px;
+    }
+</style>
+
+<div class="container-fluid mt-3 mb-5">
+
+    <!-- Top Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-0">{% trans "Service Types" %}</h2>
+            <small class="text-muted">{% trans "Manage sub-services linked to parent Service Categories and required skills" %}</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'jobcard_app:service_type_create' %}" class="btn custom-btn-primary">
+                + {% trans "New Service Type" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    {% if messages %}
+        {% for m in messages %}
+            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4" role="alert">
+                {{ m }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Filter & Stat Cards -->
+    <div class="row mb-4">
+        <div class="col-md-8 d-flex gap-3 flex-wrap">
+            <div class="stat-card-custom mr-2 mb-2">
+                <div class="text-muted small font-weight-bold">{% trans "TOTAL TYPES" %}</div>
+                <div class="h5 font-weight-bold mb-0" style="color: #5A8DEE;">{{ total }}</div>
+            </div>
+            <div class="stat-card-custom mr-2 mb-2">
+                <div class="text-muted small font-weight-bold">{% trans "ACTIVE" %}</div>
+                <div class="h5 font-weight-bold mb-0 text-success">{{ active }}</div>
+            </div>
+            <div class="stat-card-custom mr-2 mb-2">
+                <div class="text-muted small font-weight-bold">{% trans "INACTIVE" %}</div>
+                <div class="h5 font-weight-bold mb-0 text-danger">{{ inactive }}</div>
+            </div>
+        </div>
+        <div class="col-md-4 d-flex align-items-center justify-content-end">
+            <form method="get" class="d-flex align-items-center w-100">
+                <label class="mb-0 mr-2 font-weight-bold text-secondary text-nowrap">{% trans "Category:" %}</label>
+                <select name="category_id" class="form-control form-control-sm" onchange="this.form.submit()">
+                    <option value="">{% trans "— All Service Categories —" %}</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if selected_category_id == cat.id %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Service Type List Card -->
+    <div class="card shadow-sm border-0" style="border-radius: 8px; overflow: hidden; background: #ffffff;">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center">
+            <span class="card-banner-title">{% trans "Service Type Details" %}</span>
+            <span style="color: #7b8b9a; font-size: 13.5px;">{% trans "Showing:" %} {{ service_types|length }}</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0">
+                    <thead>
+                        <tr class="table-custom-header">
+                            <th>{% trans "Parent Category" %}</th>
+                            <th>{% trans "Service Type" %}</th>
+                            <th>{% trans "Code" %}</th>
+                            <th>{% trans "Required Skill Tag" %}</th>
+                            <th>{% trans "Description" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th style="width: 160px;" class="text-center">{% trans "Action" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for st in service_types %}
+                        <tr>
+                            <td class="align-middle">
+                                <span class="badge badge-light px-2 py-1 border" style="font-size: 12.5px; color: #495057;">
+                                    <i class="bi bi-folder2-open mr-1" style="color: #5A8DEE;"></i>{{ st.category.name }}
+                                </span>
+                            </td>
+                            <td class="align-middle font-weight-bold" style="color: #333;">{{ st.type_name }}</td>
+                            <td class="align-middle text-muted">{{ st.code|default:"—" }}</td>
+                            <td class="align-middle">
+                                {% if st.required_skill %}
+                                    <span class="badge badge-info px-2 py-1" style="background-color: #17a2b8;">
+                                        <i class="bi bi-tools mr-1"></i>{{ st.required_skill.name }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted" style="font-size: 0.85rem;">{% trans "Any Skill" %}</span>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle">{{ st.description|default:"—" }}</td>
+                            <td class="align-middle">
+                                {% if st.is_active %}
+                                    <span class="badge badge-success px-2 py-1">{% trans "Active" %}</span>
+                                {% else %}
+                                    <span class="badge badge-secondary px-2 py-1">{% trans "Inactive" %}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center align-middle">
+                                <a href="{% url 'jobcard_app:service_type_edit' st.pk %}" class="btn btn-sm btn-warning mr-1" style="border-radius: 4px; font-size: 13px;">
+                                    {% trans "Edit" %}
+                                </a>
+                                <form method="post" action="{% url 'jobcard_app:service_type_delete' st.pk %}"
+                                      onsubmit="return confirm('{% trans "Delete" %} {{ st.type_name }}?')" style="display:inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" style="border-radius: 4px; font-size: 13px;">
+                                        {% trans "Delete" %}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted" style="font-size: 14px;">
+                                {% trans "No service types found." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -308,9 +308,9 @@
                 };
             }
             
-            const quantity = stock.inQuantity + stock.outQuantity;
+            const quantity = stock.inQuantity - stock.outQuantity;
             grouped[key].totalQuantity += quantity;
-            grouped[key].totalValue += stock.stockValue;
+            grouped[key].totalValue += quantity * stock.rate;
             grouped[key].entries.push(stock);
             
             if (stock.hasAlterUnits) {
@@ -395,13 +395,14 @@
             `;
             
             itemEntries.forEach(entry => {
-                const qty = entry.inQuantity + entry.outQuantity;
+                const qty = entry.inQuantity - entry.outQuantity;
+                const entryValue = qty * entry.rate;
                 modalContent += `
                     <tr>
                         <td>${entry.batch}</td>
                         <td>${entry.costCenter}</td>
-                        <td style="color: ${qty < 0 ? 'red' : 'inherit'};">${qty.toFixed(2)}</td>
-                        <td style="color: ${entry.stockValue < 0 ? 'red' : 'inherit'};">${entry.stockValue.toFixed(2)}</td>
+                        <td style="color: ${qty < 0 ? 'red' : 'inherit'};">` + `${qty.toFixed(2)}</td>
+                        <td style="color: ${entryValue < 0 ? 'red' : 'inherit'};">` + `${entryValue.toFixed(2)}</td>
                     </tr>
                 `;
             });

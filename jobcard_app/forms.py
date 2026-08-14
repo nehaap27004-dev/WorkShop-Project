@@ -26,3 +26,18 @@ from .models import *
             'expiry_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'reminder_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
         }'''
+
+class SkillTagForm(forms.ModelForm):
+    class Meta:
+        model = SkillTag
+        fields = ['name', 'description', 'is_active']
+        labels = {
+            'name': _('Skill Name'),
+            'description': _('Description'),
+            'is_active': _('Is Active'),
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('e.g. AC Diagnostics')}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': _('Enter skill description...')}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
