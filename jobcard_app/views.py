@@ -9,7 +9,7 @@ from django.utils import timezone
 import logging
 import json
 from .models import (
-   Estimate, EstimateItem, InvoiceLabour, InvoiceOtherCharge, InvoicePart, JobCardVehicle,Quotation, QuotationItem, ServiceCategory
+   Estimate, EstimateItem, InvoiceLabour, InvoiceOtherCharge, InvoicePart, JobCardVehicle, Quotation, QuotationItem, ServiceCategory, ServiceType, SkillTag, ComplaintType
 )
 from fleet_app.models import FleetCustomer, Vehicle
 from item_master.models import Item
@@ -132,6 +132,160 @@ def get_service_categories(request):
         is_active=True
     ).order_by('name').values('id', 'name')
     return JsonResponse({'categories': list(categories)})
+
+
+# ─────────────────────────────────────────────────────────────
+# SERVICE TYPE
+# ─────────────────────────────────────────────────────────────
+@login_required
+def service_type_list(request):
+    category_id = request.GET.get('category_id')
+    service_types = ServiceType.objects.select_related('category', 'required_skill').all().order_by('category__name', 'type_name')
+    if category_id:
+        service_types = service_types.filter(category_id=category_id)
+    
+    categories = ServiceCategory.objects.all().order_by('name')
+    return render(request, 'jobcard_app/service_type_list.html', {
+        'service_types': service_types,
+        'categories':    categories,
+        'selected_category_id': int(category_id) if category_id and category_id.isdigit() else None,
+        'total':         service_types.count(),
+        'active':        service_types.filter(is_active=True).count(),
+        'inactive':      service_types.filter(is_active=False).count(),
+    })
+
+
+@login_required
+def service_type_create(request):
+    categories = ServiceCategory.objects.filter(is_active=True).order_by('name')
+    skills = SkillTag.objects.filter(is_active=True).order_by('name')
+
+    if request.method == 'POST':
+        category_id       = request.POST.get('category_id')
+        type_name         = request.POST.get('type_name', '').strip()
+        code              = request.POST.get('code', '').strip()
+        description       = request.POST.get('description', '').strip()
+        required_skill_id = request.POST.get('required_skill_id')
+        is_active         = request.POST.get('is_active', 'true') == 'true'
+
+        if not category_id:
+            messages.error(request, 'Parent Service Category is required.')
+            return render(request, 'jobcard_app/service_type_form.html', {
+                'categories': categories, 'skills': skills, 'post': request.POST
+            })
+
+        if not type_name:
+            messages.error(request, 'Service type name is required.')
+            return render(request, 'jobcard_app/service_type_form.html', {
+                'categories': categories, 'skills': skills, 'post': request.POST
+            })
+
+        if ServiceType.objects.filter(category_id=category_id, type_name__iexact=type_name).exists():
+            messages.error(request, f'A service type named "{type_name}" already exists in this category.')
+            return render(request, 'jobcard_app/service_type_form.html', {
+                'categories': categories, 'skills': skills, 'post': request.POST
+            })
+
+        ServiceType.objects.create(
+            category_id       = category_id,
+            type_name         = type_name,
+            code              = code,
+            description       = description,
+            required_skill_id = required_skill_id if required_skill_id else None,
+            is_active         = is_active,
+        )
+        messages.success(request, f'Service type "{type_name}" created successfully.')
+        return redirect('jobcard_app:service_type_list')
+
+    return render(request, 'jobcard_app/service_type_form.html', {
+        'categories': categories,
+        'skills': skills,
+    })
+
+
+@login_required
+def service_type_edit(request, pk):
+    st = get_object_or_404(ServiceType, pk=pk)
+    categories = ServiceCategory.objects.filter(is_active=True).order_by('name')
+    skills = SkillTag.objects.filter(is_active=True).order_by('name')
+
+    if request.method == 'POST':
+        category_id       = request.POST.get('category_id')
+        type_name         = request.POST.get('type_name', '').strip()
+        code              = request.POST.get('code', '').strip()
+        description       = request.POST.get('description', '').strip()
+        required_skill_id = request.POST.get('required_skill_id')
+        is_active         = request.POST.get('is_active', 'true') == 'true'
+
+        if not category_id:
+            messages.error(request, 'Parent Service Category is required.')
+            return render(request, 'jobcard_app/service_type_form.html', {
+                'st': st, 'categories': categories, 'skills': skills, 'post': request.POST
+            })
+
+        if not type_name:
+            messages.error(request, 'Service type name is required.')
+            return render(request, 'jobcard_app/service_type_form.html', {
+                'st': st, 'categories': categories, 'skills': skills, 'post': request.POST
+            })
+
+        if ServiceType.objects.filter(category_id=category_id, type_name__iexact=type_name).exclude(pk=st.pk).exists():
+            messages.error(request, f'A service type named "{type_name}" already exists in this category.')
+            return render(request, 'jobcard_app/service_type_form.html', {
+                'st': st, 'categories': categories, 'skills': skills, 'post': request.POST
+            })
+
+        st.category_id       = category_id
+        st.type_name         = type_name
+        st.code              = code
+        st.description       = description
+        st.required_skill_id = required_skill_id if required_skill_id else None
+        st.is_active         = is_active
+        st.save()
+
+        messages.success(request, f'Service type "{st.type_name}" updated successfully.')
+        return redirect('jobcard_app:service_type_list')
+
+    return render(request, 'jobcard_app/service_type_form.html', {
+        'st': st,
+        'categories': categories,
+        'skills': skills,
+    })
+
+
+@login_required
+def service_type_delete(request, pk):
+    st = get_object_or_404(ServiceType, pk=pk)
+
+    if request.method == 'POST':
+        name = st.type_name
+        st.delete()
+        messages.success(request, f'Service type "{name}" deleted.')
+        return redirect('jobcard_app:service_type_list')
+
+    return render(request, 'jobcard_app/service_type_confirm_delete.html', {'st': st})
+
+
+@login_required
+def get_service_types(request):
+    """AJAX: return active service types filtered by category_id (optional)."""
+    category_id = request.GET.get('category_id')
+    qs = ServiceType.objects.filter(is_active=True).select_related('required_skill', 'category').order_by('type_name')
+    if category_id:
+        qs = qs.filter(category_id=category_id)
+
+    st_list = []
+    for st in qs:
+        st_list.append({
+            'id': st.id,
+            'type_name': st.type_name,
+            'code': st.code or '',
+            'category_id': st.category_id,
+            'category_name': st.category.name,
+            'skill_id': st.required_skill_id or 0,
+            'skill_name': st.required_skill.name if st.required_skill else '',
+        })
+    return JsonResponse({'service_types': st_list})
  
  
 @login_required
@@ -593,30 +747,42 @@ def jobcard_create(request):
     prefill_category = ''
 
 
+    prefill_findings = []
     from_inspection = request.GET.get('from_inspection')
     if from_inspection:
         inspection = VehicleInspection.objects.filter(pk=from_inspection).first()
         if inspection:
             insp_complaints = inspection.findings.filter(
                 finding_type='complaint').order_by('order')
+            prefill_findings = list(
+                inspection.findings.filter(finding_type='finding')
+                .values_list('description', flat=True).order_by('order')
+            )
 
     if request.method == 'POST':
         return _save_jobcard(request, job=None)
+
+    items_json = json.dumps([
+        {'id': it.id, 'name': it.item_name, 'code': it.item_code or '',
+         'rate': float(it.sales_rate or 0)}
+        for it in items
+    ])
 
     return render(request, 'jobcard_app/jobcard_form.html', {
         'jobcard':      None,
         'customers':    customers,
         'technicians':  technicians,
-        'advisors':     advisors,     
+        'advisors':     advisors,
         'all_staff':    all_staff,
         'staff':        technicians,
         'items':        items,
+        'items_json':   items_json,
         'categories':   categories,
         'inspections':  inspections,
         'inspection':       inspection,
         'prefill_inspection': inspection,
         'insp_complaints':  insp_complaints,
-    
+        'prefill_findings': prefill_findings,
         'prefill_category': prefill_category,
         'today':        timezone.now().date(),
         'relational_mapping_json': json.dumps(_get_relational_mapping_dict()),
@@ -663,12 +829,12 @@ def jobcard_edit(request, pk):
 def _save_jobcard(request, job=None):
     from django.utils import timezone
     from accounts_app.models import LedgerCreation
-    from .models import (JobCard, JobCardComplaint, JobCardFinding,
+    from .models import (JobCard, JobCardVehicle, JobCardComplaint, JobCardFinding,
                          JobCardPart, JobCardLabour,
-                         WorkshopVehicle, VehicleInspection, ServiceCategory)
+                         WorkshopVehicle, VehicleInspection, ServiceCategory,
+                         ComplaintType, TechnicianSkill)
 
     cid      = request.POST.get('customer')
-    vid      = request.POST.get('vehicle')
 
     date       = request.POST.get('date') or timezone.now().date()
     advisor_id = request.POST.get('advisor')
@@ -707,9 +873,11 @@ def _save_jobcard(request, job=None):
     # ── Clear old rows (edit mode) ────────────────────────
     job.vehicles.all().delete()
     job.complaints.all().delete()
+    job.findings.all().delete()
     job.parts.all().delete()
     job.labours.all().delete()
 
+    # ── Vehicles table (multiple vehicles per job card) ────
     veh_ids       = request.POST.getlist('jc_vehicle_id[]')
     veh_mileages  = request.POST.getlist('jc_vehicle_mileage[]')
     veh_fuels     = request.POST.getlist('jc_vehicle_fuel[]')
@@ -734,6 +902,7 @@ def _save_jobcard(request, job=None):
             notes      = veh_notes[i] if i < len(veh_notes) else '',
         )
 
+    # Keep legacy single-vehicle fields in sync (first vehicle in the table)
     job.workshop_vehicle = first_vehicle
     job.mileage = first_vehicle and (
         JobCardVehicle.objects.filter(jobcard=job, vehicle=first_vehicle).first().mileage
@@ -742,6 +911,7 @@ def _save_jobcard(request, job=None):
         job.vehicle_model = f"{first_vehicle.manufacturer.manufacturer_name if first_vehicle.manufacturer else ''} " \
                             f"{first_vehicle.vehicle_model.model_name if first_vehicle.vehicle_model else ''}".strip()
     job.save()
+
     # ── Complaints ────────────────────────────────────────
     categories          = request.POST.getlist('complaint_category_id[]')
     cat_texts           = request.POST.getlist('complaint_category[]')
@@ -750,10 +920,9 @@ def _save_jobcard(request, job=None):
     types               = request.POST.getlist('complaint_type[]')
     tech_ids            = request.POST.getlist('complaint_technician[]')
     statuses            = request.POST.getlist('complaint_status[]')
-    veh_ids             = request.POST.getlist('complaint_vehicle_id[]')
+    complaint_veh_ids   = request.POST.getlist('complaint_vehicle_id[]')
     manual_overrides    = request.POST.getlist('complaint_manual_override[]')
 
-    from .models import ComplaintType, TechnicianSkill
     for i, desc in enumerate(descriptions):
         if not desc.strip():
             continue
@@ -768,7 +937,7 @@ def _save_jobcard(request, job=None):
         tech_id = tech_ids[i] if i < len(tech_ids) else None
         tech    = Staff.objects.filter(pk=tech_id).first() if tech_id else None
 
-        c_veh_id  = veh_ids[i] if i < len(veh_ids) else None
+        c_veh_id  = complaint_veh_ids[i] if i < len(complaint_veh_ids) else None
         c_veh_obj = WorkshopVehicle.objects.filter(pk=c_veh_id).first() if c_veh_id else first_vehicle
 
         raw_override = manual_overrides[i] if i < len(manual_overrides) else '0'
@@ -800,30 +969,48 @@ def _save_jobcard(request, job=None):
             is_manual_override = override_flag,
         )
 
-   
+    # ── Findings ──────────────────────────────────────────
+    f_descriptions = request.POST.getlist('finding_description[]')
+    f_tech_ids     = request.POST.getlist('finding_technician[]')
+    f_statuses     = request.POST.getlist('finding_status[]')
+    f_veh_ids      = request.POST.getlist('finding_vehicle_id[]')
 
+    for i, desc in enumerate(f_descriptions):
+        if not desc.strip():
+            continue
 
-    
+        f_tech_id = f_tech_ids[i] if i < len(f_tech_ids) else None
+        tech      = Staff.objects.filter(pk=f_tech_id).first() if f_tech_id else None
 
+        f_veh_id  = f_veh_ids[i] if i < len(f_veh_ids) else None
+        f_veh_obj = WorkshopVehicle.objects.filter(pk=f_veh_id).first() if f_veh_id else first_vehicle
 
+        JobCardFinding.objects.create(
+            jobcard     = job,
+            description = desc.strip(),
+            technician  = tech,
+            status      = f_statuses[i] if i < len(f_statuses) else 'Pending',
+        )
 
-      
     # ── Parts ─────────────────────────────────────────────
     part_items   = request.POST.getlist('part_item[]')
     part_numbers = request.POST.getlist('part_number[]')
     part_qtys    = request.POST.getlist('part_qty[]')
     part_rates   = request.POST.getlist('part_rate[]')
-    part_veh_ids = request.POST.getlist('part_vehicle_id[]')         # NEW
-
+    part_veh_ids = request.POST.getlist('part_vehicle_id[]')
 
     for i, desc in enumerate(part_items):
         if not desc.strip():
             continue
         qty  = float(part_qtys[i])  if i < len(part_qtys)  else 1
         rate = float(part_rates[i]) if i < len(part_rates) else 0
+
+        p_veh_id  = part_veh_ids[i] if i < len(part_veh_ids) else None
+        p_veh_obj = WorkshopVehicle.objects.filter(pk=p_veh_id).first() if p_veh_id else first_vehicle
+
         JobCardPart.objects.create(
             jobcard    = job,
-            vehicle    = veh_obj,                                    # NEW
+            vehicle    = p_veh_obj,
             description = desc.strip(),
             part_number = part_numbers[i] if i < len(part_numbers) else '',
             quantity    = qty,
@@ -836,8 +1023,7 @@ def _save_jobcard(request, job=None):
     l_descs    = request.POST.getlist('labour_description[]')
     l_hours    = request.POST.getlist('labour_hours[]')
     l_rates    = request.POST.getlist('labour_rate[]')
-    l_veh_ids  = request.POST.getlist('labour_vehicle_id[]')         # NEW
-
+    l_veh_ids  = request.POST.getlist('labour_vehicle_id[]')
 
     for i, desc in enumerate(l_descs):
         if not desc.strip():
@@ -846,11 +1032,14 @@ def _save_jobcard(request, job=None):
         l_tech_id = l_tech_ids[i] if i < len(l_tech_ids) else None
         tech      = Staff.objects.filter(pk=l_tech_id).first() if l_tech_id else None
 
+        l_veh_id  = l_veh_ids[i] if i < len(l_veh_ids) else None
+        l_veh_obj = WorkshopVehicle.objects.filter(pk=l_veh_id).first() if l_veh_id else first_vehicle
+
         hrs   = float(l_hours[i]) if i < len(l_hours) else 1
         rate  = float(l_rates[i]) if i < len(l_rates) else 0
         JobCardLabour.objects.create(
             jobcard    = job,
-            vehicle    = veh_obj,                                    # NEW
+            vehicle    = l_veh_obj,
             technician  = tech,
             description = desc.strip(),
             hours       = hrs,
@@ -941,14 +1130,15 @@ def ajax_wv_by_customer(request):
 
 def _get_relational_mapping_dict():
     """
-    Returns relational dictionary connecting Service Categories, Complaint Types,
-    Required Skills, and Technician Skill Assignments.
+    Returns relational dictionary connecting Service Categories, Service Types,
+    Complaint Types, Required Skills, and Technician Skill Assignments.
     """
-    from .models import ServiceCategory, ComplaintType, SkillTag, TechnicianSkill
+    from .models import ServiceCategory, ServiceType, ComplaintType, SkillTag, TechnicianSkill
     from fleet_app.models import Staff
 
     categories = ServiceCategory.objects.filter(is_active=True).prefetch_related(
-        'complaint_types__required_skill'
+        'complaint_types__required_skill',
+        'service_types__required_skill'
     )
     cat_data = []
     for cat in categories:
@@ -960,10 +1150,32 @@ def _get_relational_mapping_dict():
                 'skill_id': ct.required_skill_id or 0,
                 'skill_name': ct.required_skill.name if ct.required_skill else '',
             })
+        service_types = []
+        for st in cat.service_types.filter(is_active=True):
+            service_types.append({
+                'id': st.id,
+                'name': st.type_name,
+                'code': st.code or '',
+                'skill_id': st.required_skill_id or 0,
+                'skill_name': st.required_skill.name if st.required_skill else '',
+            })
         cat_data.append({
             'id': cat.id,
             'name': cat.name,
             'complaints': complaints,
+            'service_types': service_types,
+        })
+
+    all_service_types = []
+    for st in ServiceType.objects.filter(is_active=True).select_related('category', 'required_skill'):
+        all_service_types.append({
+            'id': st.id,
+            'type_name': st.type_name,
+            'code': st.code or '',
+            'category_id': st.category_id,
+            'category_name': st.category.name,
+            'skill_id': st.required_skill_id or 0,
+            'skill_name': st.required_skill.name if st.required_skill else '',
         })
 
     technicians = Staff.objects.filter(
@@ -987,6 +1199,7 @@ def _get_relational_mapping_dict():
 
     return {
         'categories': cat_data,
+        'service_types': all_service_types,
         'technicians': tech_data,
         'skills': skills,
     }
@@ -1070,49 +1283,53 @@ def ajax_get_inspections(request):
     from .models import VehicleInspection
 
     customer_id = request.GET.get('customer_id', '').strip()
-    vehicle_id  = request.GET.get('vehicle_id', '').strip()
+    vehicle_ids_param = request.GET.get('vehicle_ids', '').strip()  # comma-separated
 
     if not customer_id:
         return JsonResponse({'inspections': []})
 
     qs = VehicleInspection.objects.select_related(
-        'vehicle', 'customer', 'inspector'
+        'vehicle', 'vehicle__manufacturer', 'vehicle__vehicle_model', 'customer', 'inspector'
     ).prefetch_related('findings').filter(customer_id=customer_id)
 
-    if vehicle_id:
-        qs = qs.filter(vehicle_id=vehicle_id)
+    if vehicle_ids_param:
+        ids = [v for v in vehicle_ids_param.split(',') if v.strip().isdigit()]
+        if ids:
+            qs = qs.filter(vehicle_id__in=ids)
 
-    qs = qs.order_by('-inspection_date')[:15]
+    qs = qs.order_by('-inspection_date')[:30]
 
     result = []
     for insp in qs:
-        complaints = list(
-            insp.findings.filter(
-                finding_type='complaint'
-            ).order_by('order').values_list('description', flat=True)
-        )
-        complaints = [c for c in complaints if c and c.strip()]
+        complaints = [
+            {'id': f.id, 'description': f.description}
+            for f in insp.findings.filter(finding_type='complaint').order_by('order')
+            if f.description and f.description.strip()
+        ]
+        findings = [
+            {'id': f.id, 'description': f.description}
+            for f in insp.findings.filter(finding_type='finding').order_by('order')
+            if f.description and f.description.strip()
+        ]
 
-        findings = list(
-            insp.findings.filter(
-                finding_type='finding'
-            ).order_by('order').values_list('description', flat=True)
-        )
-        findings = [f for f in findings if f and f.strip()]
-
-        vehicle_str = ''
+        vehicle_label = ''
+        vehicle_number = ''
         if insp.vehicle:
-            vehicle_str = f"{insp.vehicle.make} {insp.vehicle.model}"
+            mfr   = insp.vehicle.manufacturer.manufacturer_name if insp.vehicle.manufacturer else ''
+            model = insp.vehicle.vehicle_model.model_name if insp.vehicle.vehicle_model else ''
+            vehicle_label = f"{mfr} {model}".strip()
             if insp.vehicle.year:
-                vehicle_str += f" ({insp.vehicle.year})"
-            vehicle_str += f" · {insp.vehicle.registration_number}"
+                vehicle_label += f" ({insp.vehicle.year})"
+            vehicle_label += f" · {insp.vehicle.registration_number}"
+            vehicle_number = insp.vehicle.vehicle_number
 
         result.append({
             'id':                insp.id,
             'inspection_number': insp.inspection_number,
             'date':              insp.inspection_date.strftime('%d %b %Y'),
-            'vehicle':           vehicle_str,
             'vehicle_id':        insp.vehicle_id or '',
+            'vehicle_number':    vehicle_number,
+            'vehicle_label':     vehicle_label,
             'odometer':          insp.odometer or '',
             'fuel_level':        insp.fuel_level or '',
             'complaints':        complaints,
@@ -1194,7 +1411,6 @@ def _common_context(estimate=None):
 
 def _save_estimate(request, estimate=None):
     cid = request.POST.get('customer')
-    vid = request.POST.get('vehicle')
     jid = request.POST.get('loaded_jobcard')
     aid = request.POST.get('advisor')
     date = request.POST.get('date') or timezone.now().date()
@@ -1204,7 +1420,6 @@ def _save_estimate(request, estimate=None):
         return None
  
     customer = get_object_or_404(LedgerCreation, pk=cid)
-    vehicle  = WorkshopVehicle.objects.filter(pk=vid).first() if vid else None
     jobcard  = JobCard.objects.filter(pk=jid).first() if jid else None
     advisor  = Staff.objects.filter(pk=aid).first() if aid else None
  
@@ -1212,7 +1427,6 @@ def _save_estimate(request, estimate=None):
         estimate = Estimate(created_by=request.user.id)
  
     estimate.customer    = customer
-    estimate.vehicle     = vehicle
     estimate.jobcard    = jobcard
     estimate.advisor     = advisor
     estimate.date        = date
@@ -1224,10 +1438,39 @@ def _save_estimate(request, estimate=None):
     estimate.notes       = request.POST.get('notes', '')
     estimate.save()
  
+
     # ── Clear old items & complaints ──────────────────────
+    estimate.vehicles.all().delete()
     estimate.items.all().delete()
     estimate.complaints.all().delete()
- 
+    veh_ids      = request.POST.getlist('est_vehicle_id[]')
+    veh_mileages = request.POST.getlist('est_vehicle_mileage[]')
+    veh_notes    = request.POST.getlist('est_vehicle_notes[]')
+    first_vehicle = None
+    seen_vehicles = set()
+    for i, v_id in enumerate(veh_ids):
+        if not v_id or v_id in seen_vehicles:
+            continue
+        seen_vehicles.add(v_id)
+        veh = WorkshopVehicle.objects.filter(pk=v_id).first()
+        if not veh:
+            continue
+        if first_vehicle is None:
+            first_vehicle = veh
+        EstimateVehicle.objects.create(
+            estimate = estimate,
+            vehicle  = veh,
+            mileage  = veh_mileages[i] if i < len(veh_mileages) and veh_mileages[i] else None,
+            notes    = veh_notes[i] if i < len(veh_notes) else '',
+        )
+
+    # Keep legacy single-vehicle fields in sync
+    estimate.vehicle = first_vehicle
+    estimate.mileage = first_vehicle and (
+        EstimateVehicle.objects.filter(estimate=estimate, vehicle=first_vehicle).first().mileage
+    ) or None
+    estimate.save()
+
     # ── Parts ─────────────────────────────────────────────
     part_ids     = request.POST.getlist('part_item_id[]')
     descriptions = request.POST.getlist('description[]')
@@ -1274,6 +1517,7 @@ def _save_estimate(request, estimate=None):
 
         EstimateItem.objects.create(
             estimate    = estimate,
+            vehicle     = p_veh_obj,
             item_type   = 'part',
             item_ref    = p_id,
             item_code   = p_no,
@@ -1289,14 +1533,20 @@ def _save_estimate(request, estimate=None):
     labour_techs  = request.POST.getlist('labour_tech[]')
     labour_hours  = request.POST.getlist('labour_hrs[]')
     labour_rates  = request.POST.getlist('labour_rate[]')
- 
+    labour_veh_ids = request.POST.getlist('labour_vehicle_id[]')
+
     for i, desc in enumerate(labour_descs):
         if not desc.strip():
             continue
         tech = Staff.objects.filter(
                 pk=labour_techs[i] if i < len(labour_techs) else None).first()
+
+        l_veh_id  = labour_veh_ids[i] if i < len(labour_veh_ids) else None
+        l_veh_obj = WorkshopVehicle.objects.filter(pk=l_veh_id).first() if l_veh_id else first_vehicle
+
         EstimateItem.objects.create(
             estimate    = estimate,
+            vehicle     = l_veh_obj,
             item_type   = 'labour',
             description = desc.strip(),
             technician  = tech,
@@ -1306,20 +1556,32 @@ def _save_estimate(request, estimate=None):
         )
  
     # ── Customer Complaints ───────────────────────────────
+
+    complaint_veh_ids = request.POST.getlist('customer_complaint_vehicle_id[]')
+
     for i, c in enumerate(request.POST.getlist('customer_complaint[]')):
         if c.strip():
+            c_veh_id  = complaint_veh_ids[i] if i < len(complaint_veh_ids) else None
+            c_veh_obj = WorkshopVehicle.objects.filter(pk=c_veh_id).first() if c_veh_id else first_vehicle
+            
             EstimateComplaint.objects.create(
                 estimate       = estimate,
+                vehicle        = c_veh_obj,
                 complaint_type = 'customer',
                 description    = c.strip(),
                 order          = i,
             )
  
     # ── Technician Findings ───────────────────────────────
+    technician_veh_ids = request.POST.getlist('technician_finding_vehicle_id[]')
     for i, f in enumerate(request.POST.getlist('technician_finding[]')):
         if f.strip():
+            f_veh_id  = technician_veh_ids[i] if i < len(technician_veh_ids) else None
+            f_veh_obj = WorkshopVehicle.objects.filter(pk=f_veh_id).first() if f_veh_id else first_vehicle
+
             EstimateComplaint.objects.create(
                 estimate       = estimate,
+                vehicle        = f_veh_obj,
                 complaint_type = 'technician',
                 description    = f.strip(),
                 order          = i,
@@ -1602,43 +1864,40 @@ def jc_get_vehicles(request):
     qs = WorkshopVehicle.objects.filter(
         customer_id=cid,
         is_active=True
-    ).values(
-        'id',
-        'registration_number',
-        'make',
-        'model',
-        'year'
-    )
+    ).select_related('manufacturer', 'vehicle_model')
 
     result = []
 
     for v in qs:
+        mfr_name  = v.manufacturer.manufacturer_name  if v.manufacturer   else ''
+        mdl_name  = v.vehicle_model.model_name        if v.vehicle_model  else ''
+        year      = v.year or ''
+        reg_no    = v.registration_number or ''
+        veh_no    = v.vehicle_number or ''
 
-        make = v['make'] or ''
-        model = v['model'] or ''
-        year = v['year']
-        reg_no = v['registration_number'] or ''
-
-        vehicle_model = f"{make} {model}".strip()
-
+        vehicle_model_str = f"{mfr_name} {mdl_name}".strip()
         if year:
-            vehicle_model += f" ({year})"
+            vehicle_model_str += f" ({year})"
 
-        label = vehicle_model
-
+        # Label: vehicle_number · registration_number
+        label_parts = [veh_no]
         if reg_no:
-            label += f" · {reg_no}"
+            label_parts.append(reg_no)
+        label = ' · '.join(filter(None, label_parts))
 
         result.append({
-            'id': v['id'],
-            'label': label,
-            'name': label,
-            'make': make,
-            'model': model,
-            'year': year or '',
-            'vehicle_model': vehicle_model,
+            'id':                  v.id,
+            'label':               label,
+            'vehicle_number':      veh_no,
             'registration_number': reg_no,
-            'reg': reg_no,
+            'make':                mfr_name,
+            'model':               mdl_name,
+            'year':                year,
+            'vehicle_model':       vehicle_model_str,
+            'manufacturer_id':     v.manufacturer_id  or '',
+            'vehicle_model_id':    v.vehicle_model_id or '',
+            'fuel_type':           v.fuel_type or '',
+            'odometer':            v.odometer  or '',
         })
 
     return JsonResponse({'vehicles': result})
@@ -1677,10 +1936,9 @@ def jc_get_items(request):
 # PRIVATE HELPER — saves quotation from POST data
 # ─────────────────────────────────────────────────────────────────────────────
 def _save_quotation(request, quotation=None):
-    from .models import Quotation, QuotationItem, QuotationComplaint
+    from .models import Quotation, QuotationVehicle, QuotationItem, QuotationComplaint
 
     cid  = request.POST.get('customer')
-    vid  = request.POST.get('vehicle')
     eid  = request.POST.get('loaded_estimate')
     jid  = request.POST.get('loaded_jobcard')
     aid  = request.POST.get('advisor')
@@ -1691,18 +1949,16 @@ def _save_quotation(request, quotation=None):
         return None
 
     customer  = get_object_or_404(LedgerCreation, pk=cid)
-    vehicle   = WorkshopVehicle.objects.filter(pk=vid).first() if vid else None
-    estimate  = Estimate.objects.filter(pk=eid).first()        if eid else None
-    jobcard  = JobCard.objects.filter(pk=jid).first()         if jid else None
-    advisor   = Staff.objects.filter(pk=aid).first()   if aid else None
+    estimate  = Estimate.objects.filter(pk=eid).first() if eid else None
+    jobcard   = JobCard.objects.filter(pk=jid).first()  if jid else None
+    advisor   = Staff.objects.filter(pk=aid).first()    if aid else None
 
     if quotation is None:
         quotation = Quotation(created_by=request.user.id)
 
     quotation.customer    = customer
-    quotation.vehicle     = vehicle
     quotation.estimate    = estimate
-    quotation.jobcard    = jobcard
+    quotation.jobcard     = jobcard
     quotation.advisor     = advisor
     quotation.date        = date
     quotation.status      = request.POST.get('status', 'draft')
@@ -1715,8 +1971,51 @@ def _save_quotation(request, quotation=None):
     quotation.save()
 
     # Clear old records
+    quotation.vehicles.all().delete()
     quotation.items.all().delete()
     quotation.complaints.all().delete()
+
+    # ── Vehicles ──────────────────────────────────────────────────────────────
+    veh_ids      = request.POST.getlist('qt_vehicle_id[]')
+    veh_mileages = request.POST.getlist('qt_vehicle_mileage[]')
+    veh_notes    = request.POST.getlist('qt_vehicle_notes[]')
+    first_vehicle = None
+    seen_vehicles = set()
+    for i, v_id in enumerate(veh_ids):
+        if not v_id or v_id in seen_vehicles:
+            continue
+        seen_vehicles.add(v_id)
+        veh = WorkshopVehicle.objects.filter(pk=v_id).first()
+        if not veh:
+            continue
+        if first_vehicle is None:
+            first_vehicle = veh
+        QuotationVehicle.objects.create(
+            quotation = quotation,
+            vehicle   = veh,
+            mileage   = veh_mileages[i] if i < len(veh_mileages) and veh_mileages[i] else None,
+            notes     = veh_notes[i] if i < len(veh_notes) else '',
+        )
+
+    # Keep legacy header single-vehicle field in sync
+    if first_vehicle:
+        quotation.vehicle = first_vehicle
+        qv_first = QuotationVehicle.objects.filter(quotation=quotation, vehicle=first_vehicle).first()
+        if qv_first and qv_first.mileage:
+            quotation.mileage = qv_first.mileage
+    else:
+        # Fallback to single vehicle input if legacy form was used
+        vid = request.POST.get('vehicle')
+        if vid:
+            v_obj = WorkshopVehicle.objects.filter(pk=vid).first()
+            if v_obj:
+                quotation.vehicle = v_obj
+                QuotationVehicle.objects.create(
+                    quotation=quotation,
+                    vehicle=v_obj,
+                    mileage=request.POST.get('mileage') or None
+                )
+    quotation.save()
 
     # ── Parts ─────────────────────────────────────────────────────────────────
     part_ids = request.POST.getlist('part_item_id[]')
@@ -1725,13 +2024,18 @@ def _save_quotation(request, quotation=None):
     quantities = request.POST.getlist('quantity[]')
     unit_prices = request.POST.getlist('unit_price[]')
     warranties = request.POST.getlist('part_warranty[]')
-    for i, desc in enumerate(descriptions):
+    part_vehs = request.POST.getlist('part_vehicle_id[]')
 
+    for i, desc in enumerate(descriptions):
         if not desc.strip():
             continue
 
+        p_veh_id = part_vehs[i] if i < len(part_vehs) else None
+        p_veh_obj = WorkshopVehicle.objects.filter(pk=p_veh_id).first() if p_veh_id else None
+
         QuotationItem.objects.create(
             quotation=quotation,
+            vehicle=p_veh_obj,
             item_type='part',
             item_ref=part_ids[i] if i < len(part_ids) else '',
             description=desc.strip(),
@@ -1747,6 +2051,7 @@ def _save_quotation(request, quotation=None):
     labour_techs = request.POST.getlist('labour_tech[]')
     labour_hours = request.POST.getlist('labour_hrs[]')
     labour_rates = request.POST.getlist('labour_rate[]')
+    labour_vehs  = request.POST.getlist('labour_vehicle_id[]')
 
     for i, desc in enumerate(labour_descs):
         if not desc.strip():
@@ -1754,8 +2059,12 @@ def _save_quotation(request, quotation=None):
         tech = Staff.objects.filter(
             pk=labour_techs[i] if i < len(labour_techs) else None
         ).first()
+        l_veh_id = labour_vehs[i] if i < len(labour_vehs) else None
+        l_veh_obj = WorkshopVehicle.objects.filter(pk=l_veh_id).first() if l_veh_id else None
+
         QuotationItem.objects.create(
             quotation   = quotation,
+            vehicle     = l_veh_obj,
             item_type   = 'labour',
             description = desc.strip(),
             technician  = tech,
@@ -1765,22 +2074,54 @@ def _save_quotation(request, quotation=None):
         )
 
     # ── Customer Complaints ───────────────────────────────────────────────────
-    cmp_descs    = request.POST.getlist('customer_complaint[]')
-    cmp_cats     = request.POST.getlist('customer_complaint_cat[]')
-    cmp_types    = request.POST.getlist('customer_complaint_type[]')
-    cmp_statuses = request.POST.getlist('customer_complaint_status[]')
+    cmp_descs    = request.POST.getlist('complaint_description[]') or request.POST.getlist('customer_complaint[]')
+    cmp_cat_ids  = request.POST.getlist('complaint_category_id[]') or request.POST.getlist('customer_complaint_cat[]')
+    cmp_cat_txts = request.POST.getlist('complaint_category[]')
+    cmp_type_ids = request.POST.getlist('complaint_type_id[]')
+    cmp_types    = request.POST.getlist('complaint_type[]') or request.POST.getlist('customer_complaint_type[]')
+    cmp_techs    = request.POST.getlist('complaint_technician[]')
+    cmp_statuses = request.POST.getlist('complaint_status[]') or request.POST.getlist('customer_complaint_status[]')
+    cmp_overrides= request.POST.getlist('complaint_manual_override[]')
+    cmp_vehs     = request.POST.getlist('complaint_vehicle_id[]') or request.POST.getlist('customer_complaint_vehicle_id[]')
+
+    from .models import ComplaintType, ServiceType
+
     for i, c in enumerate(cmp_descs):
         if c.strip():
-            cat_id = cmp_cats[i] if i < len(cmp_cats) else None
+            cat_id = cmp_cat_ids[i] if i < len(cmp_cat_ids) else None
             cat_obj = ServiceCategory.objects.filter(pk=cat_id).first() if cat_id else None
+            c_veh_id = cmp_vehs[i] if i < len(cmp_vehs) else None
+            c_veh_obj = WorkshopVehicle.objects.filter(pk=c_veh_id).first() if c_veh_id else None
+
+            tech_id = cmp_techs[i] if i < len(cmp_techs) else None
+            tech_obj = Staff.objects.filter(pk=tech_id).first() if tech_id else None
+
+            type_val_raw = cmp_type_ids[i] if i < len(cmp_type_ids) else ''
+            ct_ref = None
+            st_ref = None
+            if type_val_raw:
+                if str(type_val_raw).startswith('st_'):
+                    st_id = type_val_raw.replace('st_', '')
+                    st_ref = ServiceType.objects.filter(pk=st_id).first()
+                else:
+                    ct_ref = ComplaintType.objects.filter(pk=type_val_raw).first()
+
+            is_override = bool(cmp_overrides[i] == '1') if i < len(cmp_overrides) else False
+
             QuotationComplaint.objects.create(
-                quotation        = quotation,
-                complaint_type   = 'customer',
-                description      = c.strip(),
-                service_category = cat_obj,
-                type             = cmp_types[i] if i < len(cmp_types) else 'Mechanical',
-                status           = cmp_statuses[i] if i < len(cmp_statuses) else 'Open',
-                order            = i,
+                quotation          = quotation,
+                vehicle            = c_veh_obj,
+                complaint_type     = 'customer',
+                description        = c.strip(),
+                service_category   = cat_obj,
+                category           = cmp_cat_txts[i] if i < len(cmp_cat_txts) else (cat_obj.name if cat_obj else ''),
+                type               = cmp_types[i] if i < len(cmp_types) else 'Mechanical',
+                technician         = tech_obj,
+                complaint_type_ref = ct_ref,
+                service_type_ref   = st_ref,
+                is_manual_override = is_override,
+                status             = cmp_statuses[i] if i < len(cmp_statuses) else 'Open',
+                order              = i,
             )
 
     # ── Technician Findings ───────────────────────────────────────────────────
@@ -1952,7 +2293,7 @@ def quotation_create(request):
     if eid:
         prefill_est = Estimate.objects.select_related(
             'customer', 'vehicle'
-        ).prefetch_related('items', 'complaints').filter(pk=eid).first()
+        ).prefetch_related('items', 'complaints', 'vehicles__vehicle').filter(pk=eid).first()
 
     # Pre-fill from job card
     prefill_job = None
@@ -1960,7 +2301,7 @@ def quotation_create(request):
     if jcid:
         prefill_job = JobCard.objects.select_related(
             'customer', 'workshop_vehicle'
-        ).filter(pk=jcid).first()
+        ).prefetch_related('vehicles__vehicle').filter(pk=jcid).first()
 
     if request.method == 'POST':
         quot = _save_quotation(request)
@@ -1983,6 +2324,7 @@ def quotation_create(request):
         'prefill_job': prefill_job,
         'next_qt_no':  generate_voucher_number('Quotation', Quotation, 'quotation_number', default_prefix='QT-'),
         'today':       timezone.now().date(),
+        'relational_mapping_json': json.dumps(_get_relational_mapping_dict()),
     })
 
 
@@ -1994,11 +2336,11 @@ def quotation_detail(request, pk):
     quot = get_object_or_404(
         Quotation.objects.select_related(
             'customer', 'vehicle', 'estimate', 'jobcard', 'advisor'
-        ).prefetch_related('items__technician', 'complaints'),
+        ).prefetch_related('vehicles__vehicle', 'items__technician', 'items__vehicle', 'complaints__vehicle', 'complaints__technician', 'complaints__service_category'),
         pk=pk
     )
     return render(request, 'jobcard_app/quotation_detail.html', {
-        'quotation':       quot,
+        'quotation':  quot,
         'parts':      quot.parts(),
         'labour':     quot.labour(),
         'complaints': quot.complaints_customer(),
@@ -2011,7 +2353,10 @@ def quotation_detail(request, pk):
 # ─────────────────────────────────────────────────────────────────────────────
 @login_required
 def quotation_edit(request, pk):
-    quot        = get_object_or_404(Quotation, pk=pk)
+    quot        = get_object_or_404(
+        Quotation.objects.prefetch_related('vehicles__vehicle', 'items', 'complaints'),
+        pk=pk
+    )
     customers   = LedgerCreation.objects.filter(
         groups_id=2).order_by('ledger_name')
     technicians = Staff.objects.filter(
@@ -2041,6 +2386,7 @@ def quotation_edit(request, pk):
         'findings':    quot.findings_technician(),
         'edit_mode':   True,
         'today':       timezone.now().date(),
+        'relational_mapping_json': json.dumps(_get_relational_mapping_dict()),
     })
 
 
@@ -3166,12 +3512,14 @@ def _save_invoice(request, invoice=None):
             continue
 
         # resolve name from item master if hidden field was empty
-        if item_id and not name_val:
+        item_obj = None
+        if item_id:
             try:
                 from item_master.models import Item
                 item_obj = Item.objects.filter(pk=item_id).first()
                 if item_obj:
-                    name_val = item_obj.item_name
+                    if not name_val:
+                        name_val = item_obj.item_name
                     if not code_val:
                         code_val = item_obj.item_code or ''
             except Exception:
@@ -3194,6 +3542,7 @@ def _save_invoice(request, invoice=None):
 
         InvoicePart.objects.create(
             invoice      = invoice,
+            item         = item_obj,
             item_ref     = item_id,
             item_code    = code_val,
             description  = name_val,
@@ -3268,9 +3617,64 @@ def _save_invoice(request, invoice=None):
             order       = i,
         )
 
-    # ── Auto update status ────────────────────────────────
+    # ── Auto update status & sync stock ───────────────────
     invoice.update_status()
+    _sync_invoice_stock(invoice)
     return invoice
+
+
+def _sync_invoice_stock(invoice):
+    """
+    Reduces stock in Item Master Stock table when an invoice is created or updated.
+    If the invoice status is 'cancelled', associated stock entries are removed.
+    """
+    try:
+        from item_master.models import Stock, CostCenter, Item
+        from item_master.common import upsert_stock, to_base_qty
+        from fleet_app.models import Vouchers
+        from decimal import Decimal
+
+        inv_voucher_type = Vouchers.objects.filter(VoucherType__icontains='Invoice').first()
+        if not inv_voucher_type:
+            inv_voucher_type = Vouchers.objects.filter(id=14).first() or Vouchers.objects.first()
+
+        if not inv_voucher_type:
+            return
+
+        # Clear existing stock entries for this invoice to support clean re-saves/updates
+        Stock.objects.filter(voucherType=inv_voucher_type, voucherNo=invoice.id).delete()
+
+        if invoice.status == 'cancelled':
+            return
+
+        default_cost_center = CostCenter.objects.filter(isDefault=True).first() or CostCenter.objects.first()
+
+        for part in invoice.parts.all():
+            item_obj = part.get_item_obj()
+            if item_obj and not getattr(item_obj, 'IsNonInventory', False):
+                qty_val = Decimal(str(part.quantity or 0))
+                if qty_val <= 0:
+                    continue
+
+                rate_val = Decimal(str(part.unit_price or 0))
+                cost_center = item_obj.cost_center or default_cost_center
+
+                base_qty = to_base_qty(item_obj, item_obj.item_unit_id, qty_val)
+
+                upsert_stock(
+                    item=item_obj,
+                    batch_id=None,
+                    base_unit_id=item_obj.item_unit_id,
+                    base_qty_delta=-base_qty,
+                    rate=rate_val,
+                    voucher_date=invoice.invoice_date,
+                    voucher_type=inv_voucher_type,
+                    voucher_id=invoice.id,
+                    cost_center=cost_center,
+                )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error syncing invoice stock: {e}")
 # ─────────────────────────────────────────────────────────────
 # LIST
 # ─────────────────────────────────────────────────────────────
@@ -3438,6 +3842,15 @@ def invoice_edit(request, pk):
 def invoice_delete(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
 
+    try:
+        from item_master.models import Stock
+        from fleet_app.models import Vouchers
+        inv_vt = Vouchers.objects.filter(VoucherType__icontains='Invoice').first() or Vouchers.objects.filter(id=14).first() or Vouchers.objects.first()
+        if inv_vt:
+            Stock.objects.filter(voucherType=inv_vt, voucherNo=invoice.id).delete()
+    except Exception:
+        pass
+
     invoice.delete()
 
     return redirect('jobcard_app:invoice_list')
@@ -3600,3 +4013,73 @@ def ajax_get_docs_for_invoice(request):
         'delivery_notes': delivery_notes_result,
         'jobcards':       jobcards_result,
     })
+
+
+# ── Skill Tag Master Views ───────────────────────────────────────────────────
+from django.utils.translation import gettext_lazy as _
+from .forms import SkillTagForm
+
+@login_required
+def skill_tag_list(request):
+    """
+    Skill Tag Master list view allowing view, search, and inline creation/update.
+    """
+    skills = SkillTag.objects.all().order_by('name')
+    form = SkillTagForm()
+    edit_id = request.GET.get('edit')
+    edit_instance = None
+    if edit_id:
+        edit_instance = get_object_or_404(SkillTag, pk=edit_id)
+        form = SkillTagForm(instance=edit_instance)
+
+    return render(request, 'jobcard_app/skill_tag_list.html', {
+        'skills': skills,
+        'form': form,
+        'edit_instance': edit_instance,
+    })
+
+@login_required
+def skill_tag_save(request, pk=None):
+    """
+    Create or update a SkillTag.
+    """
+    instance = get_object_or_404(SkillTag, pk=pk) if pk else None
+    if request.method == 'POST':
+        form = SkillTagForm(request.POST, instance=instance)
+        if form.is_valid():
+            skill = form.save()
+            action_str = _("updated") if pk else _("created")
+            messages.success(request, f"Skill tag '{skill.name}' {action_str} successfully.")
+            return redirect('jobcard_app:skill_tag_list')
+        else:
+            skills = SkillTag.objects.all().order_by('name')
+            return render(request, 'jobcard_app/skill_tag_list.html', {
+                'skills': skills,
+                'form': form,
+                'edit_instance': instance,
+            })
+    return redirect('jobcard_app:skill_tag_list')
+
+@login_required
+def skill_tag_toggle(request, pk):
+    """
+    Toggle active status of a SkillTag.
+    """
+    skill = get_object_or_404(SkillTag, pk=pk)
+    skill.is_active = not skill.is_active
+    skill.save()
+    status_str = "activated" if skill.is_active else "deactivated"
+    messages.success(request, f"Skill tag '{skill.name}' {status_str} successfully.")
+    return redirect('jobcard_app:skill_tag_list')
+
+@login_required
+def skill_tag_delete(request, pk):
+    """
+    Delete a SkillTag.
+    """
+    skill = get_object_or_404(SkillTag, pk=pk)
+    name = skill.name
+    skill.delete()
+    messages.success(request, f"Skill tag '{name}' deleted successfully.")
+    return redirect('jobcard_app:skill_tag_list')
+

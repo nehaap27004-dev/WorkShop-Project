@@ -22,6 +22,7 @@ from django.db.models import Sum, F
 from accounts_app.common import check_privilege
 from django.http import HttpResponseForbidden
 from .common import create_ledger_postings_for_purchase, process_voucher, VoucherKind, create_ledger_postings_for_sale
+from fleet_app.common import get_ledgers_by_group_ids, get_ledgers_by_group_names
 
 
 
@@ -405,8 +406,9 @@ def create_purchase_voucher(request):
         except Exception as e:
             messages.error(request, f"Error creating voucher: {e}")
     else:
-        # Show form validation errors
-        messages.error(request, "⚠️ Please correct the errors below.")
+        # Show form validation errors with detail
+        error_details = '; '.join([f"{field}: {', '.join(errs)}" for field, errs in voucher_form.errors.items()])
+        messages.error(request, f"⚠️ Form errors: {error_details}")
 
     return render(request, template_name, {
         "voucher_form": voucher_form,
@@ -1136,7 +1138,7 @@ def stock_list(request):
 
     # Filter for base unit and calculate stock value
     for stock in all_stocks:
-        stock.stock_value = stock.in_quantity * stock.rate
+        stock.stock_value = (stock.in_quantity - stock.out_quantity) * stock.rate
         
         
         # Skip if both in and out quantities are 0
@@ -2008,9 +2010,9 @@ def filter_ledgers_view_purchase(request):
     is_customer = request.GET.get("customer") == "1"
 
     if is_customer:
-        queryset = get_ledgers_by_group_ids(29)   # Customer group
+        queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')   # Customer groups
     else:
-        queryset = get_ledgers_by_group_ids(8, 28)  # Cash & Sundry Creditors
+        queryset = get_ledgers_by_group_names('Cash & Bank', 'Sundry Creditors')  # Cash & Vendors
 
     data = [
         {"id": ledger.id, "name": str(ledger.ledger_name)}  # adjust field name if needed
@@ -2022,9 +2024,9 @@ def filter_ledgers_sales_view(request):
     is_vendor = request.GET.get("vendor") == "1"
 
     if is_vendor:
-        queryset = get_ledgers_by_group_ids(28)   # Vendor group
+        queryset = get_ledgers_by_group_names('Sundry Creditors')   # Vendor group
     else:
-        queryset = get_ledgers_by_group_ids(8, 29)  # Cash + Sundry Debtors
+        queryset = get_ledgers_by_group_names('Cash & Bank', 'Customer', 'Sundry Debtors')  # Cash + Customers
 
     data = [
         {"id": ledger.id, "name": str(ledger.ledger_name)}

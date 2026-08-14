@@ -19,7 +19,7 @@ class ServiceCategory(models.Model):
     updated_by  = models.IntegerField(null=True, blank=True)
 
     def service_count(self):
-        return 0
+        return self.service_types.count()
 
     def __str__(self):
         return self.name
@@ -59,6 +59,26 @@ class ComplaintType(models.Model):
         ordering = ['category__name', 'complaint_name']
         verbose_name = 'Complaint Type'
         verbose_name_plural = 'Complaint Types'
+
+
+class ServiceType(models.Model):
+    category       = models.ForeignKey(ServiceCategory, on_delete=models.CASCADE, related_name='service_types')
+    type_name      = models.CharField(max_length=200)
+    code           = models.CharField(max_length=50, blank=True, null=True)
+    description    = models.TextField(blank=True)
+    required_skill = models.ForeignKey(SkillTag, on_delete=models.SET_NULL, null=True, blank=True, related_name='service_types')
+    is_active      = models.BooleanField(default=True)
+    created_on     = models.DateTimeField(auto_now_add=True)
+    updated_on     = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.category.name} — {self.type_name}"
+
+    class Meta:
+        ordering = ['category__name', 'type_name']
+        verbose_name = 'Service Type'
+        verbose_name_plural = 'Service Types'
+
 
 
 class TechnicianSkill(models.Model):
@@ -434,6 +454,10 @@ class JobCardComplaint(models.Model):
         'ComplaintType', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='jobcard_complaints'
     )
+    service_type_ref     = models.ForeignKey(
+        'ServiceType', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='jobcard_complaints'
+    )
     is_manual_override   = models.BooleanField(default=False)
     order                = models.PositiveIntegerField(default=0)
     created_on           = models.DateTimeField(auto_now_add=True)
@@ -669,7 +693,24 @@ class Estimate(models.Model):
         ordering = ['-created_on']
         verbose_name = 'Estimate'
         verbose_name_plural = 'Estimates'
+class EstimateVehicle(models.Model):
+    """One row per vehicle attached to an Estimate"""
 
+    estimate   = models.ForeignKey(Estimate, on_delete=models.CASCADE, related_name='vehicles')
+    vehicle    = models.ForeignKey('WorkshopVehicle', on_delete=models.PROTECT, related_name='estimate_entries')
+    mileage    = models.PositiveIntegerField(null=True, blank=True, verbose_name='Mileage (km)')
+    notes      = models.CharField(max_length=255, blank=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.estimate.estimate_number} — {self.vehicle.vehicle_number}"
+
+    class Meta:
+        ordering = ['id']
+        constraints = [
+            models.UniqueConstraint(fields=['estimate', 'vehicle'], name='unique_vehicle_per_estimate')
+        ]
+        verbose_name = 'Estimate Vehicle'
 
 class EstimateItem(models.Model):
 
@@ -680,6 +721,9 @@ class EstimateItem(models.Model):
 
 
     estimate    = models.ForeignKey(Estimate, on_delete=models.CASCADE, related_name='items')
+    vehicle     = models.ForeignKey(          # NEW
+        'WorkshopVehicle', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='estimate_items_by_vehicle')
     item_type   = models.CharField(max_length=10, choices=TYPE_CHOICES, default='part')
     item_ref    = models.CharField(max_length=50, blank=True, null=True)
     item_code   = models.CharField(max_length=100, blank=True)
@@ -711,6 +755,9 @@ class EstimateComplaint(models.Model):
     estimate        = models.ForeignKey(
         Estimate, on_delete=models.CASCADE,
         related_name='complaints')
+    vehicle         = models.ForeignKey(          # NEW
+        'WorkshopVehicle', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='estimate_complaints')
     complaint_type  = models.CharField(
         max_length=20, choices=TYPE_CHOICES, default='customer')
     description     = models.TextField()
@@ -813,6 +860,26 @@ class Quotation(models.Model):
         verbose_name_plural = "Quotations"
 
 
+class QuotationVehicle(models.Model):
+    """One row per vehicle attached to a Quotation"""
+
+    quotation  = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name='vehicles')
+    vehicle    = models.ForeignKey('WorkshopVehicle', on_delete=models.PROTECT, related_name='quotation_entries')
+    mileage    = models.PositiveIntegerField(null=True, blank=True, verbose_name='Mileage (km)')
+    notes      = models.CharField(max_length=255, blank=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.quotation.quotation_number} — {self.vehicle.vehicle_number}"
+
+    class Meta:
+        ordering = ['id']
+        constraints = [
+            models.UniqueConstraint(fields=['quotation', 'vehicle'], name='unique_vehicle_per_quotation')
+        ]
+        verbose_name = 'Quotation Vehicle'
+
+
 # ─────────────────────────────────────────────────────────────
 # QUOTATION ITEM
 # ─────────────────────────────────────────────────────────────
@@ -827,6 +894,10 @@ class QuotationItem(models.Model):
         Quotation,
         on_delete=models.CASCADE,
         related_name='items'
+    )
+    vehicle = models.ForeignKey(
+        'WorkshopVehicle', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='quotation_items_by_vehicle'
     )
 
     item_type = models.CharField(
@@ -888,16 +959,33 @@ class QuotationComplaint(models.Model):
     quotation       = models.ForeignKey(
         Quotation, on_delete=models.CASCADE,
         related_name='complaints')
+    vehicle         = models.ForeignKey(
+        'WorkshopVehicle', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='quotation_complaints')
     complaint_type  = models.CharField(
         max_length=20, choices=TYPE_CHOICES, default='customer')
     service_category = models.ForeignKey(
         'ServiceCategory', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='quotation_complaints')
+    category        = models.CharField(max_length=150, blank=True)
     description     = models.TextField()
     type            = models.CharField(
         max_length=20, choices=MECHTYPE_CHOICES, default='Mechanical')
+    technician      = models.ForeignKey(
+        'fleet_app.Staff', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='quotation_assigned_complaints'
+    )
     status          = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='Open')
+    complaint_type_ref = models.ForeignKey(
+        'ComplaintType', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='quotation_complaints'
+    )
+    service_type_ref = models.ForeignKey(
+        'ServiceType', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='quotation_complaints'
+    )
+    is_manual_override = models.BooleanField(default=False)
     order           = models.PositiveIntegerField(default=0)
 
     def __str__(self):
@@ -1600,6 +1688,9 @@ class Invoice(models.Model):
 class InvoicePart(models.Model):
     invoice      = models.ForeignKey(
         Invoice, on_delete=models.CASCADE, related_name='parts')
+    item         = models.ForeignKey(
+        'item_master.Item', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='invoice_parts', verbose_name='Item Master')
     item_ref     = models.CharField(max_length=50, blank=True, null=True)
     item_code    = models.CharField(max_length=100, blank=True)
     description  = models.CharField(max_length=300)
@@ -1609,6 +1700,17 @@ class InvoicePart(models.Model):
     discount_pct = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     tax_percent  = models.DecimalField(max_digits=5, decimal_places=2, default=8)
     order        = models.PositiveIntegerField(default=0)
+
+    def get_item_obj(self):
+        if self.item:
+            return self.item
+        if self.item_ref:
+            try:
+                from item_master.models import Item
+                return Item.objects.filter(pk=self.item_ref).first()
+            except Exception:
+                pass
+        return None
 
     def get_base(self):
         return float(self.quantity) * float(self.unit_price) * (1 - float(self.discount_pct)/100)

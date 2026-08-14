@@ -324,6 +324,7 @@ class Staff(models.Model):
     license_number = models.CharField(max_length=50, null=True, blank=True)
     license_expiry_date = models.DateField(null=True, blank=True)
     staff_image = models.ImageField(upload_to='staff_images/', null=True, blank=True)
+    skills = models.ManyToManyField('jobcard_app.SkillTag', through='jobcard_app.TechnicianSkill', related_name='staff_members', blank=True)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)

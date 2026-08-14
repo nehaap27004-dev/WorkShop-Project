@@ -191,6 +191,17 @@ def get_ledgers_by_group_ids(*group_ids):
     all_group_ids = get_all_subgroup_ids(*group_ids)
     return LedgerCreation.objects.filter(groups__id__in=all_group_ids)
 
+
+def get_ledgers_by_group_names(*group_names):
+    """Get all LedgerCreation objects for groups matched by name (case-insensitive).
+    Safer than using hardcoded IDs which can change between environments."""
+    group_ids = list(
+        Groups.objects.filter(groupName__in=group_names).values_list('id', flat=True)
+    )
+    if not group_ids:
+        return LedgerCreation.objects.none()
+    return get_ledgers_by_group_ids(*group_ids)
+
 def filter_voucher_types(form, allowed_ids):
     #   
     form.fields['voucherType'].queryset = Vouchers.objects.filter(id__in=allowed_ids)

@@ -47,7 +47,13 @@
     }
 
     .card-header {
-        border-bottom: 1px solid #e9ecef;
+        background-color: #f8fafc !important;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .card-header h5 {
+        color: #1e293b !important;
+        font-weight: 700 !important;
     }
 
     .table th {
@@ -59,6 +65,48 @@
     .btn:hover {
         opacity: 0.9;
         transition: 0.2s ease-in-out;
+    }
+
+    /* ── Skill pill base ── */
+    .skill-pill-label {
+        display: inline-flex;
+        align-items: center;
+        background: #ffffff;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 20px;
+        padding: 6px 14px;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        user-select: none;
+    }
+    .skill-pill-label:hover {
+        border-color: #5A8DEE;
+        background: #f0f5ff;
+        transform: translateY(-1px);
+    }
+    /* ── SELECTED state ── */
+    .skill-pill-label.selected {
+        background: linear-gradient(135deg, #5A8DEE 0%, #4a7dd8 100%);
+        border-color: #4a7dd8;
+        box-shadow: 0 3px 10px rgba(90,141,238,0.35);
+        transform: translateY(-1px);
+    }
+    .skill-pill-label.selected .skill-pill-text {
+        color: #ffffff;
+    }
+    /* ── hide the raw checkbox – the pill is the visual control ── */
+    .skill-pill-label input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+    }
+    .skill-pill-text {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
     }
 </style>
 
@@ -250,6 +298,46 @@
             </div>
         </div>
 
+        <!-- Technical Skills & Qualifications -->
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h5 class="mb-0 font-weight-bold" style="color: #2c3e50;">
+                        <i class="bi bi-tools text-primary mr-2"></i>{% trans "Technical Skills & Qualifications" %}
+                    </h5>
+                    <small class="text-muted font-weight-bold">{% trans "Assign skill tags for job card technician matching" %}</small>
+                </div>
+                <a href="{% url 'jobcard_app:skill_tag_list' %}" class="btn btn-sm btn-outline-primary font-weight-bold">
+                    ⚙️ {% trans "Manage Skill Tags" %}
+                </a>
+            </div>
+            <div class="card-body p-4">
+                {% if form.skills %}
+                <div class="row">
+                    <div class="col-12">
+                        <label class="font-weight-bold mb-2 text-dark" style="font-size: 14px;">{{ form.skills.label }}</label>
+                        <div class="d-flex flex-wrap p-3 rounded" style="background-color: #f8fafc; border: 1px solid #e2e8f0; max-height: 220px; overflow-y: auto;">
+                            {% for checkbox in form.skills %}
+                                <label class="skill-pill-label mb-2 mr-2" for="{{ checkbox.id_for_label }}">
+                                    {{ checkbox.tag }}
+                                    <span class="skill-pill-text">🔧 {{ checkbox.choice_label }}</span>
+                                </label>
+                            {% empty %}
+                                <div class="d-flex align-items-center justify-content-between w-100 p-2">
+                                    <span class="text-muted font-italic">{% trans "No active skill tags available." %}</span>
+                                    <a href="{% url 'jobcard_app:skill_tag_list' %}" class="btn btn-sm btn-primary">
+                                        + {% trans "Create Skill Tags" %}
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+
         <div class="d-flex justify-content-between align-items-center mt-4">
             <div>
                 <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
@@ -278,6 +366,7 @@
                             <th>{% trans "Name" %}</th>
                             <th>{% trans "Category" %}</th>
                             <th>{% trans "Department" %}</th>
+                            <th>{% trans "Assigned Skills" %}</th>
                             <th>{% trans "Status" %}</th>
                             <th>{% trans "Actions" %}</th>
                         </tr>
@@ -290,6 +379,13 @@
                                 <td>{{ staff.full_name }}</td>
                                 <td>{{ staff.staff_category }}</td>
                                 <td>{{ staff.department }}</td>
+                                <td>
+                                    {% for s in staff.skills.all %}
+                                        <span class="badge badge-info me-1 mb-1" style="background-color: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">{{ s.name }}</span>
+                                    {% empty %}
+                                        <span class="text-muted" style="font-size: 0.85rem;">—</span>
+                                    {% endfor %}
+                                </td>
                                 <td>{{ staff.status }}</td>
                                 <td>
                                     <a href="{% url 'fleet_app:staff_edit' staff.pk %}" class="btn btn-sm btn-primary">{% trans "Edit" %}</a>
@@ -316,7 +412,7 @@
                                 </td>
                             </tr>
                         {% empty %}
-                            <tr><td colspan="7" class="text-center text-muted">{% trans "No staff found." %}</td></tr>
+                            <tr><td colspan="8" class="text-center text-muted">{% trans "No staff found." %}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -324,4 +420,30 @@
         </div>
     </div>
 </div>
-{% endblock %}
+
+<script>
+(function () {
+    // Initialise + toggle the visual ".selected" class on skill pills
+    var pills = document.querySelectorAll('.skill-pill-label');
+    pills.forEach(function (label) {
+        var cb = label.querySelector('input[type="checkbox"]');
+        if (!cb) return;
+
+        // Set initial state on page load (e.g. editing an existing staff member)
+        if (cb.checked) label.classList.add('selected');
+
+        label.addEventListener('click', function (e) {
+            // Let the browser toggle the checkbox first
+            setTimeout(function () {
+                if (cb.checked) {
+                    label.classList.add('selected');
+                } else {
+                    label.classList.remove('selected');
+                }
+            }, 0);
+        });
+    });
+})();
+</script>
+
+{% endblock %}

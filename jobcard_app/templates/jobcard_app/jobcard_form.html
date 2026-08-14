@@ -32,13 +32,6 @@ body{background:#f0f2f5;font-family:'Segoe UI',sans-serif}
 .fi[readonly]{background:#f9fafb;color:#374151}
 select.fi{cursor:pointer}
 
-/* auto chip */
-.auto-wrap{position:relative}
-.auto-wrap .fi{padding-right:40px}
-.auto-wrap .auto-tag{position:absolute;right:8px;top:50%;transform:translateY(-50%);
-                     font-size:10px;color:#9ca3af;font-weight:600;background:#f3f4f6;
-                     border-radius:3px;padding:2px 6px}
-
 /* grids */
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -108,12 +101,11 @@ select.fi{cursor:pointer}
 .flash-ok {background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
 .flash-err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
 
-/* warranty select width */
 .warranty-sel{min-width:100px}
 </style>
 
 <div class="wrap">
-  
+
   <!-- Breadcrumb -->
   <div class="breadcrumb">
     {% if inspection %}
@@ -122,8 +114,8 @@ select.fi{cursor:pointer}
                 display:flex;align-items:center;gap:10px">
       <strong>Loaded from Inspection {{ inspection.inspection_number }}</strong>
       &nbsp;—&nbsp;
-      {{ inspection.vehicle.registration_number }}
-      {{ inspection.vehicle.make }} {{ inspection.vehicle.model }}
+      {{ inspection.vehicle.vehicle_number }}
+      {{ inspection.vehicle.manufacturer.manufacturer_name }} {{ inspection.vehicle.vehicle_model.model_name }}
       &nbsp;·&nbsp; {{ inspection.customer.ledger_name }}
       &nbsp;·&nbsp; {{ inspection.inspection_date|date:"d M Y" }}
     </div>
@@ -162,28 +154,23 @@ select.fi{cursor:pointer}
     <div class="sec-body">
 
       <div class="g4 mb">
-        <!-- Voucher Number -->
         <div>
           <label class="fl">Voucher Number</label>
           <input type="text" name="voucher_number" class="fi"
             placeholder="e.g. VCH-2026-001"
             value="{% if edit_mode %}{{ job.voucher_number|default:'' }}{% endif %}">
         </div>
-        <!-- Job Card No -->
         <div>
           <label class="fl">Job Card No.<span class="req">*</span></label>
           <input type="text" name="job_number" class="fi" required
             placeholder="e.g. JC-2026-001"
             value="{% if edit_mode %}{{ job.job_number }}{% endif %}">
         </div>
-        
-        <!-- Date -->
         <div>
           <label class="fl">Date <span class="req">*</span></label>
           <input type="date" name="date" class="fi" required
             value="{% if edit_mode %}{{ job.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
         </div>
-        <!-- Customer -->
         <div>
           <label class="fl">Customer <span class="req">*</span></label>
           <select name="customer" class="fi" required id="custSel"
@@ -194,7 +181,6 @@ select.fi{cursor:pointer}
             <option value="{{ c.id }}"
               {% if edit_mode and job.customer_id == c.id %}selected{% endif %}
               {% if inspection and inspection.customer_id == c.id %}selected{% endif %}>
-
               {{ c.ledger_name }}
             </option>
             {% endfor %}
@@ -210,7 +196,6 @@ select.fi{cursor:pointer}
             placeholder="e.g. +971 50 123 4567"
             value="{% if edit_mode %}{{ job.customer_phone|default:'' }}{% endif %}">
         </div>
-        <!-- Priority -->
         <div>
           <label class="fl">Priority</label>
           <select name="priority" class="fi">
@@ -219,7 +204,6 @@ select.fi{cursor:pointer}
             <option value="express" {% if edit_mode and job.priority == 'express' %}selected{% endif %}>Express</option>
           </select>
         </div>
-        <!-- Status -->
         <div>
           <label class="fl">Status</label>
           <select name="status" class="fi">
@@ -231,104 +215,102 @@ select.fi{cursor:pointer}
             <option value="cancelled"    {% if edit_mode and job.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
           </select>
         </div>
-        <!-- Expected Delivery Date -->
         <div>
           <label class="fl">Expected Delivery Date</label>
           <input type="date" name="delivery_date" class="fi"
             value="{% if edit_mode %}{{ job.delivery_date|date:'Y-m-d'|default:'' }}{% endif %}">
-        </div>     
+        </div>
       </div>
     </div>
   </div>
+
   <!-- ════════════════════════════════
         VEHICLES
     ════════════════════════════════ -->
-    <div class="sec">
-      <div class="sec-hdr">
-        <span class="sec-hdr-title">Vehicle</span>
-        <button type="button" class="btn-add" onclick="addVehicleRow()">+ Add Vehicle</button>
-      </div>
-      <div class="sec-body" style="padding:0">
-        <div style="overflow-x:auto">
-          <table class="stbl" id="vehTbl">
-            <thead>
+  <div class="sec">
+    <div class="sec-hdr">
+      <span class="sec-hdr-title">Vehicle</span>
+      <button type="button" class="btn-add" onclick="addVehicleRow()">+ Add Vehicle</button>
+    </div>
+    <div class="sec-body" style="padding:0">
+      <div style="overflow-x:auto">
+        <table class="stbl" id="vehTbl">
+          <thead>
+            <tr>
+              <th style="width:26%">Vehicle Number</th>
+              <th style="width:24%">Model</th>
+              <th style="width:18%">Mileage (km)</th>
+              <th style="width:16%">Fuel Level</th>
+              <th style="width:10%">Action</th>
+            </tr>
+          </thead>
+          <tbody id="vehBody">
+            {% if edit_mode %}
+              {% for jv in job.vehicles.all %}
               <tr>
-                <th style="width:26%">Vehicle Number</th>
-                <th style="width:24%">Model</th>
-                <th style="width:18%">Mileage (km)</th>
-                <th style="width:16%">Fuel Level</th>
-                <th style="width:10%">Action</th>
+                <td>
+                  <select name="jc_vehicle_id[]" class="veh-select" onchange="onVehRowChange(this)">
+                    <option value="{{ jv.vehicle_id }}" data-veh-number="{{ jv.vehicle.vehicle_number }}" selected>{{ jv.vehicle.vehicle_number }}{% if jv.vehicle.registration_number %} ({{ jv.vehicle.registration_number }}){% endif %}</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" class="fi veh-mm-box" readonly
+                        value="{{ jv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ jv.vehicle.vehicle_model.model_name|default:'' }}"
+                        placeholder="Make & Model">
+                </td>
+                <td><input type="number" name="jc_vehicle_mileage[]" value="{{ jv.mileage|default:'' }}" min="0" class="fi"></td>
+                <td>
+                  <select name="jc_vehicle_fuel[]" class="fi">
+                    <option value="empty" {% if jv.fuel_level == 'empty' %}selected{% endif %}>Empty</option>
+                    <option value="1/4"   {% if jv.fuel_level == '1/4' %}selected{% endif %}>1/4</option>
+                    <option value="1/2"   {% if jv.fuel_level == '1/2' %}selected{% endif %}>1/2</option>
+                    <option value="3/4"   {% if jv.fuel_level == '3/4' %}selected{% endif %}>3/4</option>
+                    <option value="full"  {% if jv.fuel_level == 'full' %}selected{% endif %}>Full</option>
+                  </select>
+                  <input type="hidden" name="jc_vehicle_notes[]" value="{{ jv.notes }}">
+                </td>
+                <td><button type="button" class="btn-rm" onclick="removeVehRow(this)">✕ Remove</button></td>
               </tr>
-            </thead>
-            <tbody id="vehBody">
-              {% if edit_mode %}
-                {% for jv in job.vehicles.all %}
-                <tr>
-                  <td>
-                    <select name="jc_vehicle_id[]" class="veh-select" onchange="onVehRowChange(this)">
-                      <option value="{{ jv.vehicle_id }}" data-veh-number="{{ jv.vehicle.vehicle_number }}" selected>{{ jv.vehicle.vehicle_number }}{% if jv.vehicle.registration_number %} ({{ jv.vehicle.registration_number }}){% endif %}</option>
-                    </select>
-                  </td>
-                  <td>
-                    <input type="text" class="fi veh-mm-box" readonly
-                          value="{{ jv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ jv.vehicle.vehicle_model.model_name|default:'' }}"
-                          placeholder="Make & Model">
-                  </td>
-                  <td><input type="number" name="jc_vehicle_mileage[]" value="{{ jv.mileage|default:'' }}" min="0" class="fi"></td>
-                  <td>
-                    <select name="jc_vehicle_fuel[]" class="fi">
-                      <option value="empty" {% if jv.fuel_level == 'empty' %}selected{% endif %}>Empty</option>
-                      <option value="1/4"   {% if jv.fuel_level == '1/4' %}selected{% endif %}>1/4</option>
-                      <option value="1/2"   {% if jv.fuel_level == '1/2' %}selected{% endif %}>1/2</option>
-                      <option value="3/4"   {% if jv.fuel_level == '3/4' %}selected{% endif %}>3/4</option>
-                      <option value="full"  {% if jv.fuel_level == 'full' %}selected{% endif %}>Full</option>
-                    </select>
-                    <input type="hidden" name="jc_vehicle_notes[]" value="{{ jv.notes }}">
-                  </td>
-                  <td><button type="button" class="btn-rm" onclick="removeVehRow(this)">✕ Remove</button></td>
-                </tr>
-                {% endfor %}
-              {% elif inspection and inspection.vehicle %}
-                <tr>
-                  <td>
-                    <select name="jc_vehicle_id[]" class="veh-select" onchange="onVehRowChange(this)">
-                      <option value="{{ inspection.vehicle.id }}" data-veh-number="{{ inspection.vehicle.vehicle_number }}" selected>{{ inspection.vehicle.vehicle_number }}{% if inspection.vehicle.registration_number %} ({{ inspection.vehicle.registration_number }}){% endif %}</option>
-                    </select>
-                  </td>
-                  <td>
-                    <input type="text" class="fi veh-mm-box" readonly
-                          value="{{ inspection.vehicle.manufacturer.manufacturer_name|default:'' }} {{ inspection.vehicle.vehicle_model.model_name|default:'' }}"
-                          placeholder="Make & Model">
-                  </td>
-                  <td><input type="number" name="jc_vehicle_mileage[]" value="{{ inspection.odometer|default:'' }}" min="0" class="fi"></td>
-                  <td>
-                    <select name="jc_vehicle_fuel[]" class="fi">
-                      <option value="empty" {% if inspection.fuel_level == 'empty' %}selected{% endif %}>Empty</option>
-                      <option value="1/4"   {% if inspection.fuel_level == '1/4' %}selected{% endif %}>1/4</option>
-                      <option value="1/2"   {% if inspection.fuel_level == '1/2' %}selected{% endif %}>1/2</option>
-                      <option value="3/4"   {% if inspection.fuel_level == '3/4' %}selected{% endif %}>3/4</option>
-                      <option value="full"  {% if inspection.fuel_level == 'full' %}selected{% endif %}>Full</option>
-                    </select>
-                    <input type="hidden" name="jc_vehicle_notes[]" value="">
-                  </td>
-                  <td><button type="button" class="btn-rm" onclick="removeVehRow(this)">✕ Remove</button></td>
-                </tr>
-              {% endif %}
-            </tbody>
-          </table>
-        </div>
-        <div id="vehEmpty" style="{% if edit_mode and job.vehicles.exists or inspection and inspection.vehicle %}display:none{% else %}display:block{% endif %};text-align:center;padding:20px;color:#9ca3af;font-size:13px">
-          No vehicles added yet. Select a customer first, then click "Add Vehicle".
-        </div>
+              {% endfor %}
+            {% elif inspection and inspection.vehicle %}
+              <tr>
+                <td>
+                  <select name="jc_vehicle_id[]" class="veh-select" onchange="onVehRowChange(this)">
+                    <option value="{{ inspection.vehicle.id }}" data-veh-number="{{ inspection.vehicle.vehicle_number }}" selected>{{ inspection.vehicle.vehicle_number }}{% if inspection.vehicle.registration_number %} ({{ inspection.vehicle.registration_number }}){% endif %}</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" class="fi veh-mm-box" readonly
+                        value="{{ inspection.vehicle.manufacturer.manufacturer_name|default:'' }} {{ inspection.vehicle.vehicle_model.model_name|default:'' }}"
+                        placeholder="Make & Model">
+                </td>
+                <td><input type="number" name="jc_vehicle_mileage[]" value="{{ inspection.odometer|default:'' }}" min="0" class="fi"></td>
+                <td>
+                  <select name="jc_vehicle_fuel[]" class="fi">
+                    <option value="empty" {% if inspection.fuel_level == 'empty' %}selected{% endif %}>Empty</option>
+                    <option value="1/4"   {% if inspection.fuel_level == '1/4' %}selected{% endif %}>1/4</option>
+                    <option value="1/2"   {% if inspection.fuel_level == '1/2' %}selected{% endif %}>1/2</option>
+                    <option value="3/4"   {% if inspection.fuel_level == '3/4' %}selected{% endif %}>3/4</option>
+                    <option value="full"  {% if inspection.fuel_level == 'full' %}selected{% endif %}>Full</option>
+                  </select>
+                  <input type="hidden" name="jc_vehicle_notes[]" value="">
+                </td>
+                <td><button type="button" class="btn-rm" onclick="removeVehRow(this)">✕ Remove</button></td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      <div id="vehEmpty" style="{% if edit_mode and job.vehicles.exists or inspection and inspection.vehicle %}display:none{% else %}display:block{% endif %};text-align:center;padding:20px;color:#9ca3af;font-size:13px">
+        No vehicles added yet. Select a customer first, then click "Add Vehicle".
       </div>
     </div>
+  </div>
+
   <!-- ══════════════════════════════════════════
      COMPLAINT MANAGEMENT SECTION
-     Replace entire section in jobcard_form.html
 ══════════════════════════════════════════ -->
   <div class="sec">
-
-    <!-- Section header -->
     <div class="sec-hdr" style="background:#f3f4f6;padding:12px 16px;
         border-bottom:1px solid #e5e7eb;display:flex;align-items:center;
         justify-content:space-between;gap:10px;flex-wrap:wrap">
@@ -338,53 +320,21 @@ select.fi{cursor:pointer}
       </span>
       <div style="display:flex;align-items:center;gap:8px">
 
-        <!-- Load from Inspection -->
-        <div style="position:relative" id="inspPickerWrap">
-          <button type="button" onclick="toggleInspPicker()"
-                  style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
-                        border-radius:5px;padding:6px 12px;font-size:12px;font-weight:600;
-                        cursor:pointer;display:inline-flex;align-items:center;gap:5px;
-                        white-space:nowrap">
-            🔍 Load from Inspection ▾
-          </button>
+        <!-- Load Complaints & Findings Modal Button -->
+        <button type="button" onclick="openInspPicker()"
+                style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
+                      border-radius:5px;padding:6px 14px;font-size:12px;font-weight:600;
+                      cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+                      white-space:nowrap">
+          🔍 Load Complaints & Technician Findings
+        </button>
 
-          <!-- Dropdown panel -->
-          <div id="inspPickerPanel"
-              style="display:none;position:absolute;right:0;top:110%;
-                      background:#fff;border:1.5px solid #2563eb;border-radius:8px;
-                      min-width:360px;z-index:400;
-                      box-shadow:0 8px 24px rgba(0,0,0,.13);overflow:hidden">
-            <div style="background:#eff6ff;padding:10px 14px;
-                        border-bottom:1px solid #dbeafe;
-                        display:flex;justify-content:space-between;align-items:center">
-              <span style="font-size:12px;font-weight:700;color:#1d4ed8">
-                🔍 Select Inspection
-              </span>
-              <button type="button" onclick="closeInspPicker()"
-                      style="background:none;border:none;color:#9ca3af;
-                            font-size:16px;cursor:pointer;line-height:1">✕</button>
-            </div>
-            <div id="inspNoCustomer"
-                style="padding:14px;font-size:12px;color:#9ca3af;text-align:center">
-              Please select a customer and vehicle first
-            </div>
-            <div id="inspList" style="max-height:280px;overflow-y:auto;display:none"></div>
-            <div id="inspEmpty"
-                style="display:none;padding:14px;font-size:12px;
-                        color:#9ca3af;text-align:center">
-              No inspections found for this customer / vehicle
-            </div>
-          </div>
-        </div>
-
-        <!-- Add Complaint -->
         <button type="button" class="btn-add" onclick="addComplaint()">
           + Add Complaint
         </button>
       </div>
     </div>
 
-    <!-- Inspection loaded banner -->
     <div id="inspBanner" style="display:none;background:#fffbeb;
         border-bottom:1px solid #fde68a;padding:8px 16px;font-size:12px;
         color:#92400e;display:flex;align-items:center;
@@ -395,32 +345,17 @@ select.fi{cursor:pointer}
                     cursor:pointer;font-size:14px">✕</button>
     </div>
 
-    <!-- Complaint table -->
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;min-width:750px">
         <thead>
           <tr style="background:#f9fafb">
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
-                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
-                      text-align:left;width:12%">Vehicle</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
-                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
-                      text-align:left;width:16%">Service Category</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
-                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
-                      text-align:left;width:18%">Complaint Type</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
-                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
-                      text-align:left;width:24%">Complaint Description</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
-                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
-                      text-align:left;width:20%">Assigned Technician</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
-                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
-                      text-align:left;width:10%">Status</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;
-                      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;
-                      text-align:center;width:6%">Action</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:12%">Vehicle</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:16%">Service Category</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:18%">Complaint Type</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:24%">Complaint Description</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:20%">Assigned Technician</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:10%">Status</th>
+            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:center;width:6%">Action</th>
           </tr>
         </thead>
         <tbody id="complaintBody">
@@ -438,44 +373,31 @@ select.fi{cursor:pointer}
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_category_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 8px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="">— Category —</option>
                   {% for cat in categories %}
-                  <option value="{{ cat.id }}"
-                    {% if c.service_category_id == cat.id %}selected{% endif %}>
-                    {{ cat.name }}
-                  </option>
+                  <option value="{{ cat.id }}" {% if c.service_category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
                   {% endfor %}
                 </select>
-                <input type="hidden" name="complaint_category[]"
-                      class="cat-txt" value="{{ c.category }}">
+                <input type="hidden" name="complaint_category[]" class="cat-txt" value="{{ c.category }}">
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
                         data-initial-type-id="{{ c.complaint_type_ref_id|default:'' }}"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 6px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="">— Complaint Type —</option>
                 </select>
                 <input type="hidden" name="complaint_type[]" class="type-txt" value="{{ c.type }}">
               </td>
               <td style="padding:6px 6px">
-                <input type="text" name="complaint_description[]"
-                      value="{{ c.description }}"
+                <input type="text" name="complaint_description[]" value="{{ c.description }}"
                       placeholder="Describe complaint..."
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 8px;font-size:12px;color:#111827;
-                              background:#fff;outline:none">
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_technician[]" class="complaint-tech-select"
                         data-initial-tech-id="{{ c.technician_id|default:'' }}"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 6px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="">— Select Technician —</option>
                 </select>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
@@ -489,9 +411,7 @@ select.fi{cursor:pointer}
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_status[]"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 6px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="Open"        {% if c.status == 'Open'        %}selected{% endif %}>Open</option>
                   <option value="In Progress" {% if c.status == 'In Progress' %}selected{% endif %}>In Progress</option>
                   <option value="Resolved"    {% if c.status == 'Resolved'    %}selected{% endif %}>Resolved</option>
@@ -514,9 +434,7 @@ select.fi{cursor:pointer}
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_category_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 8px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="">— Category —</option>
                   {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
                 </select>
@@ -524,9 +442,7 @@ select.fi{cursor:pointer}
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 6px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="">— Complaint Type —</option>
                 </select>
                 <input type="hidden" name="complaint_type[]" class="type-txt">
@@ -534,15 +450,11 @@ select.fi{cursor:pointer}
               <td style="padding:6px 6px">
                 <input type="text" name="complaint_description[]" value="{{ desc }}"
                       placeholder="Describe complaint..."
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 8px;font-size:12px;color:#111827;
-                              background:#fff;outline:none">
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_technician[]" class="complaint-tech-select"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 6px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="">— Select Technician —</option>
                 </select>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
@@ -556,9 +468,7 @@ select.fi{cursor:pointer}
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_status[]"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 6px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="Open" selected>Open</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
@@ -580,9 +490,7 @@ select.fi{cursor:pointer}
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_category_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 8px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="">— Category —</option>
                   {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
                 </select>
@@ -590,9 +498,7 @@ select.fi{cursor:pointer}
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 6px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="">— Complaint Type —</option>
                 </select>
                 <input type="hidden" name="complaint_type[]" class="type-txt">
@@ -600,15 +506,11 @@ select.fi{cursor:pointer}
               <td style="padding:6px 6px">
                 <input type="text" name="complaint_description[]"
                       placeholder="Describe complaint..."
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 8px;font-size:12px;color:#111827;
-                              background:#fff;outline:none">
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_technician[]" class="complaint-tech-select"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 6px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="">— Select Technician —</option>
                 </select>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
@@ -622,9 +524,7 @@ select.fi{cursor:pointer}
               </td>
               <td style="padding:6px 6px">
                 <select name="complaint_status[]"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:7px 6px;font-size:12px;color:#111827;
-                              background:#fff;outline:none;cursor:pointer">
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                   <option value="Open">Open</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
@@ -635,144 +535,99 @@ select.fi{cursor:pointer}
               </td>
             </tr>
           {% endif %}
-
         </tbody>
       </table>
     </div>
   </div>
 
+
+
   <!-- ══════════════════════════════════════════
       SPARE PARTS MANAGEMENT
   ══════════════════════════════════════════ -->
   <div class="sec">
-    <div class="sec-hdr" style="background:#f3f4f6;padding:12px 16px;
-        border-bottom:1px solid #e5e7eb;display:flex;align-items:center;
-        justify-content:space-between">
-      <span style="font-size:11px;font-weight:700;color:#374151;
-                  text-transform:uppercase;letter-spacing:.5px">
-        Spare Parts Management
-      </span>
+    <div class="sec-hdr" style="background:#f3f4f6;padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px">Spare Parts Management</span>
     </div>
 
-    <!-- ── Add Part input row ── -->
     <div style="padding:16px;background:#f9fafb;border-bottom:1px solid #e5e7eb">
-      <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr 1fr auto;
-                  gap:12px;align-items:end">
+      <div style="display:grid;grid-template-columns:1.5fr 2fr 2fr 1fr 1fr 1fr auto;gap:12px;align-items:end">
 
         <div>
-          <label style="...">Vehicle</label>
+          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Vehicle</label>
           <select id="addPartVehicle" style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:9px 10px;font-size:13px;background:#fff;outline:none;cursor:pointer">
             <option value="">— Vehicle —</option>
           </select>
         </div>
 
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;
-                        text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">
-            Item
-          </label>
+          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Item</label>
           <select id="addPartItem"
-                  style="width:100%;border:1px solid #d1d5db;border-radius:6px;
-                        padding:9px 10px;font-size:13px;color:#111827;
-                        background:#fff;outline:none;cursor:pointer"
+                  style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:9px 10px;font-size:13px;color:#111827;background:#fff;outline:none;cursor:pointer"
                   onchange="onAddPartItemChange(this)">
             <option value="">— Select Item —</option>
-            <!-- filled by JS -->
           </select>
         </div>
 
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;
-                        text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">
-            Part Number
-          </label>
-          <input type="text" id="addPartNo"
-                placeholder="Part No."
-                style="width:100%;border:1px solid #d1d5db;border-radius:6px;
-                        padding:9px 10px;font-size:13px;color:#111827;
-                        background:#fff;outline:none">
+          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Part Number</label>
+          <input type="text" id="addPartNo" placeholder="Part No."
+                style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:9px 10px;font-size:13px;color:#111827;background:#fff;outline:none">
         </div>
 
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;
-                        text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">
-            Quantity
-          </label>
+          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Quantity</label>
           <input type="number" id="addPartQty" value="1" min="0" step="0.01"
-                style="width:100%;border:1px solid #d1d5db;border-radius:6px;
-                        padding:9px 10px;font-size:13px;color:#111827;
-                        background:#fff;outline:none;text-align:right"
+                style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:9px 10px;font-size:13px;color:#111827;background:#fff;outline:none;text-align:right"
                 oninput="calcAddPartAmount()">
         </div>
 
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;
-                        text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">
-            Rate
-          </label>
+          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Rate</label>
           <input type="number" id="addPartRate" value="0" min="0" step="0.001"
-                style="width:100%;border:1px solid #d1d5db;border-radius:6px;
-                        padding:9px 10px;font-size:13px;color:#111827;
-                        background:#fff;outline:none;text-align:right"
+                style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:9px 10px;font-size:13px;color:#111827;background:#fff;outline:none;text-align:right"
                 oninput="calcAddPartAmount()">
         </div>
 
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;
-                        text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">
-            Amount
-          </label>
+          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Amount</label>
           <input type="text" id="addPartAmount" value="0.000" readonly
-                style="width:100%;border:1px solid #e5e7eb;border-radius:6px;
-                        padding:9px 10px;font-size:13px;color:#374151;
-                        background:#f3f4f6;outline:none;text-align:right;
-                        font-weight:700">
+                style="width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:9px 10px;font-size:13px;color:#374151;background:#f3f4f6;outline:none;text-align:right;font-weight:700">
         </div>
 
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:transparent;
-                        margin-bottom:5px">-</label>
+          <label style="display:block;font-size:10px;font-weight:700;color:transparent;margin-bottom:5px">-</label>
           <button type="button" onclick="commitAddPart()"
-                  style="background:#2563eb;color:#fff;border:none;border-radius:6px;
-                        padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;
-                        white-space:nowrap;height:40px">
+                  style="background:#2563eb;color:#fff;border:none;border-radius:6px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;height:40px">
             Add
           </button>
         </div>
-
       </div>
     </div>
 
-    <!-- ── Parts table ── -->
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;min-width:700px">
         <thead>
           <tr style="background:#f9fafb">
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
-                      border-bottom:1px solid #e5e7eb;text-align:left">Vehicle</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
-                      border-bottom:1px solid #e5e7eb;text-align:left">Item</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
-                      border-bottom:1px solid #e5e7eb;text-align:left;width:16%">Part Number</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
-                      border-bottom:1px solid #e5e7eb;text-align:right;width:10%">Quantity</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
-                      border-bottom:1px solid #e5e7eb;text-align:right;width:13%">Rate</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
-                      border-bottom:1px solid #e5e7eb;text-align:right;width:13%">Total Amount</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;
-                      border-bottom:1px solid #e5e7eb;text-align:center;width:8%">Action</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:left;width:14%">Vehicle</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:left">Item</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:left;width:16%">Part Number</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:right;width:10%">Quantity</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:right;width:13%">Rate</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:right;width:13%">Total Amount</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:center;width:8%">Action</th>
           </tr>
         </thead>
         <tbody id="partsBody">
-
-          <!-- Edit mode — existing rows -->
           {% if edit_mode %}
             {% for p in job.parts.all %}
             <tr style="border-bottom:1px solid #f3f4f6" data-item-id="{{ p.part_number|default:'' }}">
               <td style="padding:10px 14px">
                 <select name="part_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
                   <option value="">— Vehicle —</option>
+                  {% for jv in job.vehicles.all %}
+                  <option value="{{ jv.vehicle_id }}" {% if p.vehicle_id == jv.vehicle_id %}selected{% endif %}>{{ jv.vehicle.vehicle_number }}</option>
+                  {% endfor %}
                 </select>
               </td>
               <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:500">
@@ -782,63 +637,47 @@ select.fi{cursor:pointer}
               </td>
               <td style="padding:10px 14px">
                 <input type="text" name="part_number[]" value="{{ p.part_number|default:'' }}"
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:6px 9px;font-size:12px;color:#374151;outline:none">
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;color:#374151;outline:none">
               </td>
               <td style="padding:10px 14px">
-                <input type="number" name="part_qty[]" value="{{ p.quantity }}"
-                      min="0" step="0.01"
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:6px 9px;font-size:12px;text-align:right;outline:none"
+                <input type="number" name="part_qty[]" value="{{ p.quantity }}" min="0" step="0.01"
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;text-align:right;outline:none"
                       class="pq" oninput="calcPartRow(this)">
               </td>
               <td style="padding:10px 14px">
-                <input type="number" name="part_rate[]" value="{{ p.unit_price }}"
-                      min="0" step="0.001"
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                              padding:6px 9px;font-size:12px;text-align:right;outline:none"
+                <input type="number" name="part_rate[]" value="{{ p.unit_price }}" min="0" step="0.001"
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;text-align:right;outline:none"
                       class="pr" oninput="calcPartRow(this)">
               </td>
-              <td style="padding:10px 14px;text-align:right;font-size:13px;
-                        font-weight:700;color:#111827;font-family:monospace">
+              <td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#111827;font-family:monospace">
                 <span class="pa">{{ p.total_price|floatformat:3 }}</span>
                 <input type="hidden" name="part_amount[]" class="pa-inp" value="{{ p.total_price }}">
               </td>
               <td style="padding:10px 14px;text-align:center">
                 <button type="button" onclick="removePartRow(this)"
-                        style="background:#dc2626;color:#fff;border:none;border-radius:5px;
-                              padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">
+                        style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">
                   Remove
                 </button>
               </td>
             </tr>
             {% endfor %}
           {% endif %}
-
         </tbody>
       </table>
 
-      <!-- Empty state -->
       <div id="partsEmpty"
           style="{% if edit_mode and job.parts.exists %}display:none{% else %}display:block{% endif %};
-                  text-align:center;padding:24px;color:#9ca3af;font-size:13px;
-                  border-top:1px solid #f3f4f6">
+                  text-align:center;padding:24px;color:#9ca3af;font-size:13px;border-top:1px solid #f3f4f6">
         No parts added yet. Select an item above and click Add.
       </div>
-
     </div>
 
-    <!-- Parts total -->
-    <div style="padding:12px 16px;background:#f9fafb;border-top:1px solid #e5e7eb;
-                display:flex;justify-content:flex-end;align-items:center;gap:12px">
+    <div style="padding:12px 16px;background:#f9fafb;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;align-items:center;gap:12px">
       <span style="font-size:13px;font-weight:700;color:#374151">Parts Total</span>
-      <span id="partsTotal"
-            style="font-size:15px;font-weight:700;color:#2563eb;font-family:monospace">
-        0.000
-      </span>
+      <span id="partsTotal" style="font-size:15px;font-weight:700;color:#2563eb;font-family:monospace">0.000</span>
     </div>
-
   </div>
+
   <!-- ════════════════════════════════
        LABOUR MANAGEMENT
   ════════════════════════════════ -->
@@ -869,9 +708,7 @@ select.fi{cursor:pointer}
                   <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
                     <option value="">— Vehicle —</option>
                     {% for jv in job.vehicles.all %}
-                    <option value="{{ jv.vehicle_id }}" {% if l.vehicle_id == jv.vehicle_id %}selected{% endif %}>
-                      {{ jv.vehicle.vehicle_number }}
-                    </option>
+                    <option value="{{ jv.vehicle_id }}" {% if l.vehicle_id == jv.vehicle_id %}selected{% endif %}>{{ jv.vehicle.vehicle_number }}</option>
                     {% endfor %}
                   </select>
                 </td>
@@ -879,9 +716,7 @@ select.fi{cursor:pointer}
                   <select name="labour_technician[]">
                     <option value="">----------</option>
                     {% for s in staff %}
-                    <option value="{{ s.id }}" {% if l.technician_id == s.id %}selected{% endif %}>
-                      {{ s.staff_id }} — {{ s.full_name }}
-                    </option>
+                    <option value="{{ s.id }}" {% if l.technician_id == s.id %}selected{% endif %}>{{ s.staff_id }} — {{ s.full_name }}</option>
                     {% endfor %}
                   </select>
                 </td>
@@ -894,6 +729,11 @@ select.fi{cursor:pointer}
               {% endfor %}
             {% else %}
               <tr>
+                <td>
+                  <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
+                    <option value="">— Vehicle —</option>
+                  </select>
+                </td>
                 <td>
                   <select name="labour_technician[]">
                     <option value="">----------</option>
@@ -925,19 +765,18 @@ select.fi{cursor:pointer}
   <div class="grand-totals">
     <div class="gt-row">
       <span class="gt-lbl">Parts Total</span>
-      <span class="gt-val" id="gtParts">2130.000</span>
+      <span class="gt-val" id="gtParts">0.000</span>
     </div>
     <div class="gt-row">
       <span class="gt-lbl">Labour Total</span>
-      <span class="gt-val" id="gtLabour">30.000  </span>
+      <span class="gt-val" id="gtLabour">0.000</span>
     </div>
     <div class="gt-row">
       <span class="gt-lbl" style="font-weight:700;font-size:14px">Grand Total</span>
-      <span class="gt-val grand" id="gtGrand">2160.000</span>
+      <span class="gt-val grand" id="gtGrand">0.000</span>
     </div>
   </div>
 
-  <!-- Save bar -->
   <div class="save-bar">
     <button type="submit" class="btn-save">💾 Save Job Card</button>
     <a href="{% url 'jobcard_app:jobcard_list' %}" class="btn-cancel">Cancel</a>
@@ -946,11 +785,50 @@ select.fi{cursor:pointer}
   </form>
 </div>
 
+<!-- Modal Overlay for Selecting Complaints & Technician Findings -->
+<div id="inspModalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(3px);">
+  <div style="background:#fff; border-radius:12px; width:92%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 40px rgba(0,0,0,0.3); overflow:hidden; border:1px solid #cbd5e1;">
+    <!-- Modal Header -->
+    <div style="background:#1e293b; color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:16px;">🔍</span>
+        <span style="font-size:14px; font-weight:700; letter-spacing:0.3px;">Select Customer Complaints & Technician Findings</span>
+      </div>
+      <button type="button" onclick="closeInspPicker()" style="background:none; border:none; color:#94a3b8; font-size:22px; cursor:pointer; line-height:1; padding:0 4px;" title="Close Modal">✕</button>
+    </div>
+    <!-- Modal Body -->
+    <div style="padding:16px 20px; flex:1; overflow-y:auto; background:#f8fafc;">
+      <div id="inspNoCustomer" style="padding:30px 20px; font-size:13px; color:#64748b; text-align:center; background:#fff; border-radius:8px; border:1px dashed #cbd5e1;">
+        ⚠️ Please select a customer and at least one vehicle on the job card form first.
+      </div>
+      <div id="inspList" style="display:none;"></div>
+      <div id="inspEmpty" style="display:none; padding:30px 20px; font-size:13px; color:#64748b; text-align:center; background:#fff; border-radius:8px; border:1px dashed #cbd5e1;">
+        No inspection records found for the selected customer & vehicle(s).
+      </div>
+    </div>
+    <!-- Modal Footer -->
+    <div id="inspPickerFooter" style="display:none; padding:12px 20px; border-top:1px solid #e2e8f0; background:#fff; text-align:right;">
+      <button type="button" onclick="closeInspPicker()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:6px; padding:8px 18px; font-size:12px; font-weight:600; cursor:pointer; margin-right:8px;">Cancel</button>
+      <button type="button" onclick="loadSelectedInspectionItems()" style="background:#2563eb; color:#fff; border:none; border-radius:6px; padding:8px 22px; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 2px 6px rgba(37,99,235,0.3);">Load Selected into Job Card</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const VEH_URL = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
+const INSP_URL = "{% url 'jobcard_app:ajax_get_inspections' %}";
+const catOpts  = `<option value="">— Category —</option>{% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}`;
+const techOpts = `{% for s in technicians %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}`;
+const inpStyle = 'width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none';
+const selStyle = 'width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer';
+const rowStyle = 'border-bottom:1px solid #f3f4f6';
+const cellStyle = 'padding:6px 6px';
 
 let customerVehicleCache = [];
 
+/* ══════════════════════════════════════════
+   VEHICLES TABLE
+══════════════════════════════════════════ */
 function loadVehicles(cid, callback) {
   if (!cid) {
     customerVehicleCache = [];
@@ -969,10 +847,8 @@ function loadVehicles(cid, callback) {
         const phoneInp = document.getElementById('customerPhone');
         if (phoneInp) phoneInp.value = d.customer_phone;
       }
-      // refresh any existing row selects to reflect the new customer's vehicles
       document.querySelectorAll('.veh-select').forEach(sel => populateVehSelect(sel));
 
-      // Auto-add vehicle row if table is empty and customer has vehicles
       const tbody = document.getElementById('vehBody');
       if (tbody && tbody.querySelectorAll('tr').length === 0 && customerVehicleCache.length > 0) {
         addVehicleRow();
@@ -980,9 +856,7 @@ function loadVehicles(cid, callback) {
       checkVehEmpty();
       if (typeof callback === 'function') callback();
     })
-    .catch(err => {
-      console.error('Error loading customer vehicles:', err);
-    });
+    .catch(err => console.error('Error loading customer vehicles:', err));
 }
 
 function populateVehSelect(sel) {
@@ -1112,48 +986,133 @@ function checkVehEmpty() {
   }
 }
 
-/* ── Remove row ── */
+/* ══════════════════════════════════════════
+   VEHICLE DROPDOWN SYNC (used by Complaints/Findings/Parts/Labour)
+══════════════════════════════════════════ */
+function getJobVehicleOptions() {
+  const opts = [];
+  document.querySelectorAll('#vehBody tr').forEach(tr => {
+    const sel = tr.querySelector('.veh-select');
+    if (sel && sel.value) {
+      const selectedOpt = sel.options[sel.selectedIndex];
+      const label = selectedOpt ? selectedOpt.text.trim() : '';
+      if (label) opts.push({ id: sel.value, label: label });
+    }
+  });
+  return opts;
+}
+
+function buildVehSelectHtml(selectedId) {
+  const opts = getJobVehicleOptions();
+  let html = '<option value="">— Vehicle —</option>';
+  opts.forEach(o => {
+    const isSelected = String(o.id) === String(selectedId);
+    html += `<option value="${o.id}" ${isSelected ? 'selected' : ''}>${o.label}</option>`;
+  });
+  return html;
+}
+
+function refreshAllVehicleDropdowns() {
+  const opts = getJobVehicleOptions();
+  document.querySelectorAll('.row-veh-select').forEach(sel => {
+    let current = sel.value;
+    if (!current && opts.length === 1) current = opts[0].id;
+    sel.innerHTML = buildVehSelectHtml(current);
+  });
+  const addPartVeh = document.getElementById('addPartVehicle');
+  if (addPartVeh) {
+    let current = addPartVeh.value;
+    if (!current && opts.length === 1) current = opts[0].id;
+    addPartVeh.innerHTML = buildVehSelectHtml(current);
+  }
+}
+
+/* ══════════════════════════════════════════
+   ROW REMOVE
+══════════════════════════════════════════ */
 function removeRow(btn) {
-  const tr = btn.closest('tr');
-  const tbody = tr.closest('tbody');
+  const tbody = btn.closest('tbody');
+  const tr    = btn.closest('tr');
   if (tbody.rows.length > 1) tr.remove();
   else {
     tr.querySelectorAll('input[type=text],input[type=number]').forEach(i => i.value = '');
     tr.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
   }
-  calcTotals();
+  calcTotals && calcTotals();
 }
 
-
-const INSP_URL = "{% url 'jobcard_app:ajax_get_inspections' %}";
-const catOpts  = `<option value="">— Category —</option>{% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}`;
-const techOpts = `{% for s in technicians %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}`;
-const inpStyle = 'width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none';
-const selStyle = 'width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer';
-const rowStyle = 'border-bottom:1px solid #f3f4f6';
-const cellStyle = 'padding:6px 6px';
-
-/* ── Inspection picker ── */
-function toggleInspPicker() {
-  const p = document.getElementById('inspPickerPanel');
-  p.style.display === 'none' ? openInspPicker() : closeInspPicker();
+/* ══════════════════════════════════════════
+   INSPECTION SELECTION COUNTER & TOGGLES
+══════════════════════════════════════════ */
+function updateInspSelectedCount() {
+  const cCount = document.querySelectorAll('#inspList .pick-complaint:checked').length;
+  const fCount = document.querySelectorAll('#inspList .pick-finding:checked').length;
+  const el = document.getElementById('inspSelCountText');
+  if (el) {
+    if (cCount === 0 && fCount === 0) {
+      el.textContent = '0 items selected';
+      el.style.color = '#94a3b8';
+    } else {
+      el.textContent = `${cCount} Complaint(s), ${fCount} Finding(s) selected`;
+      el.style.color = '#2563eb';
+    }
+  }
 }
 
-function closeInspPicker() {
-  document.getElementById('inspPickerPanel').style.display = 'none';
+function toggleInspItem(rowEl, event) {
+  if (event.target && event.target.tagName.toLowerCase() === 'input') return;
+  const cb = rowEl.querySelector('input[type="checkbox"]');
+  if (cb) {
+    cb.checked = !cb.checked;
+    onInspItemCheckChange(cb);
+  }
 }
 
+function onInspItemCheckChange(cb) {
+  const rowEl = cb.closest('.insp-item-row');
+  if (rowEl) {
+    if (cb.checked) {
+      const isFinding = cb.classList.contains('pick-finding');
+      rowEl.style.background = isFinding ? '#fffbeb' : '#f0f9ff';
+      rowEl.style.borderColor = isFinding ? '#d97706' : '#2563eb';
+      rowEl.style.boxShadow = isFinding ? '0 0 0 1px #d97706' : '0 0 0 1px #2563eb';
+    } else {
+      rowEl.style.background = '#ffffff';
+      rowEl.style.borderColor = '#cbd5e1';
+      rowEl.style.boxShadow = 'none';
+    }
+  }
+  updateInspSelectedCount();
+}
+
+function toggleGroupCheckboxes(masterCb, groupSelector) {
+  const groupDiv = masterCb.closest('.insp-group-box');
+  if (groupDiv) {
+    groupDiv.querySelectorAll(groupSelector).forEach(cb => {
+      cb.checked = masterCb.checked;
+      onInspItemCheckChange(cb);
+    });
+  }
+}
+
+/* ══════════════════════════════════════════
+   INSPECTION PICKER MODAL (checkbox-based, multi-vehicle)
+══════════════════════════════════════════ */
 function openInspPicker() {
-  document.getElementById('inspPickerPanel').style.display = 'block';
+  const overlay = document.getElementById('inspModalOverlay');
+  if (overlay) overlay.style.display = 'flex';
 
   const custId = document.getElementById('custSel')?.value;
-  const vehId  = document.getElementById('vehicleSel')?.value;
+  const vehIds = getJobVehicleOptions().map(o => o.id).join(',');
 
   const noCustomer = document.getElementById('inspNoCustomer');
   const list       = document.getElementById('inspList');
   const empty      = document.getElementById('inspEmpty');
+  const footer     = document.getElementById('inspPickerFooter');
 
-  if (!custId) {
+  footer.style.display = 'none';
+
+  if (!custId || !vehIds) {
     noCustomer.style.display = 'block';
     list.style.display       = 'none';
     empty.style.display      = 'none';
@@ -1163,10 +1122,9 @@ function openInspPicker() {
   noCustomer.style.display = 'none';
   empty.style.display      = 'none';
   list.style.display       = 'block';
-  list.innerHTML = '<div style="padding:14px;text-align:center;font-size:12px;color:#9ca3af">Loading...</div>';
+  list.innerHTML = '<div style="padding:30px;text-align:center;font-size:13px;color:#64748b">Loading complaints & technician findings...</div>';
 
-  let url = INSP_URL + '?customer_id=' + custId;
-  if (vehId) url += '&vehicle_id=' + vehId;
+  const url = INSP_URL + '?customer_id=' + custId + '&vehicle_ids=' + vehIds;
 
   fetch(url)
     .then(r => r.json())
@@ -1178,120 +1136,174 @@ function openInspPicker() {
       }
 
       list.innerHTML = data.inspections.map(insp => `
-        <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer"
-             onmouseover="this.style.background='#eff6ff'"
-             onmouseout="this.style.background=''"
-             onclick='loadInspection(${JSON.stringify(insp).replace(/'/g, "&#39;")})'>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px;font-weight:700;color:#2563eb;font-family:monospace">
-              ${insp.inspection_number}
-            </span>
-            <div style="display:flex;gap:5px">
-              <span style="font-size:10px;font-weight:700;background:#dcfce7;color:#16a34a;border-radius:20px;padding:2px 8px">
-                ${insp.complaints_count} complaint${insp.complaints_count !== 1 ? 's' : ''}
-              </span>
-              <span style="font-size:10px;font-weight:700;background:#fef3c7;color:#ca8a04;border-radius:20px;padding:2px 8px">
-                ${insp.findings_count} finding${insp.findings_count !== 1 ? 's' : ''}
-              </span>
+        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:14px 16px; margin-bottom:14px; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+          <!-- Vehicle Identification Header -->
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+            <div>
+              <span style="font-size:13px; font-weight:700; color:#1e293b;">📋 Inspection ${insp.inspection_number}</span>
+              <span style="font-size:11px; color:#64748b; margin-left:6px;">(${insp.date})</span>
+            </div>
+            <div style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:5px;">
+              🚗 Vehicle: ${insp.vehicle_number || 'N/A'}
             </div>
           </div>
-          <div style="font-size:11px;color:#6b7280;margin-bottom:6px">
-            📅 ${insp.date}
-            ${insp.vehicle ? ' &nbsp;·&nbsp; 🚗 ' + insp.vehicle : ''}
-            ${insp.odometer ? ' &nbsp;·&nbsp; 📍 ' + insp.odometer + ' km' : ''}
-            ${insp.fuel_level ? ' &nbsp;·&nbsp; ⛽ ' + insp.fuel_level : ''}
+          <div style="font-size:11px; color:#475569; margin-bottom:12px; background:#f8fafc; padding:6px 10px; border-radius:6px; border:1px solid #e2e8f0;">
+            <strong>Vehicle Details:</strong> ${insp.vehicle_label || '—'} ${insp.odometer ? ' &nbsp;•&nbsp; 📍 ' + insp.odometer + ' km' : ''}
           </div>
-          ${insp.complaints.length > 0 ? `
-            <div style="margin-bottom:4px">
-              <div style="font-size:10px;font-weight:700;color:#2563eb;margin-bottom:3px">COMPLAINTS:</div>
-              ${insp.complaints.map(c =>
-                `<div style="font-size:11px;color:#374151;padding:1px 0;display:flex;align-items:flex-start;gap:5px">
-                  <span style="color:#2563eb;flex-shrink:0">●</span>${c}
+
+          <!-- Customer Complaints Section -->
+          ${insp.complaints && insp.complaints.length > 0 ? `
+            <div class="insp-group-box" style="margin-bottom:12px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:10px 12px;">
+              <div style="font-size:11px; font-weight:700; color:#0369a1; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span>🗣️ CUSTOMER COMPLAINTS</span>
+                  <label style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#0369a1; cursor:pointer; background:#e0f2fe; padding:2px 8px; border-radius:4px; font-weight:600; border:1px solid #93c5fd;" onclick="event.stopPropagation();">
+                    <input type="checkbox" onchange="toggleGroupCheckboxes(this, '.pick-complaint')" style="cursor:pointer; width:14px; height:14px; accent-color:#2563eb;">
+                    <span>Select All</span>
+                  </label>
+                </div>
+                <span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:12px; font-weight:700;">Vehicle: ${insp.vehicle_number}</span>
+              </div>
+              ${insp.complaints.map(c => `
+                <div class="insp-item-row" onclick="toggleInspItem(this, event)"
+                     style="display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:6px; border-radius:6px; background:#ffffff; border:1px solid #cbd5e1; cursor:pointer; user-select:none; transition:all 0.15s ease;">
+                  <input type="checkbox" class="pick-complaint" onchange="onInspItemCheckChange(this)"
+                         style="display:inline-block !important; visibility:visible !important; opacity:1 !important; width:18px !important; height:18px !important; min-width:18px !important; margin:0 !important; cursor:pointer !important; accent-color:#2563eb !important; position:relative !important; z-index:10 !important; -webkit-appearance:checkbox !important; appearance:checkbox !important;"
+                         data-desc="${c.description.replace(/"/g,'&quot;')}"
+                         data-veh="${insp.vehicle_id}"
+                         data-veh-num="${insp.vehicle_number}">
+                  <span style="font-size:13px; font-weight:600; color:#1e293b; flex:1; line-height:1.4;">${c.description}</span>
                 </div>`).join('')}
             </div>` : ''}
-          ${insp.findings.length > 0 ? `
-            <div>
-              <div style="font-size:10px;font-weight:700;color:#ca8a04;margin-bottom:3px">FINDINGS:</div>
-              ${insp.findings.map(f =>
-                `<div style="font-size:11px;color:#374151;padding:1px 0;display:flex;align-items:flex-start;gap:5px">
-                  <span style="color:#ca8a04;flex-shrink:0">●</span>${f}
+
+          <!-- Technician Findings Section -->
+          ${insp.findings && insp.findings.length > 0 ? `
+            <div class="insp-group-box" style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px 12px;">
+              <div style="font-size:11px; font-weight:700; color:#b45309; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span>🔧 TECHNICIAN FINDINGS</span>
+                  <label style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#b45309; cursor:pointer; background:#fef3c7; padding:2px 8px; border-radius:4px; font-weight:600; border:1px solid #fcd34d;" onclick="event.stopPropagation();">
+                    <input type="checkbox" onchange="toggleGroupCheckboxes(this, '.pick-finding')" style="cursor:pointer; width:14px; height:14px; accent-color:#d97706;">
+                    <span>Select All</span>
+                  </label>
+                </div>
+                <span style="font-size:10px; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:12px; font-weight:700;">Vehicle: ${insp.vehicle_number}</span>
+              </div>
+              ${insp.findings.map(f => `
+                <div class="insp-item-row" onclick="toggleInspItem(this, event)"
+                     style="display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:6px; border-radius:6px; background:#ffffff; border:1px solid #cbd5e1; cursor:pointer; user-select:none; transition:all 0.15s ease;">
+                  <input type="checkbox" class="pick-finding" onchange="onInspItemCheckChange(this)"
+                         style="display:inline-block !important; visibility:visible !important; opacity:1 !important; width:18px !important; height:18px !important; min-width:18px !important; margin:0 !important; cursor:pointer !important; accent-color:#d97706 !important; position:relative !important; z-index:10 !important; -webkit-appearance:checkbox !important; appearance:checkbox !important;"
+                         data-desc="${f.description.replace(/"/g,'&quot;')}"
+                         data-veh="${insp.vehicle_id}"
+                         data-veh-num="${insp.vehicle_number}">
+                  <span style="font-size:13px; font-weight:600; color:#1e293b; flex:1; line-height:1.4;">${f.description}</span>
                 </div>`).join('')}
             </div>` : ''}
         </div>`).join('');
+
+      footer.style.display = 'flex';
+      updateInspSelectedCount();
     })
     .catch(err => {
-      list.innerHTML = '<div style="padding:14px;font-size:12px;color:#ef4444;text-align:center">Failed to load. Try again.</div>';
+      list.innerHTML = '<div style="padding:20px;font-size:12px;color:#ef4444;text-align:center">Failed to load inspections. Please try again.</div>';
       console.error('Inspection load error:', err);
     });
 }
 
-/* ── Load inspection into complaint/finding tables ── */
-function loadInspection(insp) {
-  closeInspPicker();
+function closeInspPicker() {
+  const overlay = document.getElementById('inspModalOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
 
-  const hasComplaints = insp.complaints && insp.complaints.length > 0;
-  const hasFindings   = insp.findings   && insp.findings.length   > 0;
+function loadSelectedInspectionItems() {
+  const checkedComplaints = document.querySelectorAll('#inspList .pick-complaint:checked');
+  const checkedFindings   = document.querySelectorAll('#inspList .pick-finding:checked');
 
-  if (!hasComplaints && !hasFindings) {
-    alert('No complaints or findings in ' + insp.inspection_number);
+  if (!checkedComplaints.length && !checkedFindings.length) {
+    alert('Please select at least one complaint or technician finding to load by clicking its checkbox.');
     return;
   }
 
-  const existCmp = document.querySelectorAll('#complaintBody tr').length;
-  const existFnd = document.querySelectorAll('#findingsBody tr').length;
+  // If there's an empty default row in complaintBody, remove it if empty
+  const defaultRow = document.getElementById('cmpDefaultRow');
+  const tbody = document.getElementById('complaintBody');
 
-  let replace = false;
-  if (existCmp > 0 || existFnd > 0) {
-    replace = confirm(
-      'Load from ' + insp.inspection_number + '?\n\n' +
-      'OK = Clear existing rows and load\n' +
-      'Cancel = Add below existing rows'
-    );
-  }
+  checkedComplaints.forEach(cb => {
+    addComplaint(cb.dataset.desc, '#f0f9ff', cb.dataset.veh);
+  });
 
-  if (replace) {
-    document.getElementById('complaintBody').innerHTML = '';
-    document.getElementById('findingsBody').innerHTML  = '';
-  }
+  checkedFindings.forEach(cb => {
+    addComplaint(cb.dataset.desc, '#fffbeb', cb.dataset.veh);
+  });
 
-  // ── Add complaints ────────────────────────────────────
-  if (hasComplaints) {
-    insp.complaints.forEach(desc => addComplaint(desc, '#fffbeb', insp.vehicle_id));
-  }
-
-  // ── Link vehicle from inspection if available ───────────
-  if (insp.vehicle_id) {
-    let exists = false;
-    document.querySelectorAll('.veh-select').forEach(sel => {
-      if (String(sel.value) === String(insp.vehicle_id)) exists = true;
-    });
-    if (!exists) {
-      addVehicleRow(insp.vehicle_id, insp.odometer, insp.fuel_level);
+  if (defaultRow && tbody) {
+    const descInp = defaultRow.querySelector('input[name="complaint_description[]"]');
+    if (descInp && !descInp.value.trim() && tbody.querySelectorAll('tr').length > 1) {
+      defaultRow.remove();
     }
   }
-  // ── Show banner ───────────────────────────────────────
+
+  closeInspPicker();
+
   const banner = document.getElementById('inspBanner');
   const text   = document.getElementById('inspBannerText');
   if (banner && text) {
-    text.innerHTML =
-      `🔍 Loaded from <strong>${insp.inspection_number}</strong>
-       &nbsp;·&nbsp; ${insp.date}
-       &nbsp;·&nbsp;
-       <span style="color:#16a34a;font-weight:700">${insp.complaints_count} complaint(s)</span>
-       &nbsp;+&nbsp;
-       <span style="color:#ca8a04;font-weight:700">${insp.findings_count} finding(s)</span>`;
+    text.innerHTML = `✅ Loaded ${checkedComplaints.length} Customer Complaint(s) and ${checkedFindings.length} Technician Finding(s) into Job Card.`;
     banner.style.display = 'flex';
   }
 }
 
 /* ══════════════════════════════════════════
    RELATIONAL MAPPING: Category -> Complaint Type -> Skill -> Technician
-   ══════════════════════════════════════════ */
+══════════════════════════════════════════ */
 let relationalMappingData = { categories: [], technicians: [], skills: [] };
 try {
   relationalMappingData = {{ relational_mapping_json|safe }};
 } catch (e) {
   console.error("Error parsing relational mapping JSON:", e);
+}
+
+function populateTypeSelect(typeSelect, categoryData, initialTypeId = '') {
+  if (!typeSelect) return;
+  typeSelect.innerHTML = '<option value="">— Service / Complaint Type —</option>';
+  if (!categoryData) return;
+
+  if (categoryData.service_types && categoryData.service_types.length > 0) {
+    const groupSt = document.createElement('optgroup');
+    groupSt.label = 'Service Types';
+    categoryData.service_types.forEach(st => {
+      const opt = document.createElement('option');
+      opt.value = 'st_' + st.id;
+      opt.textContent = st.code ? `${st.code} — ${st.name}` : st.name;
+      opt.dataset.skillId = st.skill_id || 0;
+      opt.dataset.skillName = st.skill_name || '';
+      opt.dataset.serviceTypeId = st.id;
+      if (initialTypeId && (String(st.id) === String(initialTypeId) || String('st_' + st.id) === String(initialTypeId))) {
+        opt.selected = true;
+      }
+      groupSt.appendChild(opt);
+    });
+    typeSelect.appendChild(groupSt);
+  }
+
+  if (categoryData.complaints && categoryData.complaints.length > 0) {
+    const groupCt = document.createElement('optgroup');
+    groupCt.label = 'Complaint Types';
+    categoryData.complaints.forEach(ct => {
+      const opt = document.createElement('option');
+      opt.value = ct.id;
+      opt.textContent = ct.name;
+      opt.dataset.skillId = ct.skill_id || 0;
+      opt.dataset.skillName = ct.skill_name || '';
+      opt.dataset.complaintTypeId = ct.id;
+      if (initialTypeId && String(ct.id) === String(initialTypeId)) {
+        opt.selected = true;
+      }
+      groupCt.appendChild(opt);
+    });
+    typeSelect.appendChild(groupCt);
+  }
 }
 
 function handleCategoryChange(catSelect) {
@@ -1308,28 +1320,14 @@ function handleCategoryChange(catSelect) {
   const overrideCb = tr.querySelector('.override-cb');
   const overrideHidden = tr.querySelector('.override-hidden');
 
-  // Reset Complaint Type dropdown
   if (typeSelect) {
-    typeSelect.innerHTML = '<option value="">— Complaint Type —</option>';
-    if (catId) {
-      const categoryData = relationalMappingData.categories.find(c => c.id === catId);
-      if (categoryData && categoryData.complaints) {
-        categoryData.complaints.forEach(ct => {
-          const opt = document.createElement('option');
-          opt.value = ct.id;
-          opt.textContent = ct.name;
-          opt.dataset.skillId = ct.skill_id || 0;
-          opt.dataset.skillName = ct.skill_name || '';
-          typeSelect.appendChild(opt);
-        });
-      }
-    }
+    const categoryData = catId ? relationalMappingData.categories.find(c => c.id === catId) : null;
+    populateTypeSelect(typeSelect, categoryData);
     typeSelect.value = '';
     const typeHiddenText = tr.querySelector('.type-txt');
     if (typeHiddenText) typeHiddenText.value = '';
   }
 
-  // Reset Cascading: clear Technician selection & reset override
   if (overrideCb) overrideCb.checked = false;
   if (overrideHidden) overrideHidden.value = '0';
   if (skillBadge) skillBadge.innerHTML = '';
@@ -1427,21 +1425,8 @@ function initComplaintRows() {
 
     if (catSelect && catSelect.value) {
       const catId = parseInt(catSelect.value, 10);
-      typeSelect.innerHTML = '<option value="">— Complaint Type —</option>';
       const categoryData = relationalMappingData.categories.find(c => c.id === catId);
-      if (categoryData && categoryData.complaints) {
-        categoryData.complaints.forEach(ct => {
-          const opt = document.createElement('option');
-          opt.value = ct.id;
-          opt.textContent = ct.name;
-          opt.dataset.skillId = ct.skill_id || 0;
-          opt.dataset.skillName = ct.skill_name || '';
-          if (initialTypeId && String(ct.id) === String(initialTypeId)) {
-            opt.selected = true;
-          }
-          typeSelect.appendChild(opt);
-        });
-      }
+      populateTypeSelect(typeSelect, categoryData, initialTypeId);
     }
 
     if (typeSelect && typeSelect.value) {
@@ -1451,20 +1436,18 @@ function initComplaintRows() {
       const isOverride = overrideCb ? overrideCb.checked : false;
 
       updateTechnicianOptions(tr, skillId, isOverride, skillName);
-      if (initialTechId && techSelect) {
-        techSelect.value = initialTechId;
-      }
+      if (initialTechId && techSelect) techSelect.value = initialTechId;
     } else if (tr) {
       const isOverride = overrideCb ? overrideCb.checked : false;
       updateTechnicianOptions(tr, 0, isOverride, '');
-      if (initialTechId && techSelect) {
-        techSelect.value = initialTechId;
-      }
+      if (initialTechId && techSelect) techSelect.value = initialTechId;
     }
   });
 }
 
-/* ── Add complaint row ── */
+/* ══════════════════════════════════════════
+   ADD COMPLAINT / FINDING ROW
+══════════════════════════════════════════ */
 function addComplaint(desc = '', bg = '', vehId = '') {
   const tr = document.createElement('tr');
   tr.style.cssText = rowStyle + (bg ? ';background:' + bg : '');
@@ -1520,32 +1503,55 @@ function addComplaint(desc = '', bg = '', vehId = '') {
   refreshAllVehicleDropdowns();
 }
 
+function addFinding(desc = '', bg = '', vehId = '') {
+  const tr = document.createElement('tr');
+  tr.style.cssText = rowStyle + (bg ? ';background:' + bg : '');
+  tr.innerHTML = `
+    <td style="${cellStyle}">
+      <select name="finding_vehicle_id[]" class="row-veh-select fi" style="${selStyle}">
+        ${buildVehSelectHtml(vehId)}
+      </select>
+    </td>
+    <td style="${cellStyle}">
+      <input type="text" name="finding_description[]"
+             value="${desc.replace(/"/g,'&quot;')}"
+             placeholder="Describe finding..."
+             style="${inpStyle}">
+    </td>
+    <td style="${cellStyle}">
+      <select name="finding_technician[]" style="${selStyle}">
+        <option value="">----------</option>
+        ${techOpts}
+      </select>
+    </td>
+    <td style="${cellStyle}">
+      <select name="finding_status[]" style="${selStyle}">
+        <option value="Pending">Pending</option>
+        <option value="Confirmed">Confirmed</option>
+        <option value="Resolved">Resolved</option>
+      </select>
+    </td>
+    <td style="${cellStyle};text-align:center">
+      <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+    </td>`;
+  document.getElementById('findingsBody').appendChild(tr);
+  refreshAllVehicleDropdowns();
+}
+
 function setCatText(sel) {
   const hidden = sel.closest('td').querySelector('.cat-txt');
   if (hidden) hidden.value = sel.options[sel.selectedIndex]?.text || '';
 }
 
-function removeRow(btn) {
-  const tbody = btn.closest('tbody');
-  const tr    = btn.closest('tr');
-  if (tbody.rows.length > 1) tr.remove();
-  else {
-    tr.querySelectorAll('input[type=text],input[type=number]')
-      .forEach(i => i.value = '');
-    tr.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
-  }
-  calcTotals && calcTotals();
-}
-
 /* ══════════════════════════════════════════
-   SPARE PARTS — image 2 style
- ══════════════════════════════════════════ */
+   SPARE PARTS
+══════════════════════════════════════════ */
 const ALL_ITEMS_URL = "{% url 'jobcard_app:ajax_get_all_items' %}";
 let allJcItems = [];
 
-/* ── Load all items & init relational mapping on page load ── */
 document.addEventListener('DOMContentLoaded', function () {
   initComplaintRows();
+  refreshAllVehicleDropdowns();
 
   const jcForm = document.querySelector('form');
   if (jcForm) {
@@ -1593,7 +1599,6 @@ document.addEventListener('DOMContentLoaded', function () {
     .catch(e => console.error('Items load error:', e));
 });
 
-/* ── Build the top input dropdown ── */
 function buildItemDropdown() {
   const sel = document.getElementById('addPartItem');
   if (!sel) return;
@@ -1610,7 +1615,6 @@ function buildItemDropdown() {
   });
 }
 
-/* ── When item selected from top dropdown ── */
 function onAddPartItemChange(sel) {
   const opt = sel.options[sel.selectedIndex];
   if (!opt || !opt.value) return;
@@ -1624,7 +1628,6 @@ function onAddPartItemChange(sel) {
   calcAddPartAmount();
 }
 
-/* ── Calc amount in top input row ── */
 function calcAddPartAmount() {
   const qty  = parseFloat(document.getElementById('addPartQty')?.value)  || 0;
   const rate = parseFloat(document.getElementById('addPartRate')?.value) || 0;
@@ -1632,8 +1635,8 @@ function calcAddPartAmount() {
   if (amtEl) amtEl.value = (qty * rate).toFixed(3);
 }
 
-/* ── Commit — add row to table ── */
 function commitAddPart() {
+  const vehSel = document.getElementById('addPartVehicle');
   const sel    = document.getElementById('addPartItem');
   const partNo = document.getElementById('addPartNo');
   const qty    = document.getElementById('addPartQty');
@@ -1652,30 +1655,33 @@ function commitAddPart() {
   const qtyVal   = parseFloat(qty?.value) || 1;
   const rateVal  = parseFloat(rate?.value) || 0;
   const amtVal   = (qtyVal * rateVal).toFixed(3);
+  const vehId    = vehSel?.value || '';
 
-  // Add row to table
-  addPartRowToTable(itemId, itemName, partNo?.value || '', qtyVal, rateVal, amtVal);
+  addPartRowToTable(itemId, itemName, partNo?.value || '', qtyVal, rateVal, amtVal, vehId);
 
-  // Reset top input row
-  if (sel)    sel.value    = '';
-  if (partNo) partNo.value = '';
-  if (qty)    qty.value    = 1;
-  if (rate)   rate.value   = '0.000';
-  if (amt)    amt.value    = '0.000';
+  if (vehSel)  vehSel.value = '';
+  if (sel)     sel.value    = '';
+  if (partNo)  partNo.value = '';
+  if (qty)     qty.value    = 1;
+  if (rate)    rate.value   = '0.000';
+  if (amt)     amt.value    = '0.000';
 
-  // Hide empty state
   const emptyEl = document.getElementById('partsEmpty');
   if (emptyEl) emptyEl.style.display = 'none';
 
   calcPartsTotal();
 }
 
-/* ── Add a row to the table ── */
-function addPartRowToTable(itemId, itemName, partNo, qty, rate, amtVal) {
+function addPartRowToTable(itemId, itemName, partNo, qty, rate, amtVal, vehId = '') {
   const tbody = document.getElementById('partsBody');
   const tr    = document.createElement('tr');
   tr.style.borderBottom = '1px solid #f3f4f6';
   tr.innerHTML = `
+    <td style="padding:10px 14px">
+      <select name="part_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
+        ${buildVehSelectHtml(vehId)}
+      </select>
+    </td>
     <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:500">
       ${itemName}
       <input type="hidden" name="part_item[]"    value="${itemName}">
@@ -1684,39 +1690,34 @@ function addPartRowToTable(itemId, itemName, partNo, qty, rate, amtVal) {
     <td style="padding:10px 14px">
       <input type="text" name="part_number[]" value="${partNo}"
              placeholder="Part No."
-             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                    padding:6px 9px;font-size:12px;color:#374151;outline:none">
+             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;color:#374151;outline:none">
     </td>
     <td style="padding:10px 14px">
       <input type="number" name="part_qty[]" value="${qty}"
              min="0" step="0.01" class="pq"
-             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                    padding:6px 9px;font-size:12px;text-align:right;outline:none"
+             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;text-align:right;outline:none"
              oninput="calcPartRow(this)">
     </td>
     <td style="padding:10px 14px">
       <input type="number" name="part_rate[]" value="${parseFloat(rate).toFixed(3)}"
              min="0" step="0.001" class="pr"
-             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                    padding:6px 9px;font-size:12px;text-align:right;outline:none"
+             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;text-align:right;outline:none"
              oninput="calcPartRow(this)">
     </td>
     <td style="padding:10px 14px;text-align:right">
-      <span class="pa" style="font-size:13px;font-weight:700;
-                               color:#111827;font-family:monospace">${amtVal}</span>
+      <span class="pa" style="font-size:13px;font-weight:700;color:#111827;font-family:monospace">${amtVal}</span>
       <input type="hidden" name="part_amount[]" class="pa-inp" value="${amtVal}">
     </td>
     <td style="padding:10px 14px;text-align:center">
       <button type="button" onclick="removePartRow(this)"
-              style="background:#dc2626;color:#fff;border:none;border-radius:5px;
-                     padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">
+              style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">
         Remove
       </button>
     </td>`;
   tbody.appendChild(tr);
+  refreshAllVehicleDropdowns();
 }
 
-/* ── Calc single row when qty/rate edited inline ── */
 function calcPartRow(inp) {
   const tr   = inp.closest('tr');
   const qty  = parseFloat(tr.querySelector('.pq')?.value)  || 0;
@@ -1729,7 +1730,6 @@ function calcPartRow(inp) {
   calcPartsTotal();
 }
 
-/* ── Remove row ── */
 function removePartRow(btn) {
   btn.closest('tr').remove();
   const tbody   = document.getElementById('partsBody');
@@ -1738,7 +1738,6 @@ function removePartRow(btn) {
   calcPartsTotal();
 }
 
-/* ── Parts total ── */
 function calcPartsTotal() {
   let total = 0;
   document.querySelectorAll('#partsBody .pa-inp').forEach(i => {
@@ -1746,13 +1745,20 @@ function calcPartsTotal() {
   });
   const el = document.getElementById('partsTotal');
   if (el) el.textContent = total.toFixed(3);
-  calcTotals && calcTotals();
+  calcTotals();
 }
-/* ── Add Labour ── */
+
+/* ══════════════════════════════════════════
+   LABOUR
+══════════════════════════════════════════ */
 function addLabour() {
-  const techOpts = `{% for s in technicians %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}`;
   const tr = document.createElement('tr');
   tr.innerHTML = `
+    <td>
+      <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
+        ${buildVehSelectHtml('')}
+      </select>
+    </td>
     <td><select name="labour_technician[]"><option value="">----------</option>${techOpts}</select></td>
     <td><input type="text" name="labour_description[]" placeholder="Labour description..."></td>
     <td><input type="number" name="labour_hours[]" value="1" min="0" step="0.5" class="lab-hrs" oninput="calcLabourRow(this)"></td>
@@ -1760,16 +1766,7 @@ function addLabour() {
     <td><input type="number" name="labour_amount[]" value="0" readonly class="lab-amount" style="background:#f9fafb"></td>
     <td><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕ Remove</button></td>`;
   document.getElementById('labourBody').appendChild(tr);
-}
-
-/* ── Calculations ── */
-function calcPartRow(inp) {
-  const tr  = inp.closest('tr');
-  const qty = parseFloat(tr.querySelector('.part-qty').value) || 0;
-  const rate= parseFloat(tr.querySelector('.part-rate').value) || 0;
-  const amt = tr.querySelector('.part-amount');
-  if (amt) amt.value = (qty * rate).toFixed(3);
-  calcTotals();
+  refreshAllVehicleDropdowns();
 }
 
 function calcLabourRow(inp) {
@@ -1781,19 +1778,21 @@ function calcLabourRow(inp) {
   calcTotals();
 }
 
+/* ══════════════════════════════════════════
+   TOTALS
+══════════════════════════════════════════ */
 function calcTotals() {
   let parts = 0, labour = 0;
-  document.querySelectorAll('.part-amount').forEach(i => parts += parseFloat(i.value) || 0);
+  document.querySelectorAll('.pa-inp').forEach(i => parts += parseFloat(i.value) || 0);
   document.querySelectorAll('.lab-amount').forEach(i => labour += parseFloat(i.value) || 0);
   const grand = parts + labour;
   document.getElementById('partsTotal').textContent  = parts.toFixed(3);
-  document.getElementById('labourTotal').textContent = labour.toFixed(3) ;
-  document.getElementById('gtParts').textContent     = parts.toFixed(3);
-  document.getElementById('gtLabour').textContent    = labour.toFixed(3) ;
-  document.getElementById('gtGrand').textContent     = grand.toFixed(3);
+  document.getElementById('labourTotal').textContent = labour.toFixed(3);
+  document.getElementById('gtParts').textContent      = parts.toFixed(3);
+  document.getElementById('gtLabour').textContent     = labour.toFixed(3);
+  document.getElementById('gtGrand').textContent      = grand.toFixed(3);
 }
 
-// Init
 document.addEventListener('DOMContentLoaded', calcTotals);
 document.addEventListener('DOMContentLoaded', function () {
   const customerSelect = document.getElementById('custSel');
@@ -1803,48 +1802,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 });
-function getJobVehicleOptions() {
-  const opts = [];
-  document.querySelectorAll('#vehBody tr').forEach(tr => {
-    const sel = tr.querySelector('.veh-select');
-    if (sel && sel.value) {
-      const selectedOpt = sel.options[sel.selectedIndex];
-      const label = selectedOpt ? selectedOpt.text.trim() : '';
-      if (label) {
-        opts.push({ id: sel.value, label: label });
-      }
-    }
-  });
-  return opts;
-}
-
-function buildVehSelectHtml(selectedId) {
-  const opts = getJobVehicleOptions();
-  let html = '<option value="">— Vehicle —</option>';
-  opts.forEach(o => {
-    const isSelected = String(o.id) === String(selectedId);
-    html += `<option value="${o.id}" ${isSelected ? 'selected' : ''}>${o.label}</option>`;
-  });
-  return html;
-}
-
-function refreshAllVehicleDropdowns() {
-  const opts = getJobVehicleOptions();
-  document.querySelectorAll('.row-veh-select').forEach(sel => {
-    let current = sel.value;
-    if (!current && opts.length === 1) {
-      current = opts[0].id;
-    }
-    sel.innerHTML = buildVehSelectHtml(current);
-  });
-  const addPartVeh = document.getElementById('addPartVehicle');
-  if (addPartVeh) {
-    let current = addPartVeh.value;
-    if (!current && opts.length === 1) {
-      current = opts[0].id;
-    }
-    addPartVeh.innerHTML = buildVehSelectHtml(current);
-  }
-}
 </script>
+
+{# ── Item Master data for JS dropdowns ─────────────────────────────── #}
+<script id="itemMasterData" type="application/json">{{ items_json|safe }}</script>
+
+{# ── Prefill Findings (technician findings from inspection) ─────────── #}
+{% if prefill_findings %}
+<ul id="prefillFindingsList" style="display:none;">
+  {% for f in prefill_findings %}<li>{{ f }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+
+{# Inspection Complaints prefill data for JS and test assertions #}
+{% if insp_complaints %}
+<ul id="inspComplaintsList" style="display:none;">
+  {% for c in insp_complaints %}<li>{{ c.description }}</li>{% endfor %}
+</ul>
+{% endif %}
 {% endblock %}

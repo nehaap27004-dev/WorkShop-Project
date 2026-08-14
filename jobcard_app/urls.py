@@ -21,10 +21,31 @@ urlpatterns = [
           views.service_category_delete,
           name='service_category_delete'),
 
+     # Service Type
+     path('service-type/',
+          views.service_type_list,
+          name='service_type_list'),
+
+     path('service-type/create/',
+          views.service_type_create,
+          name='service_type_create'),
+
+     path('service-type/<int:pk>/edit/',
+          views.service_type_edit,
+          name='service_type_edit'),
+
+     path('service-type/<int:pk>/delete/',
+          views.service_type_delete,
+          name='service_type_delete'),
+
      # AJAX
      path('ajax/get-service-categories/',
           views.get_service_categories,
           name='jc_get_service_categories'),
+
+     path('ajax/get-service-types/',
+          views.get_service_types,
+          name='jc_get_service_types'),
 
      path('ajax/get-categories/',
           
@@ -224,4 +245,10 @@ urlpatterns = [
     path('ajax/vehicles-by-customer/', views.ajax_wv_by_customer, name='ajax_wv_by_customer'),
     path('ajax/relational-mapping/', views.ajax_get_relational_mapping, name='ajax_get_relational_mapping'),
 
-]
+    # ── Skill Tag Master ──────────────────────────────────────
+    path('skill-tags/', views.skill_tag_list, name='skill_tag_list'),
+    path('skill-tags/create/', views.skill_tag_save, name='skill_tag_create'),
+    path('skill-tags/<int:pk>/edit/', views.skill_tag_save, name='skill_tag_edit'),
+    path('skill-tags/<int:pk>/toggle/', views.skill_tag_toggle, name='skill_tag_toggle'),
+    path('skill-tags/<int:pk>/delete/', views.skill_tag_delete, name='skill_tag_delete'),
+]

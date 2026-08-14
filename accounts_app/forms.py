@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from fleet_app.common import filter_voucher_types , get_ledgers_by_group_ids
+from fleet_app.common import filter_voucher_types, get_ledgers_by_group_ids, get_ledgers_by_group_names
 from .models import *
 from django.forms import inlineformset_factory
 from django.forms import modelformset_factory
@@ -183,8 +183,12 @@ class VendorForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        instance.groups_id = 28  # sundry CR - automatically assign group
-        instance.types = 'CR'    # Always CR 
+        from accounts_app.models import Groups
+        vendor_group = Groups.objects.filter(groupName='Sundry Creditors').first()
+        if vendor_group is None:
+            raise ValueError("'Sundry Creditors' group not found. Please ensure it exists in the Groups table.")
+        instance.groups = vendor_group
+        instance.types = 'CR'    # Always CR
         if commit:
             instance.save()
         return instance
@@ -224,7 +228,7 @@ class LocalPaymentForm(forms.ModelForm):
             except:
                 pass
             
-        self.fields['payment_mode'].queryset = get_ledgers_by_group_ids(8, 5)    
+        self.fields['payment_mode'].queryset = get_ledgers_by_group_names('Cash & Bank')    
 
         # Voucher type filter 
         filter_voucher_types(self, [11])     
@@ -259,7 +263,7 @@ class LocalPaymentItemForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.fields['ledger'].queryset = get_ledgers_by_group_ids(12, 16)
+        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Sundry Creditors', 'Sundry Debtors')
                 
 
 LocalPaymentItemFormSet = inlineformset_factory(LocalPayment, LocalPaymentItems, form=LocalPaymentItemForm, extra=1)
@@ -544,8 +548,8 @@ class ReceiptBillMasterForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     # Ledger filter by Groups cash account & sundry Sundry Creditors 
-        self.fields['Ledger'].queryset = get_ledgers_by_group_ids(8, 5)    
-        self.fields['Customer'].queryset = get_ledgers_by_group_ids(29)   
+        self.fields['Ledger'].queryset = get_ledgers_by_group_names('Cash & Bank')    
+        self.fields['Customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')   
 
 
 class ReceiptBillDetailsForm(forms.ModelForm):
@@ -602,8 +606,8 @@ class PaymentBillMasterForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     # Ledger filter by Groups cash account & sundry Sundry Creditors 
-        self.fields['Ledger'].queryset = get_ledgers_by_group_ids(8, 5)    
-        self.fields['Supplier'].queryset = get_ledgers_by_group_ids(28)   
+        self.fields['Ledger'].queryset = get_ledgers_by_group_names('Cash & Bank')    
+        self.fields['Supplier'].queryset = get_ledgers_by_group_names('Sundry Creditors')   
 
 
 class PaymentBillDetailsForm(forms.ModelForm):
@@ -661,7 +665,7 @@ class PaymentMasterForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         # Ledger filter by Groups cash account & Bank account
-        self.fields['Ledger'].queryset = get_ledgers_by_group_ids(8, 5)
+        self.fields['Ledger'].queryset = get_ledgers_by_group_names('Cash & Bank')
         # Voucher type filter 
         filter_voucher_types(self, [3])    
 
@@ -727,7 +731,7 @@ class ReceiptMasterForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         # Ledger filter by Groups cash account & sundry creditors 
-        self.fields['Ledger'].queryset = get_ledgers_by_group_ids(8, 5)
+        self.fields['Ledger'].queryset = get_ledgers_by_group_names('Cash & Bank')
 
         # Voucher type filter 
         filter_voucher_types(self, [4])       
