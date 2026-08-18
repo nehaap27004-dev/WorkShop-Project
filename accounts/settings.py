@@ -177,7 +177,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts_app.CustomUser'
 
 FINYEAR = "2026-01-01"
-=======
+
 """
 Django settings for accounts project.
 
@@ -362,4 +362,3 @@ MESSAGE_TAGS = {
     messages.WARNING: 'warning',
     messages.ERROR: 'danger',   # <-- this is the important mapping
 }
->>>>>>> e7921e667c65bc33572fe44057324ea27df42612

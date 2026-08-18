@@ -725,7 +725,8 @@ def contra_create(request):
     if request.method == "POST":
         form = ContraForm(request.POST)
         if form.is_valid():
-            form.save()
+            contra = form.save()
+            create_ledger_postings_for_contra(contra)
             messages.success(request, "Contra entry created successfully!")
             return redirect("accounts_app:contra_list")  # Replace with your desired redirect URL name
         else:
@@ -752,11 +753,13 @@ def journal_create(request):
     if request.method == 'POST':
         form = JournalForm(request.POST)
         if form.is_valid():
-            form.save()
+            journal = form.save()
+            create_ledger_postings_for_journal(journal)
             return redirect('accounts_app:journal_list')
     else:
         form = JournalForm()
     return render(request, 'journal_form.html', {'form': form})
+
 
 def group_management(request, group_id=None, delete_id=None):
 
@@ -3061,20 +3064,136 @@ def payment_master_delete(request, pk):
         }, status=500)
         
 def ledger_posting_list(request):
-    # Get all postings
-    postings = LedgerPosting.objects.all().select_related('ledger', 'VoucherType').order_by('-date', '-id')
-    
-    # Get filter options
-    voucher_types = Vouchers.objects.all()
-    ledgers = LedgerCreation.objects.all()
-    
+    try:
+        sync_all_transactions_to_ledger_postings()
+    except Exception as e:
+        print(f"Error during auto-sync of postings: {e}")
+
+    ledger_id = request.GET.get('ledger')
+    voucher_type_id = request.GET.get('voucher_type')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    search_q = request.GET.get('q', '').strip()
+
+    postings_qs = LedgerPosting.objects.filter(IsDeleted=False).select_related(
+        'ledger', 'VoucherType', 'RefVoucherType', 'CostCenter'
+    )
+
+    if ledger_id and ledger_id != "":
+        postings_qs = postings_qs.filter(ledger_id=ledger_id)
+
+    if voucher_type_id and voucher_type_id != "":
+        postings_qs = postings_qs.filter(VoucherType_id=voucher_type_id)
+
+    if date_from:
+        postings_qs = postings_qs.filter(date__gte=date_from)
+
+    if date_to:
+        postings_qs = postings_qs.filter(date__lte=date_to)
+
+    if search_q:
+        if search_q.isdigit():
+            postings_qs = postings_qs.filter(Q(VoucherNo=int(search_q)) | Q(RefVoucherNo=int(search_q)))
+        else:
+            postings_qs = postings_qs.filter(Q(ledger__ledger_name__icontains=search_q) | Q(VoucherType__VoucherName__icontains=search_q))
+
+    raw_postings = list(postings_qs.order_by('date', 'id'))
+
+    v_keys = set((p.VoucherType_id, p.VoucherNo) for p in raw_postings if p.VoucherType_id and p.VoucherNo)
+    sibling_map = {}
+    if v_keys:
+        q_filter = Q()
+        for vtype_id, vno in v_keys:
+            q_filter |= Q(VoucherType_id=vtype_id, VoucherNo=vno)
+        all_siblings = LedgerPosting.objects.filter(q_filter, IsDeleted=False).select_related('ledger')
+        for sib in all_siblings:
+            key = (sib.VoucherType_id, sib.VoucherNo)
+            if key not in sibling_map:
+                sibling_map[key] = []
+            sibling_map[key].append(sib)
+
+    narration_map = {}
+    try:
+        for j in Journal.objects.filter(narration__isnull=False):
+            narration_map[('Journal', j.id)] = j.narration
+        for c in Contra.objects.filter(remark__isnull=False):
+            narration_map[('Contra', c.id)] = c.remark
+        for pm in PaymentMaster.objects.all():
+            if getattr(pm, 'narration', None):
+                narration_map[('Payment', pm.id)] = pm.narration
+                narration_map[('Payment Voucher', pm.id)] = pm.narration
+        for rm in ReceiptMaster.objects.all():
+            if getattr(rm, 'narration', None):
+                narration_map[('Receipt', rm.id)] = rm.narration
+                narration_map[('Receipt Voucher', rm.id)] = rm.narration
+        for lp in LocalPayment.objects.all():
+            remark = getattr(lp, 'remark', '') or getattr(lp, 'description', '')
+            if remark:
+                narration_map[('Local Payment', lp.id)] = remark
+    except Exception as e:
+        print(f"Error fetching narrations: {e}")
+
+    running_balance = Decimal('0.000')
+    processed_postings = []
+
+    for post in raw_postings:
+        d = post.debit or Decimal('0.000')
+        c = post.credit or Decimal('0.000')
+        running_balance += (d - c)
+
+        key = (post.VoucherType_id, post.VoucherNo)
+        sibs = sibling_map.get(key, [])
+        particulars_list = []
+        for sib in sibs:
+            if sib.ledger_id != post.ledger_id:
+                prefix = "To " if (post.debit and post.debit > 0) else "By "
+                particulars_list.append(f"{prefix}{sib.ledger.ledger_name}")
+
+        particulars_str = ", ".join(particulars_list) if particulars_list else "As per Voucher"
+        vname = post.VoucherType.VoucherName if post.VoucherType else ''
+        narration_str = narration_map.get((vname, post.VoucherNo), '')
+
+        processed_postings.append({
+            'id': post.id,
+            'date': post.date,
+            'VoucherType': post.VoucherType,
+            'VoucherNo': post.VoucherNo,
+            'RefVoucherNo': post.RefVoucherNo,
+            'RefVoucherType': post.RefVoucherType,
+            'ledger': post.ledger,
+            'debit': post.debit,
+            'credit': post.credit,
+            'particulars': particulars_str,
+            'narration': narration_str,
+            'running_balance': running_balance,
+        })
+
+    processed_postings.reverse()
+
+    total_debit = sum((p['debit'] or Decimal('0.000')) for p in processed_postings)
+    total_credit = sum((p['credit'] or Decimal('0.000')) for p in processed_postings)
+    net_balance = total_debit - total_credit
+
+    voucher_types = Vouchers.objects.all().order_by('VoucherName')
+    ledgers = LedgerCreation.objects.all().order_by('ledger_name')
+
     context = {
-        'postings': postings,
+        'postings': processed_postings,
         'voucher_types': voucher_types,
         'ledgers': ledgers,
+        'ledger_id': ledger_id,
+        'voucher_type_id': voucher_type_id,
+        'date_from': date_from,
+        'date_to': date_to,
+        'search_q': search_q,
+        'total_debit': total_debit,
+        'total_credit': total_credit,
+        'net_balance': net_balance,
+        'total_count': len(processed_postings),
     }
-    
+
     return render(request, 'ledger_posting_list.html', context)
+
 
 def list_receipt(request):
    
@@ -3594,3 +3713,158 @@ def supplier_outstanding_report(request):
         'to_date': to_date,
         'selected_supplier': supplier_id,
     })
+
+
+def transaction_ledger_report(request):
+    ledgers = LedgerCreation.objects.all().order_by('ledger_name')
+    vouchers = Vouchers.objects.all().order_by('VoucherName')
+
+    ledger_id = request.GET.get('ledger')
+    voucher_type_id = request.GET.get('voucher_type')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    search_q = request.GET.get('q', '').strip()
+
+    postings = LedgerPosting.objects.filter(IsDeleted=False).select_related('ledger', 'VoucherType', 'CostCenter')
+
+    if ledger_id:
+        postings = postings.filter(ledger_id=ledger_id)
+
+    if voucher_type_id:
+        postings = postings.filter(VoucherType_id=voucher_type_id)
+
+    if date_from:
+        postings = postings.filter(date__gte=date_from)
+
+    if date_to:
+        postings = postings.filter(date__lte=date_to)
+
+    if search_q:
+        if search_q.isdigit():
+            postings = postings.filter(Q(VoucherNo=int(search_q)) | Q(RefVoucherNo=int(search_q)))
+        else:
+            postings = postings.filter(Q(ledger__ledger_name__icontains=search_q) | Q(VoucherType__VoucherName__icontains=search_q))
+
+    # Group postings by transaction key: (VoucherType_id, VoucherNo)
+    transactions_dict = {}
+    for post in postings.order_by('-date', '-VoucherType_id', '-VoucherNo'):
+        key = (post.VoucherType_id, post.VoucherNo)
+        if key not in transactions_dict:
+            transactions_dict[key] = {
+                'voucher_type_id': post.VoucherType_id,
+                'voucher_type': post.VoucherType.VoucherName if post.VoucherType else 'N/A',
+                'voucher_no': post.VoucherNo,
+                'date': post.date,
+                'ref_voucher_no': post.RefVoucherNo,
+                'ref_voucher_type': post.RefVoucherType.VoucherName if post.RefVoucherType else None,
+                'cost_center': post.CostCenter.name if post.CostCenter else None,
+                'debit_entries': [],
+                'credit_entries': [],
+                'total_debit': Decimal('0.000'),
+                'total_credit': Decimal('0.000'),
+            }
+
+        tx = transactions_dict[key]
+        if post.debit and post.debit > 0:
+            tx['debit_entries'].append({
+                'ledger': post.ledger.ledger_name,
+                'ledger_id': post.ledger.id,
+                'amount': post.debit
+            })
+            tx['total_debit'] += post.debit
+        if post.credit and post.credit > 0:
+            tx['credit_entries'].append({
+                'ledger': post.ledger.ledger_name,
+                'ledger_id': post.ledger.id,
+                'amount': post.credit
+            })
+            tx['total_credit'] += post.credit
+
+    transactions_list = list(transactions_dict.values())
+    for tx in transactions_list:
+        tx['is_balanced'] = (tx['total_debit'] == tx['total_credit'])
+        tx['amount'] = max(tx['total_debit'], tx['total_credit'])
+
+    grand_debit = sum(tx['total_debit'] for tx in transactions_list)
+    grand_credit = sum(tx['total_credit'] for tx in transactions_list)
+
+    context = {
+        'transactions': transactions_list,
+        'ledgers': ledgers,
+        'vouchers': vouchers,
+        'ledger_id': ledger_id,
+        'voucher_type_id': voucher_type_id,
+        'date_from': date_from,
+        'date_to': date_to,
+        'search_q': search_q,
+        'grand_debit': grand_debit,
+        'grand_credit': grand_credit,
+        'total_transactions': len(transactions_list),
+    }
+
+    return render(request, 'transaction_ledger_report.html', context)
+
+
+def transaction_ledger_detail(request, voucher_type_id, voucher_no):
+    voucher_type = get_object_or_404(Vouchers, pk=voucher_type_id)
+    postings = LedgerPosting.objects.filter(
+        VoucherType_id=voucher_type_id,
+        VoucherNo=voucher_no,
+        IsDeleted=False
+    ).select_related('ledger', 'VoucherType', 'RefVoucherType', 'CostCenter')
+
+    if not postings.exists():
+        messages.error(request, "No ledger entries found for this transaction.")
+        return redirect('accounts_app:transaction_ledger_report')
+
+    first_post = postings.first()
+    date = first_post.date
+    ref_voucher_no = first_post.RefVoucherNo
+    ref_voucher_type = first_post.RefVoucherType
+    cost_center = first_post.CostCenter
+
+    total_debit = sum((p.debit or Decimal('0.000')) for p in postings)
+    total_credit = sum((p.credit or Decimal('0.000')) for p in postings)
+    is_balanced = (total_debit == total_credit)
+
+    # Fetch extra model info if available
+    extra_info = {}
+    vname = voucher_type.VoucherName.lower()
+
+    if 'payment' in vname and 'local' not in vname and 'bill' not in vname:
+        pm = PaymentMaster.objects.filter(voucher_no=voucher_no).first()
+        if pm:
+            extra_info['narration'] = getattr(pm, 'narration', '')
+            extra_info['payment_mode'] = getattr(pm, 'payment_mode', '')
+    elif 'receipt' in vname and 'bill' not in vname:
+        rm = ReceiptMaster.objects.filter(voucher_no=voucher_no).first()
+        if rm:
+            extra_info['narration'] = getattr(rm, 'narration', '')
+    elif 'local' in vname:
+        lp = LocalPayment.objects.filter(id=voucher_no).first()
+        if lp:
+            extra_info['narration'] = getattr(lp, 'remark', '') or getattr(lp, 'description', '')
+    elif 'journal' in vname:
+        j = Journal.objects.filter(voucher_no=voucher_no).first()
+        if j:
+            extra_info['narration'] = getattr(j, 'narration', '')
+    elif 'contra' in vname:
+        c = Contra.objects.filter(voucher_no=voucher_no).first()
+        if c:
+            extra_info['narration'] = getattr(c, 'narration', '')
+
+    context = {
+        'voucher_type': voucher_type,
+        'voucher_no': voucher_no,
+        'date': date,
+        'postings': postings,
+        'total_debit': total_debit,
+        'total_credit': total_credit,
+        'is_balanced': is_balanced,
+        'ref_voucher_no': ref_voucher_no,
+        'ref_voucher_type': ref_voucher_type,
+        'cost_center': cost_center,
+        'extra_info': extra_info,
+    }
+
+    return render(request, 'transaction_ledger_detail.html', context)

@@ -1026,6 +1026,33 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAccCounts();
 
   {% if edit_mode %}
+  // Populate Vehicle Type / Manufacturer / Model (disabled select still has a readable .value)
+  fetch(VEH_URL + '?customer_id=' + document.getElementById('custSel').value)
+    .then(r => r.json())
+    .then(d => {
+      const v = d.vehicles.find(x => String(x.id) === String("{{ insp.vehicle_id }}"));
+      if (!v) return;
+
+      // Vehicle Type
+      const typeSel = document.getElementById('vehTypeSel');
+      [...typeSel.options].forEach(to => to.selected = String(to.value) === String(v.vehicle_type_id));
+
+      // Fuel type (only if not already saved on the inspection)
+      const fuelSel = document.getElementById('vehFuelSel');
+      if (fuelSel && !fuelSel.value) {
+        [...fuelSel.options].forEach(fo => fo.selected = fo.value === v.fuel_type);
+      }
+
+      // Color (only fill if empty, so it doesn't clobber a saved value)
+      const colorInp = document.getElementById('vehColorInp');
+      if (colorInp && !colorInp.value) colorInp.value = v.color || '';
+
+      // Chain: Manufacturer -> Model
+      loadVehTypeManufacturers(v.manufacturer_id, () => {
+        loadVehTypeModels(v.vehicle_model_id);
+      });
+    });
+
   // Load saved interior ratings
   const savedInterior = {
     dashboard: "{{ interior.dashboard|default:'good' }}",

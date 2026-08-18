@@ -387,6 +387,8 @@ class JobCard(models.Model):
             self.job_number = generate_voucher_number('JobCard', JobCard, 'job_number', default_prefix='JC-')
         super().save(*args, **kwargs)
 
+
+
     def get_parts_total(self):
         return sum((p.total_price or 0) for p in self.parts.all())
 

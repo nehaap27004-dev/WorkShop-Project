@@ -1083,4 +1083,136 @@ def handle_opening_balance_ledger_posting(ledger, action="create"):
             debit=debit,
             credit=credit,
             FY=fy_year
-        )    
+        )
+
+
+def get_or_create_voucher_type(vname, vtype=None, prefix=None):
+    if not vtype:
+        vtype = vname
+    vt = Vouchers.objects.filter(VoucherName__iexact=vname).first()
+    if not vt:
+        vt = Vouchers.objects.filter(VoucherType__iexact=vtype).first()
+    if not vt:
+        vt = Vouchers.objects.create(
+            VoucherType=vtype,
+            VoucherName=vname,
+            Prefix=prefix or (vname[:3].upper() + '-'),
+            StartingNo=1,
+            MinLength=5,
+            isDefault=True
+        )
+    return vt
+
+
+def create_ledger_postings_for_journal(journal):
+    try:
+        vt = get_or_create_voucher_type('Journal', 'Journal', 'JNL-')
+        vno = journal.id
+
+        LedgerPosting.objects.filter(VoucherType=vt, VoucherNo=vno).delete()
+
+        if journal.dr_ledger and journal.amount:
+            LedgerPosting.objects.create(
+                date=journal.date,
+                VoucherType=vt,
+                VoucherNo=vno,
+                ledger=journal.dr_ledger,
+                debit=journal.amount,
+                credit=None,
+                IsDeleted=False
+            )
+
+        if journal.cr_ledger and journal.amount:
+            LedgerPosting.objects.create(
+                date=journal.date,
+                VoucherType=vt,
+                VoucherNo=vno,
+                ledger=journal.cr_ledger,
+                debit=None,
+                credit=journal.amount,
+                IsDeleted=False
+            )
+    except Exception as e:
+        print(f"Error creating journal ledger postings: {e}")
+
+
+def create_ledger_postings_for_contra(contra):
+    try:
+        vt = get_or_create_voucher_type('Contra', 'Contra', 'CNT-')
+        vno = contra.id
+
+        LedgerPosting.objects.filter(VoucherType=vt, VoucherNo=vno).delete()
+
+        if contra.dr_ledger and contra.amount:
+            LedgerPosting.objects.create(
+                date=contra.date,
+                VoucherType=vt,
+                VoucherNo=vno,
+                ledger=contra.dr_ledger,
+                debit=contra.amount,
+                credit=None,
+                IsDeleted=False
+            )
+
+        if contra.cr_ledger and contra.amount:
+            LedgerPosting.objects.create(
+                date=contra.date,
+                VoucherType=vt,
+                VoucherNo=vno,
+                ledger=contra.cr_ledger,
+                debit=None,
+                credit=contra.amount,
+                IsDeleted=False
+            )
+    except Exception as e:
+        print(f"Error creating contra ledger postings: {e}")
+
+
+def sync_all_transactions_to_ledger_postings():
+    """Sync all unposted transactions across the system to LedgerPosting"""
+    from accounts_app.models import Journal, Contra, PaymentMaster, ReceiptMaster, LocalPayment, ReceiptBillMaster, PaymentBillMaster
+
+    try:
+        # 1. Sync Journals
+        for j in Journal.objects.all():
+            vt = get_or_create_voucher_type('Journal', 'Journal', 'JNL-')
+            if not LedgerPosting.objects.filter(VoucherType=vt, VoucherNo=j.id).exists():
+                create_ledger_postings_for_journal(j)
+
+        # 2. Sync Contras
+        for c in Contra.objects.all():
+            vt = get_or_create_voucher_type('Contra', 'Contra', 'CNT-')
+            if not LedgerPosting.objects.filter(VoucherType=vt, VoucherNo=c.id).exists():
+                create_ledger_postings_for_contra(c)
+
+        # 3. Sync Payments
+        for p in PaymentMaster.objects.all():
+            vt = getattr(p, 'voucherType', None) or get_or_create_voucher_type('Payment', 'Payment', 'PAY-')
+            if not LedgerPosting.objects.filter(VoucherType=vt, VoucherNo=p.id).exists():
+                create_ledger_postings_for_payment(p)
+
+        # 4. Sync Receipts
+        for r in ReceiptMaster.objects.all():
+            vt = getattr(r, 'voucherType', None) or get_or_create_voucher_type('Receipt', 'Receipt', 'RCP-')
+            if not LedgerPosting.objects.filter(VoucherType=vt, VoucherNo=r.id).exists():
+                create_ledger_postings_for_receipt(r)
+
+        # 5. Sync Local Payments
+        for lp in LocalPayment.objects.all():
+            vt = getattr(lp, 'voucherType', None) or get_or_create_voucher_type('Local Payment', 'Local Payment', 'LPA-')
+            if not LedgerPosting.objects.filter(VoucherType=vt, VoucherNo=lp.id).exists():
+                create_ledger_postings_for_local_payment(lp)
+
+        # 6. Sync Receipt Bill Clearances
+        for rb in ReceiptBillMaster.objects.all():
+            vt = getattr(rb, 'VoucherType', None) or get_or_create_voucher_type('Receipt Bill', 'Receipt Bill', 'RBC-')
+            if not LedgerPosting.objects.filter(VoucherType=vt, VoucherNo=rb.id).exists():
+                create_ledger_postings_for_receiptbill(rb)
+
+        # 7. Sync Payment Bill Clearances
+        for pb in PaymentBillMaster.objects.all():
+            vt = getattr(pb, 'VoucherType', None) or get_or_create_voucher_type('Payment Bill', 'Payment Bill', 'PBC-')
+            if not LedgerPosting.objects.filter(VoucherType=vt, VoucherNo=pb.id).exists():
+                create_ledger_postings_for_paymentbill(pb)
+    except Exception as e:
+        print(f"Sync error: {e}")

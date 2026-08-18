@@ -759,6 +759,11 @@ def jobcard_create(request):
                 .values_list('description', flat=True).order_by('order')
             )
 
+    from jobcard_app.utils import generate_voucher_number
+    from fleet_app.models import Vouchers
+    next_job_number = generate_voucher_number('JobCard', JobCard, 'job_number', default_prefix='JC-')
+    voucher_types = Vouchers.objects.all().order_by('VoucherName')
+
     if request.method == 'POST':
         return _save_jobcard(request, job=None)
 
@@ -770,6 +775,8 @@ def jobcard_create(request):
 
     return render(request, 'jobcard_app/jobcard_form.html', {
         'jobcard':      None,
+        'next_job_number': next_job_number,
+        'voucher_types': voucher_types,
         'customers':    customers,
         'technicians':  technicians,
         'advisors':     advisors,
@@ -789,11 +796,30 @@ def jobcard_create(request):
     })
 
 
+def get_next_jobcard_number(request):
+    """AJAX view to get next jobcard voucher number"""
+    from fleet_app.models import Vouchers
+    from jobcard_app.utils import generate_voucher_number
+    from .models import JobCard
+
+    voucher_type_id = request.GET.get('voucher_type_id')
+    if voucher_type_id:
+        try:
+            vt = Vouchers.objects.get(pk=voucher_type_id)
+            num = vt.get_next_voucher_number(JobCard, 'job_number')
+            return JsonResponse({'job_number': num, 'success': True})
+        except Vouchers.DoesNotExist:
+            pass
+
+    next_num = generate_voucher_number('JobCard', JobCard, 'job_number', default_prefix='JC-')
+    return JsonResponse({'job_number': next_num, 'success': True})
+
+
 @login_required
 def jobcard_edit(request, pk):
     from .models import ServiceCategory
+    from fleet_app.models import Vouchers
 
-    
     job = get_object_or_404(JobCard, pk=pk)
 
     if request.method == 'POST':
@@ -804,17 +830,18 @@ def jobcard_edit(request, pk):
     from .models import ServiceCategory
     customers   = LedgerCreation.objects.filter(
                       groups_id=2).order_by('ledger_name')
-    
+
     categories = ServiceCategory.objects.filter(is_active=True).order_by('name')
     technicians = Staff.objects.filter(
                     status='Active',
                     staff_category__name='Technician').order_by('full_name')
     advisors    = Staff.objects.filter(status='Active').order_by('full_name')
+    voucher_types = Vouchers.objects.all().order_by('VoucherName')
+
     return render(request, 'jobcard_app/jobcard_form.html', {
         'job':          job,
         'jobcard':      job,
-        
-
+        'voucher_types': voucher_types,
         'customers':    customers,
         'technicians':  technicians,
         'advisors':     advisors,
@@ -829,6 +856,7 @@ def jobcard_edit(request, pk):
 def _save_jobcard(request, job=None):
     from django.utils import timezone
     from accounts_app.models import LedgerCreation
+    from fleet_app.models import Vouchers
     from .models import (JobCard, JobCardVehicle, JobCardComplaint, JobCardFinding,
                          JobCardPart, JobCardLabour,
                          WorkshopVehicle, VehicleInspection, ServiceCategory,
@@ -851,6 +879,11 @@ def _save_jobcard(request, job=None):
     if job is None:
         job = JobCard(created_by=request.user.id)
 
+    job_num = request.POST.get('job_number', '').strip()
+    if job_num:
+        job.job_number = job_num
+
+
     job.customer          = customer
     job.customer_phone    = request.POST.get('customer_phone', '')
     job.vehicle_model     = request.POST.get('vehicle_model', '')
@@ -862,6 +895,7 @@ def _save_jobcard(request, job=None):
     job.delivery_date         = request.POST.get('delivery_date') or None
     job.mileage                = request.POST.get('mileage') or None
     job.save()
+
 
     source_insp_id = request.POST.get('source_inspection_id') or request.POST.get('from_inspection')
     if source_insp_id:
@@ -932,7 +966,9 @@ def _save_jobcard(request, job=None):
         cat_txt = cat_texts[i] if i < len(cat_texts) else ''
 
         ct_id  = complaint_type_ids[i] if i < len(complaint_type_ids) else None
-        ct_obj = ComplaintType.objects.filter(pk=ct_id).first() if ct_id else None
+        ct_obj = None
+        if ct_id and str(ct_id).isdigit():
+            ct_obj = ComplaintType.objects.filter(pk=ct_id).first()
 
         tech_id = tech_ids[i] if i < len(tech_ids) else None
         tech    = Staff.objects.filter(pk=tech_id).first() if tech_id else None
@@ -1209,10 +1245,7 @@ def _get_relational_mapping_dict():
 def ajax_get_relational_mapping(request):
     return JsonResponse(_get_relational_mapping_dict())
 def _save_jobcard_complaints(request, jobcard):
-    """
-    Reads complaint and finding arrays from POST and saves to DB.
-    Call this inside jobcard_create and jobcard_edit.
-    """
+    
     from .models import JobCardComplaint, JobCardFinding, ServiceCategory
     
  

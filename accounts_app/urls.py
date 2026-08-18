@@ -107,6 +107,6 @@ urlpatterns = [
     path('receipt-bill-outstanding-report/', client_outstanding_report, name='client_outstanding_report'),
     path('supplier-outstanding-report/', supplier_outstanding_report, name='supplier_outstanding_report'),
 
-    
-    
+    path('transaction-ledger-report/', transaction_ledger_report, name='transaction_ledger_report'),
+    path('transaction-ledger-detail/<int:voucher_type_id>/<int:voucher_no>/', transaction_ledger_detail, name='transaction_ledger_detail'),
 ]

@@ -155,22 +155,27 @@ select.fi{cursor:pointer}
 
       <div class="g4 mb">
         <div>
-          <label class="fl">Voucher Number</label>
-          <input type="text" name="voucher_number" class="fi"
-            placeholder="e.g. VCH-2026-001"
-            value="{% if edit_mode %}{{ job.voucher_number|default:'' }}{% endif %}">
+          <label class="fl">Voucher Type</label>
+          <select name="voucherType" id="id_voucherType" class="fi" onchange="updateJobVoucherNumber(this.value)">
+            <option value="">— Default (Job Card) —</option>
+            {% for vt in voucher_types %}
+              <option value="{{ vt.id }}" {% if job.voucherType and job.voucherType.id == vt.id %}selected{% endif %}>{{ vt.VoucherName }}</option>
+            {% endfor %}
+          </select>
         </div>
         <div>
           <label class="fl">Job Card No.<span class="req">*</span></label>
-          <input type="text" name="job_number" class="fi" required
-            placeholder="e.g. JC-2026-001"
-            value="{% if edit_mode %}{{ job.job_number }}{% endif %}">
+          <input type="text" name="job_number" id="id_job_number" class="fi" required
+            placeholder="e.g. JC-00001"
+            value="{% if edit_mode %}{{ job.job_number }}{% else %}{{ next_job_number }}{% endif %}">
         </div>
         <div>
           <label class="fl">Date <span class="req">*</span></label>
           <input type="date" name="date" class="fi" required
             value="{% if edit_mode %}{{ job.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
         </div>
+
+
         <div>
           <label class="fl">Customer <span class="req">*</span></label>
           <select name="customer" class="fi" required id="custSel"
@@ -1793,6 +1798,21 @@ function calcTotals() {
   document.getElementById('gtGrand').textContent      = grand.toFixed(3);
 }
 
+function updateJobVoucherNumber(voucherTypeId) {
+  if (!voucherTypeId) return;
+  fetch("{% url 'jobcard_app:get_next_jobcard_number' %}?voucher_type_id=" + voucherTypeId)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success && data.job_number) {
+        const jobNumInput = document.getElementById('id_job_number');
+        if (jobNumInput) {
+          jobNumInput.value = data.job_number;
+        }
+      }
+    })
+    .catch(err => console.error('Error fetching next jobcard voucher number:', err));
+}
+
 document.addEventListener('DOMContentLoaded', calcTotals);
 document.addEventListener('DOMContentLoaded', function () {
   const customerSelect = document.getElementById('custSel');
@@ -1803,6 +1823,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 </script>
+
 
 {# ── Item Master data for JS dropdowns ─────────────────────────────── #}
 <script id="itemMasterData" type="application/json">{{ items_json|safe }}</script>

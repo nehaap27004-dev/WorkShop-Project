@@ -1,106 +1,238 @@
 {% extends 'fleet_base1.html' %}
 {% load i18n %}
+{% load static %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <h2 class="mb-4">{% trans "Ledger Postings" %}</h2>
-    
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="form-row">
-                <div class="col-md-3 mb-3">
-                    <label>{% trans "From Date" %}</label>
-                    <input type="date" id="fromDate" class="form-control">
+<div class="container-fluid py-4">
+    <!-- Title & Action Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 font-weight-bold text-primary mb-1">
+                <i class="bi bi-journal-bookmark-fill mr-2"></i>{% trans "Ledger Postings" %}
+            </h2>
+            <p class="text-muted small mb-0">{% trans "Complete connected double-entry ledger postings across all transactions" %}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary shadow-sm" onclick="window.print();">
+                <i class="bi bi-printer mr-1"></i> {% trans "Print Postings" %}
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">{% trans "Total Transactions" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-receipt-cutoff fs-2 text-gray-400"></i>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="col-md-3 mb-3">
-                    <label>{% trans "To Date" %}</label>
-                    <input type="date" id="toDate" class="form-control">
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-left-success shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">{% trans "Total Debit (Dr)" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_debit|floatformat:3 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-plus-circle fs-2 text-success"></i>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="col-md-2 mb-3">
-                    <label>{% trans "Voucher Type" %}</label>
-                    <select id="voucherType" class="form-control">
-                        <option value="">{% trans "All" %}</option>
-                        {% for vt in voucher_types %}
-                        <option value="{{ vt.VoucherName }}">{{ vt.VoucherName }}</option>
-                        {% endfor %}
-                    </select>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-left-danger shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">{% trans "Total Credit (Cr)" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_credit|floatformat:3 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-dash-circle fs-2 text-danger"></i>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="col-md-3 mb-3">
-                    <label>{% trans "Ledger" %}</label>
-                    <select id="ledgerFilter" class="form-control">
-                        <option value="">{% trans "All" %}</option>
-                        {% for ledger in ledgers %}
-                        <option value="{{ ledger.ledger_name }}">{{ ledger.ledger_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-1 mb-3">
-                    <label class="d-none d-md-block">&nbsp;</label>
-                    <button onclick="clearFilters()" class="btn btn-secondary btn-block">{% trans "Clear" %}</button>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-left-info shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">{% trans "Net Balance" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ net_balance|floatformat:3 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-calculator fs-2 text-info"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="card">
+
+    <!-- Filter Section -->
+    <div class="card shadow-sm mb-4">
         <div class="card-body">
+            <form method="get" class="form-row align-items-end">
+                <div class="col-md-3 mb-2">
+                    <label class="small font-weight-bold">{% trans "Ledger Account" %}</label>
+                    <select name="ledger" class="form-control form-control-sm">
+                        <option value="">{% trans "-- All Ledgers --" %}</option>
+                        {% for l in ledgers %}
+                            <option value="{{ l.id }}" {% if ledger_id|default:'' == l.id|stringformat:'s' %}selected{% endif %}>
+                                {{ l.ledger_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label class="small font-weight-bold">{% trans "Voucher Type" %}</label>
+                    <select name="voucher_type" class="form-control form-control-sm">
+                        <option value="">{% trans "-- All Voucher Types --" %}</option>
+                        {% for v in voucher_types %}
+                            <option value="{{ v.id }}" {% if voucher_type_id|default:'' == v.id|stringformat:'s' %}selected{% endif %}>
+                                {{ v.VoucherName }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label class="small font-weight-bold">{% trans "From Date" %}</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label class="small font-weight-bold">{% trans "To Date" %}</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label class="small font-weight-bold">{% trans "Search (Voucher # / Name)" %}</label>
+                    <input type="text" name="q" class="form-control form-control-sm" placeholder="Voucher # or name..." value="{{ search_q }}">
+                </div>
+
+                <div class="col-md-1 mb-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm btn-block" title="{% trans 'Filter' %}">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <a href="{% url 'accounts_app:ledger_posting_list' %}" class="btn btn-secondary btn-sm" title="{% trans 'Reset' %}">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ledger Postings Main Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="bi bi-list-check mr-1"></i> {% trans "Connected Ledger Postings" %}
+            </h6>
+            <span class="badge badge-primary px-3 py-2">{% trans "Records Found" %}: {{ total_count }}</span>
+        </div>
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="ledgerTable">
+                <table class="table table-bordered table-hover mb-0 align-middle">
                     <thead class="thead-light">
-                        <tr>
-                            <th>{% trans "Date" %}</th>
-                            <th>{% trans "Voucher Type" %}</th>
-                            <th>{% trans "Ledger" %}</th>
-                            <th class="text-right">{% trans "Debit" %}</th>
-                            <th class="text-right">{% trans "Credit" %}</th>
+                        <tr class="text-center small font-weight-bold text-uppercase">
+                            <th style="width: 100px;">{% trans "Date" %}</th>
+                            <th style="width: 140px;">{% trans "Voucher Type" %}</th>
+                            <th style="width: 110px;">{% trans "Voucher #" %}</th>
+                            <th style="width: 180px;">{% trans "Account Ledger" %}</th>
+                            <th style="width: 200px;">{% trans "Particulars (Counter Account)" %}</th>
+                            <th>{% trans "Narration / Remarks" %}</th>
+                            <th style="width: 120px;" class="text-right">{% trans "Debit (Dr)" %}</th>
+                            <th style="width: 120px;" class="text-right">{% trans "Credit (Cr)" %}</th>
+                            <th style="width: 130px;" class="text-right">{% trans "Running Balance" %}</th>
+                            <th style="width: 100px;" class="text-center">{% trans "Action" %}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for posting in postings %}
-                        <tr class="ledger-row" 
-                            data-date="{{ posting.date|date:'Y-m-d' }}"
-                            data-voucher="{{ posting.VoucherType.VoucherName }}"
-                            data-ledger="{{ posting.ledger.ledger_name }}"
-                            data-debit="{{ posting.debit|default:'0' }}"
-                            data-credit="{{ posting.credit|default:'0' }}">
-                            
-                            <td>{{ posting.date|date:"d-m-Y" }}</td>
-                            <td>{{ posting.VoucherType.VoucherName }}</td>
-                            <td>{{ posting.ledger.ledger_name }}</td>
-
-                            <td class="text-right">
-                                {% if posting.debit %}
-                                    {{ posting.debit|floatformat:2 }}
-                                {% else %}
-                                    -
+                        {% for post in postings %}
+                        <tr>
+                            <td class="text-center align-middle font-weight-bold small">
+                                {{ post.date|date:"d-m-Y" }}
+                            </td>
+                            <td class="text-center align-middle">
+                                <span class="badge badge-soft-info px-2 py-1">
+                                    {{ post.VoucherType.VoucherName }}
+                                </span>
+                            </td>
+                            <td class="text-center align-middle font-weight-bold text-primary">
+                                #{{ post.VoucherNo }}
+                                {% if post.RefVoucherNo %}
+                                    <br><small class="text-muted">(Ref: #{{ post.RefVoucherNo }})</small>
                                 {% endif %}
                             </td>
-
-                            <td class="text-right">
-                                {% if posting.credit %}
-                                    {{ posting.credit|floatformat:2 }}
-                                {% else %}
-                                    -
-                                {% endif %}
+                            <td class="align-middle font-weight-bold text-dark small">
+                                {{ post.ledger.ledger_name }}
+                            </td>
+                            <td class="align-middle small text-info font-weight-bold">
+                                {{ post.particulars }}
+                            </td>
+                            <td class="align-middle small text-muted font-italic">
+                                {{ post.narration|default:"-" }}
+                            </td>
+                            <td class="text-right align-middle font-weight-bold text-success">
+                                {% if post.debit %}{{ post.debit|floatformat:3 }}{% else %}-{% endif %}
+                            </td>
+                            <td class="text-right align-middle font-weight-bold text-danger">
+                                {% if post.credit %}{{ post.credit|floatformat:3 }}{% else %}-{% endif %}
+                            </td>
+                            <td class="text-right align-middle font-weight-bold text-dark">
+                                {{ post.running_balance|floatformat:3 }}
+                            </td>
+                            <td class="text-center align-middle">
+                                <a href="{% url 'accounts_app:transaction_ledger_detail' voucher_type_id=post.VoucherType.id voucher_no=post.VoucherNo %}"
+                                   class="btn btn-sm btn-outline-primary py-1 px-2"
+                                   title="{% trans 'View Transaction Statement' %}">
+                                    <i class="bi bi-eye"></i> {% trans "Detail" %}
+                                </a>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted">
-                                {% trans "No records found" %}
+                            <td colspan="10" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                {% trans "No connected ledger posting entries found matching your filters." %}
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
-                    <tfoot class="bg-light">
+                    <tfoot class="bg-light font-weight-bold">
                         <tr>
-                            <th colspan="3" class="text-right">{% trans "Totals" %}:</th>
-                            <th id="totalDebit" class="text-right">0.00</th>
-                            <th id="totalCredit" class="text-right">0.00</th>
+                            <td colspan="6" class="text-right text-uppercase small py-3">
+                                {% trans "Page Totals" %}:
+                            </td>
+                            <td class="text-right text-success font-weight-bold py-3">
+                                {{ total_debit|floatformat:3 }}
+                            </td>
+                            <td class="text-right text-danger font-weight-bold py-3">
+                                {{ total_credit|floatformat:3 }}
+                            </td>
+                            <td class="text-right text-dark font-weight-bold py-3">
+                                {{ net_balance|floatformat:3 }}
+                            </td>
+                            <td></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -110,82 +242,10 @@
 </div>
 
 <style>
-    /* BS4 specificity adjustments */
-    .table-bordered {
-        border: 1px solid #dee2e6;
-    }
-    .text-right {
-        text-align: right !important;
-    }
+    .border-left-primary { border-left: .25rem solid #4e73df !important; }
+    .border-left-success { border-left: .25rem solid #1cc88a !important; }
+    .border-left-danger { border-left: .25rem solid #e74a3b !important; }
+    .border-left-info { border-left: .25rem solid #36b9cc !important; }
+    .badge-soft-info { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
 </style>
-
-<script>
-function filterTable() {
-    const fromDate = document.getElementById('fromDate').value;
-    const toDate = document.getElementById('toDate').value;
-    const voucherType = document.getElementById('voucherType').value.toLowerCase();
-    const ledgerFilter = document.getElementById('ledgerFilter').value.toLowerCase();
-    
-    const rows = document.querySelectorAll('.ledger-row');
-    let totalDebit = 0;
-    let totalCredit = 0;
-    
-    rows.forEach(row => {
-        const rowDate = row.dataset.date;
-        const rowVoucher = row.dataset.voucher.toLowerCase();
-        const rowLedger = row.dataset.ledger.toLowerCase();
-        
-        let showRow = true;
-        
-        // Date range filter
-        if (fromDate && toDate) {
-            showRow = rowDate >= fromDate && rowDate <= toDate;
-        } else if (fromDate) {
-            showRow = rowDate >= fromDate;
-        } else if (toDate) {
-            showRow = rowDate <= toDate;
-        }
-        
-        // Voucher type filter
-        if (showRow && voucherType) {
-            showRow = rowVoucher.includes(voucherType);
-        }
-        
-        // Ledger filter
-        if (showRow && ledgerFilter) {
-            showRow = rowLedger.includes(ledgerFilter);
-        }
-        
-        // Apply visibility and accumulate totals
-        if (showRow) {
-            row.style.display = '';
-            totalDebit += parseFloat(row.dataset.debit || 0);
-            totalCredit += parseFloat(row.dataset.credit || 0);
-        } else {
-            row.style.display = 'none';
-        }
-    });
-    
-    // Update footer totals
-    document.getElementById('totalDebit').textContent = totalDebit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    document.getElementById('totalCredit').textContent = totalCredit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-}
-
-function clearFilters() {
-    document.getElementById('fromDate').value = '';
-    document.getElementById('toDate').value = '';
-    document.getElementById('voucherType').value = '';
-    document.getElementById('ledgerFilter').value = '';
-    filterTable();
-}
-
-// Event Listeners
-document.getElementById('fromDate').addEventListener('change', filterTable);
-document.getElementById('toDate').addEventListener('change', filterTable);
-document.getElementById('voucherType').addEventListener('change', filterTable);
-document.getElementById('ledgerFilter').addEventListener('change', filterTable);
-
-// Run on load
-document.addEventListener('DOMContentLoaded', filterTable);
-</script>
 {% endblock %}

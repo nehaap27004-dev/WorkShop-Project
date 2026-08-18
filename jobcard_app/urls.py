@@ -61,6 +61,8 @@ urlpatterns = [
     path('ajax/jc-get-items/', views.jc_get_items, name='jc_get_items'),
     path('ajax/jc-search-jobcards/', views.jc_search_jobcards, name='jc_search_jobcards'),
     path('ajax/get-inspections/',views.ajax_get_inspections,name='ajax_get_inspections'),
+    path('ajax/get-next-jobcard-number/', views.get_next_jobcard_number, name='get_next_jobcard_number'),
+
 
      # ── Quotations ────────────────────────────────────────────
     path('quotation/',

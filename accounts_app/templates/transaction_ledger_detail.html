@@ -1,0 +1,171 @@
+{% extends 'fleet_base1.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Action Bar (Hidden on Print) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <a href="{% url 'accounts_app:transaction_ledger_report' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left mr-1"></i> {% trans "Back to Transaction Reports" %}
+        </a>
+        <button class="btn btn-primary shadow-sm" onclick="window.print();">
+            <i class="bi bi-printer-fill mr-1"></i> {% trans "Print Voucher Statement" %}
+        </button>
+    </div>
+
+    <!-- Official Ledger Voucher Card -->
+    <div class="card shadow-lg border-0 printable-card">
+        <div class="card-body p-5">
+            <!-- Header Section -->
+            <div class="row align-items-center border-bottom pb-4 mb-4">
+                <div class="col-md-7">
+                    <div class="d-flex align-items-center">
+                        <img src="{% static 'images/logo/rabwa-logo.png' %}" alt="Company Logo" style="height: 65px;" class="mr-3">
+                        <div>
+                            <h3 class="font-weight-bold text-dark mb-0">SILVER LINE GROUP</h3>
+                            <p class="text-muted small mb-0">Rabwa Accounting & Financial Management</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5 text-md-right mt-3 mt-md-0">
+                    <h4 class="font-weight-bold text-primary text-uppercase mb-1">
+                        {{ voucher_type.VoucherName }} LEDGER REPORT
+                    </h4>
+                    <span class="badge badge-lg {% if is_balanced %}badge-success{% else %}badge-warning{% endif %} px-3 py-2">
+                        {% if is_balanced %}<i class="bi bi-check-circle mr-1"></i> BALANCED VOUCHER{% else %}<i class="bi bi-exclamation-triangle mr-1"></i> UNBALANCED VOUCHER{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Transaction Metadata Grid -->
+            <div class="row bg-light rounded p-3 mb-4 mx-0 border">
+                <div class="col-md-3 col-6 mb-2 mb-md-0 border-right">
+                    <span class="text-muted small text-uppercase font-weight-bold d-block">{% trans "Voucher No" %}</span>
+                    <span class="h6 font-weight-bold text-dark">#{{ voucher_no }}</span>
+                </div>
+                <div class="col-md-3 col-6 mb-2 mb-md-0 border-right">
+                    <span class="text-muted small text-uppercase font-weight-bold d-block">{% trans "Transaction Date" %}</span>
+                    <span class="h6 font-weight-bold text-dark">{{ date|date:"d-m-Y" }}</span>
+                </div>
+                <div class="col-md-3 col-6 border-right">
+                    <span class="text-muted small text-uppercase font-weight-bold d-block">{% trans "Reference Voucher" %}</span>
+                    <span class="h6 font-weight-bold text-dark">
+                        {% if ref_voucher_no %}
+                            #{{ ref_voucher_no }} {% if ref_voucher_type %}({{ ref_voucher_type.VoucherName }}){% endif %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="col-md-3 col-6">
+                    <span class="text-muted small text-uppercase font-weight-bold d-block">{% trans "Cost Center" %}</span>
+                    <span class="h6 font-weight-bold text-dark">{{ cost_center.name|default:"General / Main" }}</span>
+                </div>
+            </div>
+
+            <!-- Double-Entry Ledger Posting Table -->
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="bg-primary text-white">
+                        <tr class="text-uppercase small">
+                            <th style="width: 60px;" class="text-center">#</th>
+                            <th>{% trans "Ledger Account Name" %}</th>
+                            <th>{% trans "Account Group" %}</th>
+                            <th style="width: 110px;" class="text-center">{% trans "Entry Type" %}</th>
+                            <th style="width: 150px;" class="text-right">{% trans "Debit (Dr)" %}</th>
+                            <th style="width: 150px;" class="text-right">{% trans "Credit (Cr)" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in postings %}
+                        <tr>
+                            <td class="text-center text-muted font-weight-bold">{{ forloop.counter }}</td>
+                            <td>
+                                <strong class="text-dark">{{ post.ledger.ledger_name }}</strong>
+                                {% if post.ledger.trn_number %}
+                                    <small class="text-muted d-block">TRN: {{ post.ledger.trn_number }}</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted small">
+                                {{ post.ledger.sub_group.name|default:post.ledger.groups.name|default:"-" }}
+                            </td>
+                            <td class="text-center">
+                                {% if post.debit and post.debit > 0 %}
+                                    <span class="badge badge-success px-2 py-1">DEBIT</span>
+                                {% else %}
+                                    <span class="badge badge-danger px-2 py-1">CREDIT</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-right font-weight-bold text-success">
+                                {% if post.debit %}{{ post.debit|floatformat:3 }}{% else %}-{% endif %}
+                            </td>
+                            <td class="text-right font-weight-bold text-danger">
+                                {% if post.credit %}{{ post.credit|floatformat:3 }}{% else %}-{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="bg-light font-weight-bold">
+                        <tr>
+                            <td colspan="4" class="text-right text-uppercase small font-weight-bold py-3">
+                                {% trans "Total Entry Balance" %}:
+                            </td>
+                            <td class="text-right text-success h6 font-weight-bold py-3">
+                                {{ total_debit|floatformat:3 }}
+                            </td>
+                            <td class="text-right text-danger h6 font-weight-bold py-3">
+                                {{ total_credit|floatformat:3 }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Narration / Notes Section -->
+            {% if extra_info.narration or extra_info.payment_mode %}
+            <div class="card bg-light border-left-info mb-4">
+                <div class="card-body py-3">
+                    <h6 class="font-weight-bold text-info mb-1"><i class="bi bi-info-circle mr-1"></i> {% trans "Transaction Narration & Details" %}</h6>
+                    {% if extra_info.payment_mode %}
+                        <p class="mb-1 small font-weight-bold">{% trans "Payment Mode" %}: {{ extra_info.payment_mode }}</p>
+                    {% endif %}
+                    {% if extra_info.narration %}
+                        <p class="mb-0 text-dark font-italic small">{{ extra_info.narration }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Signatures Section -->
+            <div class="row pt-5 mt-4 text-center border-top">
+                <div class="col-4">
+                    <div class="border-top border-secondary pt-2 mx-3">
+                        <small class="font-weight-bold text-uppercase text-muted">{% trans "Prepared By" %}</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border-top border-secondary pt-2 mx-3">
+                        <small class="font-weight-bold text-uppercase text-muted">{% trans "Checked By" %}</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border-top border-secondary pt-2 mx-3">
+                        <small class="font-weight-bold text-uppercase text-muted">{% trans "Authorized Signatory" %}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body { background-color: #fff !important; padding: 0 !important; }
+        .no-print, .top-navbar, .footer { display: none !important; }
+        .container { max-width: 100% !important; width: 100% !important; padding: 0 !important; }
+        .printable-card { box-shadow: none !important; border: none !important; }
+        .card-body { padding: 15px !important; }
+    }
+</style>
+{% endblock %}

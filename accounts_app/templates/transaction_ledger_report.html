@@ -1,0 +1,224 @@
+{% extends 'fleet_base1.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 font-weight-bold text-primary mb-1">
+                <i class="bi bi-file-earmark-text mr-2"></i>{% trans "Transaction Ledger Report" %}
+            </h2>
+            <p class="text-muted small mb-0">{% trans "Comprehensive accounting ledger entry report grouped per transaction" %}</p>
+        </div>
+        <button class="btn btn-outline-primary" onclick="window.print();">
+            <i class="bi bi-printer mr-1"></i> {% trans "Print Report" %}
+        </button>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-left-primary shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">{% trans "Total Transactions" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_transactions }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-receipt fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-left-success shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">{% trans "Grand Total Debit" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ grand_debit|floatformat:3 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-arrow-down-left-circle fs-2 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-left-info shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">{% trans "Grand Total Credit" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ grand_credit|floatformat:3 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-arrow-up-right-circle fs-2 text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="form-row align-items-end">
+                <div class="col-md-3 mb-2">
+                    <label class="small font-weight-bold">{% trans "Ledger Account" %}</label>
+                    <select name="ledger" class="form-control form-control-sm">
+                        <option value="">{% trans "-- All Ledgers --" %}</option>
+                        {% for l in ledgers %}
+                            <option value="{{ l.id }}" {% if ledger_id|default:'' == l.id|stringformat:'s' %}selected{% endif %}>
+                                {{ l.ledger_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label class="small font-weight-bold">{% trans "Voucher Type" %}</label>
+                    <select name="voucher_type" class="form-control form-control-sm">
+                        <option value="">{% trans "-- All Types --" %}</option>
+                        {% for v in vouchers %}
+                            <option value="{{ v.id }}" {% if voucher_type_id|default:'' == v.id|stringformat:'s' %}selected{% endif %}>
+                                {{ v.VoucherName }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label class="small font-weight-bold">{% trans "From Date" %}</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label class="small font-weight-bold">{% trans "To Date" %}</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label class="small font-weight-bold">{% trans "Search (Voucher / Name)" %}</label>
+                    <input type="text" name="q" class="form-control form-control-sm" placeholder="Voucher # or name..." value="{{ search_q }}">
+                </div>
+
+                <div class="col-md-1 mb-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm btn-block" title="{% trans 'Filter' %}">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <a href="{% url 'accounts_app:transaction_ledger_report' %}" class="btn btn-secondary btn-sm" title="{% trans 'Reset' %}">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="bi bi-list-stars mr-1"></i> {% trans "Transaction Ledger Entries" %}
+            </h6>
+            <span class="badge badge-primary px-3 py-2">{% trans "Total Transactions" %}: {{ total_transactions }}</span>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered mb-0 align-middle">
+                    <thead class="thead-light">
+                        <tr class="text-center small font-weight-bold text-uppercase">
+                            <th style="width: 100px;">{% trans "Date" %}</th>
+                            <th style="width: 140px;">{% trans "Voucher Type" %}</th>
+                            <th style="width: 110px;">{% trans "Voucher #" %}</th>
+                            <th>{% trans "Debit Accounts (Dr)" %}</th>
+                            <th>{% trans "Credit Accounts (Cr)" %}</th>
+                            <th style="width: 130px;" class="text-right">{% trans "Total Amount" %}</th>
+                            <th style="width: 110px;">{% trans "Status" %}</th>
+                            <th style="width: 140px;">{% trans "Action" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in transactions %}
+                        <tr>
+                            <td class="text-center align-middle font-weight-bold small">
+                                {{ tx.date|date:"d-m-Y" }}
+                            </td>
+                            <td class="text-center align-middle">
+                                <span class="badge badge-soft-info px-2 py-1">{{ tx.voucher_type }}</span>
+                            </td>
+                            <td class="text-center align-middle font-weight-bold text-primary">
+                                #{{ tx.voucher_no }}
+                                {% if tx.ref_voucher_no %}
+                                    <br><small class="text-muted">(Ref: #{{ tx.ref_voucher_no }})</small>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle small">
+                                {% for dr in tx.debit_entries %}
+                                    <div class="d-flex justify-content-between border-bottom py-1">
+                                        <span class="font-weight-bold text-dark"><i class="bi bi-plus-circle-fill text-success mr-1"></i> {{ dr.ledger }}</span>
+                                        <span class="text-success font-weight-bold ml-2">{{ dr.amount|floatformat:3 }}</span>
+                                    </div>
+                                {% empty %}
+                                    <span class="text-muted italic">-</span>
+                                {% endfor %}
+                            </td>
+                            <td class="align-middle small">
+                                {% for cr in tx.credit_entries %}
+                                    <div class="d-flex justify-content-between border-bottom py-1">
+                                        <span class="font-weight-bold text-dark"><i class="bi bi-dash-circle-fill text-danger mr-1"></i> {{ cr.ledger }}</span>
+                                        <span class="text-danger font-weight-bold ml-2">{{ cr.amount|floatformat:3 }}</span>
+                                    </div>
+                                {% empty %}
+                                    <span class="text-muted italic">-</span>
+                                {% endfor %}
+                            </td>
+                            <td class="text-right align-middle font-weight-bold text-primary">
+                                {{ tx.amount|floatformat:3 }}
+                            </td>
+                            <td class="text-center align-middle">
+                                {% if tx.is_balanced %}
+                                    <span class="badge badge-success px-2 py-1"><i class="bi bi-check-circle-fill mr-1"></i> Balanced</span>
+                                {% else %}
+                                    <span class="badge badge-warning px-2 py-1"><i class="bi bi-exclamation-triangle-fill mr-1"></i> Unbalanced</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center align-middle">
+                                <a href="{% url 'accounts_app:transaction_ledger_detail' voucher_type_id=tx.voucher_type_id voucher_no=tx.voucher_no %}"
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="{% trans 'View Individual Transaction Report' %}">
+                                    <i class="bi bi-eye mr-1"></i> {% trans "View Report" %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                {% trans "No transaction ledger entries found matching your filters." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-left-primary { border-left: .25rem solid #4e73df !important; }
+    .border-left-success { border-left: .25rem solid #1cc88a !important; }
+    .border-left-info { border-left: .25rem solid #36b9cc !important; }
+    .badge-soft-info { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-soft-primary { background-color: #e0e7ff; color: #3730a3; }
+</style>
+{% endblock %}
