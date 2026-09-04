@@ -264,8 +264,7 @@ class Vouchers(models.Model):
             
         return voucher_number
 
-    def __str__(self):
-        return f"{self.VoucherType} - {self.VoucherName}"
+    
 
     def __str__(self):
      return f"{self.VoucherName}"
@@ -494,6 +493,7 @@ class Customer(models.Model):
     customer_description = models.TextField(null=True, blank=True, help_text=" description")
     customer_VAT = models.CharField(null=True, blank=True,max_length=255, help_text="customer VAT number")
     customer_TRN_or_CRN = models.CharField(null=True, blank=True,max_length=255, help_text="customer TRN or CRN number")
+    ledger = models.ForeignKey('accounts_app.LedgerCreation', null=True, blank=True, on_delete=models.SET_NULL, related_name='item_master_customers')
     
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

@@ -333,9 +333,10 @@ def ledger_edit(request, pk):
 @login_required(login_url='accounts_app:admin_login')
 def ledger_delete(request, pk):
     ledger = get_object_or_404(LedgerCreation, pk=pk)
-    ledger.delete()
+    ledger_name = ledger.ledger_name
     # ❌ Remove Opening Balance Entry
     handle_opening_balance_ledger_posting(ledger, "delete")
+    ledger.delete()
 
     # ✅ DELETE LOG (before delete)
     log_activity(
@@ -825,7 +826,7 @@ def manage_customers(request, pk=None):
     """Add, Edit, and List Customers in one page"""
 
     if pk:
-        customer = get_object_or_404(LedgerCreation, pk=pk, groups_id=2, types='DR')
+        customer = get_object_or_404(LedgerCreation, pk=pk, groups_id=18, types='DR')
         form = CustomerForm(instance=customer)
         edit_mode = True
         title = "Edit Customer"
@@ -843,7 +844,7 @@ def manage_customers(request, pk=None):
             del_customer = get_object_or_404(
                 LedgerCreation,
                 pk=delete_id,
-                groups_id=2,
+                groups_id=18,
                 types='DR'
             )
 
@@ -883,7 +884,7 @@ def manage_customers(request, pk=None):
             return redirect('accounts_app:manage_customers')
 
     customers = LedgerCreation.objects.filter(
-        groups_id=2,
+        groups_id=18,
         types='DR'
     ).order_by('ledger_name')
 
@@ -1754,6 +1755,19 @@ def update_billwise_opening_cleared_status(opening_id):
         else:
             print(f"      ℹ️ No update needed, already at correct value")
             was_updated = False
+
+        # Sync corresponding Invoice status in jobcard_app
+        try:
+            from jobcard_app.models import Invoice
+            inv = Invoice.objects.filter(invoice_number=opening.InvNo, customer=opening.ledger).first()
+            if inv:
+                if should_be_cleared:
+                    inv.status = 'paid'
+                elif total_cleared > 0:
+                    inv.status = 'partial'
+                inv.save(update_fields=['status'])
+        except Exception as ex:
+            print(f"Notice during invoice status sync: {ex}")
         
         return opening, was_updated, total_cleared, remaining
         
@@ -1853,49 +1867,31 @@ def get_customer_invoices_and_openings(request):
     invoice_data = []
     opening_data = []
     
-    # ✅ Get Not Cleared Invoices
-    invoices = Invoice.objects.filter(customer_id=customer_id, IsCleared=False)
-    print(f"Found {invoices.count()} not cleared invoices")
-    
-    for inv in invoices:
-        # Calculate amount already cleared
-        total_paid = sum(
-            ReceiptBillDetails.objects.filter(
-                VoucherNo=inv.id,
-                voucherType__id=2  # Invoice voucher type
-            ).values_list('Amount', flat=True)
-        ) or 0
-
-        balance = float(inv.grand_total) - float(total_paid)
-
-        if balance > 0:  # Only include if there's still something to receive
-            invoice_data.append({
-                'type': 'invoice',
-                'invoice_id': inv.id,
-                'voucher_no': inv.voucher_no,
-                'date': inv.date.strftime('%Y-%m-%d'),
-                'customer': inv.customer.ledger_name,
-                'grand_total': float(inv.grand_total),
-                'amount_cleared': float(total_paid),
-                'receivable_balance': balance,
-            })
-    
     # ✅ Get Not Cleared BillWiseOpenings
-    # Filter by ledger (customer ledger) and VoucherType = 2 (Invoice)
+    # Filter by ledger (customer ledger) and invoice voucher types (including VoucherType 2, 5, 12)
+    tracked_inv_nos = set()
     try:
         from accounts_app.models import LedgerCreation
+        from fleet_app.models import Vouchers
+        from django.db.models import Q
         customer_ledger = LedgerCreation.objects.get(pk=customer_id)
         
+        inv_vt_ids = list(Vouchers.objects.filter(Q(VoucherType__icontains='Invoice') | Q(id__in=[2, 5])).values_list('id', flat=True))
+        if 12 not in inv_vt_ids:
+            inv_vt_ids.append(12)
+
         openings = BillWiseOpening.objects.filter(
             ledger=customer_ledger,
             IsCleared=False,
-            voucherType__id=2  # Invoice voucher type
+            voucherType__id__in=inv_vt_ids
         )
         
         print(f"Found {openings.count()} not cleared bill-wise openings")
         
         for opening in openings:
-            # Calculate amount already cleared
+            # Track InvNo to avoid duplication with direct invoice query
+            tracked_inv_nos.add(opening.InvNo)
+
             total_paid = sum(
                 ReceiptBillDetails.objects.filter(
                     VoucherNo=opening.id,
@@ -1912,7 +1908,7 @@ def get_customer_invoices_and_openings(request):
                     'voucher_no': opening.InvNo,
                     'date': opening.InvDate.strftime('%Y-%m-%d'),
                     'customer': opening.ledger.ledger_name,
-                    'grand_total': float(opening.InvBalance),  # ✅ Changed from InvAmount to InvBalance
+                    'grand_total': float(opening.InvBalance),
                     'amount_cleared': float(total_paid),
                     'receivable_balance': balance,
                 })
@@ -1920,6 +1916,48 @@ def get_customer_invoices_and_openings(request):
         print(f"Error fetching openings: {e}")
         import traceback
         traceback.print_exc()
+
+    # ✅ Get Not Cleared Credit Invoices (Direct invoice query support for credit invoices not in BillWiseOpening)
+    try:
+        from jobcard_app.models import Invoice
+        if hasattr(Invoice, 'IsCleared'):
+            invoices = Invoice.objects.filter(customer_id=customer_id, payment_mode__iexact='credit', IsCleared=False)
+        else:
+            invoices = Invoice.objects.filter(customer_id=customer_id, payment_mode__iexact='credit').exclude(status__in=['paid', 'cancelled'])
+        
+        print(f"Found {invoices.count()} not cleared credit invoices")
+        
+        for inv in invoices:
+            inv_no = getattr(inv, 'voucher_no', None) or getattr(inv, 'invoice_number', str(inv.id))
+            # Skip if already tracked via BillWiseOpening to avoid duplicate rows
+            if inv_no in tracked_inv_nos:
+                continue
+
+            total_paid = sum(
+                ReceiptBillDetails.objects.filter(
+                    VoucherNo=inv.id,
+                    voucherType__id=2  # Invoice voucher type
+                ).values_list('Amount', flat=True)
+            ) or 0
+
+            g_total = float(getattr(inv, 'grand_total', None) or (inv.get_grand_total() if hasattr(inv, 'get_grand_total') else 0))
+            balance = g_total - float(total_paid)
+
+            if balance > 0:  # Only include if there's still something to receive
+                inv_date = getattr(inv, 'date', None) or getattr(inv, 'invoice_date', None)
+                date_str = inv_date.strftime('%Y-%m-%d') if inv_date else ''
+                invoice_data.append({
+                    'type': 'invoice',
+                    'invoice_id': inv.id,
+                    'voucher_no': inv_no,
+                    'date': date_str,
+                    'customer': inv.customer.ledger_name,
+                    'grand_total': g_total,
+                    'amount_cleared': float(total_paid),
+                    'receivable_balance': balance,
+                })
+    except Exception as e:
+        print(f"Notice during direct invoice fetch: {e}")
     
     print(f"Returning {len(invoice_data)} invoices and {len(opening_data)} openings")
     print(f"Invoice data: {invoice_data}")
@@ -3130,6 +3168,10 @@ def ledger_posting_list(request):
             remark = getattr(lp, 'remark', '') or getattr(lp, 'description', '')
             if remark:
                 narration_map[('Local Payment', lp.id)] = remark
+        from fleet_app.models import Invoice
+        for inv in Invoice.objects.all():
+            remark = inv.other_ref or inv.supplier_ref or f"Invoice #{inv.voucher_no}"
+            narration_map[('Invoice', inv.id)] = remark
     except Exception as e:
         print(f"Error fetching narrations: {e}")
 
@@ -3715,156 +3757,4 @@ def supplier_outstanding_report(request):
     })
 
 
-def transaction_ledger_report(request):
-    ledgers = LedgerCreation.objects.all().order_by('ledger_name')
-    vouchers = Vouchers.objects.all().order_by('VoucherName')
 
-    ledger_id = request.GET.get('ledger')
-    voucher_type_id = request.GET.get('voucher_type')
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
-    search_q = request.GET.get('q', '').strip()
-
-    postings = LedgerPosting.objects.filter(IsDeleted=False).select_related('ledger', 'VoucherType', 'CostCenter')
-
-    if ledger_id:
-        postings = postings.filter(ledger_id=ledger_id)
-
-    if voucher_type_id:
-        postings = postings.filter(VoucherType_id=voucher_type_id)
-
-    if date_from:
-        postings = postings.filter(date__gte=date_from)
-
-    if date_to:
-        postings = postings.filter(date__lte=date_to)
-
-    if search_q:
-        if search_q.isdigit():
-            postings = postings.filter(Q(VoucherNo=int(search_q)) | Q(RefVoucherNo=int(search_q)))
-        else:
-            postings = postings.filter(Q(ledger__ledger_name__icontains=search_q) | Q(VoucherType__VoucherName__icontains=search_q))
-
-    # Group postings by transaction key: (VoucherType_id, VoucherNo)
-    transactions_dict = {}
-    for post in postings.order_by('-date', '-VoucherType_id', '-VoucherNo'):
-        key = (post.VoucherType_id, post.VoucherNo)
-        if key not in transactions_dict:
-            transactions_dict[key] = {
-                'voucher_type_id': post.VoucherType_id,
-                'voucher_type': post.VoucherType.VoucherName if post.VoucherType else 'N/A',
-                'voucher_no': post.VoucherNo,
-                'date': post.date,
-                'ref_voucher_no': post.RefVoucherNo,
-                'ref_voucher_type': post.RefVoucherType.VoucherName if post.RefVoucherType else None,
-                'cost_center': post.CostCenter.name if post.CostCenter else None,
-                'debit_entries': [],
-                'credit_entries': [],
-                'total_debit': Decimal('0.000'),
-                'total_credit': Decimal('0.000'),
-            }
-
-        tx = transactions_dict[key]
-        if post.debit and post.debit > 0:
-            tx['debit_entries'].append({
-                'ledger': post.ledger.ledger_name,
-                'ledger_id': post.ledger.id,
-                'amount': post.debit
-            })
-            tx['total_debit'] += post.debit
-        if post.credit and post.credit > 0:
-            tx['credit_entries'].append({
-                'ledger': post.ledger.ledger_name,
-                'ledger_id': post.ledger.id,
-                'amount': post.credit
-            })
-            tx['total_credit'] += post.credit
-
-    transactions_list = list(transactions_dict.values())
-    for tx in transactions_list:
-        tx['is_balanced'] = (tx['total_debit'] == tx['total_credit'])
-        tx['amount'] = max(tx['total_debit'], tx['total_credit'])
-
-    grand_debit = sum(tx['total_debit'] for tx in transactions_list)
-    grand_credit = sum(tx['total_credit'] for tx in transactions_list)
-
-    context = {
-        'transactions': transactions_list,
-        'ledgers': ledgers,
-        'vouchers': vouchers,
-        'ledger_id': ledger_id,
-        'voucher_type_id': voucher_type_id,
-        'date_from': date_from,
-        'date_to': date_to,
-        'search_q': search_q,
-        'grand_debit': grand_debit,
-        'grand_credit': grand_credit,
-        'total_transactions': len(transactions_list),
-    }
-
-    return render(request, 'transaction_ledger_report.html', context)
-
-
-def transaction_ledger_detail(request, voucher_type_id, voucher_no):
-    voucher_type = get_object_or_404(Vouchers, pk=voucher_type_id)
-    postings = LedgerPosting.objects.filter(
-        VoucherType_id=voucher_type_id,
-        VoucherNo=voucher_no,
-        IsDeleted=False
-    ).select_related('ledger', 'VoucherType', 'RefVoucherType', 'CostCenter')
-
-    if not postings.exists():
-        messages.error(request, "No ledger entries found for this transaction.")
-        return redirect('accounts_app:transaction_ledger_report')
-
-    first_post = postings.first()
-    date = first_post.date
-    ref_voucher_no = first_post.RefVoucherNo
-    ref_voucher_type = first_post.RefVoucherType
-    cost_center = first_post.CostCenter
-
-    total_debit = sum((p.debit or Decimal('0.000')) for p in postings)
-    total_credit = sum((p.credit or Decimal('0.000')) for p in postings)
-    is_balanced = (total_debit == total_credit)
-
-    # Fetch extra model info if available
-    extra_info = {}
-    vname = voucher_type.VoucherName.lower()
-
-    if 'payment' in vname and 'local' not in vname and 'bill' not in vname:
-        pm = PaymentMaster.objects.filter(voucher_no=voucher_no).first()
-        if pm:
-            extra_info['narration'] = getattr(pm, 'narration', '')
-            extra_info['payment_mode'] = getattr(pm, 'payment_mode', '')
-    elif 'receipt' in vname and 'bill' not in vname:
-        rm = ReceiptMaster.objects.filter(voucher_no=voucher_no).first()
-        if rm:
-            extra_info['narration'] = getattr(rm, 'narration', '')
-    elif 'local' in vname:
-        lp = LocalPayment.objects.filter(id=voucher_no).first()
-        if lp:
-            extra_info['narration'] = getattr(lp, 'remark', '') or getattr(lp, 'description', '')
-    elif 'journal' in vname:
-        j = Journal.objects.filter(voucher_no=voucher_no).first()
-        if j:
-            extra_info['narration'] = getattr(j, 'narration', '')
-    elif 'contra' in vname:
-        c = Contra.objects.filter(voucher_no=voucher_no).first()
-        if c:
-            extra_info['narration'] = getattr(c, 'narration', '')
-
-    context = {
-        'voucher_type': voucher_type,
-        'voucher_no': voucher_no,
-        'date': date,
-        'postings': postings,
-        'total_debit': total_debit,
-        'total_credit': total_credit,
-        'is_balanced': is_balanced,
-        'ref_voucher_no': ref_voucher_no,
-        'ref_voucher_type': ref_voucher_type,
-        'cost_center': cost_center,
-        'extra_info': extra_info,
-    }
-
-    return render(request, 'transaction_ledger_detail.html', context)

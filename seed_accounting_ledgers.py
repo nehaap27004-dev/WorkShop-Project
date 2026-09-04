@@ -34,40 +34,83 @@ for gdata in REQUIRED_GROUPS:
 
 
 # ── 2. Ensure essential LedgerCreation records exist ─────────────────────────
-purchase_group  = Groups.objects.get(id=6)   # Purchase Account
-expenses_group  = Groups.objects.get(id=7)   # Direct Expenses
-sales_group     = Groups.objects.get(id=9)   # Sales Account
-income_group    = Groups.objects.get(id=10)  # Direct Income
+purchase_group   = Groups.objects.get(id=6)   # Purchase Account
+expenses_group   = Groups.objects.get(id=7)   # Direct Expenses
+indirect_exp     = Groups.objects.get(id=8)   # Indirect Expenses
+sales_group      = Groups.objects.get(id=9)   # Sales Account
+income_group     = Groups.objects.get(id=10)  # Direct Income
 
 REQUIRED_LEDGERS = [
     {
         "ledger_name": "Purchase Account",
         "groups":      purchase_group,
+        "types":       "DR",
         "isDefault":   True,
     },
     {
-        "ledger_name": "Input Tax",
-        "groups":      expenses_group,
-        "isDefault":   True,
-    },
-    {
-        "ledger_name": "Discount Received",
-        "groups":      income_group,
+        "ledger_name": "Purchase Return",
+        "groups":      purchase_group,
+        "types":       "CR",
         "isDefault":   True,
     },
     {
         "ledger_name": "Sales Account",
         "groups":      sales_group,
+        "types":       "CR",
+        "isDefault":   True,
+    },
+    {
+        "ledger_name": "Sales Return",
+        "groups":      sales_group,
+        "types":       "DR",
+        "isDefault":   True,
+    },
+    {
+        "ledger_name": "Input Tax",
+        "groups":      expenses_group,
+        "types":       "DR",
         "isDefault":   True,
     },
     {
         "ledger_name": "Output Tax",
         "groups":      income_group,
+        "types":       "CR",
         "isDefault":   True,
     },
     {
         "ledger_name": "Discount Allowed",
         "groups":      expenses_group,
+        "types":       "DR",
+        "isDefault":   True,
+    },
+    {
+        "ledger_name": "Discount Received",
+        "groups":      income_group,
+        "types":       "CR",
+        "isDefault":   True,
+    },
+    {
+        "ledger_name": "Freight",
+        "groups":      income_group,
+        "types":       "CR",
+        "isDefault":   True,
+    },
+    {
+        "ledger_name": "Bank Charges",
+        "groups":      indirect_exp,
+        "types":       "DR",
+        "isDefault":   True,
+    },
+    {
+        "ledger_name": "Cash Account",
+        "groups":      expenses_group,
+        "types":       "DR",
+        "isDefault":   True,
+    },
+    {
+        "ledger_name": "Bank Account",
+        "groups":      expenses_group,
+        "types":       "DR",
         "isDefault":   True,
     },
 ]
@@ -77,11 +120,13 @@ for ldata in REQUIRED_LEDGERS:
         ledger_name=ldata["ledger_name"],
         defaults={
             "groups":    ldata["groups"],
+            "types":     ldata.get("types", "DR"),
             "isDefault": ldata["isDefault"],
         }
     )
     status = "[CREATED]" if created else "[EXISTS] "
-    print(f"  {status} Ledger: {obj.ledger_name} (id={obj.id})")
+    print(f"  {status} Ledger: {obj.ledger_name} (id={obj.id}, group={obj.groups})")
+
 
 
 # ── 3. Ensure required Voucher Types exist ────────────────────────────────────

@@ -154,20 +154,17 @@ select.fi{cursor:pointer}
     <div class="sec-body">
 
       <div class="g4 mb">
-        <div>
-          <label class="fl">Voucher Type</label>
-          <select name="voucherType" id="id_voucherType" class="fi" onchange="updateJobVoucherNumber(this.value)">
-            <option value="">— Default (Job Card) —</option>
-            {% for vt in voucher_types %}
-              <option value="{{ vt.id }}" {% if job.voucherType and job.voucherType.id == vt.id %}selected{% endif %}>{{ vt.VoucherName }}</option>
-            {% endfor %}
-          </select>
+      <input type="hidden" name="voucherType" id="id_voucherType"
+         value="{% if edit_mode and job.voucherType %}{{ job.voucherType.id }}{% else %}{% for vt in voucher_types %}{% if vt.VoucherName == 'JobCard' %}{{ vt.id }}{% endif %}{% endfor %}{% endif %}">        <div>
+          <label class="fl">Voucher Number</label>
+          <input type="text" name="voucher_number" id="id_voucher_number" class="fi"
+            placeholder="e.g. JC-00001"
+            value="{% if edit_mode %}{{ job.voucher_number|default:'' }}{% endif %}">
         </div>
         <div>
           <label class="fl">Job Card No.<span class="req">*</span></label>
           <input type="text" name="job_number" id="id_job_number" class="fi" required
-            placeholder="e.g. JC-00001"
-            value="{% if edit_mode %}{{ job.job_number }}{% else %}{{ next_job_number }}{% endif %}">
+            value="{% if edit_mode %}{{ job.job_number }}{% endif %}">
         </div>
         <div>
           <label class="fl">Date <span class="req">*</span></label>
@@ -1401,7 +1398,7 @@ function updateTechnicianOptions(tr, skillId, isOverride, skillName = '') {
     }
   });
 
-  if (currentTechVal && techSelect.querySelector(`option[value="${currentTechVal}"]`)) {
+  if (currentTechVal && techSelect.querySelector(`opti on[value="${currentTechVal}"]`)) {
     techSelect.value = currentTechVal;
   }
 
@@ -1553,6 +1550,15 @@ function setCatText(sel) {
 ══════════════════════════════════════════ */
 const ALL_ITEMS_URL = "{% url 'jobcard_app:ajax_get_all_items' %}";
 let allJcItems = [];
+
+document.addEventListener('DOMContentLoaded', function () {
+  {% if not edit_mode %}
+  const voucherTypeInput = document.getElementById('id_voucherType');
+  if (voucherTypeInput && voucherTypeInput.value) {
+    updateJobVoucherNumber(voucherTypeInput.value);
+  }
+  {% endif %}
+});
 
 document.addEventListener('DOMContentLoaded', function () {
   initComplaintRows();
@@ -1804,9 +1810,9 @@ function updateJobVoucherNumber(voucherTypeId) {
     .then(response => response.json())
     .then(data => {
       if (data.success && data.job_number) {
-        const jobNumInput = document.getElementById('id_job_number');
-        if (jobNumInput) {
-          jobNumInput.value = data.job_number;
+        const voucherNumInput = document.getElementById('id_voucher_number');
+        if (voucherNumInput) {
+          voucherNumInput.value = data.job_number;
         }
       }
     })
@@ -1835,11 +1841,18 @@ document.addEventListener('DOMContentLoaded', function () {
 </ul>
 {% endif %}
 
-
-{# Inspection Complaints prefill data for JS and test assertions #}
-{% if insp_complaints %}
-<ul id="inspComplaintsList" style="display:none;">
-  {% for c in insp_complaints %}<li>{{ c.description }}</li>{% endfor %}
-</ul>
-{% endif %}
+
+
+{# Inspection Complaints prefill data for JS and test assertions #}
+
+{% if insp_complaints %}
+
+<ul id="inspComplaintsList" style="display:none;">
+
+  {% for c in insp_complaints %}<li>{{ c.description }}</li>{% endfor %}
+
+</ul>
+
+{% endif %}
+
 {% endblock %}

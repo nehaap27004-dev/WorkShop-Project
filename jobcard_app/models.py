@@ -606,10 +606,15 @@ class Estimate(models.Model):
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
     ]
-
+    # jobcard_app/models.py, in Estimate
+    voucherType = models.ForeignKey(
+        'fleet_app.Vouchers', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='estimates'
+    )
+    voucher_number = models.CharField(max_length=50, blank=True, null=True)
+    
     estimate_number = models.CharField(
-        max_length=20, unique=True, blank=True,
-        help_text='Auto-generated: EST-00001')
+        max_length=20, unique=True, blank=True,)
 
     jobcard = models.ForeignKey(
         'JobCard', on_delete=models.SET_NULL,
@@ -654,11 +659,7 @@ class Estimate(models.Model):
     updated_on = models.DateTimeField(auto_now=True)
     created_by = models.IntegerField(null=True, blank=True)
 
-    def save(self, *args, **kwargs):
-        if not self.estimate_number:
-            from jobcard_app.utils import generate_voucher_number
-            self.estimate_number = generate_voucher_number('Estimate', Estimate, 'estimate_number', default_prefix='EST-')
-        super().save(*args, **kwargs)
+ 
 
     def get_subtotal(self):
         total = Decimal('0.000')
@@ -770,7 +771,23 @@ class EstimateComplaint(models.Model):
 
     class Meta:
         ordering = ['complaint_type', 'order']
+def get_next_estimate_number(request):
+    """AJAX view to get next estimate voucher number"""
+    from fleet_app.models import Vouchers
+    from jobcard_app.utils import generate_voucher_number
+    from .models import Estimate
 
+    voucher_type_id = request.GET.get('voucher_type_id')
+    if voucher_type_id:
+        try:
+            vt = Vouchers.objects.get(pk=voucher_type_id)
+            num = vt.get_next_voucher_number(Estimate, 'voucher_number')
+            return JsonResponse({'job_number': num, 'success': True})
+        except Vouchers.DoesNotExist:
+            pass
+
+    next_num = generate_voucher_number('Estimate', Estimate, 'voucher_number', default_prefix='VCH-')
+    return JsonResponse({'job_number': next_num, 'success': True})
 # ─────────────────────────────────────────────────────────────
 # QUOTATION
 # ─────────────────────────────────────────────────────────────
@@ -822,15 +839,13 @@ class Quotation(models.Model):
                            default=0)
     terms            = models.CharField(max_length=200, blank=True)
     notes            = models.TextField(blank=True)
+
     created_on       = models.DateTimeField(auto_now_add=True)
     updated_on       = models.DateTimeField(auto_now=True)
     created_by       = models.IntegerField(null=True, blank=True)
+    updated_by       = models.IntegerField(null=True, blank=True)
 
-    def save(self, *args, **kwargs):
-        if not self.quotation_number:
-            from jobcard_app.utils import generate_voucher_number
-            self.quotation_number = generate_voucher_number('Quotation', Quotation, 'quotation_number', default_prefix='QT-')
-        super().save(*args, **kwargs)
+ 
 
     def get_subtotal(self):
         return sum(item.total_price() for item in self.items.all())
@@ -922,6 +937,10 @@ class QuotationItem(models.Model):
     warranty = models.CharField(max_length=50,blank=True)
     order = models.PositiveIntegerField(default=0)
 
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
     def total_price(self):
         if self.item_type == 'labour':
             return (self.hours or 0) * (self.unit_price or 0)
@@ -989,6 +1008,11 @@ class QuotationComplaint(models.Model):
     )
     is_manual_override = models.BooleanField(default=False)
     order           = models.PositiveIntegerField(default=0)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.get_complaint_type_display()} — {self.description[:50]}"
@@ -1058,19 +1082,14 @@ class VehicleInspection(models.Model):
     # Meta
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
-    created_by = models.IntegerField(null=True, blank=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
+
+    
 
     def save(self, *args, **kwargs):
-        if not self.inspection_number:
-            from jobcard_app.utils import generate_voucher_number
-            self.inspection_number = generate_voucher_number('Vehicle Inspection', VehicleInspection, 'inspection_number', default_prefix='VI-')
-
         if isinstance(self.inspection_date, str):
-            self.inspection_date = datetime.strptime(
-                self.inspection_date,
-                "%Y-%m-%d"
-            ).date()
-
+            self.inspection_date = datetime.strptime(self.inspection_date, "%Y-%m-%d").date()
         super().save(*args, **kwargs)
 
     @property
@@ -1123,6 +1142,11 @@ class ExteriorDamage(models.Model):
     damage_type = models.CharField(max_length=20, choices=DAMAGE_TYPE_CHOICES)
     notes       = models.CharField(max_length=200, blank=True)
 
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
+
     def __str__(self):
         return f"{self.get_zone_display()} — {self.get_damage_type_display()}"
 
@@ -1154,6 +1178,12 @@ class InteriorInspection(models.Model):
     floor_carpet     = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='good')
     headliner        = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='good')
     door_panels      = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='good')
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
+
 
     def __str__(self):
         return f"Interior — {self.inspection.inspection_number}"
@@ -1203,6 +1233,11 @@ class MechanicalInspection(models.Model):
     steering_fluid  = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='good', verbose_name='Power Steering Fluid')
     washer_fluid    = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='good', verbose_name='Washer Fluid Level')
     exhaust_system  = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='good', verbose_name='Exhaust System')
+    
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)
+    updated_by = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"Mechanical — {self.inspection.inspection_number}"
@@ -1230,6 +1265,11 @@ class AccessoriesInspection(models.Model):
     jack              = models.CharField(max_length=15, choices=STATUS_CHOICES, default='available')
     fire_extinguisher = models.CharField(max_length=15, choices=STATUS_CHOICES, default='available')
     first_aid_kit     = models.CharField(max_length=15, choices=STATUS_CHOICES, default='available')
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
 
     def get_available_count(self):
         fields = ['spare_wheel','tool_kit','service_book','remote_key',
@@ -1264,6 +1304,12 @@ class InspectionFinding(models.Model):
     finding_type  = models.CharField(max_length=15, choices=TYPE_CHOICES)
     description   = models.TextField()
     order         = models.PositiveIntegerField(default=0)
+
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.get_finding_type_display()} — {self.description[:50]}"
@@ -1306,10 +1352,8 @@ class DeliveryNote(models.Model):
         ('Full',  'Full'),
     ]
 
-    # ── Auto Number ───────────────────────────────────────────
-    delivery_number = models.CharField(
-        max_length=20, unique=True, blank=True,
-        help_text='Auto-generated: DN-00001')
+    voucherType    = models.ForeignKey('fleet_app.Vouchers', null=True, blank=True, on_delete=models.SET_NULL, related_name='delivery_notes')
+    voucher_number = models.CharField(max_length=50, blank=True, null=True)
 
     # ── Links ─────────────────────────────────────────────────
     jobcard  = models.ForeignKey(
@@ -1387,13 +1431,10 @@ class DeliveryNote(models.Model):
     is_active  = models.BooleanField(default=True)
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
-    created_by = models.IntegerField(null=True, blank=True)
+    created_by = models.IntegerField(null=True, blank=True) 
+    updated_by = models.IntegerField(null=True, blank=True)
 
-    def save(self, *args, **kwargs):
-        if not self.delivery_number:
-            from jobcard_app.utils import generate_voucher_number
-            self.delivery_number = generate_voucher_number('Delivery Note', DeliveryNote, 'delivery_number', default_prefix='DN-')
-        super().save(*args, **kwargs)
+    
 
     def get_parts_total(self):
         return sum(
@@ -1419,15 +1460,77 @@ class DeliveryNote(models.Model):
     def get_balance(self):
         return self.get_grand_total() - float(self.advance_received)
 
+    def get_vehicle_breakdown(self):
+        """
+        Returns a list of dicts grouped by attached vehicles (and unassigned),
+        containing parts, labours, services, and charges breakdown for each vehicle.
+        """
+        breakdown = []
+        attached_vehs = [dn_v.vehicle for dn_v in self.vehicles.select_related('vehicle').all()]
+        
+        item_vehs = set()
+        for p in self.parts.all():
+            if p.vehicle: item_vehs.add(p.vehicle)
+        for l in self.labours.all():
+            if l.vehicle: item_vehs.add(l.vehicle)
+        for s in self.services.all():
+            if s.vehicle: item_vehs.add(s.vehicle)
+            
+        all_vehs = []
+        for v in attached_vehs:
+            if v and v not in all_vehs:
+                all_vehs.append(v)
+        for v in item_vehs:
+            if v and v not in all_vehs:
+                all_vehs.append(v)
+
+        for v in all_vehs:
+            v_parts = [p for p in self.parts.all() if p.vehicle_id == v.id]
+            v_labours = [l for l in self.labours.all() if l.vehicle_id == v.id]
+            v_services = [s for s in self.services.all() if s.vehicle_id == v.id]
+            parts_total = sum(float(p.quantity or 0) * float(p.rate or 0) for p in v_parts)
+            labour_total = sum(float(l.hours or 0) * float(l.rate or 0) for l in v_labours)
+            breakdown.append({
+                'vehicle': v,
+                'parts': v_parts,
+                'labours': v_labours,
+                'services': v_services,
+                'parts_total': parts_total,
+                'labour_total': labour_total,
+                'total': parts_total + labour_total,
+            })
+
+        unassigned_parts = [p for p in self.parts.all() if not p.vehicle_id]
+        unassigned_labours = [l for l in self.labours.all() if not l.vehicle_id]
+        unassigned_services = [s for s in self.services.all() if not s.vehicle_id]
+        if unassigned_parts or unassigned_labours or unassigned_services or not breakdown:
+            parts_total = sum(float(p.quantity or 0) * float(p.rate or 0) for p in unassigned_parts)
+            labour_total = sum(float(l.hours or 0) * float(l.rate or 0) for l in unassigned_labours)
+            breakdown.append({
+                'vehicle': None,
+                'parts': unassigned_parts,
+                'labours': unassigned_labours,
+                'services': unassigned_services,
+                'parts_total': parts_total,
+                'labour_total': labour_total,
+                'total': parts_total + labour_total,
+            })
+
+        return breakdown
+
     def __str__(self):
-        return f"{self.delivery_number} — {self.customer}"
+        return f"{self.voucher_number or 'DN'} — {self.customer}"
 
     class Meta:
         ordering = ['-created_on']
         verbose_name = 'Delivery Note'
         verbose_name_plural = 'Delivery Notes'
 
-
+class DeliveryNoteVehicle(models.Model):
+    delivery_note = models.ForeignKey(DeliveryNote, related_name='vehicles', on_delete=models.CASCADE)
+    vehicle       = models.ForeignKey('WorkshopVehicle', on_delete=models.CASCADE)
+    mileage       = models.PositiveIntegerField(null=True, blank=True)
+    notes         = models.CharField(max_length=255, blank=True, default='')
 # ── Completed Services ────────────────────────────────────────
 class DeliveryService(models.Model):
 
@@ -1440,6 +1543,10 @@ class DeliveryService(models.Model):
     delivery_note = models.ForeignKey(
         DeliveryNote, on_delete=models.CASCADE,
         related_name='services')
+    vehicle       = models.ForeignKey(
+        'WorkshopVehicle', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='delivery_services')
     description   = models.CharField(max_length=300)
     quantity      = models.DecimalField(
         max_digits=8, decimal_places=2, default=1)
@@ -1469,6 +1576,10 @@ class DeliveryPart(models.Model):
     delivery_note = models.ForeignKey(
         'DeliveryNote', on_delete=models.CASCADE,
         related_name='parts')
+    vehicle       = models.ForeignKey(
+        'WorkshopVehicle', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='delivery_parts_by_vehicle')
 
     # ── Item Master FK ────────────────────────────────────
     item = models.ForeignKey(
@@ -1484,7 +1595,10 @@ class DeliveryPart(models.Model):
     unit      = models.CharField(max_length=10, choices=UNIT_CHOICES, default='No')
     rate      = models.DecimalField(max_digits=12, decimal_places=3, default=0)
     order     = models.PositiveIntegerField(default=0)
-
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
     def __str__(self):
         return self.name
 
@@ -1498,6 +1612,10 @@ class DeliveryLabour(models.Model):
     delivery_note = models.ForeignKey(
         DeliveryNote, on_delete=models.CASCADE,
         related_name='labours')
+    vehicle       = models.ForeignKey(
+        'WorkshopVehicle', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='delivery_labours_by_vehicle')
     technician = models.ForeignKey(
         'fleet_app.Staff', on_delete=models.SET_NULL,
         null=True, blank=True,
@@ -1510,7 +1628,10 @@ class DeliveryLabour(models.Model):
     amount      = models.DecimalField(
         max_digits=12, decimal_places=3, default=0)
     order       = models.PositiveIntegerField(default=0)
-
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
     def save(self, *args, **kwargs):
         self.amount = float(self.hours or 0) * float(self.rate or 0)
         super().save(*args, **kwargs)
@@ -1537,52 +1658,32 @@ class Invoice(models.Model):
         ('cancelled', 'Cancelled'),
     ]
 
-    PAYMENT_MODE_CHOICES = [
-        ('cash',   'Cash'),
-        ('bank',   'Bank Transfer'),
-        ('cheque', 'Cheque'),
-        ('card',   'Credit Card'),
-        ('pdc',    'PDC'),
-    ]
-
-    # ── Auto Number ───────────────────────────────────────────
-    invoice_number = models.CharField(
-        max_length=20, unique=True, blank=True,
-        help_text='Auto-generated: INV-00001')
+    VOUCHER_PAYMENT_MODE_CHOICES = [
+            ('cash', 'Cash'),
+            ('bank', 'Bank'),
+            ('Credit', 'Credit'),
+        ]
+    voucherType = models.ForeignKey('fleet_app.Vouchers', null=True, blank=True,on_delete=models.SET_NULL, related_name='invoices')
+    voucher_number = models.CharField(max_length=50, blank=True, null=True)
+        # ── Auto Number ───────────────────────────────────────────
+    invoice_number = models.CharField(max_length=20, unique=True, blank=True,help_text='Auto-generated: INV-00001')
 
     # ── Links ─────────────────────────────────────────────────
-    jobcard      = models.ForeignKey(
-        'JobCard', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='invoices')
-    quotation     = models.ForeignKey(
-        'Quotation', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='invoices')
-    estimate      = models.ForeignKey(
-        'Estimate', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='invoices')
-    delivery_note = models.ForeignKey(
-        'DeliveryNote', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='invoices')
-    customer      = models.ForeignKey(
-        'accounts_app.LedgerCreation',
-        on_delete=models.PROTECT,
-        related_name='ws_invoices')
-    vehicle       = models.ForeignKey(
-        'WorkshopVehicle', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='invoices')
-    advisor = models.ForeignKey(
-        'fleet_app.Staff', on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='invoices_advised')
+    jobcard      = models.ForeignKey('JobCard', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
+    quotation     = models.ForeignKey('Quotation', on_delete=models.SET_NULL,null=True, blank=True, related_name='invoices')
+    estimate      = models.ForeignKey('Estimate', on_delete=models.SET_NULL,null=True, blank=True, related_name='invoices')
+    delivery_note = models.ForeignKey('DeliveryNote', on_delete=models.SET_NULL,null=True, blank=True, related_name='invoices')
+    customer      = models.ForeignKey('accounts_app.LedgerCreation',on_delete=models.PROTECT,related_name='ws_invoices')
+    ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, related_name='invoice_ledger', blank=True, null=True)
+
+    vehicle       = models.ForeignKey('WorkshopVehicle', on_delete=models.SET_NULL,null=True, blank=True, related_name='invoices')
+    advisor = models.ForeignKey('fleet_app.Staff', on_delete=models.SET_NULL,null=True, blank=True,related_name='invoices_advised')
 
     # ── Header ────────────────────────────────────────────────
     invoice_date     = models.DateField()
     due_date         = models.DateField(null=True, blank=True)
-    status           = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default='draft')
-    payment_mode     = models.CharField(
-        max_length=20, choices=PAYMENT_MODE_CHOICES,
-        default='cash', blank=True)
+    status           = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    payment_mode = models.CharField(max_length=10, choices=VOUCHER_PAYMENT_MODE_CHOICES, default='cash')
 
     # ── Customer extra info ───────────────────────────────────
     customer_mobile  = models.CharField(max_length=30, blank=True)
@@ -1590,11 +1691,8 @@ class Invoice(models.Model):
     vehicle_model    = models.CharField(max_length=100, blank=True)
 
     # ── Financials ────────────────────────────────────────────
-    discount_pct   = models.DecimalField(
-        max_digits=5, decimal_places=2, default=0,
-        verbose_name='Discount %')
-    amount_paid    = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0)
+    discount_pct   = models.DecimalField(max_digits=5, decimal_places=2, default=0,verbose_name='Discount %')
+    amount_paid    = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     notes          = models.TextField(blank=True)
 
     # ── Meta ──────────────────────────────────────────────────
@@ -1602,13 +1700,9 @@ class Invoice(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
     created_by = models.IntegerField(null=True, blank=True)
-
-    def save(self, *args, **kwargs):
-        if not self.invoice_number:
-            from jobcard_app.utils import generate_voucher_number
-            self.invoice_number = generate_voucher_number('Invoice', Invoice, 'invoice_number', default_prefix='INV-')
-        super().save(*args, **kwargs)
-
+    updated_by = models.IntegerField(null=True, blank=True)
+    
+    
     # ── Totals ────────────────────────────────────────────────
     def get_parts_subtotal(self):
         return sum(float(i.quantity) * float(i.unit_price) * (1 - float(i.discount_pct) / 100)
@@ -1685,11 +1779,18 @@ class Invoice(models.Model):
         verbose_name = 'Invoice'
         verbose_name_plural = 'Invoices'
 
-
+class InvoiceVehicle(models.Model):
+    invoice  = models.ForeignKey(Invoice, related_name='vehicles', on_delete=models.CASCADE)
+    vehicle  = models.ForeignKey('WorkshopVehicle', on_delete=models.CASCADE)
+    mileage  = models.PositiveIntegerField(null=True, blank=True)
+    notes    = models.CharField(max_length=255, blank=True, default='')
 # ── Invoice Parts ─────────────────────────────────────────────
 class InvoicePart(models.Model):
     invoice      = models.ForeignKey(
         Invoice, on_delete=models.CASCADE, related_name='parts')
+    vehicle      = models.ForeignKey(
+        'WorkshopVehicle', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='invoice_parts')
     item         = models.ForeignKey(
         'item_master.Item', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='invoice_parts', verbose_name='Item Master')
@@ -1709,10 +1810,29 @@ class InvoicePart(models.Model):
         if self.item_ref:
             try:
                 from item_master.models import Item
-                return Item.objects.filter(pk=self.item_ref).first()
+                item_found = Item.objects.filter(pk=self.item_ref).first()
+                if item_found:
+                    return item_found
+            except Exception:
+                pass
+        if self.item_code:
+            try:
+                from item_master.models import Item
+                item_found = Item.objects.filter(item_code__iexact=self.item_code.strip()).first()
+                if item_found:
+                    return item_found
+            except Exception:
+                pass
+        if self.description:
+            try:
+                from item_master.models import Item
+                item_found = Item.objects.filter(item_name__iexact=self.description.strip()).first()
+                if item_found:
+                    return item_found
             except Exception:
                 pass
         return None
+
 
     def get_base(self):
         return float(self.quantity) * float(self.unit_price) * (1 - float(self.discount_pct)/100)
@@ -1734,6 +1854,9 @@ class InvoicePart(models.Model):
 class InvoiceLabour(models.Model):
     invoice     = models.ForeignKey(
         Invoice, on_delete=models.CASCADE, related_name='labours')
+    vehicle     = models.ForeignKey(
+        'WorkshopVehicle', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='invoice_labours')
     description = models.CharField(max_length=300)
     technician = models.ForeignKey(
         'fleet_app.Staff', on_delete=models.SET_NULL,
@@ -1762,8 +1885,10 @@ class InvoiceLabour(models.Model):
 
 # ── Invoice Other Charges ─────────────────────────────────────
 class InvoiceOtherCharge(models.Model):
-    invoice     = models.ForeignKey(
-        Invoice, on_delete=models.CASCADE, related_name='other_charges')
+    invoice     = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='other_charges')
+    vehicle     = models.ForeignKey(
+        'WorkshopVehicle', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='invoice_other_charges')
     description = models.CharField(max_length=300)
     amount      = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     tax_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)

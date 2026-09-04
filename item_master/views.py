@@ -21,9 +21,9 @@ import datetime
 from django.db.models import Sum, F
 from accounts_app.common import check_privilege
 from django.http import HttpResponseForbidden
-from .common import create_ledger_postings_for_purchase, process_voucher, VoucherKind, create_ledger_postings_for_sale
+from .common import create_ledger_postings_for_purchase, process_voucher, VoucherKind, create_ledger_postings_for_sale, create_ledger_postings_for_purchase_return, create_ledger_postings_for_sales_return, delete_ledger_postings
 from fleet_app.common import get_ledgers_by_group_ids, get_ledgers_by_group_names
-
+from accounts_app.models import Groups
 
 
 
@@ -448,7 +448,9 @@ def edit_purchase_voucher(request, pk):
             if voucher_form.is_valid() and item_formset.is_valid():
                 voucher = voucher_form.save()
                 item_formset.save()
+                create_ledger_postings_for_purchase(voucher)
                 messages.success(request, f"✏️ Purchase voucher {voucher.voucher_no} updated successfully.")
+
                 return redirect('item_master:purchase_voucher_list')
             else:
                 # Collect and display all form errors
@@ -522,6 +524,7 @@ def create_purchaseReturn_voucher(request):
                     voucher_form=voucher_form,
                     items_raw_json=items_raw,
                 )
+                create_ledger_postings_for_purchase_return(voucher)
                 messages.success(request, f"✅ Purchase Return voucher {voucher.voucher_no} created successfully.")
                 return redirect('item_master:purchase_voucher_list')
         except Exception as e:
@@ -568,7 +571,9 @@ def edit_purchaseReturn_voucher(request, pk):
             if voucher_form.is_valid() and item_formset.is_valid():
                 voucher = voucher_form.save()
                 item_formset.save()
+                create_ledger_postings_for_purchase_return(voucher)
                 messages.success(request, f"✏️ Purchase Return voucher {voucher.voucher_no} updated successfully.")
+
                 return redirect('item_master:purchase_voucher_list')
             else:
                 # Collect and display all form errors
@@ -681,7 +686,9 @@ def purchase_voucher_delete(request, pk):
 
         return HttpResponseForbidden("🚫 You do not have permission to delete Purchase.")
     voucher = get_object_or_404(PurchaseMaster, pk=pk)
+    delete_ledger_postings(getattr(voucher, 'voucherType', None), voucher.id)
     voucher.delete()
+
     return redirect('item_master:purchase_voucher_list')
 
 
@@ -727,45 +734,47 @@ def purchase_voucher_delete(request, pk):
     
 
 
-@login_required(login_url='accounts_app:admin_login')        
+@login_required(login_url='accounts_app:admin_login')
 def customer_management(request, customer_id=None):
     if customer_id:
-        customer = get_object_or_404(Customer, id=customer_id)  # For updating an existing customer
+        customer = get_object_or_404(Customer, id=customer_id)
     else:
-        customer = None  # For creating a new customer
+        customer = None
 
     if request.method == 'POST':
-        form = CustomerForm(request.POST, instance=customer)  # Create or Update Customer form
+        form = CustomerForm(request.POST, instance=customer)
         if form.is_valid():
-            customer = form.save()  # Save the customer
+            customer = form.save()
 
-            # Add the corresponding Ledger under "Sundry Debtor"
-            sundry_debtors_group = GroupUnder.objects.filter(under_name="Sundry Debtors").first()
+            sundry_debtors_group = Groups.objects.filter(groupName='Sundry Debtors').first()
             if sundry_debtors_group:
-                # Check if a ledger for this customer already exists
-                existing_ledger = LedgerCreation.objects.filter(ledger_name=customer.customer_name, group_under=sundry_debtors_group).first()
-                if not existing_ledger:
-                    LedgerCreation.objects.create(
+                if customer.ledger_id:
+                    customer.ledger.ledger_name = customer.customer_name
+                    customer.ledger.save(update_fields=['ledger_name'])
+                else:
+                    ledger = LedgerCreation.objects.create(
                         ledger_name=customer.customer_name,
-                        group_under=sundry_debtors_group,
-                        opening_balance=0.00,  # Default opening balance
-                        types='DR',  # Default type as Debit
-                        remark=f"Ledger for Customer {customer.customer_name}"
+                        groups=sundry_debtors_group,
+                        opening_balance=0.00,
+                        types='DR',
+                        remark=f"Ledger for Customer {customer.customer_name}",
                     )
+                    customer.ledger = ledger
+                    customer.save(update_fields=['ledger'])
             else:
-                # Log or handle the case where "Sundry Debtor" group doesn't exist
                 print("Group 'Sundry Debtors' does not exist.")
 
-            return redirect('item_master:customer_management')  # Redirect to the same page after save
+            return redirect('item_master:customer_management')
     else:
         form = CustomerForm(instance=customer)
 
-    # Fetch all customers to list them
     customers = Customer.objects.all()
 
-    return render(request, 'customer_management.html', {'form': form, 'customers': customers, 'customer': customer})
-
-
+    return render(request, 'customer_management.html', {
+        'form': form,
+        'customers': customers,
+        'customer': customer,
+    })
 
 @login_required(login_url='accounts_app:admin_login')
 def sales_voucher_create(request):
@@ -866,7 +875,9 @@ def salesReturn_voucher_create(request):
                 voucher_form=voucher_form,
                 items_raw_json=items_raw,
             )
+            create_ledger_postings_for_sales_return(voucher)
             messages.success(request, f"Sales Return voucher {voucher.voucher_no} created successfully.")
+
             return redirect('item_master:sales_voucher_list')
         except Exception as e:
             messages.error(request, f"An error occurred: {e}")

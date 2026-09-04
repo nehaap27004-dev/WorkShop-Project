@@ -1,251 +1,142 @@
 {% extends 'fleet_base1.html' %}
-{% load i18n %}
-{% load static %}
-
 {% block content %}
-<div class="container-fluid py-4">
-    <!-- Title & Action Bar -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="h3 font-weight-bold text-primary mb-1">
-                <i class="bi bi-journal-bookmark-fill mr-2"></i>{% trans "Ledger Postings" %}
-            </h2>
-            <p class="text-muted small mb-0">{% trans "Complete connected double-entry ledger postings across all transactions" %}</p>
-        </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary shadow-sm" onclick="window.print();">
-                <i class="bi bi-printer mr-1"></i> {% trans "Print Postings" %}
-            </button>
-        </div>
-    </div>
-
-    <!-- Summary KPI Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card border-left-primary shadow-sm h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">{% trans "Total Transactions" %}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_count }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-receipt-cutoff fs-2 text-gray-400"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card border-left-success shadow-sm h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">{% trans "Total Debit (Dr)" %}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_debit|floatformat:3 }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-plus-circle fs-2 text-success"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card border-left-danger shadow-sm h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">{% trans "Total Credit (Cr)" %}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_credit|floatformat:3 }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-dash-circle fs-2 text-danger"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card border-left-info shadow-sm h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">{% trans "Net Balance" %}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ net_balance|floatformat:3 }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-calculator fs-2 text-info"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filter Section -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form method="get" class="form-row align-items-end">
-                <div class="col-md-3 mb-2">
-                    <label class="small font-weight-bold">{% trans "Ledger Account" %}</label>
-                    <select name="ledger" class="form-control form-control-sm">
-                        <option value="">{% trans "-- All Ledgers --" %}</option>
-                        {% for l in ledgers %}
-                            <option value="{{ l.id }}" {% if ledger_id|default:'' == l.id|stringformat:'s' %}selected{% endif %}>
-                                {{ l.ledger_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="col-md-2 mb-2">
-                    <label class="small font-weight-bold">{% trans "Voucher Type" %}</label>
-                    <select name="voucher_type" class="form-control form-control-sm">
-                        <option value="">{% trans "-- All Voucher Types --" %}</option>
-                        {% for v in voucher_types %}
-                            <option value="{{ v.id }}" {% if voucher_type_id|default:'' == v.id|stringformat:'s' %}selected{% endif %}>
-                                {{ v.VoucherName }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="col-md-2 mb-2">
-                    <label class="small font-weight-bold">{% trans "From Date" %}</label>
-                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
-                </div>
-
-                <div class="col-md-2 mb-2">
-                    <label class="small font-weight-bold">{% trans "To Date" %}</label>
-                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
-                </div>
-
-                <div class="col-md-2 mb-2">
-                    <label class="small font-weight-bold">{% trans "Search (Voucher # / Name)" %}</label>
-                    <input type="text" name="q" class="form-control form-control-sm" placeholder="Voucher # or name..." value="{{ search_q }}">
-                </div>
-
-                <div class="col-md-1 mb-2 d-flex gap-1">
-                    <button type="submit" class="btn btn-primary btn-sm btn-block" title="{% trans 'Filter' %}">
-                        <i class="bi bi-search"></i>
-                    </button>
-                    <a href="{% url 'accounts_app:ledger_posting_list' %}" class="btn btn-secondary btn-sm" title="{% trans 'Reset' %}">
-                        <i class="bi bi-x-lg"></i>
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Ledger Postings Main Table -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">
-                <i class="bi bi-list-check mr-1"></i> {% trans "Connected Ledger Postings" %}
-            </h6>
-            <span class="badge badge-primary px-3 py-2">{% trans "Records Found" %}: {{ total_count }}</span>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover mb-0 align-middle">
-                    <thead class="thead-light">
-                        <tr class="text-center small font-weight-bold text-uppercase">
-                            <th style="width: 100px;">{% trans "Date" %}</th>
-                            <th style="width: 140px;">{% trans "Voucher Type" %}</th>
-                            <th style="width: 110px;">{% trans "Voucher #" %}</th>
-                            <th style="width: 180px;">{% trans "Account Ledger" %}</th>
-                            <th style="width: 200px;">{% trans "Particulars (Counter Account)" %}</th>
-                            <th>{% trans "Narration / Remarks" %}</th>
-                            <th style="width: 120px;" class="text-right">{% trans "Debit (Dr)" %}</th>
-                            <th style="width: 120px;" class="text-right">{% trans "Credit (Cr)" %}</th>
-                            <th style="width: 130px;" class="text-right">{% trans "Running Balance" %}</th>
-                            <th style="width: 100px;" class="text-center">{% trans "Action" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for post in postings %}
-                        <tr>
-                            <td class="text-center align-middle font-weight-bold small">
-                                {{ post.date|date:"d-m-Y" }}
-                            </td>
-                            <td class="text-center align-middle">
-                                <span class="badge badge-soft-info px-2 py-1">
-                                    {{ post.VoucherType.VoucherName }}
-                                </span>
-                            </td>
-                            <td class="text-center align-middle font-weight-bold text-primary">
-                                #{{ post.VoucherNo }}
-                                {% if post.RefVoucherNo %}
-                                    <br><small class="text-muted">(Ref: #{{ post.RefVoucherNo }})</small>
-                                {% endif %}
-                            </td>
-                            <td class="align-middle font-weight-bold text-dark small">
-                                {{ post.ledger.ledger_name }}
-                            </td>
-                            <td class="align-middle small text-info font-weight-bold">
-                                {{ post.particulars }}
-                            </td>
-                            <td class="align-middle small text-muted font-italic">
-                                {{ post.narration|default:"-" }}
-                            </td>
-                            <td class="text-right align-middle font-weight-bold text-success">
-                                {% if post.debit %}{{ post.debit|floatformat:3 }}{% else %}-{% endif %}
-                            </td>
-                            <td class="text-right align-middle font-weight-bold text-danger">
-                                {% if post.credit %}{{ post.credit|floatformat:3 }}{% else %}-{% endif %}
-                            </td>
-                            <td class="text-right align-middle font-weight-bold text-dark">
-                                {{ post.running_balance|floatformat:3 }}
-                            </td>
-                            <td class="text-center align-middle">
-                                <a href="{% url 'accounts_app:transaction_ledger_detail' voucher_type_id=post.VoucherType.id voucher_no=post.VoucherNo %}"
-                                   class="btn btn-sm btn-outline-primary py-1 px-2"
-                                   title="{% trans 'View Transaction Statement' %}">
-                                    <i class="bi bi-eye"></i> {% trans "Detail" %}
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="10" class="text-center py-4 text-muted">
-                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                {% trans "No connected ledger posting entries found matching your filters." %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot class="bg-light font-weight-bold">
-                        <tr>
-                            <td colspan="6" class="text-right text-uppercase small py-3">
-                                {% trans "Page Totals" %}:
-                            </td>
-                            <td class="text-right text-success font-weight-bold py-3">
-                                {{ total_debit|floatformat:3 }}
-                            </td>
-                            <td class="text-right text-danger font-weight-bold py-3">
-                                {{ total_credit|floatformat:3 }}
-                            </td>
-                            <td class="text-right text-dark font-weight-bold py-3">
-                                {{ net_balance|floatformat:3 }}
-                            </td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
 <style>
-    .border-left-primary { border-left: .25rem solid #4e73df !important; }
-    .border-left-success { border-left: .25rem solid #1cc88a !important; }
-    .border-left-danger { border-left: .25rem solid #e74a3b !important; }
-    .border-left-info { border-left: .25rem solid #36b9cc !important; }
-    .badge-soft-info { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+*{box-sizing:border-box}
+body{background:#f5f6fa;font-family:'Segoe UI',system-ui,sans-serif}
+.wrap{max-width:1200px;margin:0 auto;padding:24px 20px 60px}
+
+.pg-title{font-size:24px;font-weight:400;color:#8a94a6;margin-bottom:20px}
+
+/* Filter card */
+.filter-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;
+             padding:18px 22px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.filter-row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+.filter-field{flex:1;min-width:160px}
+.filter-field label{display:block;font-size:12px;color:#8a94a6;margin-bottom:6px;font-weight:600}
+.filter-field input,.filter-field select{
+    width:100%;border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;
+    font-size:13px;color:#1a1a2e;background:#fff;outline:none;font-family:inherit}
+.filter-field input:focus,.filter-field select:focus{border-color:#7c3aed;box-shadow:0 0 0 2px rgba(124,58,237,.08)}
+.btn-clear{background:#9ca3af;color:#fff;border:none;border-radius:6px;
+           padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+           text-decoration:none;display:inline-flex;align-items:center;height:38px}
+.btn-clear:hover{background:#6b7280;color:#fff}
+.btn-filter{background:#7c3aed;color:#fff;border:none;border-radius:6px;
+            padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;height:38px}
+.btn-filter:hover{background:#6d28d9}
+
+/* Table card */
+.tcard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;
+       box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{background:#f3f4f6;color:#374151;font-weight:700;font-size:12px;
+         text-transform:uppercase;letter-spacing:.4px;
+         text-align:left;padding:13px 18px;border-bottom:1px solid #e5e7eb;white-space:nowrap}
+thead th.num{text-align:right}
+tbody td{padding:13px 18px;border-bottom:1px solid #f1f3f6;font-size:13px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#faf9ff}
+td.num{text-align:right;font-family:monospace}
+.link-cell{color:#7c3aed;font-weight:600}
+.empty-cell{color:#9ca3af;text-align:center}
+.vtype-badge{display:inline-block;background:#f3f4f6;color:#4b5563;border-radius:20px;
+             padding:3px 10px;font-size:11px;font-weight:600}
+
+tfoot td{padding:13px 18px;font-weight:700;font-size:13px;border-top:2px solid #e5e7eb}
+tfoot tr.totals td{background:#f5f3ff}
+tfoot tr.balance td{background:#eef2ff}
+tfoot td.num{text-align:right;font-family:monospace}
+
+@media(max-width:768px){.filter-field{min-width:calc(50% - 8px)}}
 </style>
+
+<div class="wrap">
+  <div class="pg-title">Ledger Posting</div>
+
+  <!-- Filter Section -->
+  <form method="get" class="filter-card">
+    <div class="filter-row">
+      <div class="filter-field">
+        <label>From Date</label>
+        <input type="date" name="date_from" value="{{ date_from }}">
+      </div>
+
+      <div class="filter-field">
+        <label>To Date</label>
+        <input type="date" name="date_to" value="{{ date_to }}">
+      </div>
+
+      <div class="filter-field">
+        <label>Voucher Type</label>
+        <select name="voucher_type">
+          <option value="">All</option>
+          {% for v in vouchers %}
+            <option value="{{ v.id }}" {% if voucher_type_id|default:'' == v.id|stringformat:'s' %}selected{% endif %}>
+              {{ v.VoucherName }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label>Ledger</label>
+        <select name="ledger">
+          <option value="">All</option>
+          {% for l in ledgers %}
+            <option value="{{ l.id }}" {% if ledger_id|default:'' == l.id|stringformat:'s' %}selected{% endif %}>
+              {{ l.ledger_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn-filter">Filter</button>
+      <a href="{% url 'accounts_app:ledger_posting_report' %}" class="btn-clear">Clear</a>
+    </div>
+  </form>
+
+  <!-- Report Table -->
+  <div class="tcard">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:110px">Date</th>
+            <th style="width:160px">Voucher Type</th>
+            <th style="width:100px">Voucher No</th>
+            <th>Ledger</th>
+            <th class="num" style="width:140px">Debit</th>
+            <th class="num" style="width:140px">Credit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for post in postings %}
+          <tr>
+            <td>{{ post.date|date:"d-m-Y" }}</td>
+            <td><span class="vtype-badge">{{ post.VoucherType.VoucherName|default:"Manual" }}</span></td>
+            <td class="link-cell">{{ post.VoucherNo }}</td>
+            <td>{{ post.ledger.ledger_name }}</td>
+            <td class="num">{% if post.debit %}{{ post.debit|floatformat:3 }}{% else %}-{% endif %}</td>
+            <td class="num">{% if post.credit %}{{ post.credit|floatformat:3 }}{% else %}-{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="empty-cell" style="padding:40px 18px">No ledger postings found.</td></tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="totals">
+            <td colspan="4" style="text-align:right">Total</td>
+            <td class="num">{{ total_debit|floatformat:3 }}</td>
+            <td class="num">{{ total_credit|floatformat:3 }}</td>
+          </tr>
+          <tr class="balance">
+            <td colspan="4" style="text-align:right">Balance (Debit − Credit)</td>
+            <td colspan="2" class="num">{{ balance|floatformat:3 }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
 {% endblock %}

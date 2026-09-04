@@ -74,7 +74,6 @@
                         <th>Cost Center</th>
                         <th>Debit</th>
                         <th>Credit</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -94,15 +93,10 @@
 
                             <td class="text-end">{{ post.debit|default:"-" }}</td>
                             <td class="text-end">{{ post.credit|default:"-" }}</td>
-                            <td class="text-center">
-                                <a href="{% url 'accounts_app:transaction_ledger_detail' voucher_type_id=post.VoucherType.id voucher_no=post.VoucherNo %}"
-                                   class="btn btn-sm btn-outline-primary py-0">
-                                    Report
-                                </a>
-                            </td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="8" class="text-center text-muted">No ledger postings found.</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted">No ledger postings found.</td></tr>
+
                     {% endfor %}
                 </tbody>
                 <tfoot>

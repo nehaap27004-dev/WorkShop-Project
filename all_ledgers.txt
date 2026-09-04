@@ -1,0 +1,12 @@
+﻿145 objects imported automatically (use -v 2 for details).
+
+9 | WAHET AL - BAYAD TRAD.& CONT. | Sundry Debtors
+10 | Discount Allowed | Indirect Expense
+11 | Other Income | Income
+12 | Output GST | Liability
+13 | HADHAB MARMUL INTERNATIONAL CONT CO. | Sundry Debtors
+14 | Test Ledger Customer | Sundry Debtors
+15 | Diesel Supplier | Sundry Creditors
+17 | Electricity | Indirect Income
+21 | Purchase Account | Asset
+22 | Input Tax | Asset

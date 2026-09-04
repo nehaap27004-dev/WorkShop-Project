@@ -53,10 +53,10 @@ def fleet_home(request):
 
     vehicles = Vehicle.objects.all()
 
-    total_invoices = Invoice.objects.aggregate(
-        total=Sum('grand_total')
-    )['total'] or 0
-
+    from jobcard_app.models import Invoice as JobCardInvoice
+    total_invoices = sum(
+        inv.get_grand_total() for inv in JobCardInvoice.objects.filter(is_active=True)
+    )
     client_outstanding = get_group_outstanding(29)
     supplier_outstanding = get_group_outstanding(28)
 

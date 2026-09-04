@@ -423,7 +423,7 @@ class SimpleQuotationAdmin(admin.ModelAdmin):
 class SimpleQuotationDetailsAdmin(admin.ModelAdmin):
     list_display = ('quotation', 'description', 'quantity', 'rent')
     search_fields = ('description', 'quotation__quotation_no')    
-    
+'''    
 class InvoiceDetailsInline(admin.TabularInline):
     model = InvoiceDetails
     extra = 1
@@ -440,7 +440,7 @@ class InvoiceDetailsAdmin(admin.ModelAdmin):
     list_display = ('invoice', 'vehicle', 'location', 'amount', 'tax', 'tax_amount', 'total_amount')
     search_fields = ('invoice__voucher_no', 'vehicle__vehicle_name')
     list_filter = ('vehicle',)    
-    
+   ''' 
 class FleetHireDetailsInline(admin.TabularInline):
     model = FleetHireDetails
     extra = 1   # number of empty rows shown

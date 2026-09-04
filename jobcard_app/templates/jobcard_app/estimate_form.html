@@ -163,18 +163,21 @@ textarea.fi{resize:vertical}
 
       <!-- Row 1: Voucher No | Estimate No | Date | Status -->
       <div class="g4 mb">
-        <div>
-          <label class="fl">Voucher Number</label>
-          <input type="text" name="voucher_number" class="fi"
-            placeholder="e.g. VCH-2026-001"
-            value="{% if edit_mode %}{{ estimate.voucher_number|default:'' }}{% endif %}">
-        </div>
-        <div>
-          <label class="fl">Estimate Number</label>
-          <input type="text" name="estimate_number" class="fi" required
-            placeholder="e.g. EST-2026-001"
-            value="{% if edit_mode %}{{ estimate.estimate_number }}{% else %}{{ next_est_no }}{% endif %}">
-        </div>
+      <input type="hidden" name="voucherType" id="id_voucherType"
+        value="{% if edit_mode and estimate.voucherType %}{{ estimate.voucherType.id }}{% else %}1{% endif %}">
+
+      <div>
+        <label class="fl">Voucher Number</label>
+        <input type="text" name="voucher_number" id="id_voucher_number" class="fi"
+          placeholder="e.g. VCH-00001"
+          value="{% if edit_mode %}{{ estimate.voucher_number|default:'' }}{% endif %}">
+      </div>
+      <div>
+        <label class="fl">Estimate Number<span class="req">*</span></label>
+        <input type="text" name="estimate_number" class="fi" required
+          placeholder="Enter estimate number"
+          value="{% if edit_mode %}{{ estimate.estimate_number }}{% endif %}">
+      </div>
         <div>
           <label class="fl">Date <span class="req">*</span></label>
           <input type="date" name="date" class="fi" required
@@ -761,7 +764,27 @@ const VEH_URL = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
 const fmt = n => parseFloat(n||0).toFixed(3);
 
 let customerVehicleCache = [];
+function updateEstimateVoucherNumber(voucherTypeId) {
+  if (!voucherTypeId) return;
+  fetch("{% url 'jobcard_app:get_next_estimate_number' %}?voucher_type_id=" + voucherTypeId)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success && data.job_number) {
+        const voucherNumInput = document.getElementById('id_voucher_number');
+        if (voucherNumInput) voucherNumInput.value = data.job_number;
+      }
+    })
+    .catch(err => console.error('Error fetching next estimate voucher number:', err));
+}
 
+document.addEventListener('DOMContentLoaded', function () {
+  {% if not edit_mode %}
+  const voucherTypeInput = document.getElementById('id_voucherType');
+  if (voucherTypeInput && voucherTypeInput.value) {
+    updateEstimateVoucherNumber(voucherTypeInput.value);
+  }
+  {% endif %}
+});
 /* ══════════════════════════════════════════
    VEHICLES TABLE (same pattern as Job Card)
 ══════════════════════════════════════════ */

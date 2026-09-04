@@ -132,7 +132,7 @@ class CustomerForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        instance.groups_id = 2  # sundry DR - Automatically assign Group ID 
+        instance.groups_id = 18  # sundry DR - Automatically assign Group ID 
         instance.types = 'DR'    # Always DR
         if commit:
             instance.save()

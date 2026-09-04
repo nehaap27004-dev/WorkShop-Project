@@ -54,6 +54,7 @@ tbody td{padding:12px 16px;vertical-align:middle}
 .ab-del {background:#fef2f2;color:#dc2626;border-color:#fecaca}
 .empty{text-align:center;padding:60px 20px;color:#9ca3af}
 .flash{padding:10px 16px;border-radius:7px;margin-bottom:14px;font-size:13px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+.veh-more{font-size:10px;color:#9ca3af;margin-top:1px}
 </style>
 
 <div class="wrap">
@@ -84,7 +85,7 @@ tbody td{padding:12px 16px;vertical-align:middle}
 
   <form method="get" class="search-bar" id="searchForm">
     <div class="srch-wrap">
-      <span class="srch-icon">🔍</span>
+     
       <input type="text" name="q" value="{{ q }}" id="qInp"
              placeholder="Search delivery no., customer, job card..." autocomplete="off">
     </div>
@@ -113,15 +114,20 @@ tbody td{padding:12px 16px;vertical-align:middle}
           {% for dn in deliveries %}
           <tr>
             <td>
-              <div class="dn-no">{{ dn.delivery_number }}</div>
+              <div class="dn-no">{{ dn.voucher_number }}</div>
               <div class="dn-date">{{ dn.date|date:"d M Y" }}</div>
             </td>
             <td><div class="cust-name">{{ dn.customer.ledger_name }}</div></td>
             <td>
-              {% if dn.vehicle %}
-              <div style="font-size:13px;font-weight:600;color:#1a1a2e">{{ dn.vehicle.registration_number }}</div>
-              <div style="font-size:11px;color:#6b7280">{{ dn.vehicle.make }} {{ dn.vehicle.model }}</div>
+              {% with dv=dn.vehicles.first %}
+              {% if dv %}
+              <div style="font-size:13px;font-weight:600;color:#1a1a2e">{{ dv.vehicle.registration_number|default:dv.vehicle.vehicle_number }}</div>
+              <div style="font-size:11px;color:#6b7280">{{ dv.vehicle.manufacturer.manufacturer_name }} {{ dv.vehicle.vehicle_model.model_name }}</div>
+              {% if dn.vehicles.count > 1 %}
+              <div class="veh-more">+{{ dn.vehicles.count|add:"-1" }} more</div>
+              {% endif %}
               {% else %}—{% endif %}
+              {% endwith %}
             </td>
             <td>
               {% if dn.jobcard %}

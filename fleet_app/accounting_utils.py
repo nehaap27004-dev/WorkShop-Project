@@ -28,13 +28,14 @@ def get_ledger_balances(from_date, to_date):
     """
     qs = (
         LedgerPosting.objects
-        .filter(date__gte=from_date, date__lte=to_date)
+        .filter(date__gte=from_date, date__lte=to_date, IsDeleted=False)
         .values('ledger_id')
         .annotate(
             total_debit=Sum('debit'),
             total_credit=Sum('credit'),
         )
     )
+
     return {
         row['ledger_id']: _net(row['total_debit'], row['total_credit'])
         for row in qs

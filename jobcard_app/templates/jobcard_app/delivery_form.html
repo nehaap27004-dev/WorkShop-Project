@@ -217,10 +217,14 @@ textarea.fi{resize:vertical}
   <div class="sec-body">
     <!-- Row 1: Document & Date Details -->
     <div class="g4 mb">
+      <input type="hidden" name="voucherType" id="id_voucherType"
+            value="{% if edit_mode and dn.voucherType %}{{ dn.voucherType.id }}{% else %}{{ dn_voucher_type_id }}{% endif %}">
+
       <div>
-        <label class="fl">Delivery Note No.</label>
-        <input type="text" class="fi" readonly
-          value="{% if edit_mode %}{{ dn.delivery_number }}{% else %}Auto-Generated{% endif %}">
+        <label class="fl">Voucher Number</label>
+        <input type="text" name="voucher_number" id="id_voucher_number" class="fi"
+              placeholder="e.g. DN-00001"
+              value="{% if edit_mode %}{{ dn.voucher_number|default:'' }}{% else %}{{ next_dn_no }}{% endif %}">
       </div>
       <div>
         <label class="fl">Job Card / Ref No.</label>
@@ -241,7 +245,7 @@ textarea.fi{resize:vertical}
     </div>
 
     <!-- Row 2: Customer & Vehicle Main Info -->
-    <div class="g4 mb">
+    <div class="g2 mb">
       <div>
         <label class="fl">Customer Name *</label>
         <select name="customer" class="fi" required id="custSel" onchange="loadVehicles(this.value)">
@@ -262,27 +266,7 @@ textarea.fi{resize:vertical}
           placeholder="+00 XXXXX XXXXX"
           value="{% if edit_mode %}{{ dn.contact_number|default:'' }}{% endif %}">
       </div>
-      <div>
-        <label class="fl">Vehicle Name / Model *</label>
-        <select name="vehicle" class="fi" id="vehSel">
-          <option value="">— Select Vehicle —</option>
-          {% if edit_mode and dn.vehicle %}
-          <option value="{{ dn.vehicle_id }}" selected>{{ dn.vehicle }}</option>
-          {% elif prefill_jc and prefill_jc.workshop_vehicle %}
-          <option value="{{ prefill_jc.workshop_vehicle_id }}" selected>{{ prefill_jc.workshop_vehicle }}</option>
-          {% elif prefill_quotation and prefill_quotation.vehicle %}
-          <option value="{{ prefill_quotation.vehicle_id }}" selected>{{ prefill_quotation.vehicle }}</option>
-          {% endif %}
-        </select>
-      </div>
-      <div>
-        <label class="fl">Reg. Number</label>
-        <input type="text" name="reg_number" class="fi" id="regNum"
-          placeholder="XX-XX-000-000"
-          value="{% if edit_mode %}{{ dn.reg_number|default:'' }}{% elif prefill_jc and prefill_jc.workshop_vehicle %}{{ prefill_jc.workshop_vehicle.registration_number }}{% elif prefill_quotation and prefill_quotation.vehicle %}{{ prefill_quotation.vehicle.registration_number }}{% endif %}">
-      </div>
-    </div>
-
+    
     <!-- Row 3: Transaction Status & Vehicle Type -->
     <div class="g4 mb">
       <div>
@@ -304,12 +288,7 @@ textarea.fi{resize:vertical}
           <option value="online" {% if edit_mode and dn.payment_mode == 'online' %}selected{% endif %}>Online</option>
         </select>
       </div>
-      <div>
-        <label class="fl">Vehicle Type</label>
-        <input type="text" name="vehicle_type" class="fi"
-          placeholder="e.g. Sedan, SUV"
-          value="{% if edit_mode %}{{ dn.vehicle_type|default:'' }}{% endif %}">
-      </div>
+      
       <div>
         <label class="fl">Delivered By</label>
         <input type="text" name="driver_name" class="fi"
@@ -354,7 +333,93 @@ textarea.fi{resize:vertical}
     </div>
   </div>
 </div>
-
+ </div>
+    <!-- ════════════════════════════════════
+     VEHICLE (multi-vehicle table)
+    ════════════════════════════════════ -->
+    <div class="sec">
+      <div class="sec-hdr" style="justify-content:space-between">
+        <span class="sec-title">Vehicle</span>
+        <button type="button" onclick="addDnVehicleRow()"
+                style="background:#2563eb;color:#fff;border:none;border-radius:6px;
+                      padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer">
+          + Add Vehicle
+        </button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="dn-tbl">
+          <thead>
+            <tr>
+              <th style="width:26%">Vehicle Number</th>
+              <th style="width:26%">Model</th>
+              <th style="width:20%">Reg. Number</th>
+              <th style="width:18%">Mileage (km)</th>
+              <th style="width:10%"></th>
+            </tr>
+          </thead>
+          <tbody id="dnVehBody">
+            {% if edit_mode %}
+              {% for dv in dn.vehicles.all %}
+              <tr>
+                <td>
+                  <select name="dn_vehicle_id[]" class="dn-veh-select" onchange="onDnVehRowChange(this)">
+                    <option value="{{ dv.vehicle_id }}" selected>{{ dv.vehicle.vehicle_number }}{% if dv.vehicle.registration_number %} ({{ dv.vehicle.registration_number }}){% endif %}</option>
+                  </select>
+                </td>
+                <td><input type="text" class="fi dn-veh-model" readonly
+                      value="{{ dv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ dv.vehicle.vehicle_model.model_name|default:'' }}"></td>
+                <td><input type="text" class="fi dn-veh-reg" readonly value="{{ dv.vehicle.registration_number|default:'' }}"></td>
+                <td><input type="number" name="dn_vehicle_mileage[]" value="{{ dv.mileage|default:'' }}" min="0" class="fi"></td>
+                <td>
+                  <input type="hidden" name="dn_vehicle_notes[]" value="{{ dv.notes }}">
+                  <button type="button" class="btn-rm" onclick="removeDnVehRow(this)">✕</button>
+                </td>
+              </tr>
+              {% endfor %}
+            {% elif prefill_jc and prefill_jc.vehicles.exists %}
+              {% for jv in prefill_jc.vehicles.all %}
+              <tr>
+                <td>
+                  <select name="dn_vehicle_id[]" class="dn-veh-select" onchange="onDnVehRowChange(this)">
+                    <option value="{{ jv.vehicle_id }}" selected>{{ jv.vehicle.vehicle_number }}</option>
+                  </select>
+                </td>
+                <td><input type="text" class="fi dn-veh-model" readonly
+                      value="{{ jv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ jv.vehicle.vehicle_model.model_name|default:'' }}"></td>
+                <td><input type="text" class="fi dn-veh-reg" readonly value="{{ jv.vehicle.registration_number|default:'' }}"></td>
+                <td><input type="number" name="dn_vehicle_mileage[]" value="{{ jv.mileage|default:'' }}" min="0" class="fi"></td>
+                <td>
+                  <input type="hidden" name="dn_vehicle_notes[]" value="">
+                  <button type="button" class="btn-rm" onclick="removeDnVehRow(this)">✕</button>
+                </td>
+              </tr>
+              {% endfor %}
+            {% elif prefill_quotation and prefill_quotation.vehicles.exists %}
+              {% for qv in prefill_quotation.vehicles.all %}
+              <tr>
+                <td>
+                  <select name="dn_vehicle_id[]" class="dn-veh-select" onchange="onDnVehRowChange(this)">
+                    <option value="{{ qv.vehicle_id }}" selected>{{ qv.vehicle.vehicle_number }}</option>
+                  </select>
+                </td>
+                <td><input type="text" class="fi dn-veh-model" readonly
+                      value="{{ qv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ qv.vehicle.vehicle_model.model_name|default:'' }}"></td>
+                <td><input type="text" class="fi dn-veh-reg" readonly value="{{ qv.vehicle.registration_number|default:'' }}"></td>
+                <td><input type="number" name="dn_vehicle_mileage[]" value="{{ qv.mileage|default:'' }}" min="0" class="fi"></td>
+                <td>
+                  <input type="hidden" name="dn_vehicle_notes[]" value="">
+                  <button type="button" class="btn-rm" onclick="removeDnVehRow(this)">✕</button>
+                </td>
+              </tr>
+              {% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      <div id="dnVehEmpty" style="{% if edit_mode and dn.vehicles.exists or prefill_jc and prefill_jc.vehicles.exists or prefill_quotation and prefill_quotation.vehicles.exists %}display:none{% else %}display:block{% endif %};text-align:center;padding:16px;color:#94a3b8;font-size:12px">
+        No vehicles added yet. Select a customer first, then click "Add Vehicle".
+      </div>
+    </div>
 <!-- ════════════════════════════════════
      SECTION 2 — COMPLETED SERVICES
 ════════════════════════════════════ -->
@@ -370,6 +435,7 @@ textarea.fi{resize:vertical}
     <table class="dn-tbl">
       <thead>
         <tr>
+          <th style="width:20%">VEHICLE</th>
           <th>SERVICE</th>
           <th style="width:70px">QTY</th>
           <th style="width:130px">STATUS</th>
@@ -381,6 +447,14 @@ textarea.fi{resize:vertical}
         {% if edit_mode and services %}
           {% for s in services %}
           <tr style="border-bottom:1px solid #f3f4f6">
+            <td>
+              <select name="svc_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none">
+                <option value="">— Vehicle —</option>
+                {% for dv in dn.vehicles.all %}
+                <option value="{{ dv.vehicle_id }}" {% if s.vehicle_id == dv.vehicle_id %}selected{% endif %}>{{ dv.vehicle.vehicle_number }}</option>
+                {% endfor %}
+              </select>
+            </td>
             <td><input type="text" name="svc_description[]" value="{{ s.description }}" placeholder="e.g. Engine Oil Change" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
             <td><input type="number" name="svc_qty[]" value="{{ s.quantity }}" min="0" step="0.01" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
             <td>
@@ -397,6 +471,14 @@ textarea.fi{resize:vertical}
         {% elif prefill_jc and prefill_jc.complaints.all %}
           {% for c in prefill_jc.complaints.all %}
           <tr style="border-bottom:1px solid #f3f4f6">
+            <td>
+              <select name="svc_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none">
+                <option value="">— Vehicle —</option>
+                {% for jv in prefill_jc.vehicles.all %}
+                <option value="{{ jv.vehicle_id }}" {% if c.vehicle_id == jv.vehicle_id %}selected{% endif %}>{{ jv.vehicle.vehicle_number }}</option>
+                {% endfor %}
+              </select>
+            </td>
             <td><input type="text" name="svc_description[]" value="{{ c.description }}" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
             <td><input type="number" name="svc_qty[]" value="1" min="0" step="0.01" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
             <td>
@@ -413,6 +495,14 @@ textarea.fi{resize:vertical}
         {% elif prefill_quotation and prefill_quotation.complaints.all %}
           {% for c in prefill_quotation.complaints.all %}
           <tr style="border-bottom:1px solid #f3f4f6">
+            <td>
+              <select name="svc_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none">
+                <option value="">— Vehicle —</option>
+                {% for qv in prefill_quotation.vehicles.all %}
+                <option value="{{ qv.vehicle_id }}" {% if c.vehicle_id == qv.vehicle_id %}selected{% endif %}>{{ qv.vehicle.vehicle_number }}</option>
+                {% endfor %}
+              </select>
+            </td>
             <td><input type="text" name="svc_description[]" value="{{ c.description }}" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
             <td><input type="number" name="svc_qty[]" value="1" min="0" step="0.01" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
             <td>
@@ -428,6 +518,11 @@ textarea.fi{resize:vertical}
           {% endfor %}
         {% else %}
           <tr style="border-bottom:1px solid #f3f4f6">
+            <td>
+              <select name="svc_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none">
+                <option value="">— Vehicle —</option>
+              </select>
+            </td>
             <td><input type="text" name="svc_description[]" placeholder="e.g. Engine Oil Change" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
             <td><input type="number" name="svc_qty[]" value="1" min="0" step="0.01" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
             <td>
@@ -465,6 +560,7 @@ textarea.fi{resize:vertical}
       <thead>
         <tr>
           <th style="width:36px;text-align:center">SL</th>
+          <th style="width:18%">VEHICLE</th>
           <th>ITEM / SPARE PART</th>
           <th style="width:130px">PART NUMBER</th>
           <th style="width:90px" class="num">QTY</th>
@@ -500,6 +596,7 @@ textarea.fi{resize:vertical}
     <table class="dn-tbl">
       <thead>
         <tr>
+          <th style="width:18%">VEHICLE</th>
           <th>LABOUR DESCRIPTION</th>
           <th style="width:140px">TECHNICIAN</th>
           <th style="width:70px">HRS</th>
@@ -512,6 +609,14 @@ textarea.fi{resize:vertical}
         {% if edit_mode and labour %}
           {% for l in labour %}
           <tr style="border-bottom:1px solid #f3f4f6">
+            <td>
+              <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none">
+                <option value="">— Vehicle —</option>
+                {% for dv in dn.vehicles.all %}
+                <option value="{{ dv.vehicle_id }}" {% if l.vehicle_id == dv.vehicle_id %}selected{% endif %}>{{ dv.vehicle.vehicle_number }}</option>
+                {% endfor %}
+              </select>
+            </td>
             <td><input type="text" name="labour_desc[]" value="{{ l.description }}" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
             <td>
               <select name="labour_technician[]" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;background:#fff">
@@ -530,6 +635,14 @@ textarea.fi{resize:vertical}
         {% elif prefill_jc and prefill_jc.labours.all %}
           {% for l in prefill_jc.labours.all %}
           <tr style="border-bottom:1px solid #f3f4f6">
+            <td>
+              <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none">
+                <option value="">— Vehicle —</option>
+                {% for jv in prefill_jc.vehicles.all %}
+                <option value="{{ jv.vehicle_id }}" {% if l.vehicle_id == jv.vehicle_id %}selected{% endif %}>{{ jv.vehicle.vehicle_number }}</option>
+                {% endfor %}
+              </select>
+            </td>
             <td><input type="text" name="labour_desc[]" value="{{ l.description }}" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
             <td>
               <select name="labour_technician[]" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;background:#fff">
@@ -549,6 +662,14 @@ textarea.fi{resize:vertical}
           {% for l in prefill_quotation.items.all %}
             {% if l.item_type == 'labour' %}
             <tr style="border-bottom:1px solid #f3f4f6">
+              <td>
+                <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none">
+                  <option value="">— Vehicle —</option>
+                  {% for qv in prefill_quotation.vehicles.all %}
+                  <option value="{{ qv.vehicle_id }}" {% if l.vehicle_id == qv.vehicle_id %}selected{% endif %}>{{ qv.vehicle.vehicle_number }}</option>
+                  {% endfor %}
+                </select>
+              </td>
               <td><input type="text" name="labour_desc[]" value="{{ l.description }}" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
               <td>
                 <select name="labour_technician[]" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;background:#fff">
@@ -567,6 +688,11 @@ textarea.fi{resize:vertical}
           {% endfor %}
         {% else %}
           <tr style="border-bottom:1px solid #f3f4f6">
+            <td>
+              <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none">
+                <option value="">— Vehicle —</option>
+              </select>
+            </td>
             <td><input type="text" name="labour_desc[]" placeholder="e.g. Engine Oil Change — Labour" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
             <td>
               <select name="labour_technician[]" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;background:#fff">
@@ -795,14 +921,42 @@ document.addEventListener('DOMContentLoaded', function () {
     .then(data => {
       dnAllItems = data.items || [];
       renderDnExistingParts();
+      updateRowVehicleDropdowns();
       calcTotals();
     })
     .catch(e => {
       console.error('Items load failed:', e);
       renderDnExistingParts();
+      updateRowVehicleDropdowns();
       calcTotals();
     });
 });
+
+/* ── Dynamic Row Vehicle Dropdowns ── */
+function updateRowVehicleDropdowns() {
+  const vehOpts = [];
+  document.querySelectorAll('#dnVehBody .dn-veh-select').forEach(sel => {
+    if (sel.value && sel.selectedIndex >= 0) {
+      const o = sel.options[sel.selectedIndex];
+      vehOpts.push({ id: sel.value, name: o.text || o.textContent });
+    }
+  });
+
+  document.querySelectorAll('.row-veh-select').forEach(sel => {
+    const curVal = sel.value;
+    sel.innerHTML = '<option value="">— Vehicle —</option>';
+    vehOpts.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.id;
+      opt.textContent = v.name;
+      if (String(v.id) === String(curVal)) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    if (curVal && [...sel.options].some(o => String(o.value) === String(curVal))) {
+      sel.value = curVal;
+    }
+  });
+}
 
 /* ── Item master dropdown options ── */
 function buildDnItemOptions(selectedId = '') {
@@ -829,7 +983,7 @@ function buildUnitOptions(selected = 'No') {
 }
 
 /* ── Add a part row ── */
-function addDnPart(itemId='', partNo='', qty=1, unit='No', rate='0.000', name='') {
+function addDnPart(itemId='', partNo='', qty=1, unit='No', rate='0.000', name='', vehicleId='') {
   const tbody = document.getElementById('dnPartsBody');
   if (!tbody) return;
   const sl = tbody.rows.length + 1;
@@ -842,6 +996,11 @@ function addDnPart(itemId='', partNo='', qty=1, unit='No', rate='0.000', name=''
 
   tr.innerHTML = `
     <td style="padding:6px 8px;text-align:center;font-size:12px;color:#94a3b8;font-weight:600">${sl}</td>
+    <td style="padding:4px 5px">
+      <select name="part_vehicle_id[]" class="row-veh-select fi" style="${inpBase};cursor:pointer">
+        <option value="">— Vehicle —</option>
+      </select>
+    </td>
     <td style="padding:4px 5px">
       <select name="part_item_id[]" style="${inpBase};cursor:pointer" onchange="onDnItemSelect(this)">
         ${buildDnItemOptions(itemId)}
@@ -867,6 +1026,11 @@ function addDnPart(itemId='', partNo='', qty=1, unit='No', rate='0.000', name=''
     </td>`;
 
   tbody.appendChild(tr);
+  updateRowVehicleDropdowns();
+  if (vehicleId) {
+    const vSel = tr.querySelector('.row-veh-select');
+    if (vSel) vSel.value = vehicleId;
+  }
 
   const selectEl = tr.querySelector('select[name="part_item_id[]"]');
   const nameInp   = tr.querySelector('.dn-pname');
@@ -966,7 +1130,21 @@ function calcDnParts() {
 
   calcTotals();
 }
-
+{% if not edit_mode %}
+const dnVoucherTypeInput = document.getElementById('id_voucherType');
+if (dnVoucherTypeInput && dnVoucherTypeInput.value) {
+  fetch("{% url 'jobcard_app:get_next_delivery_number' %}?voucher_type_id=" + dnVoucherTypeInput.value)
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.job_number) {
+        const dnVoucherNumInput = document.getElementById('id_voucher_number');
+        // Only overwrite if the field still has the server-rendered default (prevents overwriting user edits)
+        if (dnVoucherNumInput) dnVoucherNumInput.value = data.job_number;
+      }
+    })
+    .catch(err => console.error('Error fetching next delivery voucher number:', err));
+}
+{% endif %}
 function renderDnExistingParts() {
   const tbody = document.getElementById('dnPartsBody');
   if (!tbody) return;
@@ -980,7 +1158,8 @@ function renderDnExistingParts() {
       {{ p.quantity }},
       '{{ p.unit|default:"No" }}',
       '{{ p.rate|floatformat:3 }}',
-      '{{ p.name|escapejs }}'
+      '{{ p.name|escapejs }}',
+      '{{ p.vehicle_id|default:"" }}'
     );
     {% endfor %}
   {% elif prefill_jc and prefill_jc.parts.all %}
@@ -991,7 +1170,8 @@ function renderDnExistingParts() {
       {{ p.quantity }},
       'No',
       '{{ p.unit_price|floatformat:3 }}',
-      '{{ p.description|escapejs }}'
+      '{{ p.description|escapejs }}',
+      '{{ p.vehicle_id|default:"" }}'
     );
     {% endfor %}
   {% elif prefill_quotation %}
@@ -1003,7 +1183,8 @@ function renderDnExistingParts() {
         {{ p.quantity }},
         '{{ p.unit|default:"No" }}',
         '{{ p.unit_price|floatformat:3 }}',
-        '{{ p.description|escapejs }}'
+        '{{ p.description|escapejs }}',
+        '{{ p.vehicle_id|default:"" }}'
       );
       {% endif %}
     {% endfor %}
@@ -1013,36 +1194,106 @@ function renderDnExistingParts() {
 }
 
 /* ── Customer → Vehicles AJAX ── */
+let dnCustomerVehicleCache = [];
+
 function loadVehicles(cid) {
-  const sel = document.getElementById('vehSel');
-  sel.innerHTML = '<option value="">— Loading... —</option>';
-  if (!cid) { sel.innerHTML = '<option value="">— Select Vehicle —</option>'; return; }
+  dnCustomerVehicleCache = [];
+  if (!cid) {
+    document.querySelectorAll('.dn-veh-select').forEach(sel => populateDnVehSelect(sel));
+    updateRowVehicleDropdowns();
+    return;
+  }
   fetch(VEH_URL + '?customer_id=' + cid)
     .then(r => r.json())
     .then(d => {
-      sel.innerHTML = '<option value="">— Select Vehicle —</option>';
-      (d.vehicles || []).forEach(v => {
-        const vName = v.label || v.name || v.vehicle_model || (v.make ? (v.make + ' ' + (v.model || '')).trim() : 'Vehicle');
-        const vReg = v.registration_number || v.reg || '';
-        const o = new Option(vName, v.id);
-        o.dataset.reg = vReg;
-        sel.add(o);
-      });
-      sel.onchange = function() {
-        const opt = this.options[this.selectedIndex];
-        if (opt && opt.dataset.reg)
-          document.getElementById('regNum').value = opt.dataset.reg;
-      };
+      dnCustomerVehicleCache = d.vehicles || [];
+      document.querySelectorAll('.dn-veh-select').forEach(sel => populateDnVehSelect(sel));
+      updateRowVehicleDropdowns();
     });
 }
 
+function populateDnVehSelect(sel) {
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">— Select Vehicle —</option>';
+  dnCustomerVehicleCache.forEach(v => {
+    const o = new Option(v.label || v.vehicle_number, v.id);
+    o.dataset.mm  = v.mm_label || v.vehicle_model || '';
+    o.dataset.reg = v.registration_number || v.reg || '';
+    o.dataset.odo = v.odometer || '';
+    sel.add(o);
+  });
+  if (currentVal && [...sel.options].some(o => String(o.value) === String(currentVal))) {
+    sel.value = currentVal;
+  }
+  onDnVehRowChange(sel, false);
+}
+
+function addDnVehicleRow(vehicleIdToSelect) {
+  const custSel = document.getElementById('custSel');
+  if (!custSel || !custSel.value) {
+    alert('Please select a customer first.');
+    return;
+  }
+  document.getElementById('dnVehEmpty').style.display = 'none';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><select name="dn_vehicle_id[]" class="dn-veh-select" onchange="onDnVehRowChange(this)"></select></td>
+    <td><input type="text" class="fi dn-veh-model" readonly></td>
+    <td><input type="text" class="fi dn-veh-reg" readonly></td>
+    <td><input type="number" name="dn_vehicle_mileage[]" min="0" class="fi"></td>
+    <td>
+      <input type="hidden" name="dn_vehicle_notes[]" value="">
+      <button type="button" class="btn-rm" onclick="removeDnVehRow(this)">✕</button>
+    </td>`;
+  document.getElementById('dnVehBody').appendChild(tr);
+  const sel = tr.querySelector('.dn-veh-select');
+  populateDnVehSelect(sel);
+  if (vehicleIdToSelect) {
+    sel.value = vehicleIdToSelect;
+    onDnVehRowChange(sel, true);
+  }
+  updateRowVehicleDropdowns();
+}
+
+function onDnVehRowChange(sel, autoFill = true) {
+  const tr = sel.closest('tr');
+  if (!tr) return;
+  const o = sel.options[sel.selectedIndex];
+  const mmCell  = tr.querySelector('.dn-veh-model');
+  const regCell = tr.querySelector('.dn-veh-reg');
+  if (o && o.value) {
+    if (mmCell)  mmCell.value  = o.dataset.mm  || '';
+    if (regCell) regCell.value = o.dataset.reg || '';
+    if (autoFill) {
+      const mInp = tr.querySelector('input[name="dn_vehicle_mileage[]"]');
+      if (mInp && !mInp.value && o.dataset.odo) mInp.value = o.dataset.odo;
+    }
+  } else {
+    if (mmCell)  mmCell.value  = '';
+    if (regCell) regCell.value = '';
+  }
+  updateRowVehicleDropdowns();
+}
+
+function removeDnVehRow(btn) {
+  btn.closest('tr').remove();
+  const tbody = document.getElementById('dnVehBody');
+  document.getElementById('dnVehEmpty').style.display = tbody.rows.length === 0 ? 'block' : 'none';
+  updateRowVehicleDropdowns();
+}
+
 /* ── Add Service Row ── */
-function addService(desc = '', qty = 1, status = 'Completed', remarks = '') {
+function addService(desc = '', qty = 1, status = 'Completed', remarks = '', vehicleId = '') {
   const tbody = document.getElementById('serviceBody');
   if (!tbody) return;
   const tr = document.createElement('tr');
   tr.style.cssText = 'border-bottom:1px solid #f3f4f6';
   tr.innerHTML = `
+    <td>
+      <select name="svc_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none">
+        <option value="">— Vehicle —</option>
+      </select>
+    </td>
     <td><input type="text" name="svc_description[]" value="${String(desc).replace(/"/g,'&quot;')}" placeholder="e.g. Engine Oil Change" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
     <td><input type="number" name="svc_qty[]" value="${qty}" min="0" step="0.01" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
     <td>
@@ -1056,6 +1307,11 @@ function addService(desc = '', qty = 1, status = 'Completed', remarks = '') {
     <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this)">✕</button></td>
   `;
   tbody.appendChild(tr);
+  updateRowVehicleDropdowns();
+  if (vehicleId) {
+    const vSel = tr.querySelector('.row-veh-select');
+    if (vSel) vSel.value = vehicleId;
+  }
 }
 
 /* ── Technicians list (for dynamic labour rows) ── */
@@ -1066,7 +1322,7 @@ const DN_TECHNICIANS = [
 ];
 
 /* ── Add Labour Row ── */
-function addLabour(desc = '', hrs = 1, rate = 0, techId = '') {
+function addLabour(desc = '', hrs = 1, rate = 0, techId = '', vehicleId = '') {
   const tbody = document.getElementById('labourBody');
   if (!tbody) return;
   const tr = document.createElement('tr');
@@ -1082,6 +1338,11 @@ function addLabour(desc = '', hrs = 1, rate = 0, techId = '') {
     });
   }
   tr.innerHTML = `
+    <td>
+      <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none">
+        <option value="">— Vehicle —</option>
+      </select>
+    </td>
     <td><input type="text" name="labour_desc[]" value="${String(desc).replace(/"/g,'&quot;')}" placeholder="e.g. Engine Oil Change — Labour" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none"></td>
     <td><select name="labour_technician[]" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;background:#fff">${techOpts}</select></td>
     <td><input type="number" name="labour_hrs[]" class="lh" value="${hrs}" min="0" step="0.5" oninput="calcLabourRow(this)" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:6px 8px;font-size:12px;outline:none;text-align:center"></td>
@@ -1090,6 +1351,11 @@ function addLabour(desc = '', hrs = 1, rate = 0, techId = '') {
     <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>
   `;
   tbody.appendChild(tr);
+  updateRowVehicleDropdowns();
+  if (vehicleId) {
+    const vSel = tr.querySelector('.row-veh-select');
+    if (vSel) vSel.value = vehicleId;
+  }
   calcLabourRow(tr.querySelector('.lh'));
 }
 
@@ -1268,6 +1534,18 @@ function loadJcToDelivery(jc) {
   closeDnJcPicker();
   if (!confirm('Load items from Job Card ' + jc.job_number + '?')) return;
 
+  // Import Attached Vehicles
+  const vehBody = document.getElementById('dnVehBody');
+  if (vehBody) vehBody.innerHTML = '';
+  if (jc.vehicles && jc.vehicles.length) {
+    jc.vehicles.forEach(v => {
+      addDnVehicleRow(v.id);
+    });
+  } else if (jc.vehicle_id) {
+    addDnVehicleRow(jc.vehicle_id);
+  }
+  updateRowVehicleDropdowns();
+
   const serviceBody = document.getElementById('serviceBody');
   const partsBody   = document.getElementById('dnPartsBody');
   const labourBody  = document.getElementById('labourBody');
@@ -1278,7 +1556,7 @@ function loadJcToDelivery(jc) {
 
   if (jc.services && jc.services.length) {
     jc.services.forEach(s => {
-      addService(s.description || '', 1, 'Completed', s.remarks || '');
+      addService(s.description || '', 1, 'Completed', s.remarks || '', s.vehicle_id || '');
     });
   } else {
     addService();
@@ -1286,7 +1564,7 @@ function loadJcToDelivery(jc) {
 
   if (jc.parts && jc.parts.length) {
     jc.parts.forEach(p => {
-      addDnPart(p.item_id || '', p.item_code || '', p.quantity || 1, p.unit || 'No', (p.rate || 0).toFixed(3), p.name || p.description || '');
+      addDnPart(p.item_id || '', p.item_code || '', p.quantity || 1, p.unit || 'No', (p.rate || 0).toFixed(3), p.name || p.description || '', p.vehicle_id || '');
     });
   } else {
     addDnPart();
@@ -1294,7 +1572,7 @@ function loadJcToDelivery(jc) {
 
   if (jc.labours && jc.labours.length) {
     jc.labours.forEach(l => {
-      addLabour(l.description || '', l.hours || 1, l.rate || 0, l.technician_id || '');
+      addLabour(l.description || '', l.hours || 1, l.rate || 0, l.technician_id || '', l.vehicle_id || '');
     });
   } else {
     addLabour();
@@ -1336,6 +1614,18 @@ function loadQuotationToDelivery(q) {
   closeDnJcPicker();
   if (!confirm('Load items from Quotation ' + q.quotation_number + '?')) return;
 
+  // Import Attached Vehicles
+  const vehBody = document.getElementById('dnVehBody');
+  if (vehBody) vehBody.innerHTML = '';
+  if (q.vehicles && q.vehicles.length) {
+    q.vehicles.forEach(v => {
+      addDnVehicleRow(v.id);
+    });
+  } else if (q.vehicle_id) {
+    addDnVehicleRow(q.vehicle_id);
+  }
+  updateRowVehicleDropdowns();
+
   const serviceBody = document.getElementById('serviceBody');
   const partsBody   = document.getElementById('dnPartsBody');
   const labourBody  = document.getElementById('labourBody');
@@ -1346,7 +1636,7 @@ function loadQuotationToDelivery(q) {
 
   if (q.services && q.services.length) {
     q.services.forEach(s => {
-      addService(s.description || '', 1, 'Completed', s.remarks || '');
+      addService(s.description || '', 1, 'Completed', s.remarks || '', s.vehicle_id || '');
     });
   } else {
     addService();
@@ -1354,7 +1644,7 @@ function loadQuotationToDelivery(q) {
 
   if (q.parts && q.parts.length) {
     q.parts.forEach(p => {
-      addDnPart(p.item_id || '', p.item_code || '', p.quantity || 1, p.unit || 'No', (p.rate || 0).toFixed(3), p.name || p.description || '');
+      addDnPart(p.item_id || '', p.item_code || '', p.quantity || 1, p.unit || 'No', (p.rate || 0).toFixed(3), p.name || p.description || '', p.vehicle_id || '');
     });
   } else {
     addDnPart();
@@ -1362,7 +1652,7 @@ function loadQuotationToDelivery(q) {
 
   if (q.labours && q.labours.length) {
     q.labours.forEach(l => {
-      addLabour(l.description || '', l.hours || 1, l.rate || 0);
+      addLabour(l.description || '', l.hours || 1, l.rate || 0, '', l.vehicle_id || '');
     });
   } else {
     addLabour();

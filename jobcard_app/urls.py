@@ -156,7 +156,7 @@ urlpatterns = [
     path('estimate/<int:pk>/delete/',
          views.estimate_delete,
          name='estimate_delete'),
-
+    path('ajax/get-next-estimate-number/', views.get_next_estimate_number, name='get_next_estimate_number'),
     # ── Estimate AJAX ─────────────────────────────────────────
     path('ajax/search-jobcards/',
          views.jc_search_jobcards,
@@ -186,17 +186,21 @@ urlpatterns = [
      name='ajax_get_jobcard_complaints'),
     # ── Delivery Notes ────────────────────────────────────────
      path('delivery/',
-         views.delivery_list,
-         name='delivery_list'),
- 
+          views.delivery_list,
+          name='delivery_list'),
+
     path('delivery/create/',
          views.delivery_create,
          name='delivery_create'),
- 
+
+    path('delivery/<int:pk>/',
+         views.delivery_detail,
+         name='delivery_detail'),
+
     path('delivery/<int:pk>/edit/',
          views.delivery_edit,
          name='delivery_edit'),
- 
+    path('delivery/get-next-number/', views.get_next_delivery_number, name='get_next_delivery_number'),
     path('delivery/<int:pk>/delete/',
          views.delivery_delete,
          name='delivery_delete'),
@@ -218,7 +222,7 @@ urlpatterns = [
     path('invoice/create/',
          views.invoice_create,
          name='invoice_create'),
-
+    path('ajax/get-next-invoice-number/', views.get_next_invoice_number, name='get_next_invoice_number'),
     path('invoice/<int:pk>/',
          views.invoice_detail,
          name='invoice_detail'),
@@ -253,4 +257,4 @@ urlpatterns = [
     path('skill-tags/<int:pk>/edit/', views.skill_tag_save, name='skill_tag_edit'),
     path('skill-tags/<int:pk>/toggle/', views.skill_tag_toggle, name='skill_tag_toggle'),
     path('skill-tags/<int:pk>/delete/', views.skill_tag_delete, name='skill_tag_delete'),
-]
+]

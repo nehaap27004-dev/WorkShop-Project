@@ -115,15 +115,7 @@ urlpatterns = [
     path('simple-quotation/pdf/<int:quotation_id>/', simple_quotation_pdf, name='simple_quotation_pdf'),
     path('simplequotation/pdf/<int:pk>/no-header/', simplequotation_pdf_without_header, name='simplequotation_pdf_no_header'),
     
-    path('invoice/create/', create_invoice, name='create_invoice'),
-    path('invoices/', invoice_list, name='invoice_list'),
-    path('invoices/<int:pk>/edit/', invoice_edit, name='invoice_edit'),
-    path('invoice/edit/<int:invoice_id>/', create_invoice, name='edit_invoice'),
-    path("invoice/delete/<int:invoice_id>/", invoice_delete, name="invoice_delete"),
-    path('invoice/pdf/<int:invoice_id>/', invoice_pdf, name='invoice_pdf'),
-    path('invoice/pdf/<int:pk>/no-header/', invoice_pdf_without_header, name='invoice_pdf_no_header'),
-    path('get-vehicle-rates/', get_vehicle_rates, name='get_vehicle_rates'),
-
+   
     path('delivery-contract/create/', create_delivery_contract, name='delivery_contract_create'),
     path('delivery-contract/edit/<int:contract_id>/', create_delivery_contract, name='delivery_contract_edit'),
     path('delivery-contract/list/', delivery_contract_list, name='delivery_contract_list'),

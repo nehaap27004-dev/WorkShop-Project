@@ -32,7 +32,7 @@ def log_action(screen_name, action_type, remark=None, remark_field=None):
                 )
 
             except Exception:
-                # Logging must NEVER break business logic
+                # must NEVER break business logic
                 pass
 
             return response

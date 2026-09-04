@@ -66,10 +66,10 @@ table.it tbody tr:last-child td{border-bottom:none}
     <div class="hbtns">
       <button onclick="window.print()" class="hbtn hb-print">🖨 Print</button>
       <a href="{% url 'jobcard_app:delivery_edit' dn.pk %}" class="hbtn hb-edit">✏️ Edit</a>
-      <a href="{% url 'jobcard_app:invoice_create' %}?from_jobcard={% if dn.jobcard %}{{ dn.jobcard_id }}{% endif %}"
+      <a href="{% url 'jobcard_app:invoice_create' %}?from_delivery={{ dn.pk }}"
          class="hbtn hb-inv">Create Invoice</a>
       <form method="post" action="{% url 'jobcard_app:delivery_delete' dn.pk %}"
-            onsubmit="return confirm('Delete {{ dn.delivery_number }}?')" style="margin:0">
+            onsubmit="return confirm('Delete {{ dn.voucher_number|default:dn.delivery_number }}?')" style="margin:0">
         {% csrf_token %}
         <button type="submit" class="hbtn hb-del">🗑 Delete</button>
       </form>
@@ -86,7 +86,7 @@ table.it tbody tr:last-child td{border-bottom:none}
     </div>
     <div class="sec-body">
       <div class="g4 mb">
-        <div><div class="il">Delivery No</div><div class="iv" style="color:#2563eb;font-family:monospace">{{ dn.delivery_number }}</div></div>
+        <div><div class="il">Delivery No</div><div class="iv" style="color:#2563eb;font-family:monospace">{{ dn.voucher_number|default:dn.delivery_number }}</div></div>
         <div><div class="il">Date</div><div class="iv">{{ dn.date|date:"d M Y" }}</div></div>
         <div><div class="il">Driver</div><div class="iv">{{ dn.driver_name|default:"—" }}</div></div>
         <div><div class="il">Odometer Out</div><div class="iv">{% if dn.odometer_out %}{{ dn.odometer_out }} km{% else %}—{% endif %}</div></div>
@@ -94,10 +94,9 @@ table.it tbody tr:last-child td{border-bottom:none}
       <div class="g3 mb">
         <div><div class="il">Customer</div><div class="iv">{{ dn.customer.ledger_name }}</div></div>
         <div>
-          <div class="il">Vehicle</div>
+          <div class="il">Primary Vehicle</div>
           {% if dn.vehicle %}
-          <div class="iv">{{ dn.vehicle.registration_number }}</div>
-          <div class="iv-sm">{{ dn.vehicle.make }} {{ dn.vehicle.model }}</div>
+          <div class="iv">{{ dn.vehicle.vehicle_number }} {% if dn.vehicle.registration_number %}({{ dn.vehicle.registration_number }}){% endif %}</div>
           {% else %}<div class="iv">—</div>{% endif %}
         </div>
         <div><div class="il">Fuel Level Out</div><div class="iv">{{ dn.fuel_level_out|default:"—" }}</div></div>
@@ -135,6 +134,71 @@ table.it tbody tr:last-child td{border-bottom:none}
     </div>
   </div>
 
+  <!-- Attached Vehicles -->
+  {% if vehicles %}
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-title">Attached Vehicles ({{ vehicles.count }})</div>
+    </div>
+    <table class="it">
+      <thead>
+        <tr>
+          <th style="width:40px">#</th>
+          <th>Vehicle Number</th>
+          <th>Reg. Number</th>
+          <th>Model</th>
+          <th>Mileage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dv in vehicles %}
+        <tr>
+          <td style="color:#9ca3af;font-size:12px">{{ forloop.counter }}</td>
+          <td style="font-weight:700;color:#2563eb">{{ dv.vehicle.vehicle_number }}</td>
+          <td>{{ dv.vehicle.registration_number|default:"—" }}</td>
+          <td>{{ dv.vehicle.manufacturer.manufacturer_name|default:"" }} {{ dv.vehicle.vehicle_model.model_name|default:"" }}</td>
+          <td>{% if dv.mileage %}{{ dv.mileage }} km{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Vehicle-Wise Parts & Labour Charge Breakdown -->
+  {% if vehicle_breakdown %}
+  <div class="sec">
+    <div class="sec-hdr" style="background:#f8fafc">
+      <div class="sec-title" style="color:#1e293b">🚗 Vehicle-Wise Parts & Labour Breakdown</div>
+    </div>
+    <div class="sec-body" style="padding:0">
+      <table class="it">
+        <thead>
+          <tr style="background:#f1f5f9">
+            <th>Vehicle Number / Reg</th>
+            <th style="text-align:right">Parts Total</th>
+            <th style="text-align:right">Labour Total</th>
+            <th style="text-align:right">Vehicle Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for vb in vehicle_breakdown %}
+          <tr>
+            <td>
+              <span style="font-weight:700;color:#1e293b">{{ vb.vehicle_number }}</span>
+              {% if vb.reg_number %}<span style="font-size:11px;color:#64748b;margin-left:6px">({{ vb.reg_number }})</span>{% endif %}
+            </td>
+            <td style="text-align:right;font-family:monospace">{{ vb.parts_total|floatformat:3 }}</td>
+            <td style="text-align:right;font-family:monospace">{{ vb.labour_total|floatformat:3 }}</td>
+            <td style="text-align:right;font-weight:700;color:#2563eb;font-family:monospace">{{ vb.total|floatformat:3 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- 1. Completed Services -->
   <div class="sec">
     <div class="sec-hdr">
@@ -145,6 +209,7 @@ table.it tbody tr:last-child td{border-bottom:none}
       <thead>
         <tr>
           <th style="width:40px">#</th>
+          <th>Vehicle</th>
           <th>Service / Work Description</th>
           <th style="width:80px">Qty</th>
           <th style="width:120px">Status</th>
@@ -155,13 +220,14 @@ table.it tbody tr:last-child td{border-bottom:none}
         {% for svc in dn.services.all %}
         <tr>
           <td style="color:#9ca3af;font-size:12px">{{ forloop.counter }}</td>
+          <td>{% if svc.vehicle %}<span class="ref-chip ref-blue">{{ svc.vehicle.vehicle_number }}</span>{% else %}—{% endif %}</td>
           <td style="font-weight:500">{{ svc.description }}</td>
           <td>{{ svc.quantity }}</td>
           <td><span class="sbadge sb-{{ svc.status|slugify }}">{{ svc.status }}</span></td>
           <td style="color:#6b7280">{{ svc.remarks|default:"—" }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="empty-sm">No completed services recorded</td></tr>
+        <tr><td colspan="6" class="empty-sm">No completed services recorded</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -177,25 +243,27 @@ table.it tbody tr:last-child td{border-bottom:none}
       <thead>
         <tr>
           <th style="width:40px">#</th>
+          <th>Vehicle</th>
           <th>Item / Part</th>
           <th style="width:80px">Qty</th>
           <th style="width:90px">Unit</th>
           <th style="width:110px;text-align:right">Rate</th>
-          <th style="width:130px;text-align:right">Amount </th>
+          <th style="width:130px;text-align:right">Amount</th>
         </tr>
       </thead>
       <tbody>
         {% for p in dn.parts.all %}
         <tr>
           <td style="color:#9ca3af;font-size:12px">{{ forloop.counter }}</td>
+          <td>{% if p.vehicle %}<span class="ref-chip ref-blue">{{ p.vehicle.vehicle_number }}</span>{% else %}—{% endif %}</td>
           <td style="font-weight:500">{{ p.name }}</td>
           <td>{{ p.quantity }}</td>
           <td>{{ p.unit }}</td>
           <td style="text-align:right">{{ p.rate|floatformat:3 }}</td>
-          <td style="text-align:right;font-weight:600">{{ p.amount|floatformat:3 }} </td>
+          <td style="text-align:right;font-weight:600">{{ p.amount|floatformat:3 }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="empty-sm">No spare parts recorded</td></tr>
+        <tr><td colspan="7" class="empty-sm">No spare parts recorded</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -211,9 +279,10 @@ table.it tbody tr:last-child td{border-bottom:none}
       <thead>
         <tr>
           <th style="width:40px">#</th>
+          <th>Vehicle</th>
           <th>Labour Description</th>
           <th style="width:80px">Hours</th>
-          <th style="width:110px;text-align:right">Rate/Hr </th>
+          <th style="width:110px;text-align:right">Rate/Hr</th>
           <th style="width:130px;text-align:right">Amount</th>
         </tr>
       </thead>
@@ -221,13 +290,14 @@ table.it tbody tr:last-child td{border-bottom:none}
         {% for l in dn.labours.all %}
         <tr>
           <td style="color:#9ca3af;font-size:12px">{{ forloop.counter }}</td>
+          <td>{% if l.vehicle %}<span class="ref-chip ref-blue">{{ l.vehicle.vehicle_number }}</span>{% else %}—{% endif %}</td>
           <td style="font-weight:500">{{ l.description }}</td>
           <td>{{ l.hours }}</td>
           <td style="text-align:right">{{ l.rate|floatformat:3 }}</td>
           <td style="text-align:right;font-weight:600">{{ l.amount|floatformat:3 }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="empty-sm">No labour charges recorded</td></tr>
+        <tr><td colspan="6" class="empty-sm">No labour charges recorded</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -240,20 +310,20 @@ table.it tbody tr:last-child td{border-bottom:none}
     </div>
     <div class="sec-body">
       <div class="sum-box">
-        <div class="sum-line"><span>Parts Subtotal:</span><span>{{ dn.get_parts_total|floatformat:3 }} </span></div>
-        <div class="sum-line"><span>Labour Subtotal:</span><span>{{ dn.get_labour_total|floatformat:3 }} </span></div>
-        <div class="sum-line"><span>Subtotal:</span><span>{{ dn.get_subtotal|floatformat:3 }} </span></div>
+        <div class="sum-line"><span>Parts Subtotal:</span><span>{{ dn.get_parts_total|floatformat:3 }}</span></div>
+        <div class="sum-line"><span>Labour Subtotal:</span><span>{{ dn.get_labour_total|floatformat:3 }}</span></div>
+        <div class="sum-line"><span>Subtotal:</span><span>{{ dn.get_subtotal|floatformat:3 }}</span></div>
         {% if dn.discount > 0 %}
-        <div class="sum-line"><span>Discount:</span><span>- {{ dn.discount|floatformat:3 }} </span></div>
+        <div class="sum-line"><span>Discount:</span><span>- {{ dn.discount|floatformat:3 }}</span></div>
         {% endif %}
         {% if dn.tax_percent > 0 %}
-        <div class="sum-line"><span>Tax ({{ dn.tax_percent }}%):</span><span>+ {{ dn.get_tax_amount|floatformat:3 }} </span></div>
+        <div class="sum-line"><span>Tax ({{ dn.tax_percent }}%):</span><span>+ {{ dn.get_tax_amount|floatformat:3 }}</span></div>
         {% endif %}
-        <div class="sum-line total"><span>Grand Total:</span><span>{{ dn.get_grand_total|floatformat:3 }} </span></div>
+        <div class="sum-line total"><span>Grand Total:</span><span>{{ dn.get_grand_total|floatformat:3 }}</span></div>
         {% if dn.advance_received > 0 %}
-        <div class="sum-line"><span>Advance Received:</span><span>- {{ dn.advance_received|floatformat:3 }} </span></div>
+        <div class="sum-line"><span>Advance Received:</span><span>- {{ dn.advance_received|floatformat:3 }}</span></div>
         {% endif %}
-        <div class="sum-line" style="font-weight:700;color:#2563eb"><span>Balance:</span><span>{{ dn.get_balance|floatformat:3 }} </span></div>
+        <div class="sum-line" style="font-weight:700;color:#2563eb"><span>Balance:</span><span>{{ dn.get_balance|floatformat:3 }}</span></div>
       </div>
     </div>
   </div>

@@ -610,6 +610,73 @@ class InvoiceStockIntegrationTests(TestCase):
 
         self.assertFalse(Stock.objects.filter(item=self.item, voucherNo=inv.id).exists())
 
+    def test_purchase_and_invoice_stock_calculation(self):
+        from decimal import Decimal
+        from jobcard_app.models import Invoice, InvoicePart
+        from item_master.models import Stock, CostCenter
+        from item_master.common import upsert_stock
+        from fleet_app.models import Vouchers
+
+        purch_vt = Vouchers.objects.filter(VoucherType__icontains='Purchase').first() or Vouchers.objects.first()
+        cost_center = CostCenter.objects.first()
+
+        # 1. Purchase 10 items
+        upsert_stock(
+            item=self.item,
+            batch_id=None,
+            base_unit_id=self.item.item_unit_id,
+            base_qty_delta=Decimal('10'),
+            rate=Decimal('100.00'),
+            voucher_date=timezone.now().date(),
+            voucher_type=purch_vt,
+            voucher_id=999,
+            cost_center=cost_center,
+        )
+
+        # Net stock should be 10
+        stocks = Stock.objects.filter(item=self.item)
+        net_qty = sum(s.in_quantity - s.out_quantity for s in stocks)
+        self.assertEqual(net_qty, 10)
+
+        # 2. Create Invoice with quantity 2
+        inv = Invoice.objects.create(
+            customer=self.customer,
+            invoice_date=timezone.now().date(),
+            status='sent'
+        )
+        InvoicePart.objects.create(
+            invoice=inv,
+            item=self.item,
+            item_ref=str(self.item.pk),
+            item_code=self.item.item_code,
+            description=self.item.item_name,
+            quantity=2,
+            unit_price=100,
+        )
+        from jobcard_app.views import _sync_invoice_stock
+        _sync_invoice_stock(inv)
+
+        # Purchase record must still exist!
+        purch_entry = Stock.objects.filter(item=self.item, voucherNo=999).first()
+        self.assertIsNotNone(purch_entry)
+        self.assertEqual(purch_entry.in_quantity, 10)
+
+        # Total net stock must be 8 (10 in - 2 out)
+        stocks = Stock.objects.filter(item=self.item)
+        net_qty = sum(s.in_quantity - s.out_quantity for s in stocks)
+        self.assertEqual(net_qty, 8)
+
+        # 3. Re-sync/Update invoice
+        _sync_invoice_stock(inv)
+        purch_entry = Stock.objects.filter(item=self.item, voucherNo=999).first()
+        self.assertIsNotNone(purch_entry)
+        self.assertEqual(purch_entry.in_quantity, 10)
+
+        stocks = Stock.objects.filter(item=self.item)
+        net_qty = sum(s.in_quantity - s.out_quantity for s in stocks)
+        self.assertEqual(net_qty, 8)
+
+
 
 
 

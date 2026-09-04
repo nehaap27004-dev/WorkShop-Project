@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, request
 from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.db import transaction
@@ -9,7 +9,7 @@ from django.utils import timezone
 import logging
 import json
 from .models import (
-   Estimate, EstimateItem, InvoiceLabour, InvoiceOtherCharge, InvoicePart, JobCardVehicle, Quotation, QuotationItem, ServiceCategory, ServiceType, SkillTag, ComplaintType
+   DeliveryNoteVehicle, Estimate, EstimateItem, InvoiceLabour, InvoiceOtherCharge, InvoicePart, InvoiceVehicle, JobCardVehicle, Quotation, QuotationItem, ServiceCategory, ServiceType, SkillTag, ComplaintType
 )
 from fleet_app.models import FleetCustomer, Vehicle
 from item_master.models import Item
@@ -457,7 +457,7 @@ def inspection_list(request):
         qs = qs.filter(overall_status=status_filter)
  
     vehicles  = WorkshopVehicle.objects.filter(is_active=True).order_by('registration_number')
-    customers = LedgerCreation.objects.filter(groups_id=2).order_by('ledger_name')
+    customers = LedgerCreation.objects.filter(groups_id=18).order_by('ledger_name')
     today = timezone.now().date()
 
     return render(request, 'jobcard_app/inspection_list.html', {
@@ -480,7 +480,7 @@ def inspection_list(request):
 # ─────────────────────────────────────────────────────────────
 def inspection_create(request, vehicle_id=None):
     customers = LedgerCreation.objects.filter(
-        groups_id=2).order_by('ledger_name')
+        groups_id=18).order_by('ledger_name')
     inspectors = Staff.objects.filter(
         status='Active',
         staff_category__name__in=['Inspector', 'Technician']
@@ -604,7 +604,7 @@ def inspection_detail(request, pk):
 def inspection_edit(request, pk):
     insp      = get_object_or_404(VehicleInspection, pk=pk)
     customers = LedgerCreation.objects.filter(
-        groups_id=2).order_by('ledger_name')
+        groups_id=18).order_by('ledger_name')
     inspectors = Staff.objects.filter(
         status='Active',
         staff_category__name__in=['Inspector', 'Technician']
@@ -728,7 +728,7 @@ def jobcard_create(request):
     from .models import ServiceCategory
 
     customers = LedgerCreation.objects.filter(
-        groups_id=2).order_by('ledger_name')
+        groups_id=18).order_by('ledger_name')
 
 
 
@@ -813,7 +813,23 @@ def get_next_jobcard_number(request):
 
     next_num = generate_voucher_number('JobCard', JobCard, 'job_number', default_prefix='JC-')
     return JsonResponse({'job_number': next_num, 'success': True})
+def get_next_estimate_number(request):
+    """AJAX view to get next estimate voucher number"""
+    from fleet_app.models import Vouchers
+    from jobcard_app.utils import generate_voucher_number
+    from .models import Estimate
 
+    voucher_type_id = request.GET.get('voucher_type_id')
+    if voucher_type_id:
+        try:
+            vt = Vouchers.objects.get(pk=voucher_type_id)
+            num = vt.get_next_voucher_number(Estimate, 'voucher_number')
+            return JsonResponse({'job_number': num, 'success': True})
+        except Vouchers.DoesNotExist:
+            pass
+
+    next_num = generate_voucher_number('Estimate', Estimate, 'voucher_number', default_prefix='VCH-')
+    return JsonResponse({'job_number': next_num, 'success': True})
 
 @login_required
 def jobcard_edit(request, pk):
@@ -829,7 +845,7 @@ def jobcard_edit(request, pk):
     from django.utils import timezone
     from .models import ServiceCategory
     customers   = LedgerCreation.objects.filter(
-                      groups_id=2).order_by('ledger_name')
+                      groups_id=18).order_by('ledger_name')
 
     categories = ServiceCategory.objects.filter(is_active=True).order_by('name')
     technicians = Staff.objects.filter(
@@ -1461,6 +1477,15 @@ def _save_estimate(request, estimate=None):
  
     estimate.customer    = customer
     estimate.jobcard    = jobcard
+    from fleet_app.models import Vouchers
+    vt_id = request.POST.get('voucherType')
+    estimate.voucherType = Vouchers.objects.filter(pk=vt_id).first() if vt_id else None
+    estimate.voucher_number = request.POST.get('voucher_number', '').strip() or None
+
+    est_num = request.POST.get('estimate_number', '').strip()
+    if est_num:
+        estimate.estimate_number = est_num
+      
     estimate.advisor     = advisor
     estimate.date        = date
     estimate.status      = request.POST.get('status', 'draft')
@@ -1666,8 +1691,9 @@ def estimate_list(request):
 # ─────────────────────────────────────────────────────────────
 @login_required
 def estimate_create(request):
+    
     customers   = LedgerCreation.objects.filter(
-                      groups_id=2).order_by('ledger_name')
+                      groups_id=18).order_by('ledger_name')
     technicians = Staff.objects.filter(
                     status='Active',
                     staff_category__name='Technician').order_by('full_name')
@@ -1699,7 +1725,8 @@ def estimate_create(request):
         'categories': categories,
 
         'prefill_job': prefill_job,
-        'next_est_no': generate_voucher_number('Estimate', Estimate, 'estimate_number', default_prefix='EST-'),
+        
+        'next_voucher_no': generate_voucher_number('Estimate', Estimate, 'voucher_number', default_prefix='VCH-'),
         'today':       timezone.now().date(),
     })
  
@@ -1736,7 +1763,7 @@ def estimate_detail(request, pk):
 def estimate_edit(request, pk):
     est         = get_object_or_404(Estimate, pk=pk)
     customers   = LedgerCreation.objects.filter(
-                      groups_id=2).order_by('ledger_name')
+                      groups_id=18).order_by('ledger_name')
     technicians = Staff.objects.filter(
                     status='Active',
                     staff_category__name='Technician').order_by('full_name')
@@ -1927,6 +1954,7 @@ def jc_get_vehicles(request):
             'model':               mdl_name,
             'year':                year,
             'vehicle_model':       vehicle_model_str,
+            'mm_label':            vehicle_model_str,
             'manufacturer_id':     v.manufacturer_id  or '',
             'vehicle_model_id':    v.vehicle_model_id or '',
             'fuel_type':           v.fuel_type or '',
@@ -2312,7 +2340,7 @@ def quotation_list(request):
 @login_required
 def quotation_create(request):
     customers   = LedgerCreation.objects.filter(
-        groups_id=2).order_by('ledger_name')
+        groups_id=18).order_by('ledger_name')
     technicians = Staff.objects.filter(
         status='Active',
         staff_category__name='Technician').order_by('full_name')
@@ -2391,7 +2419,7 @@ def quotation_edit(request, pk):
         pk=pk
     )
     customers   = LedgerCreation.objects.filter(
-        groups_id=2).order_by('ledger_name')
+        groups_id=18).order_by('ledger_name')
     technicians = Staff.objects.filter(
         status='Active',
         staff_category__name='Technician').order_by('full_name')
@@ -2479,7 +2507,7 @@ def wv_list(request):
         vehicles = vehicles.filter(fuel_type=fuel_filter)
 
     customers  = LedgerCreation.objects.filter(
-        groups_id=2).order_by('ledger_name')
+        groups_id=18).order_by('ledger_name')
     all_v      = WorkshopVehicle.objects.filter(is_active=True)
 
     counts = {
@@ -2509,7 +2537,7 @@ def wv_list(request):
 # customer_id optional — comes from "Add Vehicle" in customer list
 # ─────────────────────────────────────────────────────────────
 def wv_create(request, customer_id=None):
-    customers     = LedgerCreation.objects.filter(groups_id=2).order_by('ledger_name')
+    customers     = LedgerCreation.objects.filter(groups_id=18).order_by('ledger_name')
     vehicle_types = VehicleCategory.objects.all().order_by('category_name')
 
     preselected = None
@@ -2604,7 +2632,7 @@ def wv_create(request, customer_id=None):
 # ─────────────────────────────────────────────────────────────
 def wv_edit(request, pk):
     v             = get_object_or_404(WorkshopVehicle, pk=pk)
-    customers     = LedgerCreation.objects.filter(groups_id=2).order_by('ledger_name')
+    customers     = LedgerCreation.objects.filter(groups_id=18).order_by('ledger_name')
     vehicle_types = VehicleCategory.objects.all().order_by('category_name')
 
     if request.method == 'POST':
@@ -2750,6 +2778,7 @@ def _checklist_items():
 def _save_delivery(request, dn=None):
     from item_master.models import Item
     from django.utils import timezone
+    from fleet_app.models import Vouchers
 
     cid = request.POST.get('customer')
     if not cid:
@@ -2757,9 +2786,7 @@ def _save_delivery(request, dn=None):
         return None
 
     customer    = get_object_or_404(LedgerCreation, pk=cid)
-    vehicle     = WorkshopVehicle.objects.filter(
-                      pk=request.POST.get('vehicle')).first()
-    
+    vt_id = request.POST.get('voucherType')
     jobcard_id = request.POST.get('loaded_jobcard')
     jobcard = None
     if jobcard_id:
@@ -2795,7 +2822,20 @@ def _save_delivery(request, dn=None):
 
     # ── Header ────────────────────────────────────────────────
     dn.customer         = customer
-    dn.vehicle          = vehicle
+    
+    # ── Voucher type: default to 'Delivery Note' voucher if not sent ────
+    if vt_id:
+        dn.voucherType = Vouchers.objects.filter(pk=vt_id).first()
+    elif not dn.voucherType_id:
+        dn.voucherType = Vouchers.objects.filter(VoucherName='Delivery Note').first()
+
+    # ── Auto-generate voucher number if blank on create ─────────────────
+    raw_voucher_number = request.POST.get('voucher_number', '').strip()
+    if raw_voucher_number:
+        dn.voucher_number = raw_voucher_number
+    elif not dn.pk:  # new record
+        from jobcard_app.utils import generate_voucher_number
+        dn.voucher_number = generate_voucher_number('Delivery Note', DeliveryNote, 'voucher_number', default_prefix='DN-')
     dn.jobcard         = jobcard
     dn.quotation        = quotation
     dn.estimate         = estimate
@@ -2836,39 +2876,55 @@ def _save_delivery(request, dn=None):
     dn.notes             = request.POST.get('notes', '')
     dn.customer_signed   = 'customer_signed' in request.POST
     dn.save()
+    dn.vehicles.all().delete()
+    dn_veh_ids      = request.POST.getlist('dn_vehicle_id[]')
+    dn_veh_mileages = request.POST.getlist('dn_vehicle_mileage[]')
+    dn_veh_notes    = request.POST.getlist('dn_vehicle_notes[]')
+    first_vehicle = None
+    seen_vehicles = set()
+    for i, v_id in enumerate(dn_veh_ids):
+        if not v_id or v_id in seen_vehicles:
+            continue
+        seen_vehicles.add(v_id)
+        veh = WorkshopVehicle.objects.filter(pk=v_id).first()
+        if not veh:
+            continue
+        if first_vehicle is None:
+            first_vehicle = veh
+        DeliveryNoteVehicle.objects.create(
+            delivery_note = dn,
+            vehicle       = veh,
+            mileage       = dn_veh_mileages[i] if i < len(dn_veh_mileages) and dn_veh_mileages[i] else None,
+            notes         = dn_veh_notes[i] if i < len(dn_veh_notes) else '',
+        )
+
+    dn.vehicle = first_vehicle
+    dn.save(update_fields=['vehicle'])
 
     # ── Completed Services ────────────────────────────────────
     dn.services.all().delete()
-    svc_descs   = request.POST.getlist('svc_description[]')
-    svc_qtys    = request.POST.getlist('svc_qty[]')
+    svc_descs    = request.POST.getlist('svc_description[]')
+    svc_qtys     = request.POST.getlist('svc_qty[]')
     svc_statuses = request.POST.getlist('svc_status[]')
-    svc_remarks = request.POST.getlist('svc_remarks[]')
+    svc_remarks  = request.POST.getlist('svc_remarks[]')
+    svc_vehs     = request.POST.getlist('svc_vehicle_id[]')
     for i, desc in enumerate(svc_descs):
         if desc.strip():
+            v_id  = svc_vehs[i] if i < len(svc_vehs) and svc_vehs[i] else None
+            v_obj = WorkshopVehicle.objects.filter(pk=v_id).first() if v_id else None
             DeliveryService.objects.create(
                 delivery_note = dn,
+                vehicle       = v_obj,
                 description   = desc.strip(),
-                quantity      = float(svc_qtys[i]) if i < len(svc_qtys) else 1,
+                quantity      = float(svc_qtys[i]) if i < len(svc_qtys) and svc_qtys[i] else 1,
                 status        = svc_statuses[i] if i < len(svc_statuses) else 'Completed',
                 remarks       = svc_remarks[i] if i < len(svc_remarks) else '',
                 order         = i,
             )
 
-    if dn and dn.pk:
-        for old_part in dn.parts.all():
-            if old_part.item_id:
-                try:
-                    stock = Stock.objects.filter(
-                        item_id=old_part.item_id
-                    ).order_by('-id').first()
-                    if stock:
-                        stock.out_quantity = max(
-                            0,
-                            (stock.out_quantity or 0) - int(old_part.quantity)
-                        )
-                        stock.save()
-                except Exception as e:
-                    print(f'Stock restore error: {e}')
+    dn_vt = dn.voucherType or Vouchers.objects.filter(VoucherName='Delivery Note').first()
+    if dn_vt and dn.pk:
+        Stock.objects.filter(voucherType=dn_vt, voucherNo=dn.id).delete()
 
     dn.parts.all().delete()
 
@@ -2879,13 +2935,17 @@ def _save_delivery(request, dn=None):
     part_qtys     = request.POST.getlist('part_qty[]')
     part_units    = request.POST.getlist('part_unit[]')
     part_rates    = request.POST.getlist('part_rate[]')
+    part_vehs     = request.POST.getlist('part_vehicle_id[]')
 
-    max_parts = max(len(part_item_ids), len(part_names), len(part_numbers))
+    max_parts = max(len(part_item_ids), len(part_names), len(part_numbers), len(part_vehs))
+    default_cost_center = CostCenter.objects.filter(isDefault=True).first() or CostCenter.objects.first()
     for i in range(max_parts):
         item_id  = part_item_ids[i] if i < len(part_item_ids) else None
         item_obj = Item.objects.filter(pk=item_id).first() if item_id else None
         name     = part_names[i] if i < len(part_names) else ''
         part_no  = part_numbers[i] if i < len(part_numbers) else ''
+        v_id     = part_vehs[i] if i < len(part_vehs) and part_vehs[i] else None
+        v_obj    = WorkshopVehicle.objects.filter(pk=v_id).first() if v_id else None
 
         if not name.strip() and item_obj:
             name = item_obj.item_name
@@ -2900,6 +2960,7 @@ def _save_delivery(request, dn=None):
 
         DeliveryPart.objects.create(
             delivery_note = dn,
+            vehicle       = v_obj,
             item          = item_obj,
             name          = name.strip() or (item_obj.item_name if item_obj else 'Part'),
             item_code     = part_no.strip(),
@@ -2910,33 +2971,31 @@ def _save_delivery(request, dn=None):
         )
 
         # ── Deduct from stock ─────────────────────────────
-        if item_obj:
+        if item_obj and dn_vt:
             try:
-                stock = Stock.objects.filter(
-                    item_id=item_obj.id
-                ).order_by('-id').first()
-
-                if stock:
-                    stock.out_quantity = (stock.out_quantity or 0) + int(qty)
-                    stock.save()
-                else:
-                    Stock.objects.create(
-                        item_id      = item_obj.id,
-                        voucherDate  = timezone.now().date(),
-                        in_quantity  = 0,
-                        out_quantity = int(qty),
-                        stock_value  = 0,
-                        fyId         = 1,
-                    )
+                cost_center = item_obj.cost_center or default_cost_center
+                base_qty = to_base_qty(item_obj, item_obj.item_unit_id, Decimal(str(qty)))
+                upsert_stock(
+                    item=item_obj,
+                    batch_id=None,
+                    base_unit_id=item_obj.item_unit_id,
+                    base_qty_delta=-base_qty,
+                    rate=Decimal(str(rate)),
+                    voucher_date=dn.delivery_date or timezone.now().date(),
+                    voucher_type=dn_vt,
+                    voucher_id=dn.id,
+                    cost_center=cost_center,
+                )
             except Exception as e:
                 print(f'Stock deduct error for item {item_obj.id}: {e}')
 
     # ── Save Labour Charges ────────────────────────────────
     dn.labours.all().delete()
-    lab_descs  = request.POST.getlist('labour_desc[]')
-    lab_hrs    = request.POST.getlist('labour_hrs[]')
-    lab_rates  = request.POST.getlist('labour_rate[]')
-    lab_techs  = request.POST.getlist('labour_technician[]')
+    lab_descs = request.POST.getlist('labour_desc[]')
+    lab_hrs   = request.POST.getlist('labour_hrs[]')
+    lab_rates = request.POST.getlist('labour_rate[]')
+    lab_techs = request.POST.getlist('labour_technician[]')
+    lab_vehs  = request.POST.getlist('labour_vehicle_id[]')
 
     for i, desc in enumerate(lab_descs):
         if desc.strip():
@@ -2946,8 +3005,11 @@ def _save_delivery(request, dn=None):
             tech_obj = None
             if tech_id:
                 tech_obj = Staff.objects.filter(id=tech_id).first()
+            v_id  = lab_vehs[i] if i < len(lab_vehs) and lab_vehs[i] else None
+            v_obj = WorkshopVehicle.objects.filter(pk=v_id).first() if v_id else None
             DeliveryLabour.objects.create(
                 delivery_note = dn,
+                vehicle       = v_obj,
                 technician    = tech_obj,
                 description   = desc.strip(),
                 hours         = hrs,
@@ -2968,35 +3030,53 @@ def delivery_list(request):
     q      = request.GET.get('q', '').strip()
     status = request.GET.get('status', '')
 
-    qs = DeliveryNote.objects.select_related(
-        'customer', 'vehicle', 'jobcard', 'quotation'
-    ).filter(is_active=True)
+    deliveries = DeliveryNote.objects.select_related(
+        'customer', 'jobcard', 'quotation', 'advisor', 'technician'
+    ).prefetch_related('vehicles__vehicle').filter(is_active=True)
 
     if q:
-        qs = qs.filter(
-            Q(delivery_number__icontains=q) |
+        deliveries = deliveries.filter(
+            Q(voucher_number__icontains=q) |
             Q(customer__ledger_name__icontains=q) |
             Q(jobcard__job_number__icontains=q) |
-            Q(reg_number__icontains=q)
+            Q(quotation__quotation_number__icontains=q)
         )
-    if status:
-        qs = qs.filter(status=status)
 
-    all_dn = DeliveryNote.objects.filter(is_active=True)
-    counts = {
-        'total':     all_dn.count(),
-        'draft':     all_dn.filter(status='draft').count(),
-        'delivered': all_dn.filter(status='delivered').count(),
-        'cancelled': all_dn.filter(status='cancelled').count(),
-    }
+    if status:
+        deliveries = deliveries.filter(status=status)
+
+    deliveries = deliveries.order_by('-created_on')
 
     return render(request, 'jobcard_app/delivery_list.html', {
-        'deliveries': qs,
-        'q':          q,
-        'status':     status,
-        'counts':     counts,
+        'deliveries': deliveries,
+        'q': q,
+        'status': status,
     })
 
+# ─────────────────────────────────────────────────────────────
+# DETAIL
+# ─────────────────────────────────────────────────────────────
+@login_required
+def delivery_detail(request, pk):
+    dn = get_object_or_404(
+        DeliveryNote.objects.select_related(
+            'customer', 'vehicle', 'jobcard', 'quotation', 'estimate', 'advisor', 'technician'
+        ).prefetch_related(
+            'vehicles__vehicle',
+            'services__vehicle',
+            'parts__vehicle',
+            'labours__vehicle', 'labours__technician'
+        ),
+        pk=pk
+    )
+    return render(request, 'jobcard_app/delivery_detail.html', {
+        'dn':                dn,
+        'vehicles':          dn.vehicles.all(),
+        'services':          dn.services.all(),
+        'parts':             dn.parts.all(),
+        'labour':            dn.labours.all(),
+        'vehicle_breakdown': dn.get_vehicle_breakdown(),
+    })
 
 # ─────────────────────────────────────────────────────────────
 # CREATE
@@ -3004,7 +3084,7 @@ def delivery_list(request):
 @login_required
 def delivery_create(request):
     customers   = LedgerCreation.objects.filter(
-                      groups_id=2).order_by('ledger_name')
+                      groups_id=18).order_by('ledger_name')
     advisors    = Staff.objects.filter(status='Active').order_by('full_name')
     technicians = Staff.objects.filter(
                       status='Active',
@@ -3017,7 +3097,7 @@ def delivery_create(request):
             'customer', 'workshop_vehicle',
             'advisor'
         ).prefetch_related(
-            'complaints', 'parts', 'labours'
+            'complaints', 'parts', 'labours', 'vehicles__vehicle'
         ).filter(pk=jcid).first()
 
     # Pre-fill from quotation
@@ -3027,7 +3107,7 @@ def delivery_create(request):
         prefill_quotation = Quotation.objects.select_related(
             'customer', 'vehicle', 'advisor'
         ).prefetch_related(
-            'items', 'complaints'
+            'items', 'complaints', 'vehicles__vehicle'
         ).filter(pk=qid).first()
 
     if request.method == 'POST':
@@ -3035,19 +3115,23 @@ def delivery_create(request):
         if dn:
             messages.success(
                 request,
-                f"Delivery Note {dn.delivery_number} saved!")
-            return redirect('jobcard_app:delivery_list')
+                f"Delivery Note {dn.voucher_number} saved!")
+            return redirect('jobcard_app:delivery_detail', pk=dn.pk)
 
     from jobcard_app.utils import generate_voucher_number
+    from fleet_app.models import Vouchers
+    dn_voucher_type = Vouchers.objects.filter(VoucherName='Delivery Note').first()
     return render(request, 'jobcard_app/delivery_form.html', {
-        'customers':         customers,
-        'advisors':          advisors,
-        'technicians':       technicians,
-        'checklist_items':   _checklist_items(),
-        'prefill_jc':        prefill_jc,
-        'prefill_quotation': prefill_quotation,
-        'next_dn_no':        generate_voucher_number('Delivery Note', DeliveryNote, 'delivery_number', default_prefix='DN-'),
-        'today':             timezone.now().date(),
+        'customers':           customers,
+        'advisors':            advisors,
+        'technicians':         technicians,
+        'checklist_items':     _checklist_items(),
+        'prefill_jc':          prefill_jc,
+        'prefill_quotation':   prefill_quotation,
+        'next_dn_no':          generate_voucher_number('Delivery Note', DeliveryNote, 'voucher_number', default_prefix='DN-'),
+        'today':               timezone.now().date(),
+        'dn_voucher_type_id':  dn_voucher_type.id if dn_voucher_type else 6,
+        'voucher_types':       Vouchers.objects.all().order_by('VoucherName'),
     })
 
 
@@ -3056,9 +3140,12 @@ def delivery_create(request):
 # ─────────────────────────────────────────────────────────────
 @login_required
 def delivery_edit(request, pk):
-    dn          = get_object_or_404(DeliveryNote, pk=pk)
+    dn          = get_object_or_404(
+        DeliveryNote.objects.prefetch_related('vehicles__vehicle', 'services', 'parts', 'labours'),
+        pk=pk
+    )
     customers   = LedgerCreation.objects.filter(
-                      groups_id=2).order_by('ledger_name')
+                      groups_id=18).order_by('ledger_name')
     advisors    = Staff.objects.filter(
                       status='Active',)
     technicians = Staff.objects.filter(
@@ -3070,20 +3157,24 @@ def delivery_edit(request, pk):
         if updated:
             messages.success(
                 request,
-                f"Delivery Note {dn.delivery_number} updated!")
-            return redirect('jobcard_app:delivery_list', pk=pk)
+                f"Delivery Note {dn.voucher_number} updated!")
+            return redirect('jobcard_app:delivery_detail', pk=pk)
 
+    from fleet_app.models import Vouchers
+    dn_voucher_type = Vouchers.objects.filter(VoucherName='Delivery Note').first()
     return render(request, 'jobcard_app/delivery_form.html', {
-        'dn':              dn,
-        'customers':       customers,
-        'advisors':        advisors,
-        'technicians':     technicians,
-        'checklist_items': _checklist_items(),
-        'services':        dn.services.all(),
-        'parts':           dn.parts.all(),
-        'labour':          dn.labours.all(),
-        'edit_mode':       True,
-        'today':           timezone.now().date(),
+        'dn':                  dn,
+        'customers':           customers,
+        'advisors':            advisors,
+        'technicians':         technicians,
+        'checklist_items':     _checklist_items(),
+        'services':            dn.services.all(),
+        'parts':               dn.parts.all(),
+        'labour':              dn.labours.all(),
+        'edit_mode':           True,
+        'today':               timezone.now().date(),
+        'dn_voucher_type_id':  dn_voucher_type.id if dn_voucher_type else 6,
+        'voucher_types':       Vouchers.objects.all().order_by('VoucherName'),
     })
 
 
@@ -3094,9 +3185,11 @@ def delivery_edit(request, pk):
 def delivery_delete(request, pk):
     dn = get_object_or_404(DeliveryNote, pk=pk)
     if request.method == 'POST':
-        num = dn.delivery_number
+        num = dn.voucher_number
         dn.is_active = False
         dn.save()
+        if dn.voucherType:
+            Stock.objects.filter(voucherType=dn.voucherType, voucherNo=dn.id).delete()
         messages.success(request, f"Delivery Note {num} deleted.")
         return redirect('jobcard_app:delivery_list')
     return render(
@@ -3167,14 +3260,14 @@ def ajax_search_deliveries(request):
     qs = DeliveryNote.objects.select_related(
         'customer', 'vehicle'
     ).filter(is_active=True).filter(
-        Q(delivery_number__icontains=q) |
+        Q(voucher_number__icontains=q) |
         Q(customer__ledger_name__icontains=q) |
         Q(reg_number__icontains=q)
     )[:10]
 
     result = [{
         'id':              d.id,
-        'delivery_number': d.delivery_number,
+        'voucher_number':  d.voucher_number,
         'customer_id':     d.customer_id,
         'customer_name':   d.customer.ledger_name,
         'vehicle_id':      d.vehicle_id or '',
@@ -3188,7 +3281,7 @@ def ajax_search_deliveries(request):
 def ajax_get_jobcard_for_delivery(request):
     """
     Returns job cards and quotations for a customer+vehicle to load into delivery note.
-    Returns: services (complaints), parts (with item_id), labour lines.
+    Returns: services (complaints), parts (with item_id), labour lines, and attached vehicles.
     """
     customer_id = request.GET.get('customer_id', '').strip()
     vehicle_id  = request.GET.get('vehicle_id', '').strip()
@@ -3221,7 +3314,7 @@ def ajax_get_jobcard_for_delivery(request):
         qs = JobCard.objects.select_related(
             'workshop_vehicle', 'advisor'
         ).prefetch_related(
-            'complaints', 'parts', 'labours'
+            'complaints', 'parts', 'labours', 'vehicles__vehicle'
         ).filter(
             customer_id=customer_id,
             is_active=True
@@ -3235,6 +3328,24 @@ def ajax_get_jobcard_for_delivery(request):
         result = []
         for jc in qs:
 
+            # ── Attached Vehicles ─────────────────────────────
+            jc_vehs = []
+            for jv in jc.vehicles.select_related('vehicle').all():
+                if jv.vehicle:
+                    jc_vehs.append({
+                        'id': str(jv.vehicle_id),
+                        'number': jv.vehicle.vehicle_number,
+                        'reg': jv.vehicle.registration_number or '',
+                        'mileage': jv.mileage or '',
+                    })
+            if not jc_vehs and jc.workshop_vehicle:
+                jc_vehs.append({
+                    'id': str(jc.workshop_vehicle_id),
+                    'number': jc.workshop_vehicle.vehicle_number,
+                    'reg': jc.workshop_vehicle.registration_number or '',
+                    'mileage': jc.mileage or '',
+                })
+
             # ── Complaints as services ────────────────────────
             services = []
             for c in jc.complaints.all():
@@ -3242,6 +3353,7 @@ def ajax_get_jobcard_for_delivery(request):
                     'description': c.description or '',
                     'category':    c.category    or '',
                     'status':      'Completed',
+                    'vehicle_id':  str(c.vehicle_id) if c.vehicle_id else (str(jc.workshop_vehicle_id) if jc.workshop_vehicle_id else ''),
                 })
 
             # ── Parts ─────────────────────────────────────────
@@ -3256,13 +3368,14 @@ def ajax_get_jobcard_for_delivery(request):
                 ) if (code_str or name_str) else None
 
                 parts.append({
-                    'item_id':   str(matched_item.id) if matched_item else '',
-                    'name':      name_str or (matched_item.item_name if matched_item else ''),
-                    'item_code': matched_item.item_code if matched_item else code_str,
-                    'unit':      _safe_unit(matched_item, 'No'),
-                    'quantity':  float(p.quantity   or 1),
-                    'rate':      float(p.unit_price or 0),
-                    'amount':    float(p.total_price or 0),
+                    'item_id':    str(matched_item.id) if matched_item else '',
+                    'name':       name_str or (matched_item.item_name if matched_item else ''),
+                    'item_code':  matched_item.item_code if matched_item else code_str,
+                    'unit':       _safe_unit(matched_item, 'No'),
+                    'quantity':   float(p.quantity   or 1),
+                    'rate':       float(p.unit_price or 0),
+                    'amount':     float(p.total_price or 0),
+                    'vehicle_id': str(p.vehicle_id) if p.vehicle_id else (str(jc.workshop_vehicle_id) if jc.workshop_vehicle_id else ''),
                 })
 
             # ── Labour ────────────────────────────────────────
@@ -3274,6 +3387,7 @@ def ajax_get_jobcard_for_delivery(request):
                     'rate':          float(l.rate  or 0),
                     'amount':        float(l.amount or 0),
                     'technician_id': str(l.technician_id) if l.technician_id else '',
+                    'vehicle_id':    str(l.vehicle_id) if l.vehicle_id else (str(jc.workshop_vehicle_id) if jc.workshop_vehicle_id else ''),
                 })
 
             result.append({
@@ -3282,6 +3396,8 @@ def ajax_get_jobcard_for_delivery(request):
                 'date':         jc.date.strftime('%d %b %Y'),
                 'status':       jc.get_status_display(),
                 'vehicle':      str(jc.workshop_vehicle) if jc.workshop_vehicle else '',
+                'vehicle_id':   jc.workshop_vehicle_id or '',
+                'vehicles':     jc_vehs,
                 'mileage':      jc.mileage or '',
                 'fuel_level':   jc.fuel_level or '',
                 'advisor':      jc.advisor.full_name if jc.advisor else '',
@@ -3298,7 +3414,7 @@ def ajax_get_jobcard_for_delivery(request):
         q_qs = Quotation.objects.select_related(
             'vehicle', 'advisor'
         ).prefetch_related(
-            'items', 'complaints'
+            'items', 'complaints', 'vehicles__vehicle'
         ).filter(
             customer_id=customer_id
         )
@@ -3309,12 +3425,30 @@ def ajax_get_jobcard_for_delivery(request):
         quotations_result = []
 
         for q in q_qs:
+            q_vehs = []
+            for qv in q.vehicles.select_related('vehicle').all():
+                if qv.vehicle:
+                    q_vehs.append({
+                        'id': str(qv.vehicle_id),
+                        'number': qv.vehicle.vehicle_number,
+                        'reg': qv.vehicle.registration_number or '',
+                        'mileage': qv.mileage or '',
+                    })
+            if not q_vehs and q.vehicle:
+                q_vehs.append({
+                    'id': str(q.vehicle_id),
+                    'number': q.vehicle.vehicle_number,
+                    'reg': q.vehicle.registration_number or '',
+                    'mileage': q.mileage or '',
+                })
+
             q_services = []
             for c in q.complaints.all():
                 q_services.append({
                     'description': c.description or '',
                     'category':    getattr(c, 'category', '') or '',
                     'status':      'Completed',
+                    'vehicle_id':  str(c.vehicle_id) if c.vehicle_id else (str(q.vehicle_id) if q.vehicle_id else ''),
                 })
 
             q_parts = []
@@ -3328,13 +3462,14 @@ def ajax_get_jobcard_for_delivery(request):
                 ) if (code_str or name_str) else None
 
                 q_parts.append({
-                    'item_id':   str(matched_item.id) if matched_item else (code_str if code_str.isdigit() else ''),
-                    'name':      name_str or (matched_item.item_name if matched_item else ''),
-                    'item_code': matched_item.item_code if matched_item else code_str,
-                    'unit':      i.unit or _safe_unit(matched_item, 'No'),
-                    'quantity':  float(i.quantity or 1),
-                    'rate':      float(i.unit_price or 0),
-                    'amount':    float(i.quantity or 1) * float(i.unit_price or 0),
+                    'item_id':    str(matched_item.id) if matched_item else (code_str if code_str.isdigit() else ''),
+                    'name':       name_str or (matched_item.item_name if matched_item else ''),
+                    'item_code':  matched_item.item_code if matched_item else code_str,
+                    'unit':       i.unit or _safe_unit(matched_item, 'No'),
+                    'quantity':   float(i.quantity or 1),
+                    'rate':       float(i.unit_price or 0),
+                    'amount':     float(i.quantity or 1) * float(i.unit_price or 0),
+                    'vehicle_id': str(i.vehicle_id) if i.vehicle_id else (str(q.vehicle_id) if q.vehicle_id else ''),
                 })
 
             q_labours = []
@@ -3344,6 +3479,7 @@ def ajax_get_jobcard_for_delivery(request):
                     'hours':       float(i.hours or 1),
                     'rate':        float(i.unit_price or 0),
                     'amount':      float(i.hours or 1) * float(i.unit_price or 0),
+                    'vehicle_id':  str(i.vehicle_id) if i.vehicle_id else (str(q.vehicle_id) if q.vehicle_id else ''),
                 })
 
             quotations_result.append({
@@ -3352,6 +3488,8 @@ def ajax_get_jobcard_for_delivery(request):
                 'date':             q.date.strftime('%d %b %Y'),
                 'status':           q.get_status_display(),
                 'vehicle':          str(q.vehicle) if q.vehicle else '',
+                'vehicle_id':       q.vehicle_id or '',
+                'vehicles':         q_vehs,
                 'advisor':          q.advisor.full_name if q.advisor else '',
                 'advisor_id':       q.advisor_id or '',
                 'services':         q_services,
@@ -3386,7 +3524,7 @@ def ajax_get_docs_for_delivery(request):
     jc_qs = JobCard.objects.select_related(
         'workshop_vehicle', 'advisor'
     ).prefetch_related(
-        'complaints', 'parts', 'labours'
+        'complaints', 'parts', 'labours', 'vehicles__vehicle'
     ).filter(is_active=True)
 
     if customer_id:
@@ -3399,14 +3537,15 @@ def ajax_get_docs_for_delivery(request):
     jc_qs = jc_qs.order_by('-date')[:10]
 
     for jc in jc_qs:
-        services = [{'description': c.description, 'category': getattr(c, 'category', ''), 'status': 'Completed'}
+        jc_vehs = [{'id': str(jv.vehicle_id), 'number': jv.vehicle.vehicle_number, 'reg': jv.vehicle.registration_number or ''} for jv in jc.vehicles.select_related('vehicle').all() if jv.vehicle]
+        services = [{'description': c.description, 'category': getattr(c, 'category', ''), 'status': 'Completed', 'vehicle_id': str(c.vehicle_id) if c.vehicle_id else ''}
                     for c in jc.complaints.all() if c.description]
         parts    = [{'name': p.description, 'item_code': p.part_number or '',
                      'quantity': float(p.quantity or 1), 'rate': float(p.unit_price or 0),
-                     'item_id': ''}
+                     'item_id': '', 'vehicle_id': str(p.vehicle_id) if p.vehicle_id else ''}
                     for p in jc.parts.all() if p.description]
         labours  = [{'description': l.description, 'hours': float(l.hours or 1),
-                     'rate': float(l.rate or 0)}
+                     'rate': float(l.rate or 0), 'vehicle_id': str(l.vehicle_id) if l.vehicle_id else ''}
                     for l in jc.labours.all() if l.description]
 
         result.append({
@@ -3416,6 +3555,8 @@ def ajax_get_docs_for_delivery(request):
             'date':        jc.date.strftime('%d %b %Y'),
             'status':      jc.get_status_display(),
             'vehicle':     str(jc.workshop_vehicle) if jc.workshop_vehicle else '',
+            'vehicle_id':  jc.workshop_vehicle_id or '',
+            'vehicles':    jc_vehs,
             'mileage':     jc.mileage or '',
             'fuel_level':  jc.fuel_level or '',
             'advisor_id':  jc.advisor_id or '',
@@ -3433,7 +3574,7 @@ def ajax_get_docs_for_delivery(request):
     qt_qs = Quotation.objects.select_related(
         'vehicle', 'advisor'
     ).prefetch_related(
-        'items', 'complaints'
+        'items', 'complaints', 'vehicles__vehicle'
     )
 
     if customer_id:
@@ -3446,15 +3587,16 @@ def ajax_get_docs_for_delivery(request):
     qt_qs = qt_qs.order_by('-date')[:10]
 
     for qt in qt_qs:
-        services = [{'description': c.description, 'status': 'Completed'}
+        qt_vehs = [{'id': str(qv.vehicle_id), 'number': qv.vehicle.vehicle_number, 'reg': qv.vehicle.registration_number or ''} for qv in qt.vehicles.select_related('vehicle').all() if qv.vehicle]
+        services = [{'description': c.description, 'status': 'Completed', 'vehicle_id': str(c.vehicle_id) if c.vehicle_id else ''}
                     for c in qt.complaints.filter(complaint_type='customer')
                     if c.description]
         parts    = [{'name': i.description, 'item_code': i.item_ref or '',
                      'quantity': float(i.quantity or 1), 'rate': float(i.unit_price or 0),
-                     'item_id': i.item_ref or ''}
+                     'item_id': i.item_ref or '', 'vehicle_id': str(i.vehicle_id) if i.vehicle_id else ''}
                     for i in qt.items.filter(item_type='part') if i.description]
         labours  = [{'description': i.description, 'hours': float(i.hours or 1),
-                     'rate': float(i.unit_price or 0)}
+                     'rate': float(i.unit_price or 0), 'vehicle_id': str(i.vehicle_id) if i.vehicle_id else ''}
                     for i in qt.items.filter(item_type='labour') if i.description]
 
         result.append({
@@ -3464,6 +3606,8 @@ def ajax_get_docs_for_delivery(request):
             'date':       qt.date.strftime('%d %b %Y'),
             'status':     qt.get_status_display(),
             'vehicle':    str(qt.vehicle) if qt.vehicle else '',
+            'vehicle_id': qt.vehicle_id or '',
+            'vehicles':   qt_vehs,
             'mileage':    qt.mileage or '',
             'advisor_id': qt.advisor_id or '',
             'advisor':    qt.advisor.full_name if qt.advisor else '',
@@ -3488,8 +3632,7 @@ def _save_invoice(request, invoice=None):
 
     customer = get_object_or_404(LedgerCreation, pk=cid)
 
-    v_id    = request.POST.get('vehicle', '').strip()
-    vehicle = WorkshopVehicle.objects.filter(pk=v_id).first() if v_id else None
+    
 
     jc_id   = (request.POST.get('job_card', '').strip() or
                request.POST.get('loaded_job_card', '').strip())
@@ -3499,11 +3642,42 @@ def _save_invoice(request, invoice=None):
     adv_id  = request.POST.get('advisor', '').strip()
     advisor = Staff.objects.filter(pk=adv_id).first() if adv_id else None
 
-    if invoice is None:
-        invoice = Invoice(created_by=request.user.id)
+    old_inv_num = None
+    old_vt = None
+    if invoice and invoice.pk:
+        old_inv_num = invoice.invoice_number
+        old_vt = invoice.voucherType
+
+    if invoice is None: invoice = Invoice(created_by=request.user.id)
 
     invoice.customer         = customer
-    invoice.vehicle          = vehicle
+    from fleet_app.models import Vouchers
+    vt_id = request.POST.get('voucherType')
+    invoice.voucherType = Vouchers.objects.filter(pk=vt_id).first() if vt_id else None
+    invoice.voucher_number = request.POST.get('voucher_number', '').strip() or None
+
+    inv_num = request.POST.get('invoice_number', '').strip()
+    if inv_num:
+        dup_qs = Invoice.objects.filter(invoice_number=inv_num)
+        if invoice.pk:
+            dup_qs = dup_qs.exclude(pk=invoice.pk)
+        if dup_qs.exists():
+            messages.error(
+                request,
+                f'Invoice number "{inv_num}" is already in use. Please choose a different number.')
+            return None
+        invoice.invoice_number = inv_num
+
+    if old_inv_num and old_inv_num != invoice.invoice_number:
+        try:
+            from accounts_app.models import BillWiseOpening
+            inv_vt = old_vt or invoice.voucherType or Vouchers.objects.filter(VoucherType__icontains='Invoice').first() or Vouchers.objects.filter(pk=5).first() or Vouchers.objects.first()
+            if inv_vt:
+                BillWiseOpening.objects.filter(voucherType=inv_vt, InvNo=old_inv_num).delete()
+        except Exception:
+            pass
+    
+  
     invoice.jobcard          = jobcard        # ← correct field name
     invoice.advisor          = advisor
     invoice.invoice_date     = request.POST.get('invoice_date') or timezone.now().date()
@@ -3514,16 +3688,46 @@ def _save_invoice(request, invoice=None):
     invoice.customer_address = request.POST.get('customer_address', '')
     invoice.vehicle_model    = request.POST.get('vehicle_model', '')
     invoice.discount_pct     = request.POST.get('discount_pct') or 0
-    invoice.amount_paid      = request.POST.get('amount_paid') or 0
+    posted_paid = Decimal(request.POST.get('amount_paid') or 0)
+    invoice.amount_paid = posted_paid
+    invoice._auto_settle_cash_bank = (
+        invoice.payment_mode in ('cash', 'bank') and posted_paid == 0
+    )
     invoice.notes            = request.POST.get('notes', '')
     invoice.save()
+    # ── Vehicles ────────────────────────────────────────
+    invoice.vehicles.all().delete()
+    inv_veh_ids      = request.POST.getlist('inv_vehicle_id[]')
+    inv_veh_mileages = request.POST.getlist('inv_vehicle_mileage[]')
+    inv_veh_notes    = request.POST.getlist('inv_vehicle_notes[]')
+    first_vehicle = None
+    seen_vehicles = set()
+    for i, v_id in enumerate(inv_veh_ids):
+        if not v_id or v_id in seen_vehicles:
+            continue
+        seen_vehicles.add(v_id)
+        veh = WorkshopVehicle.objects.filter(pk=v_id).first()
+        if not veh:
+            continue
+        if first_vehicle is None:
+            first_vehicle = veh
+        InvoiceVehicle.objects.create(
+            invoice = invoice,
+            vehicle = veh,
+            mileage = inv_veh_mileages[i] if i < len(inv_veh_mileages) and inv_veh_mileages[i] else None,
+            notes   = inv_veh_notes[i] if i < len(inv_veh_notes) else '',
+        )
 
+    # Keep legacy single-vehicle field in sync (first vehicle)
+    invoice.vehicle = first_vehicle
+    invoice.save(update_fields=['vehicle'])
     # ── Clear old lines ───────────────────────────────────
     invoice.parts.all().delete()
     invoice.labours.all().delete()
     invoice.other_charges.all().delete()
 
     # ── Spare Parts ───────────────────────────────────────
+    part_vehs     = request.POST.getlist('part_vehicle_id[]')
     part_item_ids = request.POST.getlist('part_item_id[]')
     part_names    = request.POST.getlist('part_name[]')
     part_codes    = request.POST.getlist('part_code[]')
@@ -3539,6 +3743,8 @@ def _save_invoice(request, invoice=None):
         item_id  = part_item_ids[i].strip() if i < len(part_item_ids) else ''
         name_val = part_names[i].strip()    if i < len(part_names)    else ''
         code_val = part_codes[i].strip()    if i < len(part_codes)    else ''
+        v_id     = part_vehs[i].strip()     if i < len(part_vehs)     else ''
+        p_veh    = WorkshopVehicle.objects.filter(pk=v_id).first() if v_id else None
 
         # skip completely empty rows
         if not item_id and not name_val:
@@ -3575,6 +3781,7 @@ def _save_invoice(request, invoice=None):
 
         InvoicePart.objects.create(
             invoice      = invoice,
+            vehicle      = p_veh,
             item         = item_obj,
             item_ref     = item_id,
             item_code    = code_val,
@@ -3588,7 +3795,8 @@ def _save_invoice(request, invoice=None):
         )
 
     # ── Labour ────────────────────────────────────────────
-    # InvoiceLabour fields: description, technician, hours, rate, tax_percent, order
+    # InvoiceLabour fields: vehicle, description, technician, hours, rate, tax_percent, order
+    lab_vehs  = request.POST.getlist('labour_vehicle_id[]')
     lab_descs = request.POST.getlist('lab_desc[]')
     lab_techs = request.POST.getlist('lab_tech[]')
     lab_hrs   = request.POST.getlist('lab_hrs[]')
@@ -3601,6 +3809,8 @@ def _save_invoice(request, invoice=None):
 
         tech_id = lab_techs[i].strip() if i < len(lab_techs) else ''
         tech    = Staff.objects.filter(pk=tech_id).first() if tech_id else None
+        v_id    = lab_vehs[i].strip()  if i < len(lab_vehs)  else ''
+        l_veh   = WorkshopVehicle.objects.filter(pk=v_id).first() if v_id else None
 
         try:
             hrs  = float(lab_hrs[i])   if i < len(lab_hrs)   and lab_hrs[i]   else 1
@@ -3617,6 +3827,7 @@ def _save_invoice(request, invoice=None):
 
         InvoiceLabour.objects.create(
             invoice     = invoice,
+            vehicle     = l_veh,
             description = desc.strip(),
             technician  = tech,
             hours       = hrs,
@@ -3626,6 +3837,7 @@ def _save_invoice(request, invoice=None):
         )
 
     # ── Other Charges ─────────────────────────────────────
+    oth_vehs  = request.POST.getlist('other_vehicle_id[]')
     oth_descs = request.POST.getlist('oth_desc[]')
     oth_amts  = request.POST.getlist('oth_amt[]')
     oth_taxs  = request.POST.getlist('oth_tax[]')
@@ -3633,6 +3845,10 @@ def _save_invoice(request, invoice=None):
     for i, desc in enumerate(oth_descs):
         if not desc.strip():
             continue
+
+        v_id  = oth_vehs[i].strip() if i < len(oth_vehs) else ''
+        o_veh = WorkshopVehicle.objects.filter(pk=v_id).first() if v_id else None
+
         try:
             amt = float(oth_amts[i]) if i < len(oth_amts) and oth_amts[i] else 0
         except (ValueError, TypeError):
@@ -3644,16 +3860,26 @@ def _save_invoice(request, invoice=None):
 
         InvoiceOtherCharge.objects.create(
             invoice     = invoice,
+            vehicle     = o_veh,
             description = desc.strip(),
             amount      = amt,
             tax_percent = tax,
             order       = i,
         )
 
-    # ── Auto update status & sync stock ───────────────────
+    # ── Auto update status, sync stock, create ledger postings & sync bill-wise opening ──────
+        # ── Auto-settle cash/bank invoices before computing status ──
+    if getattr(invoice, '_auto_settle_cash_bank', False):
+        invoice.amount_paid = Decimal(str(invoice.get_grand_total()))
+
+    # ── Auto update status, sync stock, create ledger postings & sync bill-wise opening ──────
     invoice.update_status()
     _sync_invoice_stock(invoice)
+    _post_invoice_to_ledger(invoice)
+    _sync_invoice_billwise_opening(invoice)
     return invoice
+
+
 
 
 def _sync_invoice_stock(invoice):
@@ -3667,10 +3893,7 @@ def _sync_invoice_stock(invoice):
         from fleet_app.models import Vouchers
         from decimal import Decimal
 
-        inv_voucher_type = Vouchers.objects.filter(VoucherType__icontains='Invoice').first()
-        if not inv_voucher_type:
-            inv_voucher_type = Vouchers.objects.filter(id=14).first() or Vouchers.objects.first()
-
+        inv_voucher_type = invoice.voucherType or Vouchers.objects.filter(VoucherType__icontains='Invoice').first() or Vouchers.objects.filter(pk=5).first() or Vouchers.objects.first()
         if not inv_voucher_type:
             return
 
@@ -3708,6 +3931,299 @@ def _sync_invoice_stock(invoice):
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f"Error syncing invoice stock: {e}")
+
+from decimal import Decimal
+from accounts_app.models import LedgerPosting, LedgerCreation
+from fleet_app.models import Vouchers
+def _post_invoice_to_ledger(invoice):
+    generate_invoice_ledger_postings(invoice, invoice.payment_mode)
+    """
+    Posts itemized double-entry LedgerPosting entries for a jobcard_app Invoice.
+
+    DEBIT  Customer (credit mode) or invoice.ledger (cash/bank mode)   grand_total
+    CREDIT Labour Income     get_labour_subtotal()
+    CREDIT Spare Parts Sales get_parts_subtotal()
+    CREDIT Other Income      get_other_subtotal()      (only if > 0)
+    CREDIT Output GST        get_total_tax()            (only if > 0)
+    DEBIT  Discount Allowed  discount amount            (only if > 0)
+
+    Total debits == Total credits == grand_total, always, by construction.
+    Runs on every save (create + edit) — deletes old postings first.
+    """
+    try:
+        from decimal import Decimal
+        from accounts_app.models import LedgerPosting, LedgerCreation
+
+        voucher_type = Vouchers.objects.filter(pk=5).first()  # "Invoice"
+        if not voucher_type:
+            print(f"[ERROR] Cannot post Invoice #{invoice.id}: 'Invoice' voucher type not found.")
+            return
+
+        _delete_invoice_ledger_postings(invoice)
+
+        grand_total = Decimal(str(invoice.get_grand_total() or 0))
+        if grand_total <= Decimal('0'):
+            return
+
+        labour_amt = Decimal(str(invoice.get_labour_subtotal() or 0))
+        parts_amt  = Decimal(str(invoice.get_parts_subtotal() or 0))
+        other_amt  = Decimal(str(invoice.get_other_subtotal() or 0))
+        gst_amt    = Decimal(str(invoice.get_total_tax() or 0))
+
+        subtotal_before_disc = labour_amt + parts_amt + other_amt + gst_amt
+        discount_amt = subtotal_before_disc - grand_total
+        if discount_amt < Decimal('0.01'):
+            discount_amt = Decimal('0')
+
+        labour_ledger   = LedgerCreation.objects.filter(ledger_name='Labour Income').first()
+        parts_ledger    = LedgerCreation.objects.filter(ledger_name='Spare Parts Sales').first()
+        other_ledger    = LedgerCreation.objects.filter(pk=11).first()   # Other Income
+        gst_ledger      = LedgerCreation.objects.filter(pk=12).first()   # Output GST
+        discount_ledger = LedgerCreation.objects.filter(pk=10).first()   # Discount Allowed
+
+        payment_mode = (invoice.payment_mode or 'cash').lower()
+        if payment_mode == 'credit':
+            debit_ledger = invoice.customer
+        else:
+            debit_ledger = invoice.ledger or invoice.customer
+
+        if not debit_ledger:
+            print(f"[ERROR] Cannot post Invoice #{invoice.id}: no customer/ledger to debit.")
+            return
+
+        entries = []
+        entries.append(dict(ledger=debit_ledger, debit=grand_total, credit=None))
+
+        if labour_amt > 0 and labour_ledger:
+            entries.append(dict(ledger=labour_ledger, debit=None, credit=labour_amt))
+        if parts_amt > 0 and parts_ledger:
+            entries.append(dict(ledger=parts_ledger, debit=None, credit=parts_amt))
+        if other_amt > 0 and other_ledger:
+            entries.append(dict(ledger=other_ledger, debit=None, credit=other_amt))
+        if gst_amt > 0 and gst_ledger:
+            entries.append(dict(ledger=gst_ledger, debit=None, credit=gst_amt))
+        if discount_amt > 0 and discount_ledger:
+            entries.append(dict(ledger=discount_ledger, debit=discount_amt, credit=None))
+
+        missing = [
+            name for name, obj in [
+                ('Labour Income', labour_ledger), ('Spare Parts Sales', parts_ledger),
+                ('Other Income', other_ledger), ('Output GST', gst_ledger),
+                ('Discount Allowed', discount_ledger),
+            ] if obj is None
+        ]
+        if missing:
+            print(f"[WARNING] Invoice #{invoice.id}: missing ledgers {missing} -- some entries skipped, postings may not balance.")
+
+        for e in entries:
+            LedgerPosting.objects.create(
+                date=invoice.invoice_date,
+                VoucherType=voucher_type,
+                VoucherNo=invoice.id,
+                ledger=e['ledger'],
+                debit=e['debit'],
+                credit=e['credit'],
+            )
+
+        total_dr = sum(e['debit'] or 0 for e in entries)
+        total_cr = sum(e['credit'] or 0 for e in entries)
+        print(f"[OK] Invoice #{invoice.id} posted -- Dr: {total_dr}, Cr: {total_cr}, "
+              f"{'BALANCED' if total_dr == total_cr else '[MISMATCH]'}")
+
+    except Exception as e:
+        print(f"[ERROR] Ledger posting failed for Invoice #{invoice.id}: {e}")
+def generate_invoice_ledger_postings(invoice, payment_mode):
+    """
+    Automatically generates double-entry ledger postings for an invoice.
+
+    DEBIT side (determined by payment_mode):
+        'credit' → Client/Customer ledger
+        'cash'   → Cash ledger
+        'bank'   → Main Bank Account ledger
+
+    CREDIT side (always, regardless of payment mode):
+        Spare Parts Sales   — invoice.get_parts_subtotal()
+        Labour Income       — invoice.get_labour_subtotal()
+        Other Income        — invoice.get_other_subtotal()   (if > 0)
+        Output GST          — invoice.get_total_tax()        (if > 0)
+
+    DEBIT (offsetting, if applicable):
+        Discount Allowed    — difference needed to balance, if a discount was applied
+
+    Debits always equal credits, by construction.
+    """
+    from decimal import Decimal
+    from accounts_app.models import LedgerPosting, LedgerCreation
+    from fleet_app.models import Vouchers
+
+    voucher_type = Vouchers.objects.filter(pk=5).first()  # "Invoice"
+    if not voucher_type:
+        print(f"❌ Cannot post Invoice #{invoice.id}: 'Invoice' voucher type not found.")
+        return
+
+    # Clear old postings first (safe for create + edit)
+    LedgerPosting.objects.filter(VoucherType=voucher_type, VoucherNo=invoice.id).delete()
+
+    grand_total = Decimal(str(invoice.get_grand_total() or 0))
+    if grand_total <= Decimal('0'):
+        return
+
+    # ── Determine DEBIT account based on payment mode ──
+    payment_mode = (payment_mode or 'cash').lower()
+
+    if payment_mode == 'credit':
+        debit_ledger = invoice.customer
+    elif payment_mode == 'bank':
+        debit_ledger = LedgerCreation.objects.filter(pk=24).first()  # Main Bank Account
+    else:  # cash (default)
+        debit_ledger = LedgerCreation.objects.filter(pk=23).first()  # Cash
+
+    if not debit_ledger:
+        print(f"❌ Cannot post Invoice #{invoice.id}: no ledger found for payment mode '{payment_mode}'.")
+        return
+
+    # ── CREDIT side: line items ──
+    labour_amt = Decimal(str(invoice.get_labour_subtotal() or 0))
+    parts_amt  = Decimal(str(invoice.get_parts_subtotal() or 0))
+    other_amt  = Decimal(str(invoice.get_other_subtotal() or 0))
+    gst_amt    = Decimal(str(invoice.get_total_tax() or 0))
+
+    labour_ledger   = LedgerCreation.objects.filter(ledger_name='Labour Income').first()
+    parts_ledger    = LedgerCreation.objects.filter(ledger_name='Spare Parts Sales').first()
+    other_ledger    = LedgerCreation.objects.filter(pk=11).first()   # Other Income
+    gst_ledger      = LedgerCreation.objects.filter(pk=12).first()   # Output GST
+    discount_ledger = LedgerCreation.objects.filter(pk=10).first()   # Discount Allowed
+
+    subtotal_before_disc = labour_amt + parts_amt + other_amt + gst_amt
+    discount_amt = subtotal_before_disc - grand_total
+    if discount_amt < Decimal('0.01'):
+        discount_amt = Decimal('0')
+
+    entries = [dict(ledger=debit_ledger, debit=grand_total, credit=None)]
+
+    if labour_amt > 0 and labour_ledger:
+        entries.append(dict(ledger=labour_ledger, debit=None, credit=labour_amt))
+    if parts_amt > 0 and parts_ledger:
+        entries.append(dict(ledger=parts_ledger, debit=None, credit=parts_amt))
+    if other_amt > 0 and other_ledger:
+        entries.append(dict(ledger=other_ledger, debit=None, credit=other_amt))
+    if gst_amt > 0 and gst_ledger:
+        entries.append(dict(ledger=gst_ledger, debit=None, credit=gst_amt))
+    if discount_amt > 0 and discount_ledger:
+        entries.append(dict(ledger=discount_ledger, debit=discount_amt, credit=None))
+
+    missing = [
+        name for name, obj in [
+            ('Labour Income', labour_ledger), ('Spare Parts Sales', parts_ledger),
+            ('Other Income', other_ledger), ('Output GST', gst_ledger),
+            ('Discount Allowed', discount_ledger),
+        ] if obj is None
+    ]
+    if missing:
+        print(f"⚠️ Invoice #{invoice.id}: missing ledgers {missing} — some entries skipped, postings may not balance.")
+
+    for e in entries:
+        LedgerPosting.objects.create(
+            date=invoice.invoice_date,
+            VoucherType=voucher_type,
+            VoucherNo=invoice.id,
+            ledger=e['ledger'],
+            debit=e['debit'],
+            credit=e['credit'],
+        )
+
+    total_dr = sum(e['debit'] or 0 for e in entries)
+    total_cr = sum(e['credit'] or 0 for e in entries)
+    print(f"✅ Invoice #{invoice.id} posted ({payment_mode}) — Dr: {total_dr}, Cr: {total_cr}, "
+          f"{'BALANCED' if total_dr == total_cr else '⚠️ MISMATCH'}")
+
+def _delete_invoice_ledger_postings(invoice):
+    from accounts_app.models import LedgerPosting
+    from fleet_app.models import Vouchers
+    voucher_type = Vouchers.objects.filter(pk=5).first()
+    if voucher_type:
+        LedgerPosting.objects.filter(VoucherType=voucher_type, VoucherNo=invoice.id).delete()
+
+
+def _sync_invoice_billwise_opening(invoice):
+    """
+    Creates or updates BillWiseOpening entry for an Invoice so that
+    outstanding bill tracking works for Receipt bill clearance allocation.
+    ONLY Credit invoices generate BillWiseOpening entries.
+    Cash and Bank invoices are paid upfront and must NOT have BillWiseOpening entries.
+    """
+    try:
+        from accounts_app.models import BillWiseOpening, ReceiptBillDetails
+        from fleet_app.models import Vouchers
+        from django.db.models import Sum
+        from decimal import Decimal
+
+        inv_vt = (
+            invoice.voucherType
+            or Vouchers.objects.filter(VoucherType__icontains='Invoice').first()
+            or Vouchers.objects.filter(pk=5).first()
+            or Vouchers.objects.first()
+        )
+        if not inv_vt or not invoice.invoice_number or not invoice.customer:
+            return
+
+        payment_mode = (invoice.payment_mode or '').strip().lower()
+        grand_total = Decimal(str(invoice.get_grand_total() or 0))
+
+        # ONLY Credit invoices are tracked as outstanding bills.
+        # Cash/bank invoices or cancelled invoices or zero-total invoices must be deleted from BillWiseOpening.
+        if payment_mode != 'credit' or invoice.status == 'cancelled' or grand_total <= Decimal('0'):
+            BillWiseOpening.objects.filter(
+                voucherType=inv_vt,
+                InvNo=invoice.invoice_number
+            ).delete()
+            return
+
+        opening_obj = BillWiseOpening.objects.filter(
+            voucherType=inv_vt,
+            InvNo=invoice.invoice_number,
+            ledger=invoice.customer
+        ).first()
+
+        total_cleared = Decimal('0.00')
+        if opening_obj:
+            tc = ReceiptBillDetails.objects.filter(
+                VoucherNo=opening_obj.id,
+                voucherType__id=12  # BillWiseOpening voucher type
+            ).aggregate(total=Sum('Amount'))['total']
+            if tc:
+                total_cleared = Decimal(str(tc))
+
+        direct_paid = Decimal(str(invoice.amount_paid or 0))
+        effective_cleared = total_cleared + direct_paid
+
+        inv_balance = grand_total - direct_paid
+        if inv_balance < Decimal('0'):
+            inv_balance = Decimal('0')
+
+        rem_balance = grand_total - effective_cleared
+        is_cleared = rem_balance <= Decimal('0.01') or invoice.status == 'paid'
+
+        BillWiseOpening.objects.update_or_create(
+            ledger=invoice.customer,
+            voucherType=inv_vt,
+            InvNo=invoice.invoice_number,
+            defaults={
+                'InvDate': invoice.invoice_date,
+                'InvAmount': grand_total,
+                'InvBalance': inv_balance,
+                'dr_cr': 'DR',
+                'IsCleared': is_cleared,
+                'IsClosed': False,
+            }
+        )
+        print(f"[OK] BillWiseOpening synced for Credit Invoice #{invoice.invoice_number}: Amount={grand_total}, Balance={inv_balance}, IsCleared={is_cleared}")
+
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error syncing invoice BillWiseOpening: {e}")
+        print(f"[ERROR] Syncing BillWiseOpening for Invoice #{invoice.invoice_number} failed: {e}")
+
 # ─────────────────────────────────────────────────────────────
 # LIST
 # ─────────────────────────────────────────────────────────────
@@ -3785,17 +4301,17 @@ def invoice_list(request):
 # ─────────────────────────────────────────────────────────────
 # CREATE
 # ─────────────────────────────────────────────────────────────
-@login_required
+import json
+
+
 def invoice_create(request):
     customers   = LedgerCreation.objects.filter(
-                      groups_id=2).order_by('ledger_name')
+                      groups_id=18).order_by('ledger_name')
     technicians = Staff.objects.filter(
                       status='Active',
                       staff_category__name='Technician').order_by('full_name')
     advisors    = Staff.objects.filter(status='Active').order_by('full_name')
-  
- 
-    # Pre-fill from job card
+
     # Pre-fill from job card
     prefill_jc = None
     jcid = request.GET.get('from_jobcard')
@@ -3805,26 +4321,100 @@ def invoice_create(request):
         ).prefetch_related(
             'parts', 'labours', 'complaints'
         ).filter(pk=jcid).first()
- 
+
+    # Pre-fill from delivery note
+    prefill_dn = None
+    dnid = request.GET.get('from_delivery')
+    if dnid:
+        prefill_dn = DeliveryNote.objects.select_related(
+            'customer', 'vehicle', 'advisor'
+        ).prefetch_related(
+            'parts', 'labours', 'services', 'vehicles__vehicle'
+        ).filter(pk=dnid).first()
+
+    posted_data = None
+
     if request.method == 'POST':
         inv = _save_invoice(request)
         if inv:
             messages.success(
                 request,
                 f"Invoice {inv.invoice_number} created!")
-            return redirect('jobcard_app:invoice_list')
- 
+            return redirect('jobcard_app:invoice_detail', pk=inv.pk)
+
+        # Save failed (validation error) — preserve everything the user typed
+        # so the form re-renders with their data instead of wiping it.
+        array_fields = [
+            'inv_vehicle_id', 'inv_vehicle_mileage', 'inv_vehicle_notes',
+            'part_item_id', 'part_name', 'part_code', 'part_qty',
+            'part_unit', 'part_rate', 'part_disc', 'part_tax',
+            'lab_desc', 'lab_tech', 'lab_hrs', 'lab_rate', 'lab_tax',
+            'oth_desc', 'oth_amt', 'oth_tax',
+        ]
+        scalar_fields = [
+            'voucherType', 'voucher_number', 'invoice_number', 'invoice_date',
+            'due_date', 'payment_mode', 'job_card_ref', 'job_card', 'status',
+            'customer', 'customer_mobile', 'customer_address', 'notes',
+            'discount_pct', 'amount_paid', 'loaded_delivery_note', 'loaded_job_card',
+        ]
+
+        posted_data = {}
+        for f in scalar_fields:
+            posted_data[f] = request.POST.get(f, '')
+        for f in array_fields:
+            posted_data[f] = request.POST.getlist(f + '[]')
+
     from jobcard_app.utils import generate_voucher_number
     return render(request, 'jobcard_app/invoice_form.html', {
-        'customers':   customers,
-        'technicians': technicians,
-        'advisors':    advisors,
-        'prefill_jc':  prefill_jc,
-        'next_inv_no': generate_voucher_number('Invoice', Invoice, 'invoice_number', default_prefix='INV-'),
-        'today':       timezone.now().date(),
+        'customers':    customers,
+        'technicians':  technicians,
+        'advisors':     advisors,
+        'prefill_jc':   prefill_jc,
+        'prefill_dn':   prefill_dn,
+        'next_inv_no':  generate_voucher_number('Invoice', Invoice, 'invoice_number', default_prefix='INV-'),
+        'today':        timezone.now().date(),
+        'posted_data':  posted_data,
     })
  
- 
+def get_next_invoice_number(request):
+    """AJAX view to get next invoice voucher number"""
+    from fleet_app.models import Vouchers
+    from jobcard_app.utils import generate_voucher_number
+    from .models import Invoice
+
+    voucher_type_id = request.GET.get('voucher_type_id')
+    if voucher_type_id:
+        try:
+            vt = Vouchers.objects.get(pk=voucher_type_id)
+            num = vt.get_next_voucher_number(Invoice, 'voucher_number')
+            return JsonResponse({'job_number': num, 'success': True})
+        except Vouchers.DoesNotExist:
+            pass
+
+    next_num = generate_voucher_number('Invoice', Invoice, 'voucher_number', default_prefix='VCH-')
+    return JsonResponse({'job_number': next_num, 'success': True})
+
+# ─────────────────────────────────────────────────────────────
+# AJAX — GET NEXT DELIVERY NOTE VOUCHER NUMBER
+# ─────────────────────────────────────────────────────────────
+@login_required
+def get_next_delivery_number(request):
+    """AJAX view to get next delivery note voucher number"""
+    from fleet_app.models import Vouchers
+    from jobcard_app.utils import generate_voucher_number
+    from .models import DeliveryNote
+
+    voucher_type_id = request.GET.get('voucher_type_id')
+    if voucher_type_id:
+        try:
+            vt = Vouchers.objects.get(pk=voucher_type_id)
+            num = vt.get_next_voucher_number(DeliveryNote, 'voucher_number')
+            return JsonResponse({'job_number': num, 'success': True})
+        except Vouchers.DoesNotExist:
+            pass
+
+    next_num = generate_voucher_number('Delivery Note', DeliveryNote, 'voucher_number', default_prefix='DN-')
+    return JsonResponse({'job_number': next_num, 'success': True})
 # ─────────────────────────────────────────────────────────────
 # DETAIL
 # ─────────────────────────────────────────────────────────────
@@ -3840,7 +4430,7 @@ def invoice_detail(request, pk):
 def invoice_edit(request, pk):
     inv         = get_object_or_404(Invoice, pk=pk)
     customers   = LedgerCreation.objects.filter(
-                      groups_id=2).order_by('ledger_name')
+                      groups_id=18).order_by('ledger_name')
     technicians = Staff.objects.filter(
                       status='Active',
                       staff_category__name='Technician').order_by('full_name')
@@ -3877,10 +4467,13 @@ def invoice_delete(request, pk):
 
     try:
         from item_master.models import Stock
+        from accounts_app.models import LedgerPosting, BillWiseOpening
         from fleet_app.models import Vouchers
-        inv_vt = Vouchers.objects.filter(VoucherType__icontains='Invoice').first() or Vouchers.objects.filter(id=14).first() or Vouchers.objects.first()
+        inv_vt = invoice.voucherType or Vouchers.objects.filter(VoucherType__icontains='Invoice').first() or Vouchers.objects.filter(pk=5).first() or Vouchers.objects.first()
         if inv_vt:
             Stock.objects.filter(voucherType=inv_vt, voucherNo=invoice.id).delete()
+            LedgerPosting.objects.filter(VoucherType=inv_vt, VoucherNo=invoice.id).delete()
+            BillWiseOpening.objects.filter(voucherType=inv_vt, InvNo=invoice.invoice_number).delete()
     except Exception:
         pass
 
@@ -3963,7 +4556,7 @@ def ajax_get_docs_for_invoice(request):
 
             delivery_notes_result.append({
                 'id':              dn.id,
-                'number':          dn.delivery_number,
+                'number':          dn.voucher_number,
                 'date':            dn.date.strftime('%d %b %Y'),
                 'status':          dn.get_status_display(),
                 'vehicle_id':      dn.vehicle_id or '',

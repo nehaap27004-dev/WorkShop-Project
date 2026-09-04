@@ -131,6 +131,7 @@
                             <th>{% trans "ID" %}</th> 
                             <th>{% trans "Ledger Name" %}</th>
                             <th>{% trans "Group" %}</th>
+                            <th>{% trans "Sub Group" %}</th>
                             <th>{% trans "Opening Balance" %}</th>
                             <th>{% trans "Actions" %}</th>
                         </tr>
@@ -142,6 +143,8 @@
                             <td>{{ ledger.id }}</td>
                             <td><strong>{{ ledger.ledger_name }}</strong></td>
                             <td>{{ ledger.groups.groupName }}</td>
+                            <td class="text-end">{{ ledger.opening_balance }}</td>
+                            <td>{{ ledger.sub_group.sub_group_name|default:"—" }}</td>
                             <td class="text-end">{{ ledger.opening_balance }}</td>
                             <td>
                                 <div class="d-flex gap-2 justify-content-center">
@@ -156,10 +159,11 @@
                                     </a>
                                 </div>
                             </td>
+                            
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
+                            <td colspan="7" class="text-center text-muted py-4">
                                 <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                                 {% trans "No ledgers found. Create your first ledger using the form." %}
                             </td>

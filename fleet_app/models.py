@@ -45,7 +45,7 @@ class Manufacturer(models.Model):
     def __str__(self):
         return self.manufacturer_name
 
-    class Meta:
+    class Meta:                 
         verbose_name = "Manufacturer"
         verbose_name_plural = "Manufacturers"
         ordering = ['manufacturer_name']
@@ -826,7 +826,7 @@ class FleetContract(models.Model):
     
     
     
-'''
+# '''
 class VehicleMaster(models.Model):
 
     customer = models.ForeignKey(
@@ -859,6 +859,7 @@ class VehicleMaster(models.Model):
         verbose_name_plural = "Vehicle Masters"
         ordering = ['vehicle_name']    
         
+# '''
 class Document(models.Model):
     STATUS_CHOICES = [
         ('active', 'Active'),
@@ -883,7 +884,7 @@ class Document(models.Model):
 
     def __str__(self):
         return self.title        
-       ''' 
+#         
         
 class SimpleQuotation(models.Model):
     voucher_no = models.CharField(max_length=50, unique=True)
@@ -1096,98 +1097,6 @@ class DeliveryContractDetails(models.Model):
         return f"{self.vehicle} - {self.location} - {self.total_amount}"
 
     
-class Invoice(models.Model):
-    VOUCHER_PAYMENT_MODE_CHOICES = [
-        ('cash', 'Cash'),
-        ('bank', 'Bank'),
-        ('Credit', 'Credit'),
-    ]
-    voucher_no = models.CharField(max_length=100, unique=True)
-    invoice_no = models.CharField(max_length=100, blank=True, null=True)
-    date = models.DateField(default=timezone.now)
-    voucherType = models.ForeignKey(Vouchers, on_delete=models.PROTECT, default=2)
-    customer = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, related_name='invoice_customer', blank=True, null=True)
-    ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, related_name='invoice_ledger', blank=True, null=True)
-    is_taxable = models.BooleanField(default=True)
-
-    payment_mode = models.CharField(max_length=10, choices=VOUCHER_PAYMENT_MODE_CHOICES, default='cash')
-    supplier_ref = models.CharField(max_length=255, blank=True, null=True)
-    other_ref = models.CharField(max_length=255, blank=True, null=True)
-    buyer_order_no = models.CharField(max_length=255, blank=True, null=True)
-    dated = models.CharField(max_length=100, blank=True, null=True)  # Free text date entry if needed
-    grand_total = models.DecimalField(max_digits=12, decimal_places=3, default=0)
-    IsCleared = models.BooleanField(default=False)
-
-    invoice_type = models.CharField(max_length=10, choices=[('simple', 'Simple'), ('complex', 'Complex')], default='simple')
-    lpo_date = models.DateField(null=True, blank=True)
-    hire_contract_no = models.CharField(max_length=255, null=True, blank=True)
-    location = models.CharField(max_length=255, null=True, blank=True)
-    
-    enable_header = models.BooleanField(default=True)
-    enable_footer = models.BooleanField(default=True)
-    enable_signature = models.BooleanField(default=True)
-    
-    created_on = models.DateTimeField(auto_now_add=True)
-    updated_on = models.DateTimeField(auto_now=True)
-    created_by = models.IntegerField(null=True, blank=True)   
-    updated_by = models.IntegerField(null=True, blank=True)
-    
-    def save(self, *args, **kwargs):
-        if not self.voucher_no and self.voucherType:
-            self.voucher_no = self.voucherType.get_next_voucher_number()
-            
-        # Only auto-set IsCleared for NEW invoices (not existing ones)
-        # This allows receipt processing to update IsCleared for existing invoices
-        if self.pk is None:  # New invoice
-            if self.payment_mode == 'Credit':
-                self.IsCleared = False
-            else:
-                self.IsCleared = True
-
-        super().save(*args, **kwargs)
-
-    def is_locked(self):
-        if self.payment_mode != "Credit":
-            return False
-
-        return ReceiptBillDetails.objects.filter(
-            voucherType=self.voucherType,
-            VoucherNo=self.voucher_no
-        ).exists()    
-
-    def __str__(self):
-        return f"Invoice #{self.voucher_no}"
-
-
-class InvoiceDetails(models.Model):
-    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='details')
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT)
-    vehicle_model = models.CharField(max_length=255, null=True, blank=True)  # Stores model name + year
-    description = models.TextField(null=True, blank=True)  # Editable description per line
-    location = models.CharField(max_length=255)
-    amount = models.DecimalField(max_digits=20, decimal_places=3)
-    tax = models.DecimalField(max_digits=20, decimal_places=3)
-    tax_amount = models.DecimalField(max_digits=10, decimal_places=3)
-    total_amount = models.DecimalField(max_digits=12, decimal_places=3)
-
-    PERIOD_CHOICES = [
-    ('hourly', 'Hourly'),
-    ('daily', 'Daily'),
-    ('monthly', 'Monthly'),
-    ]
-    period = models.CharField(max_length=10, choices=PERIOD_CHOICES, null=True, blank=True)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    unit_rate = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
-    from_date = models.DateField(null=True, blank=True)
-    to_date = models.DateField(null=True, blank=True)
-    
-    created_on = models.DateTimeField(auto_now_add=True)
-    updated_on = models.DateTimeField(auto_now=True)
-    created_by = models.IntegerField(null=True, blank=True)   
-    updated_by = models.IntegerField(null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.vehicle} - {self.location} - {self.total_amount}"    
 
 
 

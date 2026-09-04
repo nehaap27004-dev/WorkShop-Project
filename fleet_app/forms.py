@@ -1341,7 +1341,7 @@ DeliveryContractDetailsFormSet = inlineformset_factory(
     extra=1,
     can_delete=True
 )
-
+'''
 class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
@@ -1402,8 +1402,8 @@ class InvoiceForm(forms.ModelForm):
             except:
                 pass
         
-        # Ledger filter by Groups cash account & Bank account
-        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Customer', 'Sundry Debtors')
+        # Ledger filter by Groups cash account, Bank account, Customer & Sales/Income groups
+        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Customer', 'Sundry Debtors', 'Sales Accounts', 'Direct Incomes', 'Indirect Incomes')
         # Voucher type filter 
         filter_voucher_types(self, [2])
         # customer filter by Groups 
@@ -1459,7 +1459,7 @@ InvoiceDetailsFormSet = inlineformset_factory(
     form=InvoiceDetailsForm,
     extra=1,
     can_delete=True
-)
+)'''
 
 class CompanyForm(forms.ModelForm):
     class Meta:

@@ -176,10 +176,10 @@ def upsert_stock(
         item_id=item.id,
         batch_id=batch_id,
         unit_id=base_unit_id,       # always store in base unit
+        voucherType=voucher_type,
+        voucherNo=voucher_id,
         defaults={
             "voucherDate": voucher_date,
-            "voucherType": voucher_type,
-            "voucherNo": voucher_id,
             "costCenter": cost_center,
             "rate": rate,
             "in_quantity": (base_qty_delta if base_qty_delta > 0 else 0),
@@ -188,28 +188,11 @@ def upsert_stock(
         }
     )
     if not created:
-        # Move quantities against existing
-        if base_qty_delta >= 0:
-            # Incoming: first net against any negative out, then add to in
-            if entry.out_quantity > 0:
-                nettable = min(entry.out_quantity, base_qty_delta)
-                entry.out_quantity -= nettable
-                base_qty_delta -= nettable
-            entry.in_quantity += base_qty_delta
-        else:
-            # Outgoing: consume from in_quantity, then add to out shortfall
-            wanted = abs(base_qty_delta)
-            if entry.in_quantity >= wanted:
-                entry.in_quantity -= wanted
-            else:
-                short = wanted - entry.in_quantity
-                entry.in_quantity = 0
-                entry.out_quantity += short
-        entry.stock_value += stock_value_delta
-        entry.rate = rate  # last rate wins; adjust if you want weighted avg
+        entry.in_quantity = (base_qty_delta if base_qty_delta > 0 else 0)
+        entry.out_quantity = (abs(base_qty_delta) if base_qty_delta < 0 else 0)
+        entry.stock_value = stock_value_delta
+        entry.rate = rate
         entry.voucherDate = voucher_date
-        entry.voucherType = voucher_type
-        entry.voucherNo = voucher_id
         entry.costCenter = cost_center
         entry.save()
     return entry
@@ -477,170 +460,340 @@ def process_voucher(
 
 
 #LedgerPosting for Sales
+def get_or_create_ledger(name, group_id_or_name=None, default_type='DR'):
+    """Helper to safely lookup or auto-create accounting ledgers by name."""
+    ledger = LedgerCreation.objects.filter(ledger_name=name).first()
+    if not ledger:
+        group = None
+        if isinstance(group_id_or_name, int):
+            group = Groups.objects.filter(id=group_id_or_name).first()
+        elif isinstance(group_id_or_name, str):
+            group = Groups.objects.filter(groupName=group_id_or_name).first()
+        if not group:
+            group = Groups.objects.first()
+        ledger, _ = LedgerCreation.objects.get_or_create(
+            ledger_name=name,
+            defaults={'groups': group, 'types': default_type, 'isDefault': True}
+        )
+    return ledger
+
+
+def delete_ledger_postings(voucher_type, voucher_no):
+    """Delete all active LedgerPosting records for a given voucher to prevent duplicates on edit/delete."""
+    try:
+        if voucher_type and voucher_no:
+            deleted_count, _ = LedgerPosting.objects.filter(
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no
+            ).delete()
+            print(f"Purged {deleted_count} old postings for VoucherType={voucher_type}, VoucherNo={voucher_no}")
+    except Exception as e:
+        print(f"Error purging ledger postings: {e}")
+
+
 def create_ledger_postings_for_sale(sale):
     """
-    Creates LedgerPosting entries for a given SalesMaster instance.
-    Handles debit entry for customer/Cash ledger,
-    and credit entries for sales, tax, and discount allowed.
-    Ledgers are looked up by name (not hardcoded ID) for robustness.
+    Creates double-entry LedgerPosting entries for a SalesMaster instance.
+    Rules:
+    - Debit: Customer / Cash / Bank ledger (Grand Total)
+    - Debit: Discount Allowed (if discount > 0)
+    - Credit: Sales Account (Net Value)
+    - Credit: Output Tax (Tax Amount, if tax > 0)
+    - Credit: Freight (Freight Amount, if freight > 0)
+    Ensures Total Debit = Total Credit.
     """
     try:
-        # --- Common Data ---
-        transaction_date = sale.transaction_date
-        voucher_type = Vouchers.objects.get(VoucherType="Sales")  # Sales VoucherType
+        voucher_type = Vouchers.objects.filter(VoucherType="Sales").first() or Vouchers.objects.filter(VoucherName__icontains="Sales").first()
+        if not voucher_type:
+            voucher_type, _ = Vouchers.objects.get_or_create(VoucherType="Sales", defaults={"VoucherName": "Sales", "Prefix": "SAL"})
+        
         voucher_no = sale.id
-        cost_center = sale.cost_center
-        fy = None  # future FK (optional)
+        # Delete prior postings if any
+        delete_ledger_postings(voucher_type, voucher_no)
 
-        # ---------------------- DEBIT ENTRY ----------------------
-        LedgerPosting.objects.create(
-            date=transaction_date,
-            VoucherType=voucher_type,
-            VoucherNo=voucher_no,
-            ledger=sale.ledger,  # selected Cash/Customer ledger from sale
-            debit=sale.grand_total_amount,
-            credit=None,
-            CostCenter=cost_center,
-            FY=fy,
-            IsDeleted=False
-        )
-        # Discount Allowed Ledger
-        if sale.discount > 0:
-            discount_allowed_ledger = LedgerCreation.objects.get(ledger_name="Discount Allowed")
+        transaction_date = sale.transaction_date
+        cost_center = getattr(sale, 'cost_center', None)
+
+        # DEBIT 1: Customer / Cash / Bank Ledger
+        if sale.grand_total_amount and sale.grand_total_amount > 0:
             LedgerPosting.objects.create(
                 date=transaction_date,
                 VoucherType=voucher_type,
                 VoucherNo=voucher_no,
-                ledger=discount_allowed_ledger,
+                ledger=sale.ledger,
+                debit=sale.grand_total_amount,
+                credit=None,
+                CostCenter=cost_center,
+                IsDeleted=False
+            )
+
+        # DEBIT 2: Discount Allowed (if applicable)
+        if sale.discount and sale.discount > 0:
+            discount_ledger = get_or_create_ledger("Discount Allowed", "Direct Expenses", "DR")
+            LedgerPosting.objects.create(
+                date=transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no,
+                ledger=discount_ledger,
                 debit=sale.discount,
                 credit=None,
                 CostCenter=cost_center,
-                FY=fy,
                 IsDeleted=False
             )
 
-        # ---------------------- CREDIT ENTRY 1 ----------------------
-        # Sales Account Ledger
-        sales_ledger = LedgerCreation.objects.get(ledger_name="Sales Account")
-        LedgerPosting.objects.create(
-            date=transaction_date,
-            VoucherType=voucher_type,
-            VoucherNo=voucher_no,
-            ledger=sales_ledger,
-            debit=None,
-            credit=sale.total_net_value,
-            CostCenter=cost_center,
-            FY=fy,
-            IsDeleted=False
-        )
-
-        # ---------------------- CREDIT ENTRY 2 ----------------------
-        # Output Tax Ledger
-        if sale.total_tax_amount > 0:
-            output_tax_ledger = LedgerCreation.objects.get(ledger_name="Output Tax")
+        # CREDIT 1: Sales Account
+        if sale.total_net_value and sale.total_net_value > 0:
+            sales_ledger = get_or_create_ledger("Sales Account", "Sales Account", "CR")
             LedgerPosting.objects.create(
                 date=transaction_date,
                 VoucherType=voucher_type,
                 VoucherNo=voucher_no,
-                ledger=output_tax_ledger,
+                ledger=sales_ledger,
+                debit=None,
+                credit=sale.total_net_value,
+                CostCenter=cost_center,
+                IsDeleted=False
+            )
+
+        # CREDIT 2: Output Tax
+        if sale.total_tax_amount and sale.total_tax_amount > 0:
+            tax_ledger = get_or_create_ledger("Output Tax", "Direct Income", "CR")
+            LedgerPosting.objects.create(
+                date=transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no,
+                ledger=tax_ledger,
                 debit=None,
                 credit=sale.total_tax_amount,
                 CostCenter=cost_center,
-                FY=fy,
                 IsDeleted=False
             )
-        
-        if sale.Freight > 0:
-            # Freight Ledger: look up by name; fall back gracefully if not yet created
-            freight_ledger = LedgerCreation.objects.filter(ledger_name="Freight").first()
-            if freight_ledger:
-                LedgerPosting.objects.create(
-                    date=transaction_date,
-                    VoucherType=voucher_type,
-                    VoucherNo=voucher_no,
-                    ledger=freight_ledger,
-                    debit=None,
-                    credit=sale.Freight,
-                    CostCenter=cost_center,
-                    FY=fy,
-                    IsDeleted=False
-                )
-            
+
+        # CREDIT 3: Freight
+        if getattr(sale, 'Freight', 0) and sale.Freight > 0:
+            freight_ledger = get_or_create_ledger("Freight", "Direct Income", "CR")
+            LedgerPosting.objects.create(
+                date=transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no,
+                ledger=freight_ledger,
+                debit=None,
+                credit=sale.Freight,
+                CostCenter=cost_center,
+                IsDeleted=False
+            )
+
     except Exception as e:
         print(f"Error creating LedgerPosting for sale {sale.id}: {e}")
-        raise
-
-
-#LedgerPosting for Purchase
-import traceback
+        raise e
 
 
 def create_ledger_postings_for_purchase(purchase):
     """
-    Creates LedgerPosting entries for a given PurchaseMaster instance.
-    Ledgers are looked up by name (not hardcoded ID) for robustness.
+    Creates double-entry LedgerPosting entries for a PurchaseMaster instance.
+    Rules:
+    - Credit: Supplier / Cash / Bank ledger (Grand Total)
+    - Credit: Discount Received (if discount > 0)
+    - Debit: Purchase Account (Net Value)
+    - Debit: Input Tax (Tax Amount, if tax > 0)
+    Ensures Total Debit = Total Credit.
     """
     try:
-        # Fetch Purchase voucher type by VoucherType name
-        voucher_type = Vouchers.objects.get(VoucherType="Purchase")
+        voucher_type = Vouchers.objects.filter(VoucherType="Purchase").first() or Vouchers.objects.filter(VoucherName__icontains="Purchase").first()
+        if not voucher_type:
+            voucher_type, _ = Vouchers.objects.get_or_create(VoucherType="Purchase", defaults={"VoucherName": "Purchase", "Prefix": "PUR"})
 
-        # Supplier Credit entry (Accounts Payable / Sundry Creditor)
-        LedgerPosting.objects.create(
-            date=purchase.transaction_date,
-            VoucherType=voucher_type,
-            VoucherNo=purchase.id,
-            ledger=purchase.ledger,
-            debit=None,
-            credit=purchase.grand_total_amount,
-            CostCenter=purchase.cost_center,
-            FY=None,
-            IsDeleted=False
-        )
+        voucher_no = purchase.id
+        delete_ledger_postings(voucher_type, voucher_no)
 
-        # Discount Received (credit — reducing the cost)
-        if purchase.discount > 0:
-            discount_ledger = LedgerCreation.objects.get(ledger_name="Discount Received")
+        transaction_date = purchase.transaction_date
+        cost_center = getattr(purchase, 'cost_center', None)
+
+        # CREDIT 1: Supplier / Cash / Bank Ledger
+        if purchase.grand_total_amount and purchase.grand_total_amount > 0:
             LedgerPosting.objects.create(
-                date=purchase.transaction_date,
+                date=transaction_date,
                 VoucherType=voucher_type,
-                VoucherNo=purchase.id,
-                ledger=discount_ledger,
+                VoucherNo=voucher_no,
+                ledger=purchase.ledger,
                 debit=None,
-                credit=purchase.discount,
-                CostCenter=purchase.cost_center,
-                FY=None,
+                credit=purchase.grand_total_amount,
+                CostCenter=cost_center,
                 IsDeleted=False
             )
 
-        # Purchase Account Debit
-        purchase_ledger = LedgerCreation.objects.get(ledger_name="Purchase Account")
-        LedgerPosting.objects.create(
-            date=purchase.transaction_date,
-            VoucherType=voucher_type,
-            VoucherNo=purchase.id,
-            ledger=purchase_ledger,
-            debit=purchase.total_net_value,
-            credit=None,
-            CostCenter=purchase.cost_center,
-            FY=None,
-            IsDeleted=False
-        )
-
-        # Input Tax Debit
-        if purchase.total_tax_amount > 0:
-            tax_ledger = LedgerCreation.objects.get(ledger_name="Input Tax")
+        # CREDIT 2: Discount Received
+        if purchase.discount and purchase.discount > 0:
+            discount_ledger = get_or_create_ledger("Discount Received", "Direct Income", "CR")
             LedgerPosting.objects.create(
-                date=purchase.transaction_date,
+                date=transaction_date,
                 VoucherType=voucher_type,
-                VoucherNo=purchase.id,
+                VoucherNo=voucher_no,
+                ledger=discount_ledger,
+                debit=None,
+                credit=purchase.discount,
+                CostCenter=cost_center,
+                IsDeleted=False
+            )
+
+        # DEBIT 1: Purchase Account
+        if purchase.total_net_value and purchase.total_net_value > 0:
+            purchase_ledger = get_or_create_ledger("Purchase Account", "Purchase Account", "DR")
+            LedgerPosting.objects.create(
+                date=transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no,
+                ledger=purchase_ledger,
+                debit=purchase.total_net_value,
+                credit=None,
+                CostCenter=cost_center,
+                IsDeleted=False
+            )
+
+        # DEBIT 2: Input Tax
+        if purchase.total_tax_amount and purchase.total_tax_amount > 0:
+            tax_ledger = get_or_create_ledger("Input Tax", "Direct Expenses", "DR")
+            LedgerPosting.objects.create(
+                date=transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no,
                 ledger=tax_ledger,
                 debit=purchase.total_tax_amount,
                 credit=None,
-                CostCenter=purchase.cost_center,
-                FY=None,
+                CostCenter=cost_center,
                 IsDeleted=False
             )
 
     except Exception as e:
-        traceback.print_exc()
+        print(f"Error creating LedgerPosting for purchase {purchase.id}: {e}")
         raise e
+
+
+def create_ledger_postings_for_purchase_return(p_return):
+    """
+    Creates double-entry LedgerPosting entries for a PurchaseReturnMaster instance.
+    Rules:
+    - Debit: Supplier / Cash / Bank ledger (Grand Total)
+    - Credit: Purchase Return Account (Net Value)
+    - Credit: Input Tax (Tax Amount, reversing input tax)
+    """
+    try:
+        voucher_type = Vouchers.objects.filter(VoucherType="Purchase Return").first() or Vouchers.objects.filter(VoucherName__icontains="Purchase Return").first()
+        if not voucher_type:
+            voucher_type, _ = Vouchers.objects.get_or_create(VoucherType="Purchase Return", defaults={"VoucherName": "Purchase Return", "Prefix": "PRN"})
+
+        voucher_no = p_return.id
+        delete_ledger_postings(voucher_type, voucher_no)
+
+        transaction_date = getattr(p_return, 'transaction_date', None) or getattr(p_return, 'date', None)
+        cost_center = getattr(p_return, 'cost_center', None)
+
+        # DEBIT: Supplier / Cash / Bank Ledger
+        if p_return.grand_total_amount and p_return.grand_total_amount > 0:
+            LedgerPosting.objects.create(
+                date=transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no,
+                ledger=p_return.ledger,
+                debit=p_return.grand_total_amount,
+                credit=None,
+                CostCenter=cost_center,
+                IsDeleted=False
+            )
+
+        # CREDIT 1: Purchase Return Account
+        if p_return.total_net_value and p_return.total_net_value > 0:
+            pr_ledger = get_or_create_ledger("Purchase Return", "Purchase Account", "CR")
+            LedgerPosting.objects.create(
+                date=transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no,
+                ledger=pr_ledger,
+                debit=None,
+                credit=p_return.total_net_value,
+                CostCenter=cost_center,
+                IsDeleted=False
+            )
+
+        # CREDIT 2: Input Tax (reversal)
+        if p_return.total_tax_amount and p_return.total_tax_amount > 0:
+            tax_ledger = get_or_create_ledger("Input Tax", "Direct Expenses", "DR")
+            LedgerPosting.objects.create(
+                date=transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no,
+                ledger=tax_ledger,
+                debit=None,
+                credit=p_return.total_tax_amount,
+                CostCenter=cost_center,
+                IsDeleted=False
+            )
+
+    except Exception as e:
+        print(f"Error creating LedgerPosting for purchase return {p_return.id}: {e}")
+        raise e
+
+
+def create_ledger_postings_for_sales_return(s_return):
+    """
+    Creates double-entry LedgerPosting entries for a SalesReturnMaster instance.
+    Rules:
+    - Debit: Sales Return Account (Net Value)
+    - Debit: Output Tax (Tax Amount, reversing output tax)
+    - Credit: Customer / Cash / Bank ledger (Grand Total)
+    """
+    try:
+        voucher_type = Vouchers.objects.filter(VoucherType="Sales Return").first() or Vouchers.objects.filter(VoucherName__icontains="Sales Return").first()
+        if not voucher_type:
+            voucher_type, _ = Vouchers.objects.get_or_create(VoucherType="Sales Return", defaults={"VoucherName": "Sales Return", "Prefix": "SRN"})
+
+        voucher_no = s_return.id
+        delete_ledger_postings(voucher_type, voucher_no)
+
+        transaction_date = getattr(s_return, 'transaction_date', None) or getattr(s_return, 'date', None)
+        cost_center = getattr(s_return, 'cost_center', None)
+
+        # DEBIT 1: Sales Return Account
+        if s_return.total_net_value and s_return.total_net_value > 0:
+            sr_ledger = get_or_create_ledger("Sales Return", "Sales Account", "DR")
+            LedgerPosting.objects.create(
+                date=transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no,
+                ledger=sr_ledger,
+                debit=s_return.total_net_value,
+                credit=None,
+                CostCenter=cost_center,
+                IsDeleted=False
+            )
+
+        # DEBIT 2: Output Tax (reversal)
+        if s_return.total_tax_amount and s_return.total_tax_amount > 0:
+            tax_ledger = get_or_create_ledger("Output Tax", "Direct Income", "CR")
+            LedgerPosting.objects.create(
+                date=transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no,
+                ledger=tax_ledger,
+                debit=s_return.total_tax_amount,
+                credit=None,
+                CostCenter=cost_center,
+                IsDeleted=False
+            )
+
+        # CREDIT: Customer / Cash / Bank Ledger
+        if s_return.grand_total_amount and s_return.grand_total_amount > 0:
+            LedgerPosting.objects.create(
+                date=transaction_date,
+                VoucherType=voucher_type,
+                VoucherNo=voucher_no,
+                ledger=s_return.ledger,
+                debit=None,
+                credit=s_return.grand_total_amount,
+                CostCenter=cost_center,
+                IsDeleted=False
+            )
+
+    except Exception as e:
+        print(f"Error creating LedgerPosting for sales return {s_return.id}: {e}")
+        raise e

@@ -1,6 +1,9 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
 {% block content %}
+{% if posted_data %}
+{{ posted_data|json_script:"posted-invoice-data" }}
+{% endif %}
 <style>
 *{box-sizing:border-box}
 body,input,select,textarea,button{font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
@@ -171,8 +174,6 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 <div class="pg-hdr-box">
   <div>
     <div class="pg-title">{% if invoice %}Edit Invoice — {{ invoice.invoice_number }}{% else %}Create Invoice{% endif %}</div>
-    
-    
   </div>
 </div>
 
@@ -217,7 +218,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
         <div id="docListDN" style="display:none"></div>
         <div id="docListJC" style="display:none"></div>
         <div id="docEmptyMsg" style="display:none;padding:24px 16px;text-align:center;color:#94a3b8;font-size:12.5px">
-          No documents found for this customer / vehicle.
+          No documents found for this customer.
         </div>
       </div>
     </div>
@@ -240,6 +241,9 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
     </div>
   </div>
   <div class="card-body">
+    <input type="hidden" name="voucherType" id="id_voucherType"
+          value="{% if invoice and invoice.voucherType %}{{ invoice.voucherType.id }}{% else %}5{% endif %}">
+
     <div class="info-grid">
 
       <!-- LEFT: Invoice fields -->
@@ -247,14 +251,23 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
         <div class="fields-block">
           <div class="fields-row fr2">
             <div>
-              <label class="fl">Invoice Number</label>
-              <input type="text" class="fc" disabled
-                     value="{% if invoice %}{{ invoice.invoice_number }}{% else %}INV-AUTO{% endif %}">
+              <label class="fl">Voucher Number</label>
+              <input type="text" name="voucher_number" id="id_voucher_number" class="fc"
+                    placeholder="e.g. VCH-00001"
+                    value="{% if invoice %}{{ invoice.voucher_number|default:'' }}{% endif %}">
             </div>
+            <div>
+              <label class="fl">Invoice Number <span class="req">*</span></label>
+              <input type="text" name="invoice_number" class="fc" required
+                    placeholder="Enter invoice number"
+                    value="{% if invoice %}{{ invoice.invoice_number }}{% endif %}">
+            </div>
+          </div>
+          <div class="fields-row fr2" style="margin-top:12px">
             <div>
               <label class="fl">Invoice Date <span class="req">*</span></label>
               <input type="date" name="invoice_date" class="fc" required
-                     value="{% if invoice %}{{ invoice.invoice_date|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}">
+                    value="{% if invoice %}{{ invoice.invoice_date|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}">
             </div>
           </div>
         </div>
@@ -270,10 +283,8 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
               <label class="fl">Payment Mode</label>
               <select name="payment_mode" class="fc">
                 <option value="cash"   {% if not invoice or invoice.payment_mode == 'cash'   %}selected{% endif %}>Cash</option>
-                <option value="bank"   {% if invoice and invoice.payment_mode == 'bank'       %}selected{% endif %}>Bank Transfer</option>
-                <option value="cheque" {% if invoice and invoice.payment_mode == 'cheque'     %}selected{% endif %}>Cheque</option>
-                <option value="card"   {% if invoice and invoice.payment_mode == 'card'       %}selected{% endif %}>Credit Card</option>
-                <option value="pdc"    {% if invoice and invoice.payment_mode == 'pdc'        %}selected{% endif %}>PDC</option>
+                <option value="bank"   {% if invoice and invoice.payment_mode == 'bank'      %}selected{% endif %}>Bank</option>
+                <option value="credit" {% if invoice and invoice.payment_mode == 'credit'    %}selected{% endif %}>Credit</option>
               </select>
             </div>
           </div>
@@ -308,7 +319,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
         </div>
       </div>
 
-      <!-- RIGHT: Customer & Vehicle info -->
+      <!-- RIGHT: Customer info -->
       <div>
         <div style="margin-bottom:12px">
           <label class="fl">Customer <span class="req">*</span></label>
@@ -317,7 +328,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
             {% for c in customers %}
             <option value="{{ c.id }}"
               data-mobile="{{ c.contact_number|default:'' }}"
-              {% if invoice and invoice.customer_id == c.id %}selected{% endif %}>
+              {% if invoice and invoice.customer_id == c.id or prefill_dn and prefill_dn.customer_id == c.id %}selected{% endif %}>
               {{ c.ledger_name }}
             </option>
             {% endfor %}
@@ -330,27 +341,9 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
             <div class="fc-wrap">
               <input type="text" name="customer_mobile" id="custMobile" class="fc with-icon"
                      placeholder="+968 9000 0000"
-                     value="{% if invoice %}{{ invoice.customer_mobile }}{% endif %}">
+                     value="{% if invoice %}{{ invoice.customer_mobile }}{% elif prefill_dn %}{{ prefill_dn.contact_number|default:'' }}{% endif %}">
             </div>
           </div>
-          <div>
-            <label class="fl">Vehicle Number</label>
-            <div class="fc-wrap">
-              <select name="vehicle" id="vehSel" class="fc with-icon">
-                <option value="">— Select Vehicle —</option>
-                {% if invoice and invoice.vehicle %}
-                <option value="{{ invoice.vehicle.id }}" selected>{{ invoice.vehicle }}</option>
-                {% endif %}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-bottom:12px">
-          <label class="fl">Vehicle Model</label>
-          <input type="text" name="vehicle_model" id="vehModel" class="fc"
-                 placeholder="e.g. Toyota Land Cruiser (4.0 V6)"
-                 value="{% if invoice and invoice.vehicle_model %}{{ invoice.vehicle_model }}{% endif %}">
         </div>
 
         <div>
@@ -360,6 +353,88 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- VEHICLE (multi-vehicle table)                 -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-hdr" style="justify-content:space-between">
+    <span class="card-title">Vehicle</span>
+    <button type="button" onclick="addInvVehicleRow()"
+            style="background:#2563eb;color:#fff;border:none;border-radius:5px;
+                   padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">
+      + Add Vehicle
+    </button>
+  </div>
+  <div class="card-body" style="padding:0">
+    <div class="tbl-wrap">
+      <table class="inv-tbl" id="invVehTbl">
+        <thead>
+          <tr>
+            <th style="width:26%">Vehicle Number</th>
+            <th style="width:28%">Model</th>
+            <th style="width:22%">Mileage (km)</th>
+            <th style="width:14%">Action</th>
+          </tr>
+        </thead>
+        <tbody id="invVehBody">
+          {% if invoice %}
+            {% for iv in invoice.vehicles.all %}
+            <tr>
+              <td>
+                <select name="inv_vehicle_id[]" class="inv-veh-select" onchange="onInvVehRowChange(this)">
+                  <option value="{{ iv.vehicle_id }}" selected
+                          data-mm="{{ iv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ iv.vehicle.vehicle_model.model_name|default:'' }}"
+                          data-odo="{{ iv.vehicle.odometer|default:'' }}">
+                    {{ iv.vehicle.vehicle_number }}{% if iv.vehicle.registration_number %} ({{ iv.vehicle.registration_number }}){% endif %}
+                  </option>
+                </select>
+              </td>
+              <td>
+                <input type="text" class="fc" readonly
+                      value="{{ iv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ iv.vehicle.vehicle_model.model_name|default:'' }}">
+              </td>
+              <td><input type="number" name="inv_vehicle_mileage[]" value="{{ iv.mileage|default:'' }}" min="0" class="fc"></td>
+              <td>
+                <input type="hidden" name="inv_vehicle_notes[]" value="{{ iv.notes }}">
+                <button type="button" onclick="removeInvVehRow(this)"
+                        style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">✕ Remove</button>
+              </td>
+            </tr>
+            {% endfor %}
+          {% elif prefill_dn and prefill_dn.vehicles.exists %}
+            {% for dv in prefill_dn.vehicles.all %}
+            <tr>
+              <td>
+                <select name="inv_vehicle_id[]" class="inv-veh-select" onchange="onInvVehRowChange(this)">
+                  <option value="{{ dv.vehicle_id }}" selected
+                          data-mm="{{ dv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ dv.vehicle.vehicle_model.model_name|default:'' }}"
+                          data-odo="{{ dv.vehicle.odometer|default:'' }}">
+                    {{ dv.vehicle.vehicle_number }}{% if dv.vehicle.registration_number %} ({{ dv.vehicle.registration_number }}){% endif %}
+                  </option>
+                </select>
+              </td>
+              <td>
+                <input type="text" class="fc" readonly
+                      value="{{ dv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ dv.vehicle.vehicle_model.model_name|default:'' }}">
+              </td>
+              <td><input type="number" name="inv_vehicle_mileage[]" value="{{ dv.mileage|default:'' }}" min="0" class="fc"></td>
+              <td>
+                <input type="hidden" name="inv_vehicle_notes[]" value="{{ dv.notes }}">
+                <button type="button" onclick="removeInvVehRow(this)"
+                        style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">✕ Remove</button>
+              </td>
+            </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    <div id="invVehEmpty" style="{% if invoice and invoice.vehicles.exists or prefill_dn and prefill_dn.vehicles.exists %}display:none{% else %}display:block{% endif %};text-align:center;padding:20px;color:#9ca3af;font-size:13px">
+      No vehicles added yet. Select a customer first, then click "Add Vehicle".
     </div>
   </div>
 </div>
@@ -382,6 +457,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
       <thead>
         <tr>
           <th style="width:26px">#</th>
+          <th style="width:130px">Vehicle</th>
           <th>Item / Description</th>
           <th style="width:110px">Part Code</th>
           <th style="width:65px">Qty</th>
@@ -398,6 +474,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
         {% if invoice %}
           {% for item in parts %}
           <tr
+            data-vehicle-id="{{ item.vehicle_id|default:'' }}"
             data-item-id="{{ item.item_ref|default:'' }}"
             data-item-name="{{ item.description|default:'' }}"
             data-item-code="{{ item.item_code|default:'' }}"
@@ -406,6 +483,20 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
             data-item-qty="{{ item.quantity|default:1 }}"
             data-item-disc="{{ item.discount_pct|default:0 }}"
             data-item-tax="{{ item.tax_percent|default:8 }}">
+          </tr>
+          {% endfor %}
+        {% elif prefill_dn and prefill_dn.parts.exists %}
+          {% for item in prefill_dn.parts.all %}
+          <tr
+            data-vehicle-id="{{ item.vehicle_id|default:'' }}"
+            data-item-id="{{ item.item_id|default:'' }}"
+            data-item-name="{{ item.name|default:'' }}"
+            data-item-code="{{ item.item_code|default:'' }}"
+            data-item-unit="{{ item.unit|default:'Pcs' }}"
+            data-item-rate="{{ item.rate|default:0 }}"
+            data-item-qty="{{ item.quantity|default:1 }}"
+            data-item-disc="0"
+            data-item-tax="8">
           </tr>
           {% endfor %}
         {% endif %}
@@ -437,8 +528,9 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
       <thead>
         <tr>
           <th style="width:26px">#</th>
-          <th style="width:35%">Description / Work Done</th>
-          <th style="width:20%">Technician</th>
+          <th style="width:130px">Vehicle</th>
+          <th style="width:30%">Description / Work Done</th>
+          <th style="width:18%">Technician</th>
           <th style="width:70px">Hours</th>
           <th style="width:100px">Rate / Hr </th>
           <th style="width:55px">Tax %</th>
@@ -452,6 +544,14 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
           {% for item in labour %}
           <tr>
             <td class="row-num">{{ forloop.counter }}</td>
+            <td>
+              <select name="labour_vehicle_id[]" class="row-veh-select fc" style="width:100%;cursor:pointer">
+                <option value="">— Vehicle —</option>
+                {% for iv in invoice.vehicles.all %}
+                <option value="{{ iv.vehicle_id }}" {% if item.vehicle_id == iv.vehicle_id %}selected{% endif %}>{{ iv.vehicle.vehicle_number }}</option>
+                {% endfor %}
+              </select>
+            </td>
             <td><input type="text" name="lab_desc[]" value="{{ item.description }}" placeholder="e.g. Engine overhaul..."></td>
             <td>
               <select name="lab_tech[]">
@@ -467,9 +567,41 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
             <td><button type="button" class="btn-rm rm-labour">×</button></td>
           </tr>
           {% endfor %}
+        {% elif prefill_dn and prefill_dn.labours.exists %}
+          {% for item in prefill_dn.labours.all %}
+          <tr>
+            <td class="row-num">{{ forloop.counter }}</td>
+            <td>
+              <select name="labour_vehicle_id[]" class="row-veh-select fc" style="width:100%;cursor:pointer">
+                <option value="">— Vehicle —</option>
+                {% for dv in prefill_dn.vehicles.all %}
+                <option value="{{ dv.vehicle_id }}" {% if item.vehicle_id == dv.vehicle_id %}selected{% endif %}>{{ dv.vehicle.vehicle_number }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td><input type="text" name="lab_desc[]" value="{{ item.description }}" placeholder="e.g. Engine overhaul..."></td>
+            <td>
+              <select name="lab_tech[]">
+                <option value="">— Assign —</option>
+                {% for t in technicians %}<option value="{{ t.id }}" {% if item.technician_id == t.id %}selected{% endif %}>{{ t.full_name }}</option>{% endfor %}
+              </select>
+            </td>
+            <td><input type="number" name="lab_hrs[]"  class="lhrs"  value="{{ item.hours|default:1 }}" min="0" step="0.5"></td>
+            <td><input type="number" name="lab_rate[]" class="lrate" value="{{ item.rate }}" min="0" step="0.001"></td>
+            <td><input type="number" name="lab_tax[]"  class="ltax"  value="8" min="0" step="0.1"></td>
+            <td class="cell-tax ltax-amt">0.000</td>
+            <td class="cell-num ltotal">{{ item.amount|floatformat:3 }}</td>
+            <td><button type="button" class="btn-rm rm-labour">×</button></td>
+          </tr>
+          {% endfor %}
         {% else %}
         <tr>
           <td class="row-num">1</td>
+          <td>
+            <select name="labour_vehicle_id[]" class="row-veh-select fc" style="width:100%;cursor:pointer">
+              <option value="">— Vehicle —</option>
+            </select>
+          </td>
           <td><input type="text" name="lab_desc[]" placeholder="e.g. Engine oil change & filter replacement..."></td>
           <td>
             <select name="lab_tech[]">
@@ -513,6 +645,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
       <thead>
         <tr>
           <th style="width:26px">#</th>
+          <th style="width:130px">Vehicle</th>
           <th>Description</th>
           <th style="width:120px">Amount</th>
           <th style="width:55px">Tax %</th>
@@ -526,6 +659,14 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
           {% for item in other_charges %}
           <tr>
             <td class="row-num">{{ forloop.counter }}</td>
+            <td>
+              <select name="other_vehicle_id[]" class="row-veh-select fc" style="width:100%;cursor:pointer">
+                <option value="">— Vehicle —</option>
+                {% for iv in invoice.vehicles.all %}
+                <option value="{{ iv.vehicle_id }}" {% if item.vehicle_id == iv.vehicle_id %}selected{% endif %}>{{ iv.vehicle.vehicle_number }}</option>
+                {% endfor %}
+              </select>
+            </td>
             <td><input type="text" name="oth_desc[]" value="{{ item.description }}" placeholder="e.g. Wheel Alignment..."></td>
             <td><input type="number" name="oth_amt[]"  class="oamt" value="{{ item.amount }}" min="0" step="0.001"></td>
             <td><input type="number" name="oth_tax[]"  class="otax" value="{{ item.tax_percent|default:0 }}" min="0" step="0.1"></td>
@@ -537,6 +678,11 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
         {% else %}
         <tr>
           <td class="row-num">1</td>
+          <td>
+            <select name="other_vehicle_id[]" class="row-veh-select fc" style="width:100%;cursor:pointer">
+              <option value="">— Vehicle —</option>
+            </select>
+          </td>
           <td><input type="text" name="oth_desc[]" placeholder="e.g. Wheel Alignment / Diagnostics..."></td>
           <td><input type="number" name="oth_amt[]"  class="oamt" value="0.000" min="0" step="0.001"></td>
           <td><input type="number" name="oth_tax[]"  class="otax" value="0" min="0" step="0.1"></td>
@@ -639,6 +785,11 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 <template id="labourRowTpl">
   <tr>
     <td class="row-num">•</td>
+    <td>
+      <select name="labour_vehicle_id[]" class="row-veh-select fc" style="width:100%;cursor:pointer">
+        <option value="">— Vehicle —</option>
+      </select>
+    </td>
     <td><input type="text" name="lab_desc[]" placeholder="e.g. Oil change service..."></td>
     <td><select name="lab_tech[]"><option value="">— Assign —</option>{% for t in technicians %}<option value="{{ t.id }}">{{ t.full_name }}</option>{% endfor %}</select></td>
     <td><input type="number" name="lab_hrs[]"  class="lhrs"  value="1" min="0" step="0.5"></td>
@@ -652,6 +803,11 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 <template id="otherRowTpl">
   <tr>
     <td class="row-num">•</td>
+    <td>
+      <select name="other_vehicle_id[]" class="row-veh-select fc" style="width:100%;cursor:pointer">
+        <option value="">— Vehicle —</option>
+      </select>
+    </td>
     <td><input type="text" name="oth_desc[]" placeholder="e.g. Wheel Alignment..."></td>
     <td><input type="number" name="oth_amt[]"  class="oamt" value="0.000" min="0" step="0.001"></td>
     <td><input type="number" name="oth_tax[]"  class="otax" value="0" min="0" step="0.1"></td>
@@ -682,6 +838,7 @@ const GET_DOCS_INVOICE_URL= "{% url 'jobcard_app:ajax_get_docs_for_invoice' %}";
 
 let invAllItems = [];
 let cachedDocs = { delivery_notes: [], jobcards: [] };
+let invCustomerVehicleCache = [];
 
 /* ── Build item dropdown options ── */
 function buildInvItemOptions(selectedId = '') {
@@ -703,8 +860,34 @@ function buildUnitOptions(selected = 'Pcs') {
   ).join('');
 }
 
+/* ── Dynamic Row Vehicle Dropdowns ── */
+function syncRowVehicleDropdowns() {
+  const vehOpts = [];
+  document.querySelectorAll('#invVehBody .inv-veh-select').forEach(sel => {
+    if (sel.value && sel.selectedIndex >= 0) {
+      const o = sel.options[sel.selectedIndex];
+      vehOpts.push({ id: sel.value, name: o.text || o.textContent });
+    }
+  });
+
+  document.querySelectorAll('.row-veh-select').forEach(sel => {
+    const curVal = sel.value;
+    sel.innerHTML = '<option value="">— Vehicle —</option>';
+    vehOpts.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.id;
+      opt.textContent = v.name;
+      if (String(v.id) === String(curVal)) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    if (curVal && [...sel.options].some(o => String(o.value) === String(curVal))) {
+      sel.value = curVal;
+    }
+  });
+}
+
 /* ── Add a spare parts row ── */
-function addInvPartRow(itemId='', partCode='', qty=1, unit='Pcs', rate='0.000', disc=0, tax=8) {
+function addInvPartRow(itemId='', partCode='', qty=1, unit='Pcs', rate='0.000', disc=0, tax=8, vehicleId='') {
   const tbody = document.getElementById('partsTbody');
   const sl = tbody.rows.length + 1;
   const tr = document.createElement('tr');
@@ -713,6 +896,9 @@ function addInvPartRow(itemId='', partCode='', qty=1, unit='Pcs', rate='0.000', 
 
   tr.innerHTML = `
     <td class="row-num">${sl}</td>
+    <td>
+      <select name="part_vehicle_id[]" class="row-veh-select fc" style="${inpBase};cursor:pointer"></select>
+    </td>
     <td>
       <select name="part_item_id[]" class="inv-item-sel" style="${inpBase};cursor:pointer" onchange="onInvItemSelect(this)">
         ${buildInvItemOptions(itemId)}
@@ -734,6 +920,12 @@ function addInvPartRow(itemId='', partCode='', qty=1, unit='Pcs', rate='0.000', 
     <td><button type="button" class="btn-rm rm-part">×</button></td>`;
 
   tbody.appendChild(tr);
+
+  syncRowVehicleDropdowns();
+  if (vehicleId) {
+    const vSel = tr.querySelector('.row-veh-select');
+    if (vSel) vSel.value = vehicleId;
+  }
 
   if (itemId) {
     const found = invAllItems.find(i => String(i.id) === String(itemId));
@@ -783,27 +975,101 @@ function onInvItemSelect(sel) {
 const omr = (n, d=3) => parseFloat(n||0).toFixed(d);
 const fOMR = n => 'OMR ' + omr(n);
 
-// ── Customer → load vehicles & load documents ─────────────────────────
-document.getElementById('custSel').addEventListener('change', function () {
-  const opt  = this.options[this.selectedIndex];
-  document.getElementById('custMobile').value = opt.dataset.mobile || '';
-  const vsel = document.getElementById('vehSel');
-  vsel.innerHTML = '<option value="">— Select Vehicle —</option>';
-  
-  fetchDocsForInvoice();
-
-  if (!this.value) return;
-  fetch(VEHICLES_URL + '?customer_id=' + this.value)
+/* ══════════════════════════════════════════
+   VEHICLE TABLE (multi-vehicle, customer-driven)
+══════════════════════════════════════════ */
+function loadInvVehicles(cid) {
+  invCustomerVehicleCache = [];
+  if (!cid) {
+    document.querySelectorAll('.inv-veh-select').forEach(sel => populateInvVehSelect(sel));
+    return;
+  }
+  fetch(VEHICLES_URL + '?customer_id=' + cid)
     .then(r => r.json())
     .then(d => {
-      d.vehicles.forEach(v => {
-        const o = new Option(v.label || (v.make + ' ' + v.model + ' (' + v.reg + ')'), v.id);
-        vsel.add(o);
-      });
-    });
-});
+      invCustomerVehicleCache = d.vehicles || [];
+      document.querySelectorAll('.inv-veh-select').forEach(sel => populateInvVehSelect(sel));
+    })
+    .catch(err => console.error('Error loading customer vehicles:', err));
+}
 
-document.getElementById('vehSel').addEventListener('change', function() {
+function populateInvVehSelect(sel) {
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">— Select Vehicle —</option>';
+  invCustomerVehicleCache.forEach(v => {
+    const o = new Option(v.label, v.id);
+    o.dataset.mm  = v.mm_label || v.vehicle_model || '';
+    o.dataset.odo = v.odometer || '';
+    sel.add(o);
+  });
+  if (currentVal && [...sel.options].some(o => String(o.value) === String(currentVal))) {
+    sel.value = currentVal;
+  } else {
+    sel.value = '';
+  }
+  onInvVehRowChange(sel, false);
+}
+
+function addInvVehicleRow(vehicleIdToSelect) {
+  const custSel = document.getElementById('custSel');
+  if (!custSel || !custSel.value) {
+    alert('Please select a customer first.');
+    custSel && custSel.focus();
+    return null;
+  }
+  document.getElementById('invVehEmpty').style.display = 'none';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><select name="inv_vehicle_id[]" class="inv-veh-select" onchange="onInvVehRowChange(this)"></select></td>
+    <td><input type="text" class="fc" readonly placeholder="Model"></td>
+    <td><input type="number" name="inv_vehicle_mileage[]" min="0" class="fc" placeholder="Mileage"></td>
+    <td>
+      <input type="hidden" name="inv_vehicle_notes[]" value="">
+      <button type="button" onclick="removeInvVehRow(this)"
+              style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">✕ Remove</button>
+    </td>`;
+  document.getElementById('invVehBody').appendChild(tr);
+  const sel = tr.querySelector('.inv-veh-select');
+  populateInvVehSelect(sel);
+  if (vehicleIdToSelect) {
+    sel.value = vehicleIdToSelect;
+    onInvVehRowChange(sel, true);
+  }
+  return tr;
+}
+
+function onInvVehRowChange(sel, autoFill = true) {
+  const tr = sel.closest('tr');
+  if (!tr) return;
+  const o = sel.options[sel.selectedIndex];
+  const mmCell = tr.querySelector('input[type=text].fc');
+  if (o && o.value) {
+    if (mmCell) mmCell.value = o.dataset.mm || '';
+    if (autoFill) {
+      const mInp = tr.querySelector('input[name="inv_vehicle_mileage[]"]');
+      if (mInp && !mInp.value && o.dataset.odo) mInp.value = o.dataset.odo;
+    }
+  } else {
+    if (mmCell) mmCell.value = '';
+  }
+  syncRowVehicleDropdowns();
+}
+
+function removeInvVehRow(btn) {
+  btn.closest('tr').remove();
+  const tbody = document.getElementById('invVehBody');
+  document.getElementById('invVehEmpty').style.display = tbody.rows.length === 0 ? 'block' : 'none';
+  syncRowVehicleDropdowns();
+}
+
+/* ══════════════════════════════════════════
+   Customer change → load vehicles & documents
+══════════════════════════════════════════ */
+document.getElementById('custSel').addEventListener('change', function () {
+  const opt = this.options[this.selectedIndex];
+  document.getElementById('custMobile').value = opt.dataset.mobile || '';
+
+  loadInvVehicles(this.value);
   fetchDocsForInvoice();
 });
 
@@ -842,15 +1108,14 @@ document.getElementById('jcSearch').addEventListener('input', function () {
 // ── Document Loader Fetch & Picker logic ──────────────────────────────────────
 function fetchDocsForInvoice() {
   const custId = document.getElementById('custSel').value;
-  const vehId  = document.getElementById('vehSel').value;
-  
+
   if (!custId) {
     cachedDocs = { delivery_notes: [], jobcards: [] };
     updateDocBadges();
     return;
   }
 
-  fetch(`${GET_DOCS_INVOICE_URL}?customer_id=${custId}&vehicle_id=${vehId}`)
+  fetch(`${GET_DOCS_INVOICE_URL}?customer_id=${custId}`)
     .then(r => r.json())
     .then(data => {
       cachedDocs = data || { delivery_notes: [], jobcards: [] };
@@ -880,7 +1145,113 @@ function toggleDocPicker() {
 function closeDocPicker() {
   document.getElementById('docPickerPanel').style.display = 'none';
 }
+function restorePostedInvoiceData() {
+  const tag = document.getElementById('posted-invoice-data');
+  if (!tag) return null;
+  try {
+    return JSON.parse(tag.textContent);
+  } catch (e) {
+    console.error('Failed to parse posted invoice data:', e);
+    return null;
+  }
+}
 
+function applyPostedHeaderFields(d) {
+  const setVal = (name, val) => {
+    const el = document.querySelector(`[name="${name}"]`);
+    if (el && val !== undefined && val !== null) el.value = val;
+  };
+  setVal('voucherType', d.voucherType);
+  setVal('voucher_number', d.voucher_number);
+  setVal('invoice_number', d.invoice_number);
+  setVal('invoice_date', d.invoice_date);
+  setVal('due_date', d.due_date);
+  setVal('payment_mode', d.payment_mode);
+  setVal('status', d.status);
+  setVal('customer', d.customer);
+  setVal('customer_mobile', d.customer_mobile);
+  setVal('customer_address', d.customer_address);
+  setVal('notes', d.notes);
+  setVal('discount_pct', d.discount_pct);
+  setVal('amount_paid', d.amount_paid);
+}
+
+function applyPostedVehicles(d) {
+  const ids = d.inv_vehicle_id || [];
+  const mileages = d.inv_vehicle_mileage || [];
+  if (!ids.length) return;
+  ids.forEach((vid, i) => {
+    const tr = addInvVehicleRow(vid);
+    if (tr) {
+      const mInp = tr.querySelector('input[name="inv_vehicle_mileage[]"]');
+      if (mInp && mileages[i]) mInp.value = mileages[i];
+    }
+  });
+}
+
+function applyPostedParts(d) {
+  const itemIds = d.part_item_id || [];
+  if (!itemIds.length) return;
+  const names = d.part_name || [];
+  const codes = d.part_code || [];
+  const qtys  = d.part_qty || [];
+  const units = d.part_unit || [];
+  const rates = d.part_rate || [];
+  const discs = d.part_disc || [];
+  const taxes = d.part_tax || [];
+
+  document.getElementById('partsTbody').innerHTML = '';
+
+  itemIds.forEach((itemId, i) => {
+    addInvPartRow(itemId, codes[i] || '', qtys[i] || 1, units[i] || 'Pcs',
+                  rates[i] || '0.000', discs[i] || 0, taxes[i] || 8);
+    const tbody = document.getElementById('partsTbody');
+    const tr = tbody.lastElementChild;
+    if (tr) {
+      const nameInp = tr.querySelector('.inv-pname');
+      if (nameInp) nameInp.value = names[i] || '';
+    }
+  });
+  calcAll();
+}
+
+function applyPostedLabour(d) {
+  const descs = d.lab_desc || [];
+  if (!descs.length) return;
+  const techs = d.lab_tech || [];
+  const hrs   = d.lab_hrs || [];
+  const rates = d.lab_rate || [];
+  const taxes = d.lab_tax || [];
+
+  document.getElementById('labourTbody').innerHTML = '';
+  descs.forEach((desc, i) => {
+    addLabourDataRow(desc, techs[i] || '', hrs[i] || 1, rates[i] || 0, taxes[i] || 8);
+  });
+  calcAll();
+}
+
+function applyPostedOtherCharges(d) {
+  const descs = d.oth_desc || [];
+  if (!descs.length) return;
+  const amts  = d.oth_amt || [];
+  const taxes = d.oth_tax || [];
+
+  document.getElementById('otherTbody').innerHTML = '';
+  descs.forEach((desc, i) => {
+    addOtherRow();
+    const tbody = document.getElementById('otherTbody');
+    const tr = tbody.lastElementChild;
+    if (tr) {
+      const descInp = tr.querySelector('input[name="oth_desc[]"]');
+      const amtInp  = tr.querySelector('input[name="oth_amt[]"]');
+      const taxInp  = tr.querySelector('input[name="oth_tax[]"]');
+      if (descInp) descInp.value = desc;
+      if (amtInp)  amtInp.value  = amts[i] || 0;
+      if (taxInp)  taxInp.value  = taxes[i] || 0;
+    }
+  });
+  calcAll();
+}
 function switchDocTab(tab) {
   document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
   if (tab === 'DN') {
@@ -967,12 +1338,10 @@ function loadDeliveryNoteData(dnId) {
   const dn = (cachedDocs.delivery_notes || []).find(d => d.id === dnId);
   if (!dn) return;
 
-  // Auto select vehicle if available
+  // Auto add vehicle row if available and not already present
   if (dn.vehicle_id) {
-    const vsel = document.getElementById('vehSel');
-    if ([...vsel.options].some(o => o.value == dn.vehicle_id)) {
-      vsel.value = dn.vehicle_id;
-    }
+    const already = [...document.querySelectorAll('.inv-veh-select')].some(s => String(s.value) === String(dn.vehicle_id));
+    if (!already) addInvVehicleRow(dn.vehicle_id);
   }
 
   // Job card ref if linked
@@ -988,7 +1357,6 @@ function loadDeliveryNoteData(dnId) {
     clearEmptyPartsRows();
     dn.parts.forEach(p => {
       addInvPartRow(p.item_id, p.part_code, p.quantity, p.unit, p.rate, p.discount_pct || 0, p.tax_percent || 8);
-      // Set name if item_id was not matched
       const lastRow = document.querySelector('#partsTbody tr:last-child');
       if (lastRow && p.description) {
         lastRow.querySelector('.inv-pname').value = p.description;
@@ -1013,12 +1381,10 @@ function loadJobCardData(jcId) {
   const jc = (cachedDocs.jobcards || []).find(j => j.id === jcId);
   if (!jc) return;
 
-  // Auto select vehicle if available
+  // Auto add vehicle row if available and not already present
   if (jc.vehicle_id) {
-    const vsel = document.getElementById('vehSel');
-    if ([...vsel.options].some(o => o.value == jc.vehicle_id)) {
-      vsel.value = jc.vehicle_id;
-    }
+    const already = [...document.querySelectorAll('.inv-veh-select')].some(s => String(s.value) === String(jc.vehicle_id));
+    if (!already) addInvVehicleRow(jc.vehicle_id);
   }
 
   document.getElementById('jcSearch').value = jc.number;
@@ -1240,27 +1606,47 @@ function addPartRow() {
 function addLabourRow() {
   const tbody = document.getElementById('labourTbody');
   const tr    = document.getElementById('labourRowTpl').content.cloneNode(true).querySelector('tr');
-  tbody.appendChild(tr); bindLabourRow(tr); renumber('labourTbody'); calcAll();
+  tbody.appendChild(tr); bindLabourRow(tr); syncRowVehicleDropdowns(); renumber('labourTbody'); calcAll();
 }
 function addOtherRow() {
   const tbody = document.getElementById('otherTbody');
   const tr    = document.getElementById('otherRowTpl').content.cloneNode(true).querySelector('tr');
-  tbody.appendChild(tr); bindOtherRow(tr); renumber('otherTbody'); calcAll();
+  tbody.appendChild(tr); bindOtherRow(tr); syncRowVehicleDropdowns(); renumber('otherTbody'); calcAll();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
+  const posted = restorePostedInvoiceData();
+
   fetch(INV_ALL_ITEMS_URL)
     .then(r => r.json())
     .then(data => {
       invAllItems = data.items || [];
-      renderInvExistingParts();
+      if (posted) {
+        applyPostedHeaderFields(posted);
+        applyPostedParts(posted);
+      } else {
+        renderInvExistingParts();
+      }
+      syncRowVehicleDropdowns();
       calcAll();
     })
     .catch(() => {
-      renderInvExistingParts();
+      if (posted) {
+        applyPostedHeaderFields(posted);
+        applyPostedParts(posted);
+      } else {
+        renderInvExistingParts();
+      }
+      syncRowVehicleDropdowns();
       calcAll();
     });
+
+  if (posted) {
+    applyPostedVehicles(posted);
+    applyPostedLabour(posted);
+    applyPostedOtherCharges(posted);
+  }
 
   document.querySelectorAll('#labourTbody tr').forEach(tr => bindLabourRow(tr));
   document.querySelectorAll('#otherTbody tr').forEach(tr  => bindOtherRow(tr));
@@ -1268,10 +1654,29 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('discPct').addEventListener('input', calcAll);
   document.getElementById('amtPaid').addEventListener('input', calcAll);
 
-  // If editing and customer already selected, fetch available docs
-  if (document.getElementById('custSel').value) {
+  // If editing and customer already selected, load vehicles & fetch available docs
+  const custVal = document.getElementById('custSel').value;
+  if (custVal) {
+    loadInvVehicles(custVal);
     fetchDocsForInvoice();
   }
+
+  syncRowVehicleDropdowns();
+
+  {% if not invoice %}
+  const voucherTypeInput = document.getElementById('id_voucherType');
+  if (voucherTypeInput && voucherTypeInput.value) {
+    fetch("{% url 'jobcard_app:get_next_invoice_number' %}?voucher_type_id=" + voucherTypeInput.value)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.job_number) {
+          const voucherNumInput = document.getElementById('id_voucher_number');
+          if (voucherNumInput) voucherNumInput.value = data.job_number;
+        }
+      })
+      .catch(err => console.error('Error fetching next invoice voucher number:', err));
+  }
+  {% endif %}
 });
 
 /* ── Render existing parts ── */
@@ -1282,6 +1687,7 @@ function renderInvExistingParts() {
   if (placeholders.length > 0) {
     placeholders.forEach(ph => ph.remove());
     placeholders.forEach(ph => {
+      const vehicleId= ph.dataset.vehicleId|| '';
       const itemId   = ph.dataset.itemId   || '';
       const itemName = ph.dataset.itemName || '';
       const itemCode = ph.dataset.itemCode || '';
@@ -1297,7 +1703,7 @@ function renderInvExistingParts() {
         if (found) resolvedId = String(found.id);
       }
 
-      addInvPartRow(resolvedId, itemCode, itemQty, itemUnit, itemRate, itemDisc, itemTax);
+      addInvPartRow(resolvedId, itemCode, itemQty, itemUnit, itemRate, itemDisc, itemTax, vehicleId);
 
       if (!resolvedId && itemName) {
         const lastRow = tbody.querySelector('tr:last-child');
