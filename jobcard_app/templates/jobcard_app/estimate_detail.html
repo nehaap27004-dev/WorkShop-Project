@@ -76,13 +76,13 @@ table.dt tbody tr:last-child td{border-bottom:none}
     <div class="card-hdr">📋 Estimate Details</div>
     <div class="card-body">
       <div class="g4" style="margin-bottom:14px">
-        <div><div class="info-lbl">Customer</div><div class="info-val">{{ est.customer.customer_name|default:est.customer.ledger_name }}</div></div>
+        <div><div class="info-lbl">Customer</div><div class="info-val">{{ est.customer.ledger_name }}</div></div>
         <div><div class="info-lbl">Vehicle</div><div class="info-val">
           {% if est.vehicle %}
-            {{ est.vehicle.vehicle_name|default:est.vehicle.make }}
-            {% if est.vehicle.license_plate_number or est.vehicle.registration_number %}
+            {{ est.vehicle.manufacturer.manufacturer_name }} {{ est.vehicle.vehicle_model.model_name }}{% if est.vehicle.year %} ({{ est.vehicle.year }}){% endif %}
+            {% if est.vehicle.registration_number %}
             <span style="background:#f1f5f9;padding:2px 8px;border-radius:5px;font-family:monospace;font-size:11px">
-              {{ est.vehicle.license_plate_number|default:est.vehicle.registration_number }}
+              {{ est.vehicle.registration_number }}
             </span>
             {% endif %}
           {% else %}—{% endif %}
@@ -91,7 +91,7 @@ table.dt tbody tr:last-child td{border-bottom:none}
         <div><div class="info-lbl">Advisor</div><div class="info-val">{{ est.advisor.full_name|default:"—" }}</div></div>
         <div><div class="info-lbl">Job Card</div><div class="info-val">
           {% if est.jobcard %}
-          <a href="{% url 'jobcard_app:jobcard_detail' est.jobcard.pk %}" style="color:#2563eb;font-weight:700">
+          <a href="{% url 'jobcard_app:jobcard_edit' est.jobcard.pk %}" style="color:#2563eb;font-weight:700">
             {{ est.jobcard.job_number }}
           </a>
           {% else %}—{% endif %}

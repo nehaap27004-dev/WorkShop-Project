@@ -165,7 +165,95 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 .iopt-code{font-size:10px;color:#94a3b8;font-family:monospace;flex-shrink:0}
 
 /* Toast banner */
-.toast-banner{display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:10px;padding:11px 16px;margin-bottom:16px;font-size:13px;font-weight:600;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 8px rgba(22,163,74,.1)}
+.toast-banner {
+  display: none;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1.5px solid #86efac;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 25px -5px rgba(22, 163, 74, 0.15), 0 8px 10px -6px rgba(22, 163, 74, 0.1);
+  animation: toastSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes toastSlideDown {
+  from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.toast-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.toast-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #14532d;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toast-icon-badge {
+  width: 26px;
+  height: 26px;
+  background: #22c55e;
+  color: #fff;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+  flex-shrink: 0;
+}
+
+.toast-close-btn {
+  background: transparent;
+  border: none;
+  color: #15803d;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.toast-close-btn:hover {
+  background: rgba(22, 163, 74, 0.15);
+  color: #14532d;
+}
+
+.toast-details-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 12.5px;
+  color: #166534;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #bbf7d0;
+}
+
+.toast-pill {
+  background: #ffffff;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-weight: 600;
+  font-size: 11.5px;
+  color: #15803d;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
 </style>
 
 <div class="iw">
@@ -179,20 +267,27 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 
 <!-- Loaded Toast Banner -->
 <div class="toast-banner" id="loadToast">
-  <span id="loadToastText"></span>
-  <button type="button" onclick="document.getElementById('loadToast').style.display='none'" style="background:none;border:none;color:#16a34a;cursor:pointer;font-size:16px;line-height:1">✕</button>
+  <div class="toast-header">
+    <div class="toast-title">
+      <span class="toast-icon-badge">✓</span>
+      <span id="loadToastTitle">Document Details Successfully Loaded</span>
+    </div>
+    <button type="button" class="toast-close-btn" onclick="document.getElementById('loadToast').style.display='none'">✕</button>
+  </div>
+  <div id="loadToastText" style="font-size:13px;color:#166534;font-weight:500;margin-left:36px"></div>
+  <div class="toast-details-grid" id="toastDetailsGrid" style="margin-left:36px;display:none"></div>
 </div>
 
 <!-- Document Loader Banner -->
-<div class="doc-loader-card">
+<div class="doc-loader-card" id="docLoaderCard">
   <div class="doc-loader-info">
     <div>
       <div class="doc-loader-title">Load Data from Delivery Note / Job Card</div>
     </div>
   </div>
   <div style="position:relative">
-    <button type="button" class="btn-doc-load" onclick="toggleDocPicker()">
-      📥 Load Document ▾
+    <button type="button" class="btn-doc-load" id="btnLoadDetails" onclick="handleLoadDetailsClick()">
+      📥 Load Details ▾
     </button>
 
     <!-- Document Picker Panel Dropdown -->
@@ -1053,6 +1148,7 @@ function onInvVehRowChange(sel, autoFill = true) {
     if (mmCell) mmCell.value = '';
   }
   syncRowVehicleDropdowns();
+  fetchDocsForInvoice();
 }
 
 function removeInvVehRow(btn) {
@@ -1060,6 +1156,7 @@ function removeInvVehRow(btn) {
   const tbody = document.getElementById('invVehBody');
   document.getElementById('invVehEmpty').style.display = tbody.rows.length === 0 ? 'block' : 'none';
   syncRowVehicleDropdowns();
+  fetchDocsForInvoice();
 }
 
 /* ══════════════════════════════════════════
@@ -1112,17 +1209,112 @@ function fetchDocsForInvoice() {
   if (!custId) {
     cachedDocs = { delivery_notes: [], jobcards: [] };
     updateDocBadges();
-    return;
+    return Promise.resolve(cachedDocs);
   }
 
-  fetch(`${GET_DOCS_INVOICE_URL}?customer_id=${custId}`)
+  const vehSelElements = document.querySelectorAll('#invVehBody .inv-veh-select');
+  const selectedVehIds = Array.from(vehSelElements)
+    .map(s => s.value)
+    .filter(v => v !== '');
+
+  let url = `${GET_DOCS_INVOICE_URL}?customer_id=${encodeURIComponent(custId)}`;
+  if (selectedVehIds.length > 0) {
+    url += `&vehicle_id=${encodeURIComponent(selectedVehIds.join(','))}`;
+  }
+
+  return fetch(url)
     .then(r => r.json())
     .then(data => {
       cachedDocs = data || { delivery_notes: [], jobcards: [] };
       updateDocBadges();
       renderDocLists();
+      return cachedDocs;
     })
-    .catch(err => console.error("Error fetching docs:", err));
+    .catch(err => {
+      console.error("Error fetching docs:", err);
+      return { delivery_notes: [], jobcards: [] };
+    });
+}
+
+function handleLoadDetailsClick() {
+  const custId = document.getElementById('custSel').value;
+  if (!custId) {
+    alert('Please select a Customer first to load details.');
+    document.getElementById('custSel').focus();
+    return;
+  }
+
+  fetchDocsForInvoice().then(docs => {
+    const dns = docs.delivery_notes || [];
+    const jcs = docs.jobcards || [];
+
+    if (dns.length === 0 && jcs.length === 0) {
+      closeDocPicker();
+      showToastBanner(
+        'No Records Found',
+        'No matching active Delivery Notes or Job Cards were found for the selected Customer and Vehicle criteria.',
+        [],
+        true
+      );
+      return;
+    }
+
+    // Auto-populate form fields with the retrieved data (first matching Delivery Note or Job Card)
+    if (dns.length > 0) {
+      loadDeliveryNoteData(dns[0].id);
+    } else if (jcs.length > 0) {
+      loadJobCardData(jcs[0].id);
+    }
+
+    // Open doc picker panel so user can view/select other matching documents if available
+    const panel = document.getElementById('docPickerPanel');
+    if (panel) panel.style.display = 'block';
+  });
+}
+
+function showToastBanner(title, msg, pills = [], isInfo = false) {
+  const toast   = document.getElementById('loadToast');
+  const titleEl = document.getElementById('loadToastTitle');
+  const textEl  = document.getElementById('loadToastText');
+  const gridEl  = document.getElementById('toastDetailsGrid');
+
+  if (!toast) return;
+
+  const iconBadge = toast.querySelector('.toast-icon-badge');
+
+  if (isInfo) {
+    toast.style.background = 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
+    toast.style.borderColor = '#93c5fd';
+    if (titleEl) titleEl.style.color = '#1e40af';
+    if (textEl)  textEl.style.color  = '#1e3a8a';
+    if (iconBadge) {
+      iconBadge.style.background = '#3b82f6';
+      iconBadge.textContent = 'ℹ';
+    }
+  } else {
+    toast.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
+    toast.style.borderColor = '#86efac';
+    if (titleEl) titleEl.style.color = '#14532d';
+    if (textEl)  textEl.style.color  = '#166534';
+    if (iconBadge) {
+      iconBadge.style.background = '#22c55e';
+      iconBadge.textContent = '✓';
+    }
+  }
+
+  if (titleEl) titleEl.textContent = title;
+  if (textEl)  textEl.textContent  = msg || '';
+
+  if (pills && pills.length > 0 && gridEl) {
+    gridEl.style.display = 'flex';
+    gridEl.innerHTML = pills.map(p => `<span class="toast-pill">${p}</span>`).join('');
+  } else if (gridEl) {
+    gridEl.style.display = 'none';
+    gridEl.innerHTML = '';
+  }
+
+  toast.style.display = 'block';
+  toast.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function updateDocBadges() {
@@ -1339,7 +1531,15 @@ function loadDeliveryNoteData(dnId) {
   if (!dn) return;
 
   // Auto add vehicle row if available and not already present
-  if (dn.vehicle_id) {
+  if (dn.vehicles && dn.vehicles.length > 0) {
+    dn.vehicles.forEach(v => {
+      const vId = typeof v === 'object' ? v.id : v;
+      if (vId) {
+        const already = [...document.querySelectorAll('.inv-veh-select')].some(s => String(s.value) === String(vId));
+        if (!already) addInvVehicleRow(vId);
+      }
+    });
+  } else if (dn.vehicle_id) {
     const already = [...document.querySelectorAll('.inv-veh-select')].some(s => String(s.value) === String(dn.vehicle_id));
     if (!already) addInvVehicleRow(dn.vehicle_id);
   }
@@ -1372,8 +1572,19 @@ function loadDeliveryNoteData(dnId) {
     });
   }
 
-  closeDocPicker();
-  showToastBanner(`✅ Successfully loaded data from Delivery Note ${dn.number} (${dn.parts_count} parts, ${dn.labours_count} labours)`);
+  const pills = [
+    `🚚 Delivery Note: ${dn.number}`,
+    `📅 ${dn.date}`,
+    `📦 ${dn.parts_count || 0} Spare Parts`,
+    `🔧 ${dn.labours_count || 0} Labour Charges`,
+  ];
+  if (dn.vehicle_name) pills.push(`🚗 ${dn.vehicle_name}`);
+
+  showToastBanner(
+    'Delivery Note Successfully Imported',
+    `All items, vehicle details, and charges from Delivery Note ${dn.number} have been loaded into the invoice form.`,
+    pills
+  );
   calcAll();
 }
 
@@ -1382,7 +1593,15 @@ function loadJobCardData(jcId) {
   if (!jc) return;
 
   // Auto add vehicle row if available and not already present
-  if (jc.vehicle_id) {
+  if (jc.vehicles && jc.vehicles.length > 0) {
+    jc.vehicles.forEach(v => {
+      const vId = typeof v === 'object' ? v.id : v;
+      if (vId) {
+        const already = [...document.querySelectorAll('.inv-veh-select')].some(s => String(s.value) === String(vId));
+        if (!already) addInvVehicleRow(vId);
+      }
+    });
+  } else if (jc.vehicle_id) {
     const already = [...document.querySelectorAll('.inv-veh-select')].some(s => String(s.value) === String(jc.vehicle_id));
     if (!already) addInvVehicleRow(jc.vehicle_id);
   }
@@ -1411,8 +1630,19 @@ function loadJobCardData(jcId) {
     });
   }
 
-  closeDocPicker();
-  showToastBanner(`✅ Successfully loaded data from Job Card ${jc.number} (${jc.parts_count} parts, ${jc.labours_count} labours)`);
+  const pills = [
+    `🔧 Job Card: ${jc.number}`,
+    `📅 ${jc.date}`,
+    `📦 ${jc.parts_count || 0} Spare Parts`,
+    `🛠️ ${jc.labours_count || 0} Labour Charges`,
+  ];
+  if (jc.vehicle_name) pills.push(`🚗 ${jc.vehicle_name}`);
+
+  showToastBanner(
+    'Job Card Details Successfully Imported',
+    `All items, vehicle details, and charges from Job Card ${jc.number} have been loaded into the invoice form.`,
+    pills
+  );
   calcAll();
 }
 

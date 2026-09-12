@@ -262,26 +262,29 @@ textarea.fi{resize:vertical}
       <!-- Loaded Estimate Banner -->
       <div id="estBanner"
            style="display:{% if prefill_est or edit_mode and quotation.estimate %}flex{% else %}none{% endif %};background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:9px 14px;font-size:12px;color:#1e40af;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px">
-        <span id="estBannerText">
-          {% if prefill_est %}Imported data from Estimate: <strong>{{ prefill_est.estimate_number }}</strong>
-          {% elif edit_mode and quotation.estimate %}Linked Estimate: <strong>{{ quotation.estimate.estimate_number }}</strong>{% endif %}
-        </span>
-        <button type="button" onclick="this.parentElement.style.display='none'"
-                style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:14px">✕</button>
-      </div>
+                <span id="estBannerText">
+                  {% if prefill_est %}Imported data from Estimate: <strong>{{ prefill_est.estimate_number }}</strong>
+                  {% elif edit_mode and quotation.estimate %}Linked Estimate: <strong>{{ quotation.estimate.estimate_number }}</strong>{% endif %}
+                </span>
+                <button type="button" onclick="this.parentElement.style.display='none'"
+                        style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:14px">✕</button>
+              </div>
 
-      <!-- Row 1: Voucher No | Quotation No | Date | Status -->
-      <div class="g4 mb">
+              <!-- Row 1: Voucher No | Quotation No | Date | Status -->
+              <div class="g4 mb">
+                <input type="hidden" name="voucherType" id="id_voucherType"
+          value="{% if edit_mode and quotation.voucherType %}{{ quotation.voucherType.id }}{% else %}3{% endif %}">
+
         <div>
           <label class="fl">Voucher Number</label>
-          <input type="text" name="voucher_number" class="fi"
-            placeholder="e.g. VCH-2026-001"
+          <input type="text" name="voucher_number" id="id_voucher_number" class="fi"
+            placeholder="e.g. QUA-00001"
             value="{% if edit_mode %}{{ quotation.voucher_number|default:'' }}{% endif %}">
         </div>
         <div>
-          <label class="fl">Quotation Number</label>
+          <label class="fl">PO Number</label>
           <input type="text" name="Quotation_number" class="fi" required
-            placeholder="e.g. QUA-2026-001"
+            placeholder="e.g. PO-2026-001"
             value="{% if edit_mode %}{{ quotation.quotation_number }}{% endif %}">
         </div>
         <div>
@@ -534,14 +537,7 @@ textarea.fi{resize:vertical}
                           style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                     <option value="">— Select Technician —</option>
                   </select>
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
-                    <div class="skill-badge-info"></div>
-                    <label style="font-size:10px;color:#4b5563;display:inline-flex;align-items:center;gap:3px;cursor:pointer;user-select:none" title="Show all technicians regardless of required skill matching">
-                      <input type="checkbox" class="override-cb" onchange="handleOverrideToggle(this)" {% if c.is_manual_override %}checked{% endif %}>
-                      <span>Show All</span>
-                    </label>
-                    <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="{% if c.is_manual_override %}1{% else %}0{% endif %}">
-                  </div>
+                  <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="{% if c.is_manual_override %}1{% else %}0{% endif %}">
                 </td>
                 <td style="padding:6px 6px">
                   <select name="complaint_status[]"
@@ -589,14 +585,7 @@ textarea.fi{resize:vertical}
                           style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                     <option value="">— Select Technician —</option>
                   </select>
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
-                    <div class="skill-badge-info"></div>
-                    <label style="font-size:10px;color:#4b5563;display:inline-flex;align-items:center;gap:3px;cursor:pointer;user-select:none" title="Show all technicians regardless of required skill matching">
-                      <input type="checkbox" class="override-cb" onchange="handleOverrideToggle(this)">
-                      <span>Show All</span>
-                    </label>
-                    <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
-                  </div>
+                  <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
                 </td>
                 <td style="padding:6px 6px">
                   <select name="complaint_status[]"
@@ -1349,7 +1338,7 @@ function addPartRow(
             <select name="part_item_id[]" class="part-item" onchange="quotationItemChanged(this)">
                 ${buildQuotationItemOptions(matchedId)}
             </select>
-            <input type="text" name="description[]" class="part-desc" value="${safeDesc}" placeholder="Item description..." style="width:100%;margin-top:4px;border:1px solid #e5e7eb;border-radius:5px;padding:5px 8px;font-size:12px;display:${matchedId ? 'none' : 'block'}">
+            <input type="hidden" name="description[]" class="part-desc" value="${safeDesc}">
         </td>
         <td>
             <input type="text" name="item_unit[]" class="part-unit" value="${existingUnit}" ${matchedId ? 'readonly' : ''} style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:5px 8px;font-size:12px">
@@ -1389,7 +1378,7 @@ function quotationItemChanged(select) {
     const priceInp = tr.querySelector('.price');
 
     if (!option || !option.value) {
-        if (descInp) { descInp.value = ''; descInp.style.display = 'block'; }
+        if (descInp) descInp.value = '';
         if (unitInp) { unitInp.value = ''; unitInp.removeAttribute('readonly'); }
         if (priceInp) priceInp.value = '0.000';
         calcPart(tr.querySelector('.qty'));
@@ -1400,7 +1389,7 @@ function quotationItemChanged(select) {
     const unit  = option.dataset.unit || '';
     const price = parseFloat(option.dataset.price || 0);
 
-    if (descInp) { descInp.value = name; descInp.style.display = 'none'; }
+    if (descInp) descInp.value = name;
     if (unitInp) { unitInp.value = unit; unitInp.setAttribute('readonly', 'readonly'); }
     if (priceInp) priceInp.value = price.toFixed(3);
     calcPart(tr.querySelector('.qty'));
@@ -1564,7 +1553,20 @@ function updateTechnicianOptions(tr, skillId, isOverride, skillName = '') {
     }
   }
 }
-
+{% if not edit_mode %}
+const voucherTypeInput = document.getElementById('id_voucherType');
+if (voucherTypeInput && voucherTypeInput.value) {
+  fetch("{% url 'jobcard_app:get_next_quotation_number' %}?voucher_type_id=" + voucherTypeInput.value)
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.job_number) {
+        const voucherNumInput = document.getElementById('id_voucher_number');
+        if (voucherNumInput) voucherNumInput.value = data.job_number;
+      }
+    })
+    .catch(err => console.error('Error fetching next quotation voucher number:', err));
+}
+{% endif %}
 function initComplaintRows() {
   document.querySelectorAll('#quotComplaintBody tr').forEach(tr => {
     const catSelect = tr.querySelector('.complaint-cat-select');
@@ -1633,14 +1635,7 @@ function addQuotComplaint(desc='', catName='', type='Mechanical', status='Open',
               style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
         <option value="">— Select Technician —</option>
       </select>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
-        <div class="skill-badge-info"></div>
-        <label style="font-size:10px;color:#4b5563;display:inline-flex;align-items:center;gap:3px;cursor:pointer;user-select:none" title="Show all technicians regardless of required skill matching">
-          <input type="checkbox" class="override-cb" onchange="handleOverrideToggle(this)">
-          <span>Show All</span>
-        </label>
-        <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
-      </div>
+      <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
     </td>
     <td style="padding:6px 6px">
       <select name="complaint_status[]"

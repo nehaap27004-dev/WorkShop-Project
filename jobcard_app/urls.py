@@ -91,6 +91,8 @@ urlpatterns = [
     path('quotation/<int:pk>/status-update/',
           views.quotation_status_update,
           name='quotation_status_update'),
+    path('ajax/get-next-quotation-number/', views.get_next_quotation_number, name='get_next_quotation_number'),
+    
    
 
   
@@ -127,8 +129,8 @@ urlpatterns = [
  
     path('inspection/create/vehicle/<int:vehicle_id>/', views.inspection_create,name='inspection_create_for_vehicle'),
  
-    path('inspection/<int:pk>/',views.inspection_detail,name='inspection_detail'),
- 
+
+
     path('inspection/<int:pk>/edit/', views.inspection_edit,name='inspection_edit'),
  
     path('inspection/<int:pk>/delete/',views.inspection_delete,name='inspection_delete'),

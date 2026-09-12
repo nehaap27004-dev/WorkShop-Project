@@ -346,47 +346,6 @@ textarea.fi{resize:vertical}
           Complaint Management
         </span>
         <div style="display:flex;gap:8px;align-items:center">
-
-          <div style="position:relative" id="jcPickerWrap">
-            <button type="button" onclick="toggleJcPicker()"
-                    style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;
-                           border-radius:5px;padding:6px 12px;font-size:12px;
-                           font-weight:600;cursor:pointer;display:inline-flex;
-                           align-items:center;gap:5px;white-space:nowrap">
-               Load from Job Card ▾
-            </button>
-
-            <div id="jcPickerPanel"
-                 style="display:none;position:absolute;right:0;top:110%;
-                        background:#fff;border:1.5px solid #16a34a;border-radius:8px;
-                        min-width:380px;z-index:400;
-                        box-shadow:0 8px 24px rgba(0,0,0,.13);overflow:hidden">
-
-              <div style="background:#f0fdf4;padding:10px 14px;
-                          border-bottom:1px solid #bbf7d0;
-                          display:flex;justify-content:space-between;align-items:center">
-                <span style="font-size:12px;font-weight:700;color:#15803d">
-                   Select Job Card
-                </span>
-                <button type="button" onclick="closeJcPicker()"
-                        style="background:none;border:none;color:#9ca3af;
-                               font-size:16px;cursor:pointer;line-height:1">✕</button>
-              </div>
-
-              <div id="jcNoCustomer"
-                   style="padding:14px;font-size:12px;color:#9ca3af;text-align:center">
-                Please select a customer first
-              </div>
-              <div id="jcList"
-                   style="max-height:300px;overflow-y:auto;display:none"></div>
-              <div id="jcEmpty"
-                   style="display:none;padding:14px;font-size:12px;
-                          color:#9ca3af;text-align:center">
-                No job cards found for this customer
-              </div>
-            </div>
-          </div>
-
           <button type="button" onclick="addEstComplaint()"
                   style="background:#2563eb;color:#fff;border:none;border-radius:5px;
                          padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;
@@ -410,36 +369,13 @@ textarea.fi{resize:vertical}
         <table style="width:100%;border-collapse:collapse;min-width:800px">
           <thead>
             <tr style="background:#f9fafb">
-              <th style="padding:9px 12px;font-size:10px;font-weight:700;color:#6b7280;
-                         text-transform:uppercase;letter-spacing:.5px;
-                         border-bottom:1px solid #e5e7eb;text-align:left;width:14%">
-                Vehicle
-              </th>
-              <th style="padding:9px 12px;font-size:10px;font-weight:700;color:#6b7280;
-                         text-transform:uppercase;letter-spacing:.5px;
-                         border-bottom:1px solid #e5e7eb;text-align:left;width:18%">
-                Service Category
-              </th>
-              <th style="padding:9px 12px;font-size:10px;font-weight:700;color:#6b7280;
-                         text-transform:uppercase;letter-spacing:.5px;
-                         border-bottom:1px solid #e5e7eb;text-align:left;width:28%">
-                Complaint Description
-              </th>
-              <th style="padding:9px 12px;font-size:10px;font-weight:700;color:#6b7280;
-                         text-transform:uppercase;letter-spacing:.5px;
-                         border-bottom:1px solid #e5e7eb;text-align:left;width:12%">
-                Type
-              </th>
-              <th style="padding:9px 12px;font-size:10px;font-weight:700;color:#6b7280;
-                         text-transform:uppercase;letter-spacing:.5px;
-                         border-bottom:1px solid #e5e7eb;text-align:left;width:14%">
-                Status
-              </th>
-              <th style="padding:9px 12px;font-size:10px;font-weight:700;color:#6b7280;
-                         text-transform:uppercase;letter-spacing:.5px;
-                         border-bottom:1px solid #e5e7eb;text-align:center;width:14%">
-                Action
-              </th>
+              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:12%">Vehicle</th>
+              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:16%">Service Category</th>
+              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:18%">Complaint Type</th>
+              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:24%">Complaint Description</th>
+              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:20%">Assigned Technician</th>
+              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:6%">Status</th>
+              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:center;width:4%">Action</th>
             </tr>
           </thead>
           <tbody id="estComplaintBody">
@@ -447,7 +383,7 @@ textarea.fi{resize:vertical}
             {% if edit_mode and complaints %}
               {% for c in complaints %}
               <tr style="border-bottom:1px solid #f3f4f6">
-                <td style="padding:7px 8px">
+                <td style="padding:6px 6px">
                   <select name="customer_complaint_vehicle_id[]" class="row-veh-select fi"
                           style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;background:#fff;outline:none">
                     <option value="">— Vehicle —</option>
@@ -456,116 +392,101 @@ textarea.fi{resize:vertical}
                     {% endfor %}
                   </select>
                 </td>
-                <td style="padding:7px 8px">
-                  <select name="customer_complaint_cat[]"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                                 padding:7px 8px;font-size:12px;color:#111827;
-                                 background:#fff;outline:none;cursor:pointer">
+                <td style="padding:6px 6px">
+                  <select name="customer_complaint_cat_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                     <option value="">— Category —</option>
                     {% for cat in categories %}
-                    <option value="{{ cat.id }}"
-                      {% if c.complaint_type == cat.name %}selected{% endif %}>
-                      {{ cat.name }}
-                    </option>
+                    <option value="{{ cat.id }}" {% if c.service_category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
                     {% endfor %}
                   </select>
+                  <input type="hidden" name="customer_complaint_cat[]" class="cat-txt" value="{{ c.category }}">
                 </td>
-                <td style="padding:7px 8px">
-                  <input type="text" name="customer_complaint[]"
-                         value="{{ c.description }}"
-                         style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                                padding:7px 8px;font-size:12px;color:#111827;
-                                background:#fff;outline:none">
-                </td>
-                <td style="padding:7px 8px">
-                  <select name="customer_complaint_type[]"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                                 padding:7px 6px;font-size:12px;color:#111827;
-                                 background:#fff;outline:none;cursor:pointer">
-                    <option value="Mechanical">Mechanical</option>
-                    <option value="Electrical">Electrical</option>
-                    <option value="Body">Body</option>
-                    <option value="AC">AC</option>
-                    <option value="Other">Other</option>
+                <td style="padding:6px 6px">
+                  <select name="customer_complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
+                          data-initial-type-id="{{ c.complaint_type_ref_id|default:'' }}"
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+                    <option value="">— Complaint Type —</option>
                   </select>
+                  <input type="hidden" name="customer_complaint_type[]" class="type-txt" value="{{ c.type }}">
                 </td>
-                <td style="padding:7px 8px">
+                <td style="padding:6px 6px">
+                  <input type="text" name="customer_complaint[]" value="{{ c.description }}"
+                        placeholder="Describe complaint..."
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
+                </td>
+                <td style="padding:6px 6px">
+                  <div style="display:flex;flex-direction:column;gap:4px">
+                    <select name="customer_complaint_technician[]" class="complaint-tech-select"
+                            data-initial-tech-id="{{ c.technician_id|default:'' }}"
+                            style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+                      <option value="">— Select Technician —</option>
+                    </select>
+                    <div class="skill-badge-info" style="margin-top:2px"></div>
+                  </div>
+                </td>
+                <td style="padding:6px 6px">
                   <select name="customer_complaint_status[]"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                                 padding:7px 6px;font-size:12px;color:#111827;
-                                 background:#fff;outline:none;cursor:pointer">
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+                    <option value="Open"        {% if c.status == 'Open'        %}selected{% endif %}>Open</option>
+                    <option value="In Progress" {% if c.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Resolved"    {% if c.status == 'Resolved'    %}selected{% endif %}>Resolved</option>
                   </select>
                 </td>
-                <td style="padding:7px 8px;text-align:center">
-                  <button type="button"
-                          onclick="rmEstComplaint(this)"
-                          style="background:#dc2626;color:#fff;border:none;border-radius:5px;
-                                 padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;
-                                 display:inline-flex;align-items:center;gap:4px">
-                    ✕ Remove
-                  </button>
+                <td style="padding:6px 6px;text-align:center">
+                  <button type="button" class="btn-rm" onclick="rmEstComplaint(this)">✕ Remove</button>
                 </td>
               </tr>
               {% endfor %}
             {% else %}
               <tr style="border-bottom:1px solid #f3f4f6" id="estCmpDefault">
-                <td style="padding:7px 8px">
+                <td style="padding:6px 6px">
                   <select name="customer_complaint_vehicle_id[]" class="row-veh-select fi"
                           style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;background:#fff;outline:none">
                     <option value="">— Vehicle —</option>
                   </select>
                 </td>
-                <td style="padding:7px 8px">
-                  <select name="customer_complaint_cat[]"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                                 padding:7px 8px;font-size:12px;color:#111827;
-                                 background:#fff;outline:none;cursor:pointer">
+                <td style="padding:6px 6px">
+                  <select name="customer_complaint_cat_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                     <option value="">— Category —</option>
                     {% for cat in categories %}
                     <option value="{{ cat.id }}">{{ cat.name }}</option>
                     {% endfor %}
                   </select>
+                  <input type="hidden" name="customer_complaint_cat[]" class="cat-txt">
                 </td>
-                <td style="padding:7px 8px">
-                  <input type="text" name="customer_complaint[]"
-                         placeholder="Describe complaint..."
-                         style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                                padding:7px 8px;font-size:12px;color:#111827;
-                                background:#fff;outline:none">
-                </td>
-                <td style="padding:7px 8px">
-                  <select name="customer_complaint_type[]"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                                 padding:7px 6px;font-size:12px;color:#111827;
-                                 background:#fff;outline:none;cursor:pointer">
-                    <option value="Mechanical">Mechanical</option>
-                    <option value="Electrical">Electrical</option>
-                    <option value="Body">Body</option>
-                    <option value="AC">AC</option>
-                    <option value="Other">Other</option>
+                <td style="padding:6px 6px">
+                  <select name="customer_complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+                    <option value="">— Complaint Type —</option>
                   </select>
+                  <input type="hidden" name="customer_complaint_type[]" class="type-txt">
                 </td>
-                <td style="padding:7px 8px">
+                <td style="padding:6px 6px">
+                  <input type="text" name="customer_complaint[]"
+                        placeholder="Describe complaint..."
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
+                </td>
+                <td style="padding:6px 6px">
+                  <div style="display:flex;flex-direction:column;gap:4px">
+                    <select name="customer_complaint_technician[]" class="complaint-tech-select"
+                            style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+                      <option value="">— Select Technician —</option>
+                    </select>
+                    <div class="skill-badge-info" style="margin-top:2px"></div>
+                  </div>
+                </td>
+                <td style="padding:6px 6px">
                   <select name="customer_complaint_status[]"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                                 padding:7px 6px;font-size:12px;color:#111827;
-                                 background:#fff;outline:none;cursor:pointer">
+                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
                     <option value="Open">Open</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Resolved">Resolved</option>
                   </select>
                 </td>
-                <td style="padding:7px 8px;text-align:center">
-                  <button type="button"
-                          onclick="rmEstComplaint(this)"
-                          style="background:#dc2626;color:#fff;border:none;border-radius:5px;
-                                 padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;
-                                 display:inline-flex;align-items:center;gap:4px">
-                    ✕ Remove
-                  </button>
+                <td style="padding:6px 6px;text-align:center">
+                  <button type="button" class="btn-rm" onclick="rmEstComplaint(this)">✕ Remove</button>
                 </td>
               </tr>
             {% endif %}
@@ -1264,9 +1185,16 @@ function rmRow(btn) {
 }
 
 /* ══════════════════════════════════════════
-   COMPLAINTS
+   COMPLAINTS & RELATIONAL MAPPING
 ══════════════════════════════════════════ */
 const JC_COMPLAINTS_URL = "{% url 'jobcard_app:ajax_get_jobcard_complaints' %}";
+
+let relationalMappingData = { categories: [], service_types: [], technicians: [], skills: [] };
+try {
+  relationalMappingData = {{ relational_mapping_json|safe }};
+} catch (e) {
+  console.error("Error parsing relational mapping JSON:", e);
+}
 
 const estCatOpts = `
   <option value="">— Category —</option>
@@ -1275,62 +1203,252 @@ const estCatOpts = `
   {% endfor %}
 `;
 
-function addEstComplaint(desc='', catName='', type='Mechanical', status='Open', bg='', vehId='') {
+function populateTypeSelect(typeSelect, categoryData, initialTypeId = '') {
+  if (!typeSelect) return;
+  typeSelect.innerHTML = '<option value="">— Service / Complaint Type —</option>';
+  if (!categoryData) return;
+
+  if (categoryData.service_types && categoryData.service_types.length > 0) {
+    const groupSt = document.createElement('optgroup');
+    groupSt.label = 'Service Types';
+    categoryData.service_types.forEach(st => {
+      const opt = document.createElement('option');
+      opt.value = 'st_' + st.id;
+      opt.textContent = st.code ? `${st.code} — ${st.name}` : st.name;
+      opt.dataset.skillId = st.skill_id || 0;
+      opt.dataset.skillName = st.skill_name || '';
+      opt.dataset.serviceTypeId = st.id;
+      if (initialTypeId && (String(st.id) === String(initialTypeId) || String('st_' + st.id) === String(initialTypeId))) {
+        opt.selected = true;
+      }
+      groupSt.appendChild(opt);
+    });
+    typeSelect.appendChild(groupSt);
+  }
+
+  if (categoryData.complaints && categoryData.complaints.length > 0) {
+    const groupCt = document.createElement('optgroup');
+    groupCt.label = 'Complaint Types';
+    categoryData.complaints.forEach(ct => {
+      const opt = document.createElement('option');
+      opt.value = ct.id;
+      opt.textContent = ct.name;
+      opt.dataset.skillId = ct.skill_id || 0;
+      opt.dataset.skillName = ct.skill_name || '';
+      opt.dataset.complaintTypeId = ct.id;
+      if (initialTypeId && String(ct.id) === String(initialTypeId)) {
+        opt.selected = true;
+      }
+      groupCt.appendChild(opt);
+    });
+    typeSelect.appendChild(groupCt);
+  }
+}
+
+function handleCategoryChange(catSelect) {
+  const tr = catSelect.closest('tr');
+  const catTextHidden = tr.querySelector('.cat-txt');
+  if (catTextHidden) {
+    catTextHidden.value = catSelect.options[catSelect.selectedIndex]?.text || '';
+  }
+
+  const catId = parseInt(catSelect.value, 10);
+  const typeSelect = tr.querySelector('.complaint-type-select');
+  const techSelect = tr.querySelector('.complaint-tech-select');
+  const skillBadge = tr.querySelector('.skill-badge-info');
+  const overrideCb = tr.querySelector('.override-cb');
+  const overrideHidden = tr.querySelector('.override-hidden');
+
+  if (typeSelect) {
+    const categoryData = catId ? relationalMappingData.categories.find(c => c.id === catId) : null;
+    populateTypeSelect(typeSelect, categoryData);
+    typeSelect.value = '';
+    const typeHiddenText = tr.querySelector('.type-txt');
+    if (typeHiddenText) typeHiddenText.value = '';
+  }
+
+  if (overrideCb) overrideCb.checked = false;
+  if (overrideHidden) overrideHidden.value = '0';
+  if (skillBadge) skillBadge.innerHTML = '';
+
+  if (techSelect) {
+    updateTechnicianOptions(tr, 0, false);
+    techSelect.value = '';
+  }
+}
+
+function handleComplaintTypeChange(typeSelect) {
+  const tr = typeSelect.closest('tr');
+  const selectedOpt = typeSelect.options[typeSelect.selectedIndex];
+  const skillId = selectedOpt ? parseInt(selectedOpt.dataset.skillId || '0', 10) : 0;
+  const skillName = selectedOpt ? (selectedOpt.dataset.skillName || '') : '';
+
+  const typeHiddenText = tr.querySelector('.type-txt');
+  if (typeHiddenText) {
+    typeHiddenText.value = selectedOpt && typeSelect.value ? selectedOpt.textContent : '';
+  }
+
+  const overrideCb = tr.querySelector('.override-cb');
+  const isOverride = overrideCb ? overrideCb.checked : false;
+
+  updateTechnicianOptions(tr, skillId, isOverride, skillName);
+}
+
+function handleOverrideToggle(checkbox) {
+  const tr = checkbox.closest('tr');
+  const overrideHidden = tr.querySelector('.override-hidden');
+  if (overrideHidden) {
+    overrideHidden.value = checkbox.checked ? '1' : '0';
+  }
+
+  const typeSelect = tr.querySelector('.complaint-type-select');
+  const selectedOpt = typeSelect ? typeSelect.options[typeSelect.selectedIndex] : null;
+  const skillId = selectedOpt ? parseInt(selectedOpt.dataset.skillId || '0', 10) : 0;
+  const skillName = selectedOpt ? (selectedOpt.dataset.skillName || '') : '';
+
+  updateTechnicianOptions(tr, skillId, checkbox.checked, skillName);
+}
+
+function updateTechnicianOptions(tr, skillId, isOverride, skillName = '') {
+  const techSelect = tr.querySelector('.complaint-tech-select');
+  const skillBadge = tr.querySelector('.skill-badge-info');
+  if (!techSelect) return;
+
+  const currentTechVal = techSelect.value || techSelect.dataset.initialTechId || '';
+  techSelect.innerHTML = '<option value="">— Select Technician —</option>';
+
+  let qualifiedCount = 0;
+
+  if (relationalMappingData.technicians) {
+    relationalMappingData.technicians.forEach(t => {
+      const isQualified = skillId ? (t.skill_ids && t.skill_ids.includes(skillId)) : true;
+      if (isQualified) qualifiedCount++;
+
+      if (isOverride || !skillId || isQualified) {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = `${t.staff_id ? t.staff_id + ' — ' : ''}${t.full_name}${isQualified && skillId ? ' ★' : ''}`;
+        opt.dataset.isQualified = isQualified ? '1' : '0';
+        if (String(t.id) === String(currentTechVal)) {
+          opt.selected = true;
+        }
+        techSelect.appendChild(opt);
+      }
+    });
+  }
+
+  if (currentTechVal && techSelect.querySelector(`option[value="${currentTechVal}"]`)) {
+    techSelect.value = currentTechVal;
+  }
+
+  if (skillBadge) {
+    if (skillId && skillName) {
+      if (isOverride) {
+        skillBadge.innerHTML = `<span style="font-size:10px;color:#d97706;background:#fef3c7;padding:2px 6px;border-radius:4px;display:inline-block">⚙️ Override (Req: ${skillName})</span>`;
+      } else {
+        skillBadge.innerHTML = `<span style="font-size:10px;color:#2563eb;background:#eff6ff;padding:2px 6px;border-radius:4px;display:inline-block">🎯 Skill: <strong>${skillName}</strong> (${qualifiedCount} spec.)</span>`;
+      }
+    } else {
+      skillBadge.innerHTML = '';
+    }
+  }
+}
+
+function initEstComplaintRows() {
+  document.querySelectorAll('#estComplaintBody tr').forEach(tr => {
+    const catSelect = tr.querySelector('.complaint-cat-select');
+    const typeSelect = tr.querySelector('.complaint-type-select');
+    const techSelect = tr.querySelector('.complaint-tech-select');
+    const overrideCb = tr.querySelector('.override-cb');
+
+    const initialTypeId = typeSelect ? typeSelect.dataset.initialTypeId : '';
+    const initialTechId = techSelect ? techSelect.dataset.initialTechId : '';
+
+    if (catSelect && catSelect.value) {
+      const catId = parseInt(catSelect.value, 10);
+      const categoryData = relationalMappingData.categories.find(c => c.id === catId);
+      populateTypeSelect(typeSelect, categoryData, initialTypeId);
+    }
+
+    if (typeSelect && typeSelect.value) {
+      const selectedOpt = typeSelect.options[typeSelect.selectedIndex];
+      const skillId = selectedOpt ? parseInt(selectedOpt.dataset.skillId || '0', 10) : 0;
+      const skillName = selectedOpt ? (selectedOpt.dataset.skillName || '') : '';
+      const isOverride = overrideCb ? overrideCb.checked : false;
+
+      updateTechnicianOptions(tr, skillId, isOverride, skillName);
+      if (initialTechId && techSelect) techSelect.value = initialTechId;
+    } else {
+      const isOverride = overrideCb ? overrideCb.checked : false;
+      updateTechnicianOptions(tr, 0, isOverride, '');
+      if (initialTechId && techSelect) techSelect.value = initialTechId;
+    }
+  });
+}
+
+function addEstComplaint(desc='', catId='', initialTypeId='', techId='', status='Open', bg='', vehId='', isOverride=false) {
   const tr = document.createElement('tr');
   tr.style.cssText = 'border-bottom:1px solid #f3f4f6' + (bg ? ';background:' + bg : '');
   tr.innerHTML = `
-    <td style="padding:7px 8px">
+    <td style="padding:6px 6px">
       <select name="customer_complaint_vehicle_id[]" class="row-veh-select fi"
               style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;background:#fff;outline:none">
         ${buildVehSelectHtml(vehId)}
       </select>
     </td>
-    <td style="padding:7px 8px">
-      <select name="customer_complaint_cat[]"
-              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                     padding:7px 8px;font-size:12px;color:#111827;
-                     background:#fff;outline:none;cursor:pointer">
+    <td style="padding:6px 6px">
+      <select name="customer_complaint_cat_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
+              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
         ${estCatOpts}
       </select>
+      <input type="hidden" name="customer_complaint_cat[]" class="cat-txt">
     </td>
-    <td style="padding:7px 8px">
+    <td style="padding:6px 6px">
+      <select name="customer_complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
+              data-initial-type-id="${initialTypeId}"
+              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+        <option value="">— Complaint Type —</option>
+      </select>
+      <input type="hidden" name="customer_complaint_type[]" class="type-txt">
+    </td>
+    <td style="padding:6px 6px">
       <input type="text" name="customer_complaint[]"
              value="${desc.replace(/"/g,'&quot;')}"
              placeholder="Describe complaint..."
-             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                    padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
+             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
     </td>
-    <td style="padding:7px 8px">
-      <select name="customer_complaint_type[]"
-              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                     padding:7px 6px;font-size:12px;color:#111827;
-                     background:#fff;outline:none;cursor:pointer">
-        <option value="Mechanical" ${type==='Mechanical'?'selected':''}>Mechanical</option>
-        <option value="Electrical" ${type==='Electrical'?'selected':''}>Electrical</option>
-        <option value="Body"       ${type==='Body'      ?'selected':''}>Body</option>
-        <option value="AC"         ${type==='AC'        ?'selected':''}>AC</option>
-        <option value="Other"      ${type==='Other'     ?'selected':''}>Other</option>
-      </select>
+    <td style="padding:6px 6px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <select name="customer_complaint_technician[]" class="complaint-tech-select"
+                data-initial-tech-id="${techId}"
+                style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+          <option value="">— Select Technician —</option>
+        </select>
+        <div class="skill-badge-info" style="margin-top:2px"></div>
+      </div>
     </td>
-    <td style="padding:7px 8px">
+    <td style="padding:6px 6px">
       <select name="customer_complaint_status[]"
-              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;
-                     padding:7px 6px;font-size:12px;color:#111827;
-                     background:#fff;outline:none;cursor:pointer">
+              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
         <option value="Open"        ${status==='Open'       ?'selected':''}>Open</option>
         <option value="In Progress" ${status==='In Progress'?'selected':''}>In Progress</option>
         <option value="Resolved"    ${status==='Resolved'   ?'selected':''}>Resolved</option>
       </select>
     </td>
-    <td style="padding:7px 8px;text-align:center">
-      <button type="button" onclick="rmEstComplaint(this)"
-              style="background:#dc2626;color:#fff;border:none;border-radius:5px;
-                     padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;
-                     display:inline-flex;align-items:center;gap:4px">
-        ✕ Remove
-      </button>
+    <td style="padding:6px 6px;text-align:center">
+      <button type="button" class="btn-rm" onclick="rmEstComplaint(this)">✕ Remove</button>
     </td>`;
   document.getElementById('estComplaintBody').appendChild(tr);
+
+  if (catId) {
+    const catSel = tr.querySelector('.complaint-cat-select');
+    if (catSel) {
+      catSel.value = catId;
+      handleCategoryChange(catSel);
+    }
+  } else {
+    updateTechnicianOptions(tr, 0, isOverride, '');
+  }
   refreshAllVehicleDropdowns();
 }
 
@@ -1345,124 +1463,6 @@ function rmEstComplaint(btn) {
   }
 }
 
-function toggleJcPicker() {
-  const p = document.getElementById('jcPickerPanel');
-  p.style.display === 'none' ? openJcPicker() : closeJcPicker();
-}
-function closeJcPicker() {
-  document.getElementById('jcPickerPanel').style.display = 'none';
-}
-function openJcPicker() {
-  document.getElementById('jcPickerPanel').style.display = 'block';
-
-  const custId = document.getElementById('custSel')?.value;
-  const noCustomer = document.getElementById('jcNoCustomer');
-  const list       = document.getElementById('jcList');
-  const empty      = document.getElementById('jcEmpty');
-
-  if (!custId) {
-    noCustomer.style.display = 'block';
-    list.style.display       = 'none';
-    empty.style.display      = 'none';
-    return;
-  }
-
-  noCustomer.style.display = 'none';
-  empty.style.display      = 'none';
-  list.style.display       = 'block';
-  list.innerHTML = '<div style="padding:14px;text-align:center;font-size:12px;color:#9ca3af">Loading job cards...</div>';
-
-  fetch(JC_COMPLAINTS_URL + '?customer_id=' + custId)
-    .then(r => r.json())
-    .then(data => {
-      if (!data.jobcards || !data.jobcards.length) {
-        list.style.display  = 'none';
-        empty.style.display = 'block';
-        return;
-      }
-
-      list.innerHTML = data.jobcards.map(jc => `
-        <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer"
-             onmouseover="this.style.background='#f0fdf4'"
-             onmouseout="this.style.background=''"
-             onclick='loadJcComplaints(${JSON.stringify(jc).replace(/'/g,"&#39;")})'>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px;font-weight:700;color:#16a34a;font-family:monospace">
-              ${jc.job_number}
-            </span>
-            <span style="font-size:10px;font-weight:700;background:#dcfce7;
-                         color:#16a34a;border-radius:20px;padding:2px 8px">
-              ${jc.count} complaint${jc.count !== 1 ? 's' : ''}
-            </span>
-          </div>
-          <div style="font-size:11px;color:#6b7280;margin-bottom:5px">
-            📅 ${jc.date}
-            ${jc.vehicle ? ' &nbsp;·&nbsp; 🚗 ' + jc.vehicle : ''}
-            &nbsp;·&nbsp;
-            <span style="font-size:10px;font-weight:700;background:#f3f4f6;
-                         color:#374151;border-radius:10px;padding:1px 7px">
-              ${jc.status}
-            </span>
-          </div>
-          ${jc.complaints.length > 0
-            ? jc.complaints.map(c =>
-                `<div style="font-size:11px;color:#374151;padding:2px 0;
-                              display:flex;align-items:flex-start;gap:5px">
-                   <span style="color:#16a34a;flex-shrink:0;margin-top:1px">●</span>
-                   <span>${c.description}</span>
-                 </div>`).join('')
-            : '<div style="font-size:11px;color:#9ca3af">No complaints recorded</div>'
-          }
-        </div>`).join('');
-    })
-    .catch(err => {
-      list.innerHTML = '<div style="padding:14px;font-size:12px;color:#ef4444;text-align:center">Failed to load. Try again.</div>';
-    });
-}
-
-function loadJcComplaints(jc) {
-  closeJcPicker();
-
-  if (!jc.complaints || !jc.complaints.length) {
-    alert('No complaints found in Job Card ' + jc.job_number);
-    return;
-  }
-
-  const existing = document.querySelectorAll('#estComplaintBody tr').length;
-  let replace = false;
-
-  if (existing > 0) {
-    replace = confirm(
-      'Load ' + jc.complaints.length + ' complaint(s) from ' + jc.job_number + '?\n\n' +
-      'OK = Replace existing rows\nCancel = Add below'
-    );
-    if (replace) {
-      document.getElementById('estComplaintBody').innerHTML = '';
-    }
-  }
-
-  jc.complaints.forEach(c => {
-    addEstComplaint(
-      c.description || '',
-      c.category    || '',
-      c.type        || 'Mechanical',
-      c.status      || 'Open',
-      '#f0fdf4'
-    );
-  });
-
-  const banner = document.getElementById('jcBanner');
-  document.getElementById('jcBannerText').innerHTML =
-    `🔧 <strong>${jc.complaints.length} complaint(s)</strong> loaded from
-     Job Card <strong>${jc.job_number}</strong> · ${jc.date}`;
-  banner.style.display = 'flex';
-}
-
-document.addEventListener('click', e => {
-  const wrap = document.getElementById('jcPickerWrap');
-  if (wrap && !wrap.contains(e.target)) closeJcPicker();
-});
-
 document.getElementById('custSel')?.addEventListener('change', () => {
   document.getElementById('jcList').style.display       = 'none';
   document.getElementById('jcEmpty').style.display      = 'none';
@@ -1476,6 +1476,7 @@ document.addEventListener('click', e => {
 
 document.addEventListener('DOMContentLoaded', function () {
   calcAll();
+  initEstComplaintRows();
   const customerSelect = document.getElementById('custSel');
   if (customerSelect && customerSelect.value) {
     // keepExisting=true so edit-mode rows are not cleared on page load

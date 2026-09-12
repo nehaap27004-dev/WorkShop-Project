@@ -129,8 +129,7 @@ textarea.fi{resize:vertical}
 <div class="wrap">
 
 <!-- Page header -->
-<div class="pg-title">{% if edit_mode %}Edit Delivery Note — {{ dn.delivery_number }}{% else %}Create Delivery Note{% endif %}</div>
-
+<div class="pg-title">{% if edit_mode %}Edit Delivery Note — {{ dn.voucher_number }}{% else %}Create Delivery Note{% endif %}</div>
 
 {% if messages %}{% for m in messages %}
 <div class="flash {% if 'error' in m.tags %}flash-err{% else %}flash-ok{% endif %}">{{ m }}</div>

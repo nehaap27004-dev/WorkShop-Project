@@ -438,7 +438,7 @@ class JobCardComplaint(models.Model):
     category             = models.CharField(max_length=150, blank=True)
     description          = models.CharField(max_length=400)
     type                 = models.CharField(
-        max_length=20, choices=TYPE_CHOICES, default='Mechanical'
+        max_length=200, blank=True, default='Mechanical'
     )
     technician = models.ForeignKey(
         'fleet_app.Staff', on_delete=models.SET_NULL,
@@ -755,22 +755,48 @@ class EstimateComplaint(models.Model):
         ('technician', 'Technician Finding'),
     ]
 
+    STATUS_CHOICES = [
+        ('Open',        'Open'),
+        ('In Progress', 'In Progress'),
+        ('Resolved',    'Resolved'),
+    ]
+
     estimate        = models.ForeignKey(
         Estimate, on_delete=models.CASCADE,
         related_name='complaints')
-    vehicle         = models.ForeignKey(          # NEW
+    vehicle         = models.ForeignKey(
         'WorkshopVehicle', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='estimate_complaints')
+    service_category     = models.ForeignKey(
+        'ServiceCategory', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='estimate_complaints'
+    )
+    category             = models.CharField(max_length=150, blank=True)
     complaint_type  = models.CharField(
         max_length=20, choices=TYPE_CHOICES, default='customer')
     description     = models.TextField()
+    type                 = models.CharField(
+        max_length=200, blank=True, default='Mechanical'
+    )
+    technician           = models.ForeignKey(
+        'fleet_app.Staff', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='estimate_assigned_complaints'
+    )
+    complaint_type_ref   = models.ForeignKey(
+        'ComplaintType', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='estimate_complaints'
+    )
+    is_manual_override   = models.BooleanField(default=False)
+    status               = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='Open'
+    )
     order           = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"{self.get_complaint_type_display()} — {self.description[:50]}"
 
     class Meta:
-        ordering = ['complaint_type', 'order']
+        ordering = ['order']
 def get_next_estimate_number(request):
     """AJAX view to get next estimate voucher number"""
     from fleet_app.models import Vouchers
@@ -799,7 +825,11 @@ class Quotation(models.Model):
         ('rejected', 'Rejected'),
         ('expired',  'Expired'),
     ]
-
+    voucherType = models.ForeignKey(
+        'fleet_app.Vouchers', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='quotations_vt'
+    )
+    voucher_number = models.CharField(max_length=50, blank=True, null=True)
     quotation_number = models.CharField(max_length=50, unique=True, blank=True)
     estimate         = models.ForeignKey(
                            'Estimate',
@@ -991,7 +1021,7 @@ class QuotationComplaint(models.Model):
     category        = models.CharField(max_length=150, blank=True)
     description     = models.TextField()
     type            = models.CharField(
-        max_length=20, choices=MECHTYPE_CHOICES, default='Mechanical')
+        max_length=200, blank=True, default='Mechanical')
     technician      = models.ForeignKey(
         'fleet_app.Staff', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='quotation_assigned_complaints'

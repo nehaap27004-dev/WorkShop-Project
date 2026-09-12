@@ -3,607 +3,477 @@
 {% load i18n %}
 
 {% block content %}
-
 <style>
-    .page-title {
-        color: #2c3e50;
-        font-weight: 600;
-        margin-bottom: 0;
-    }
-
-    .stat-box {
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
+    /* Workshop ERP Dashboard Styles */
+    .dashboard-header-banner {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         border-radius: 12px;
-        padding: 25px;
+        padding: 24px 28px;
+        color: #ffffff;
+        margin-bottom: 28px;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.12);
         display: flex;
         align-items: center;
-        gap: 20px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .dashboard-header-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: #ffffff !important;
+        letter-spacing: -0.3px;
+    }
+
+    .dashboard-header-sub {
+        font-size: 13.5px;
+        color: #94a3b8;
+    }
+
+    .dashboard-quick-btn {
+        background-color: var(--erp-primary) !important;
+        border-color: var(--erp-primary) !important;
+        color: #ffffff !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        padding: 8px 16px !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .dashboard-quick-btn:hover {
+        background-color: var(--erp-primary-hover) !important;
+        transform: translateY(-1px);
+    }
+
+    .dashboard-quick-btn.outline {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        color: #ffffff !important;
+        box-shadow: none !important;
+    }
+
+    .dashboard-quick-btn.outline:hover {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    /* KPI Stat Cards */
+    .erp-kpi-card {
+        background: #ffffff;
+        border: 1px solid var(--erp-border-color);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 16px;
         height: 100%;
-        min-height: 120px;
+        transition: all 0.2s ease;
     }
 
-    .stat-box:hover {
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        transform: translateY(-4px);
+    .erp-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        border-color: #cbd5e1;
     }
 
-    .stat-icon {
-        width: 65px;
-        height: 65px;
-        border-radius: 50%;
-        background-color: rgba(0, 123, 255, 0.1);
+    .erp-kpi-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 22px;
         flex-shrink: 0;
     }
 
-    .stat-icon i {
-        font-size: 2rem;
-        color: #007bff;
+    .erp-kpi-icon.primary { background: #eff6ff; color: #2563eb; }
+    .erp-kpi-icon.success { background: #ecfdf5; color: #10b981; }
+    .erp-kpi-icon.warning { background: #fffbeb; color: #f59e0b; }
+    .erp-kpi-icon.danger { background: #fef2f2; color: #ef4444; }
+
+    .erp-kpi-label {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .stat-content {
+    .erp-kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-top: 2px;
+        line-height: 1.2;
+    }
+
+    /* Operations Modules Card */
+    .erp-module-card {
+        background: #ffffff;
+        border: 1px solid var(--erp-border-color);
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    .erp-module-header {
+        background: #f8fafc;
+        border-bottom: 1px solid var(--erp-border-color);
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14.5px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .erp-module-header i {
+        font-size: 18px;
+        color: var(--erp-primary);
+    }
+
+    .erp-grid-item {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        flex: 1;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 18px 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        color: #1e293b;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+        height: 100%;
     }
 
-    .stat-label {
-        font-size: 0.95rem;
-        color: #6c757d;
+    .erp-grid-item:hover {
+        background: #f8fafc;
+        border-color: var(--erp-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+    }
+
+    .erp-grid-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: #eff6ff;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-bottom: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .erp-grid-item:hover .erp-grid-icon {
+        background: var(--erp-primary);
+        color: #ffffff;
+    }
+
+    .erp-grid-title {
+        font-size: 12.5px;
         font-weight: 600;
+        color: #334155;
         line-height: 1.3;
     }
-
-    .stat-value {
-        font-size: 2rem;
-        color: #2c3e50;
-        font-weight: 700;
-        line-height: 1;
-    }
-
-    .box-heading {
-        color: #2c3e50;
-        font-weight: 600;
-        font-size: 0.95rem;
-        text-align: center;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #007bff;
-    }
-
-    .dashboard-box {
-        background-color: #f8f9fa;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 20px 15px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        height: 100%;
-        transition: box-shadow 0.3s ease;
-    }
-
-    .dashboard-box:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    }
-
-    .dashboard-item {
-        text-decoration: none;
-        text-align: center;
-        display: block;
-        padding: 10px 8px;
-        border-radius: 6px;
-        transition: all 0.3s ease;
-    }
-
-    .dashboard-item:hover {
-        background-color: rgba(0, 123, 255, 0.05);
-        transform: translateY(-3px);
-    }
-
-    .dashboard-item i {
-        font-size: 2rem;
-        color: #007bff;
-        margin-bottom: 8px;
-        display: block;
-        transition: color 0.3s ease;
-    }
-
-    .dashboard-item:hover i {
-        color: #0056b3;
-    }
-
-    .dashboard-item h5 {
-        color: #007bff;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin: 0;
-        line-height: 1.2;
-        transition: color 0.3s ease;
-    }
-
-    .dashboard-item:hover h5 {
-        color: #0056b3;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 991px) {
-        .stat-box {
-            padding: 20px;
-            min-height: 110px;
-        }
-
-        .stat-icon {
-            width: 55px;
-            height: 55px;
-        }
-
-        .stat-icon i {
-            font-size: 1.7rem;
-        }
-
-        .stat-label {
-            font-size: 0.85rem;
-        }
-
-        .stat-value {
-            font-size: 1.7rem;
-        }
-
-        .dashboard-item i {
-            font-size: 1.8rem;
-        }
-        
-        .dashboard-item h5 {
-            font-size: 0.8rem;
-        }
-    }
-
-    @media (max-width: 767px) {
-        .stat-box {
-            padding: 15px;
-            gap: 12px;
-            min-height: 95px;
-        }
-
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-        }
-
-        .stat-icon i {
-            font-size: 1.4rem;
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-        }
-
-        .dashboard-item i {
-            font-size: 1.6rem;
-        }
-        
-        .dashboard-item h5 {
-            font-size: 0.75rem;
-        }
-        
-        .dashboard-box {
-            padding: 15px 10px;
-        }
-        
-        .dashboard-item {
-            padding: 8px 5px;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .stat-box {
-            padding: 12px;
-            gap: 10px;
-            min-height: 85px;
-        }
-
-        .stat-icon {
-            width: 45px;
-            height: 45px;
-        }
-
-        .stat-icon i {
-            font-size: 1.2rem;
-        }
-
-        .stat-label {
-            font-size: 0.7rem;
-        }
-
-        .stat-value {
-            font-size: 1.3rem;
-        }
-    }
 </style>
-<div class="content-wrapper">
-    <div class="container-fluid">
-        <!-- Page Header -->
-        {% comment %} <div class="row mb-4">
-            <div class="col-12">
-                <h2 class="page-title">Dashboard</h2>
-            </div>
-        </div> {% endcomment %}
 
-        <!-- Stats Row -->
-        <div class="row mb-4">
-        <!-- Total Invoices -->
-        <div class="col-lg-3 col-md-6 col-6 mb-3 mb-lg-0">
-            <div class="stat-box">
-                <div class="stat-icon">
-                    <i class="bi bi-receipt"></i>
+<div class="container-fluid p-0">
+
+    <!-- Header Banner -->
+    <div class="dashboard-header-banner">
+        <div>
+            <div class="dashboard-header-title">{% trans "Workshop Operations Center" %}</div>
+            <div class="dashboard-header-sub">{% trans "Automotive Service Management, Fleet Register, Invoicing & Accounts Overview" %}</div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'jobcard_app:jobcard_create' %}" class="dashboard-quick-btn">
+                <i class="bi bi-plus-circle"></i> {% trans "New Job Card" %}
+            </a>
+            <a href="{% url 'jobcard_app:estimate_create' %}" class="dashboard-quick-btn outline">
+                <i class="bi bi-file-earmark-text"></i> {% trans "New Estimate" %}
+            </a>
+            <a href="{% url 'jobcard_app:invoice_create' %}" class="dashboard-quick-btn outline">
+                <i class="bi bi-receipt"></i> {% trans "New Invoice" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Executive KPI Metrics Row -->
+    <div class="row mb-4">
+        <!-- Total Invoices Billed -->
+        <div class="col-xl-3 col-lg-6 col-md-6 mb-3 mb-xl-0">
+            <div class="erp-kpi-card">
+                <div class="erp-kpi-icon primary">
+                    <i class="bi bi-receipt-cutoff"></i>
                 </div>
-                <div class="stat-content">
-                    <span class="stat-label">{% trans "Total Invoices" %}</span>
-                    <span class="stat-value">{{ total_invoices }}</span>
+                <div>
+                    <div class="erp-kpi-label">{% trans "Total Invoices Billed" %}</div>
+                    <div class="erp-kpi-value">{{ total_invoices|floatformat:2 }}</div>
                 </div>
             </div>
         </div>
 
-        <!-- Total Client Outstanding -->
-        <div class="col-lg-3 col-md-6 col-6 mb-3 mb-lg-0">
-            <div class="stat-box">
-                <div class="stat-icon">
-                    <i class="bi bi-person-badge"></i>
+        <!-- Client Outstanding -->
+        <div class="col-xl-3 col-lg-6 col-md-6 mb-3 mb-xl-0">
+            <div class="erp-kpi-card">
+                <div class="erp-kpi-icon warning">
+                    <i class="bi bi-person-exclamation"></i>
                 </div>
-                <div class="stat-content">
-                    <span class="stat-label">{% trans "Total Client Outstanding" %}</span>
-                    <span class="stat-value">{{ total_client_outstanding}}</span>
+                <div>
+                    <div class="erp-kpi-label">{% trans "Client Receivables" %}</div>
+                    <div class="erp-kpi-value">{{ total_client_outstanding }}</div>
                 </div>
             </div>
         </div>
 
-        <!-- Total Supplier Outstanding -->
-        <div class="col-lg-3 col-md-6 col-6 mb-3 mb-lg-0">
-            <div class="stat-box">
-                <div class="stat-icon">
+        <!-- Supplier Outstanding -->
+        <div class="col-xl-3 col-lg-6 col-md-6 mb-3 mb-xl-0">
+            <div class="erp-kpi-card">
+                <div class="erp-kpi-icon info">
                     <i class="bi bi-building"></i>
                 </div>
-                <div class="stat-content">
-                    <span class="stat-label">{% trans "Total Supplier Outstanding" %}</span>
-                    <span class="stat-value">{{ total_supplier_outstanding }}</span>
+                <div>
+                    <div class="erp-kpi-label">{% trans "Supplier Payables" %}</div>
+                    <div class="erp-kpi-value">{{ total_supplier_outstanding }}</div>
                 </div>
             </div>
         </div>
 
-        <!-- Expense -->
-        <div class="col-lg-3 col-md-6 col-6 mb-3 mb-lg-0">
-            <div class="stat-box">
-                <div class="stat-icon">
+        <!-- Expenses -->
+        <div class="col-xl-3 col-lg-6 col-md-6 mb-3 mb-xl-0">
+            <div class="erp-kpi-card">
+                <div class="erp-kpi-icon danger">
                     <i class="bi bi-cash-stack"></i>
                 </div>
-                <div class="stat-content">
-                    <span class="stat-label">{% trans "Expense" %}</span>
-                    <span class="stat-value">{{ total_expense|floatformat:3 }}</span>
+                <div>
+                    <div class="erp-kpi-label">{% trans "Total Expenses" %}</div>
+                    <div class="erp-kpi-value">{{ total_expense|floatformat:2 }}</div>
                 </div>
             </div>
         </div>
     </div>
 
-        <!-- First Row - Two boxes side by side -->
-        <div class="row mb-4">
-            <!-- Box 1: Timesheet, Contract, Quotation, Repair & Maintenance -->
-            <div class="col-lg-8 col-md-8 mb-4 mb-lg-0">
-                <div class="dashboard-box">
-                    <div class="row">
-                        <!-- Timesheet -->
-                        <div class="col-3">
-                            <a href="{% url 'fleet_app:time_sheet' %}" class="dashboard-item">
-                                <i class="bi bi-clock-history"></i>
-                                <h5>{% trans "TIMESHEET" %}</h5>
+    <!-- Workshop Modules Grid -->
+    <div class="row">
+
+        <!-- Column 1: Core Workshop Operations -->
+        <div class="col-lg-8">
+            
+            <!-- Work Orders & Jobs Card -->
+            <div class="erp-module-card">
+                <div class="erp-module-header">
+                    <i class="bi bi-card-checklist"></i>
+                    <span>{% trans "Workshop Operations & Job Cards" %}</span>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'jobcard_app:jobcard_list' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-card-checklist"></i></div>
+                                <div class="erp-grid-title">{% trans "Job Cards List" %}</div>
                             </a>
                         </div>
-                        <!-- Contract -->
-                        <div class="col-3">
-                            <a href="{% url 'fleet_app:create_fleet_contract' %}" class="dashboard-item">
-                                <i class="bi bi-file-earmark-text"></i>
-                                <h5>{% trans "CONTRACT" %}</h5>
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'jobcard_app:inspection_list' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-clipboard-check"></i></div>
+                                <div class="erp-grid-title">{% trans "Vehicle Inspections" %}</div>
                             </a>
                         </div>
-                        <!-- Quotation -->
-                        <div class="col-3">
-                            <a href="{% url 'fleet_app:create_quotation' %}" class="dashboard-item">
-                                <i class="bi bi-file-earmark-ruled"></i>
-                                <h5>{% trans "QUOTATION" %}</h5>
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'jobcard_app:wv_list' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-truck"></i></div>
+                                <div class="erp-grid-title">{% trans "Vehicle Register" %}</div>
                             </a>
                         </div>
-                        <!-- Repair & Maintenance -->
-                        <div class="col-3">
-                            <a href="{% url 'fleet_app:create_repair_and_maintenance' %}" class="dashboard-item">
-                                <i class="bi bi-tools"></i>
-                                <h5>{% trans "REPAIR & MAINTENANCE" %}</h5>
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'jobcard_app:service_type_list' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-tools"></i></div>
+                                <div class="erp-grid-title">{% trans "Service Masters" %}</div>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Box 2: Invoice & Hire -->
-            <div class="col-lg-4 col-md-4">
-                <div class="dashboard-box">
-                    <div class="row">
-                        <!-- Invoice -->
-                        <div class="col-6">
-                            <a href="{% url 'jobcard_app:invoice_create' %}" class="dashboard-item">
-                                <i class="bi bi-receipt"></i>
-                                <h5>{% trans "INVOICE" %}</h5>
+            <!-- Estimates, Quotations & Billing Card -->
+            <div class="erp-module-card">
+                <div class="erp-module-header">
+                    <i class="bi bi-receipt"></i>
+                    <span>{% trans "Estimates, Quotations & Billing" %}</span>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'jobcard_app:estimate_list' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-file-earmark-text"></i></div>
+                                <div class="erp-grid-title">{% trans "Estimates" %}</div>
                             </a>
                         </div>
-                        <!-- Hire -->
-                        <div class="col-6">
-                            <a href="{% url 'fleet_app:fleet_hire_create' %}" class="dashboard-item">
-                                <i class="bi bi-truck"></i>
-                                <h5>{% trans "HIRE" %}</h5>
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'jobcard_app:quotation_list' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-file-earmark-ruled"></i></div>
+                                <div class="erp-grid-title">{% trans "Quotations" %}</div>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'jobcard_app:invoice_list' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-receipt"></i></div>
+                                <div class="erp-grid-title">{% trans "Invoices" %}</div>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'jobcard_app:delivery_list' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-box-arrow-right"></i></div>
+                                <div class="erp-grid-title">{% trans "Delivery Notes" %}</div>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Spare Parts & Inventory Control Card -->
+            <div class="erp-module-card">
+                <div class="erp-module-header">
+                    <i class="bi bi-boxes"></i>
+                    <span>{% trans "Spare Parts & Stock Control" %}</span>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'item_master:item_list' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-box-seam"></i></div>
+                                <div class="erp-grid-title">{% trans "Item Master" %}</div>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'item_master:stock_list' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-pie-chart"></i></div>
+                                <div class="erp-grid-title">{% trans "Stock Summary" %}</div>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'fleet_app:po_create' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-cart-plus"></i></div>
+                                <div class="erp-grid-title">{% trans "Purchase Order" %}</div>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'item_master:sales_voucher_create' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-arrow-up-right-circle"></i></div>
+                                <div class="erp-grid-title">{% trans "Issue Parts" %}</div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
-        <!-- Second Row - Two boxes side by side -->
-        <div class="row">
-            <!-- Box 3: Payments & Receipts -->
-            <div class="col-lg-8 col-md-8 mb-4 mb-lg-0">
-                <div class="dashboard-box">
-                    <div class="row">
-                        <!-- Payment -->
-                        <div class="col-4">
-                            <a href="{% url 'accounts_app:payment_create' %}" class="dashboard-item">
-                                <i class="bi bi-cash-coin"></i>
-                                <h5>{% trans "PAYMENT" %}</h5>
+        <!-- Column 2: Financials & Clearances -->
+        <div class="col-lg-4">
+
+            <!-- Payments & Cash Flow -->
+            <div class="erp-module-card">
+                <div class="erp-module-header">
+                    <i class="bi bi-wallet2"></i>
+                    <span>{% trans "Payments & Cash Flow" %}</span>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-6 mb-3">
+                            <a href="{% url 'accounts_app:list_receipt' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-wallet2"></i></div>
+                                <div class="erp-grid-title">{% trans "Receipts" %}</div>
                             </a>
                         </div>
-                        <!-- Receipt -->
-                        <div class="col-4">
-                            <a href="{% url 'accounts_app:receipt_create' %}" class="dashboard-item">
-                                <i class="bi bi-wallet2"></i>
-                                <h5>{% trans "RECEIPT" %}</h5>
+                        <div class="col-6 mb-3">
+                            <a href="{% url 'accounts_app:list_payment' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-cash-coin"></i></div>
+                                <div class="erp-grid-title">{% trans "Payments" %}</div>
                             </a>
                         </div>
-                        <!-- Local Payment -->
-                        <div class="col-4">
-                            <a href="{% url 'accounts_app:create_local_payment' %}" class="dashboard-item">
-                                <i class="bi bi-currency-exchange"></i>
-                                <h5>{% trans "LOCAL PAYMENT" %}</h5>
+                        <div class="col-6 mb-3">
+                            <a href="{% url 'accounts_app:local_payment_list' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-currency-exchange"></i></div>
+                                <div class="erp-grid-title">{% trans "Local Payments" %}</div>
+                            </a>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <a href="{% url 'accounts_app:cheque_clearance' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-check2-circle"></i></div>
+                                <div class="erp-grid-title">{% trans "Cheque Clearance" %}</div>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Box 4: Bill Payments & Receipts -->
-            <div class="col-lg-4 col-md-4">
-                <div class="dashboard-box">
-                    <h6 class="box-heading">{% trans "Bill Clearance" %}</h6>
-                    <div class="row">
-                        <!-- Payment Bill -->
-                        <div class="col-6">
-                            <a href="{% url 'accounts_app:create_paymentbill' %}" class="dashboard-item">
-                                <i class="bi bi-file-earmark-medical"></i>
-                                <h5>{% trans "PAYMENT-BILL" %}</h5>
+            <!-- Bill Clearance Card -->
+            <div class="erp-module-card">
+                <div class="erp-module-header">
+                    <i class="bi bi-file-earmark-check"></i>
+                    <span>{% trans "Bill Clearance" %}</span>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-6 mb-3">
+                            <a href="{% url 'accounts_app:create_receiptbill' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-file-earmark-arrow-down"></i></div>
+                                <div class="erp-grid-title">{% trans "Receipt-Bill" %}</div>
                             </a>
                         </div>
-                        <!-- Receipt Bill -->
-                        <div class="col-6">
-                            <a href="{% url 'accounts_app:create_receiptbill' %}" class="dashboard-item">
-                                <i class="bi bi-file-earmark-check"></i>
-                                <h5>{% trans "RECEIPT-BILL" %}</h5>
+                        <div class="col-6 mb-3">
+                            <a href="{% url 'accounts_app:create_paymentbill' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
+                                <div class="erp-grid-title">{% trans "Payment-Bill" %}</div>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Financial Reports Quick Access -->
+            <div class="erp-module-card">
+                <div class="erp-module-header">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <span>{% trans "Reports Quick Access" %}</span>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-6 mb-3">
+                            <a href="{% url 'fleet_app:trial_balance_report' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-bar-chart"></i></div>
+                                <div class="erp-grid-title">{% trans "Trial Balance" %}</div>
+                            </a>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <a href="{% url 'fleet_app:profit_loss' %}" class="erp-grid-item">
+                                <div class="erp-grid-icon"><i class="bi bi-cash"></i></div>
+                                <div class="erp-grid-title">{% trans "Profit & Loss" %}</div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
+
 </div>
-
-<style>
-    .page-title {
-        color: #2c3e50;
-        font-weight: 600;
-        margin-bottom: 0;
-    }
-
-    .stat-box {
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 20px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
-        height: 100%;
-    }
-
-    .stat-box:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-        transform: translateY(-2px);
-    }
-
-    .stat-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background-color: rgba(0, 123, 255, 0.1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .stat-icon i {
-        font-size: 2rem;
-        color: #007bff;
-    }
-
-    .stat-content {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        
-    }
-
-    .stat-label {
-        font-size: 1rem;
-        color: #6c757d;
-        font-weight: 500;
-    }
-
-    .stat-value {
-        font-size: 1.5rem;
-        color: #2c3e50;
-        font-weight: 700;
-    }
-
-    .box-heading {
-        color: #2c3e50;
-        font-weight: 600;
-        font-size: 0.95rem;
-        text-align: center;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #007bff;
-    }
-
-    .dashboard-box {
-        background-color: #f8f9fa;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 20px 15px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        height: 100%;
-        transition: box-shadow 0.3s ease;
-    }
-
-    .dashboard-box:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    }
-
-    .dashboard-item {
-        text-decoration: none;
-        text-align: center;
-        display: block;
-        padding: 10px 8px;
-        border-radius: 6px;
-        transition: all 0.3s ease;
-    }
-
-    .dashboard-item:hover {
-        background-color: rgba(0, 123, 255, 0.05);
-        transform: translateY(-3px);
-    }
-
-    .dashboard-item i {
-        font-size: 2rem;
-        color: #007bff;
-        margin-bottom: 8px;
-        display: block;
-        transition: color 0.3s ease;
-    }
-
-    .dashboard-item:hover i {
-        color: #0056b3;
-    }
-
-    .dashboard-item h5 {
-        color: #007bff;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin: 0;
-        line-height: 1.2;
-        transition: color 0.3s ease;
-    }
-
-    .dashboard-item:hover h5 {
-        color: #0056b3;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 991px) {
-        .stat-box {
-            padding: 15px;
-        }
-
-        .stat-icon {
-            width: 45px;
-            height: 45px;
-        }
-
-        .stat-icon i {
-            font-size: 1.3rem;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-        }
-
-        .stat-value {
-            font-size: 1.3rem;
-        }
-
-        .dashboard-item i {
-            font-size: 1.8rem;
-        }
-        
-        .dashboard-item h5 {
-            font-size: 0.8rem;
-        }
-    }
-
-    @media (max-width: 767px) {
-        .stat-box {
-            padding: 12px;
-            gap: 10px;
-        }
-
-        .stat-icon {
-            width: 40px;
-            height: 40px;
-        }
-
-        .stat-icon i {
-            font-size: 1.1rem;
-        }
-
-        .stat-label {
-            font-size: 0.7rem;
-        }
-
-        .stat-value {
-            font-size: 1.1rem;
-        }
-
-        .dashboard-item i {
-            font-size: 1.6rem;
-        }
-        
-        .dashboard-item h5 {
-            font-size: 0.75rem;
-        }
-        
-        .dashboard-box {
-            padding: 15px 10px;
-        }
-        
-        .dashboard-item {
-            padding: 8px 5px;
-        }
-    }
-</style>
 {% endblock %}

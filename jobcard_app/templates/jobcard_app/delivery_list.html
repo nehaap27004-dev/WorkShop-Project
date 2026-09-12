@@ -1,195 +1,148 @@
-<!-- ═══════════════════════════════════════════════════════════
-     delivery_list.html
-     Save to: jobcard_app/templates/jobcard_app/delivery_list.html
-═══════════════════════════════════════════════════════════ -->
 {% extends 'fleet_base1.html' %}
+{% load static %}
+{% load i18n %}
+
 {% block content %}
-<style>
-*{box-sizing:border-box}
-body{background:#f5f6fa;font-family:'Segoe UI',sans-serif}
-.wrap{max-width:1300px;margin:0 auto;padding:24px 20px 60px}
-.top-bar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px}
-.page-title{font-size:20px;font-weight:700;color:#1a1a2e;margin-bottom:2px}
-.page-sub{font-size:12px;color:#6b7280}
-.btn-new{background:#2563eb;color:#fff;border:none;border-radius:7px;padding:10px 20px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.btn-new:hover{background:#1d4ed8;color:#fff}
-.stats-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.stat{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 20px;flex:1;min-width:100px;cursor:pointer;transition:all .15s}
-.stat:hover{border-color:#2563eb}
-.stat.active{border-color:#2563eb;background:#eff6ff}
-.stat-num{font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:2px}
-.stat-lbl{font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
-.search-bar{display:flex;gap:10px;margin-bottom:18px;align-items:center;flex-wrap:wrap}
-.srch-wrap{flex:1;position:relative;min-width:200px}
-.srch-wrap input{width:100%;border:1px solid #e5e7eb;border-radius:7px;padding:9px 12px 9px 36px;font-size:13px;color:#1a1a2e;background:#fff;outline:none}
-.srch-wrap input:focus{border-color:#2563eb}
-.srch-wrap input::placeholder{color:#d1d5db}
-.srch-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:14px}
-.btn-clear{background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;border-radius:7px;padding:9px 14px;font-size:13px;text-decoration:none;white-space:nowrap}
-.tcard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-thead th{padding:11px 16px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid #f3f4f6;text-align:left;background:#f9fafb;white-space:nowrap}
-tbody tr{border-bottom:1px solid #f9fafb;transition:background .12s;cursor:pointer}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:#f0f4ff}
-tbody td{padding:12px 16px;vertical-align:middle}
-.dn-no{font-size:12px;font-weight:700;color:#2563eb;font-family:monospace}
-.dn-date{font-size:11px;color:#6b7280;margin-top:2px}
-.cust-name{font-size:13px;font-weight:600;color:#1a1a2e}
-.ref-chip{display:inline-block;border-radius:4px;padding:2px 7px;font-size:11px;font-family:monospace;font-weight:600}
-.ref-green{background:#f0fdf4;color:#16a34a}
-.ref-blue{background:#eff6ff;color:#2563eb}
-.ref-grey{background:#f3f4f6;color:#6b7280}
-.sbadge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
-.sb-draft    {background:#f3f4f6;color:#374151}
-.sb-delivered{background:#dcfce7;color:#16a34a}
-.sb-cancelled{background:#fee2e2;color:#dc2626}
-.signed-y{color:#16a34a;font-size:12px;font-weight:700}
-.signed-n{color:#d1d5db;font-size:12px}
-.act-wrap{display:flex;gap:5px}
-.ab{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;border:1px solid transparent;cursor:pointer;background:none;white-space:nowrap}
-.ab-view{background:#eff6ff;color:#2563eb;border-color:#bfdbfe}
-.ab-edit{background:#f0fdf4;color:#16a34a;border-color:#bbf7d0}
-.ab-del {background:#fef2f2;color:#dc2626;border-color:#fecaca}
-.empty{text-align:center;padding:60px 20px;color:#9ca3af}
-.flash{padding:10px 16px;border-radius:7px;margin-bottom:14px;font-size:13px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
-.veh-more{font-size:10px;color:#9ca3af;margin-top:1px}
-</style>
+<div class="container-fluid p-0 mb-5">
 
-<div class="wrap">
-  <div class="top-bar">
-    <div>
-      <div class="page-title">Delivery Notes</div>
-      <div class="page-sub">{{ counts.total }} delivery note{{ counts.total|pluralize }}</div>
+    <!-- Top Bar: Title + New Delivery Note Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-1">
+                <i class="bi bi-box-arrow-right text-primary mr-2"></i>{% trans "Delivery Notes & Vehicle Handover" %}
+            </h2>
+            <div class="text-muted small">{% trans "Track vehicle handover certificates, driver assignments & customer signatures" %}</div>
+        </div>
+        <a href="{% url 'jobcard_app:delivery_create' %}" class="btn btn-custom-primary shadow-sm">
+            <i class="bi bi-plus-lg mr-1"></i> {% trans "New Delivery Note" %}
+        </a>
     </div>
-    <a href="{% url 'jobcard_app:delivery_create' %}" class="btn-new">+ New Delivery Note</a>
-  </div>
 
-  {% if messages %}{% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}{% endif %}
-
-  <div class="stats-row">
-    <div class="stat {% if not status %}active{% endif %}" onclick="filterStatus('')">
-      <div class="stat-num">{{ counts.total }}</div><div class="stat-lbl">All</div>
-    </div>
-    <div class="stat {% if status == 'draft' %}active{% endif %}" onclick="filterStatus('draft')">
-      <div class="stat-num" style="color:#374151">{{ counts.draft }}</div><div class="stat-lbl">Draft</div>
-    </div>
-    <div class="stat {% if status == 'delivered' %}active{% endif %}" onclick="filterStatus('delivered')">
-      <div class="stat-num" style="color:#16a34a">{{ counts.delivered }}</div><div class="stat-lbl">Delivered</div>
-    </div>
-    <div class="stat {% if status == 'cancelled' %}active{% endif %}" onclick="filterStatus('cancelled')">
-      <div class="stat-num" style="color:#dc2626">{{ counts.cancelled }}</div><div class="stat-lbl">Cancelled</div>
-    </div>
-  </div>
-
-  <form method="get" class="search-bar" id="searchForm">
-    <div class="srch-wrap">
-     
-      <input type="text" name="q" value="{{ q }}" id="qInp"
-             placeholder="Search delivery no., customer, job card..." autocomplete="off">
-    </div>
-    <input type="hidden" name="status" id="statusHidden" value="{{ status }}">
-    <a href="{% url 'jobcard_app:delivery_list' %}" class="btn-clear">✕ Clear</a>
-  </form>
-
-  <div class="tcard">
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Delivery No.</th>
-            <th>Customer</th>
-            <th>Vehicle</th>
-            <th>Job Card</th>
-            <th>Quotation</th>
-            <th>Driver</th>
-            <th>Odometer Out</th>
-            <th>Signed</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for dn in deliveries %}
-          <tr>
-            <td>
-              <div class="dn-no">{{ dn.voucher_number }}</div>
-              <div class="dn-date">{{ dn.date|date:"d M Y" }}</div>
-            </td>
-            <td><div class="cust-name">{{ dn.customer.ledger_name }}</div></td>
-            <td>
-              {% with dv=dn.vehicles.first %}
-              {% if dv %}
-              <div style="font-size:13px;font-weight:600;color:#1a1a2e">{{ dv.vehicle.registration_number|default:dv.vehicle.vehicle_number }}</div>
-              <div style="font-size:11px;color:#6b7280">{{ dv.vehicle.manufacturer.manufacturer_name }} {{ dv.vehicle.vehicle_model.model_name }}</div>
-              {% if dn.vehicles.count > 1 %}
-              <div class="veh-more">+{{ dn.vehicles.count|add:"-1" }} more</div>
-              {% endif %}
-              {% else %}—{% endif %}
-              {% endwith %}
-            </td>
-            <td>
-              {% if dn.jobcard %}
-              <span class="ref-chip ref-green">{{ dn.jobcard.job_number }}</span>
-              {% else %}<span class="ref-chip ref-grey">—</span>{% endif %}
-            </td>
-            <td>
-              {% if dn.quotation %}
-              <span class="ref-chip ref-blue">{{ dn.quotation.quotation_number }}</span>
-              {% else %}<span class="ref-chip ref-grey">—</span>{% endif %}
-            </td>
-            <td style="font-size:13px;color:#374151">{{ dn.driver_name|default:"—" }}</td>
-            <td style="font-size:12px;font-family:monospace;color:#374151">
-              {% if dn.odometer_out %}{{ dn.odometer_out }} km{% else %}—{% endif %}
-            </td>
-            <td>
-              {% if dn.customer_signed %}
-              <span class="signed-y">✅ Yes</span>
-              {% else %}
-              <span class="signed-n">—</span>
-              {% endif %}
-            </td>
-            <td><span class="sbadge sb-{{ dn.status }}">{{ dn.get_status_display }}</span></td>
-            <td onclick="event.stopPropagation()">
-              <div class="act-wrap">
-                
-                <a href="{% url 'jobcard_app:delivery_edit' dn.pk %}"   class="ab ab-edit">✏️ Edit</a>
-                <form method="post" action="{% url 'jobcard_app:delivery_delete' dn.pk %}"
-                      onsubmit="return confirm('Delete {{ dn.delivery_number }}?')" style="margin:0">
-                  {% csrf_token %}
-                  <button type="submit" class="ab ab-del">🗑</button>
-                </form>
-              </div>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="10">
-            <div class="empty">
-              <div style="font-size:44px;margin-bottom:12px">🚚</div>
-              <p style="font-size:14px;margin-bottom:16px">No delivery notes yet</p>
-              <a href="{% url 'jobcard_app:delivery_create' %}"
-                 style="background:#2563eb;color:#fff;border-radius:7px;padding:9px 20px;text-decoration:none;font-size:13px;font-weight:600">
-                Create First Delivery Note
-              </a>
+    <!-- Alert Messages -->
+    {% if messages %}
+        {% for m in messages %}
+            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm" style="border-radius:8px;" role="alert">
+                {{ m }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-          </td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
+        {% endfor %}
+    {% endif %}
 
-<script>
-let t;
-document.getElementById('qInp').addEventListener('input', function() {
-  clearTimeout(t);
-  t = setTimeout(() => document.getElementById('searchForm').submit(), 400);
-});
-function filterStatus(s) {
-  document.getElementById('statusHidden').value = s;
-  document.getElementById('searchForm').submit();
-}
-</script>
+    <!-- Stats Filter Row -->
+    <div class="d-flex gap-2 mb-4 flex-wrap">
+        <a href="{% url 'jobcard_app:delivery_list' %}" class="stat-card-custom {% if not status %}active{% endif %}">
+            <span class="font-weight-bold h5 mb-0">{{ counts.total }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "ALL" %}</span>
+        </a>
+        <a href="?status=draft" class="stat-card-custom {% if status == 'draft' %}active{% endif %}">
+            <span class="font-weight-bold h5 mb-0 text-secondary">{{ counts.draft }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "DRAFT" %}</span>
+        </a>
+        <a href="?status=delivered" class="stat-card-custom {% if status == 'delivered' %}active{% endif %}">
+            <span class="font-weight-bold h5 mb-0 text-success">{{ counts.delivered }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "DELIVERED" %}</span>
+        </a>
+        <a href="?status=cancelled" class="stat-card-custom {% if status == 'cancelled' %}active{% endif %}">
+            <span class="font-weight-bold h5 mb-0 text-danger">{{ counts.cancelled }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "CANCELLED" %}</span>
+        </a>
+    </div>
+
+    <!-- Filter Form Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header card-banner-header">
+            <span class="card-banner-title"><i class="bi bi-funnel text-primary mr-1"></i> {% trans "Filter Delivery Notes" %}</span>
+        </div>
+        <div class="card-body p-3">
+            <form method="get" class="form-inline" id="searchForm">
+                <div class="input-group mr-2 mb-2 mb-sm-0" style="flex: 1; min-width: 250px;">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
+                    </div>
+                    <input type="text" name="q" value="{{ q }}" placeholder="{% trans 'Search delivery no., customer, vehicle plate...' %}" class="form-control border-left-0">
+                </div>
+                <input type="hidden" name="status" value="{{ status }}">
+                <button type="submit" class="btn btn-custom-primary mr-2 mb-2 mb-sm-0">{% trans "Filter" %}</button>
+                <a href="{% url 'jobcard_app:delivery_list' %}" class="btn btn-secondary mb-2 mb-sm-0">✕ {% trans "Reset" %}</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delivery List Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="card-banner-title"><i class="bi bi-list-task mr-1 text-primary"></i> {% trans "Delivery Notes Register" %}</span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold">Total: {{ counts.total }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if deliveries %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Delivery No." %}</th>
+                            <th>{% trans "Customer Owner" %}</th>
+                            <th>{% trans "Vehicle" %}</th>
+                            <th>{% trans "Job Card" %}</th>
+                            <th>{% trans "Driver" %}</th>
+                            <th>{% trans "Odometer Out" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th style="width: 140px;" class="text-center">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dn in deliveries %}
+                        <tr>
+                            <td class="align-middle font-weight-bold">
+                                <a href="{% url 'jobcard_app:delivery_detail' dn.pk %}" class="text-primary" style="font-size:14px;">
+                                    {{ dn.voucher_number }}
+                                </a>
+                                <div class="text-muted small">{{ dn.date|date:"d M Y" }}</div>
+                            </td>
+                            <td class="align-middle font-weight-600 text-dark">
+                                {{ dn.customer.ledger_name|default:"—" }}
+                            </td>
+                            <td class="align-middle">
+                                {% if dn.workshop_vehicle %}
+                                    <span class="badge badge-light border text-dark"><i class="bi bi-truck mr-1 text-secondary"></i> {{ dn.workshop_vehicle }}</span>
+                                {% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                            <td class="align-middle">
+                                {% if dn.job_card %}
+                                    <a href="{% url 'jobcard_app:jobcard_edit' dn.job_card.pk %}" class="font-weight-bold text-primary">
+                                        {{ dn.job_card.job_number }}
+                                    </a>
+                                {% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                            <td class="align-middle text-muted">{{ dn.driver_name|default:"—" }}</td>
+                            <td class="align-middle font-weight-600 text-dark">{{ dn.odometer_reading_out|default:"—" }} km</td>
+                            <td class="align-middle">
+                                {% if dn.status == 'delivered' %}
+                                    <span class="badge badge-success"><i class="bi bi-check-circle mr-1"></i> {% trans "Delivered" %}</span>
+                                {% elif dn.status == 'cancelled' %}
+                                    <span class="badge badge-danger">{% trans "Cancelled" %}</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">{% trans "Draft" %}</span>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle text-center">
+                                <a href="{% url 'jobcard_app:delivery_detail' dn.pk %}" class="btn btn-sm btn-outline-primary mr-1" title="{% trans 'View Details' %}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'jobcard_app:delivery_edit' dn.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans 'Edit' %}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-box-arrow-right display-4 d-block mb-2 text-secondary"></i>
+                {% trans "No delivery notes found." %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

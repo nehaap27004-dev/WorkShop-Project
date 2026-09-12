@@ -3,69 +3,25 @@
 {% load i18n %}
 
 {% block content %}
-<style>
-    .module-title {
-        color: #5A8DEE;
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 26px;
-        font-weight: 500;
-    }
-    .card-banner-header {
-        background-color: #dce4ec !important;
-        padding: 12px 20px;
-        border-bottom: none;
-    }
-    .card-banner-title {
-        color: #7b8b9a;
-        font-weight: 500;
-        font-size: 15px;
-    }
-    .custom-btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
-        color: #ffffff !important;
-        border-radius: 4px;
-        font-size: 14px;
-        padding: 5px 18px;
-    }
-    .table-custom-header th {
-        background-color: #f4f7fb !important;
-        color: #6c7a89;
-        font-weight: 600;
-        font-size: 13.5px;
-        border-color: #e2e8f0 !important;
-    }
-    .form-control-custom {
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        padding: 6px 12px;
-        font-size: 14px;
-        height: 38px;
-    }
-    label {
-        font-weight: 500;
-        color: #444;
-        font-size: 13.5px;
-    }
-    .pr-normal { color: #6b7280; }
-    .pr-urgent { color: #b45309; font-weight: 600; }
-    .pr-express { color: #b91c1c; font-weight: 700; }
-</style>
-
-<div class="container-fluid mt-3 mb-5">
+<div class="container-fluid p-0 mb-5">
 
     <!-- Top Bar: Title + New Job Card Button -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="module-title mb-0">{% trans "Job Cards" %}</h2>
-        <a href="{% url 'jobcard_app:jobcard_create' %}" class="btn custom-btn-primary">
-            + {% trans "New Job Card" %}
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-1">
+                <i class="bi bi-card-checklist text-primary mr-2"></i>{% trans "Job Cards & Work Orders" %}
+            </h2>
+            <div class="text-muted small">{% trans "Manage active workshop repair orders, service priorities & technician assignments" %}</div>
+        </div>
+        <a href="{% url 'jobcard_app:jobcard_create' %}" class="btn btn-custom-primary shadow-sm">
+            <i class="bi bi-plus-lg mr-1"></i> {% trans "New Job Card" %}
         </a>
     </div>
 
     <!-- Alert Messages -->
     {% if messages %}
         {% for m in messages %}
-            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4" role="alert">
+            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm" style="border-radius:8px;" role="alert">
                 {{ m }}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -75,40 +31,51 @@
     {% endif %}
 
     <!-- Filter Card -->
-    <div class="card shadow-sm border-0 mb-4" style="border-radius: 8px; overflow: hidden; background: #ffffff;">
+    <div class="card shadow-sm border-0 mb-4">
         <div class="card-header card-banner-header">
-            <span class="card-banner-title">{% trans "Filter Job Cards" %}</span>
+            <span class="card-banner-title"><i class="bi bi-funnel text-primary mr-1"></i> {% trans "Filter Job Cards" %}</span>
         </div>
         <div class="card-body p-3">
-            <div class="form-inline">
-                <input type="text" id="jcSearch" placeholder="{% trans 'Search by job number, customer or vehicle...' %}" oninput="filterRows()" class="form-control form-control-custom mr-3 mb-2 mb-sm-0" style="flex: 1; min-width: 250px;">
-                <select id="jcStatusFilter" onchange="filterRows()" class="form-control form-control-custom mr-2 mb-2 mb-sm-0" style="min-width: 180px;">
-                    <option value="">{% trans "All Status" %}</option>
-                    <option value="open">{% trans "Open" %}</option>
-                    <option value="in_progress">{% trans "In Progress" %}</option>
-                    <option value="waiting">{% trans "Waiting" %}</option>
-                    <option value="completed">{% trans "Completed" %}</option>
-                    <option value="closed">{% trans "Closed" %}</option>
-                    <option value="cancelled">{% trans "Cancelled" %}</option>
-                </select>
+            <div class="form-row align-items-center">
+                <div class="col-md-7 mb-2 mb-md-0">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
+                        </div>
+                        <input type="text" id="jcSearch" placeholder="{% trans 'Search by job card number, customer name, vehicle plate...' %}" oninput="filterRows()" class="form-control border-left-0">
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <select id="jcStatusFilter" onchange="filterRows()" class="form-control">
+                        <option value="">{% trans "All Statuses" %}</option>
+                        <option value="open">{% trans "Open" %}</option>
+                        <option value="in_progress">{% trans "In Progress" %}</option>
+                        <option value="waiting">{% trans "Waiting for Parts" %}</option>
+                        <option value="completed">{% trans "Completed" %}</option>
+                        <option value="closed">{% trans "Closed" %}</option>
+                        <option value="cancelled">{% trans "Cancelled" %}</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Job Cards Table Card -->
-    <div class="card shadow-sm border-0" style="border-radius: 8px; overflow: hidden; background: #ffffff;">
-        <div class="card-header card-banner-header">
-            <span class="card-banner-title">{% trans "Job Card List" %}</span>
+    <div class="card shadow-sm border-0">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="card-banner-title"><i class="bi bi-list-task mr-1 text-primary"></i> {% trans "Job Cards Directory" %}</span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold">Total Job Orders: {{ jobs|length }}</span>
         </div>
         <div class="card-body p-0">
+            {% if jobs %}
             <div class="table-responsive">
-                <table class="table table-bordered mb-0" id="jcTable">
+                <table class="table table-hover mb-0" id="jcTable">
                     <thead>
-                        <tr class="table-custom-header">
+                        <tr>
                             <th>{% trans "Job Card No." %}</th>
                             <th>{% trans "Date" %}</th>
-                            <th>{% trans "Customer" %}</th>
-                            <th>{% trans "Vehicle" %}</th>
+                            <th>{% trans "Customer Name" %}</th>
+                            <th>{% trans "Vehicle Registered" %}</th>
                             <th>{% trans "Priority" %}</th>
                             <th>{% trans "Status" %}</th>
                             <th class="text-right">{% trans "Grand Total" %}</th>
@@ -119,62 +86,82 @@
                         {% for job in jobs %}
                         <tr data-status="{{ job.status }}"
                             data-search="{{ job.job_number|lower }} {{ job.customer|lower }} {{ job.workshop_vehicle|default_if_none:''|lower }}">
-                            <td class="align-middle font-weight-bold" style="color: #333;">{{ job.job_number }}</td>
-                            <td class="align-middle">{{ job.date|date:'d M Y' }}</td>
-                            <td class="align-middle">{{ job.customer }}</td>
-                            <td class="align-middle">{{ job.workshop_vehicle|default:'—' }}</td>
-                            <td class="align-middle pr-{{ job.priority }}">{{ job.get_priority_display }}</td>
                             <td class="align-middle">
-                                {% if job.status == 'completed' %}
-                                    <span class="badge badge-success px-2 py-1">{% trans "Completed" %}</span>
-                                {% elif job.status == 'in_progress' %}
-                                    <span class="badge badge-warning px-2 py-1">{% trans "In Progress" %}</span>
-                                {% elif job.status == 'open' %}
-                                    <span class="badge badge-primary px-2 py-1">{% trans "Open" %}</span>
-                                {% elif job.status == 'waiting' %}
-                                    <span class="badge badge-danger px-2 py-1">{% trans "Waiting" %}</span>
+                                <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="font-weight-bold text-primary" style="font-size:14px;">
+                                    {{ job.job_number }}
+                                </a>
+                            </td>
+                            <td class="align-middle text-muted">{{ job.date|date:'d M Y' }}</td>
+                            <td class="align-middle font-weight-600 text-dark">{{ job.customer }}</td>
+                            <td class="align-middle">
+                                {% if job.workshop_vehicle %}
+                                    <span class="badge badge-light text-dark border"><i class="bi bi-truck mr-1 text-secondary"></i> {{ job.workshop_vehicle }}</span>
+                                {% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                            <td class="align-middle">
+                                {% if job.priority == 'express' %}
+                                    <span class="badge badge-danger">{% trans "Express" %}</span>
+                                {% elif job.priority == 'urgent' %}
+                                    <span class="badge badge-warning">{% trans "Urgent" %}</span>
                                 {% else %}
-                                    <span class="badge badge-secondary px-2 py-1">{{ job.get_status_display }}</span>
+                                    <span class="badge badge-secondary">{% trans "Normal" %}</span>
                                 {% endif %}
                             </td>
-                            <td class="align-middle text-right font-weight-bold" style="color: #5A8DEE;">{{ job.get_grand_total|floatformat:3 }}</td>
-                            <td class="text-center align-middle">
-                                <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="btn btn-sm btn-warning mr-1" style="border-radius: 4px; font-size: 13px;">
-                                    {% trans "Edit" %}
-                                </a>
-                                <form method="post" action="{% url 'jobcard_app:jobcard_delete' job.pk %}"
-                                      onsubmit="return confirm('{% trans "Delete Job Card" %} {{ job.job_number }}?');" style="display:inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-danger" style="border-radius: 4px; font-size: 13px;">
-                                        {% trans "Delete" %}
-                                    </button>
-                                </form>
+                            <td class="align-middle">
+                                {% if job.status == 'open' %}
+                                    <span class="badge badge-open">{% trans "Open" %}</span>
+                                {% elif job.status == 'in_progress' %}
+                                    <span class="badge badge-in-progress">{% trans "In Progress" %}</span>
+                                {% elif job.status == 'waiting' %}
+                                    <span class="badge badge-waiting">{% trans "Waiting for Parts" %}</span>
+                                {% elif job.status == 'completed' %}
+                                    <span class="badge badge-completed">{% trans "Completed" %}</span>
+                                {% elif job.status == 'closed' %}
+                                    <span class="badge badge-closed">{% trans "Closed" %}</span>
+                                {% elif job.status == 'cancelled' %}
+                                    <span class="badge badge-cancelled">{% trans "Cancelled" %}</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">{{ job.get_status_display }}</span>
+                                {% endif %}
                             </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center py-4 text-muted" style="font-size: 14px;">
-                                {% trans "No details added yet" %}
+                            <td class="align-middle text-right font-weight-bold text-dark">
+                                {{ job.grand_total|floatformat:2|default:"0.00" }}
+                            </td>
+                            <td class="align-middle text-center">
+                                <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="btn btn-sm btn-outline-primary mr-1" title="{% trans 'View Job Card' %}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans 'Edit Job Card' %}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-card-checklist display-4 d-block mb-2 text-secondary"></i>
+                {% trans "No job cards found." %}
+            </div>
+            {% endif %}
         </div>
     </div>
-
 </div>
 
 <script>
 function filterRows() {
-  const q = document.getElementById('jcSearch').value.toLowerCase();
-  const status = document.getElementById('jcStatusFilter').value;
-  document.querySelectorAll('#jcTable tbody tr[data-search]').forEach(tr => {
-    const matchesSearch = !q || tr.dataset.search.includes(q);
-    const matchesStatus = !status || tr.dataset.status === status;
-    tr.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
-  });
+    let q = document.getElementById('jcSearch').value.toLowerCase();
+    let st = document.getElementById('jcStatusFilter').value.toLowerCase();
+    let rows = document.querySelectorAll('#jcTable tbody tr');
+    rows.forEach(r => {
+        let text = r.getAttribute('data-search') || '';
+        let status = r.getAttribute('data-status') || '';
+        let matchQ = !q || text.includes(q);
+        let matchSt = !st || status === st;
+        r.style.display = (matchQ && matchSt) ? '' : 'none';
+    });
 }
 </script>
 {% endblock %}

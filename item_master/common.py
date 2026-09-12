@@ -470,7 +470,10 @@ def get_or_create_ledger(name, group_id_or_name=None, default_type='DR'):
         elif isinstance(group_id_or_name, str):
             group = Groups.objects.filter(groupName=group_id_or_name).first()
         if not group:
-            group = Groups.objects.first()
+            raise ValueError(
+                f"Accounting group '{group_id_or_name}' not found "
+                f"for ledger '{name}'"
+            )
         ledger, _ = LedgerCreation.objects.get_or_create(
             ledger_name=name,
             defaults={'groups': group, 'types': default_type, 'isDefault': True}
@@ -796,4 +799,4 @@ def create_ledger_postings_for_sales_return(s_return):
 
     except Exception as e:
         print(f"Error creating LedgerPosting for sales return {s_return.id}: {e}")
-        raise e
+        raise e

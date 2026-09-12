@@ -1,215 +1,192 @@
 {% extends 'fleet_base1.html' %}
 {% load i18n %}
-{% block title %}{% trans "Create Client" %}{% endblock %}
+{% block title %}{% trans "Customer Directory & Create" %}{% endblock %}
 
 {% block content %}
-<!-- Custom CSS -->
-<style>
-    h2, h3, h4, h5 {
-        font-family: 'Segoe UI', sans-serif;
-    }
+<div class="container-fluid p-0">
 
-    form label {
-        font-weight: 500;
-        color: #444;
-    }
-
-    input, select, textarea {
-        width: 100% !important;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        padding: 6px 10px;
-        font-size: 0.95rem;
-    }
-
-    input:focus, select:focus, textarea:focus {
-        border-color: #5A8DEE;
-        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
-        outline: none;
-    }
-
-    .btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
-    }
-
-    .btn-success {
-        background-color: #28a745 !important;
-        border-color: #28a745 !important;
-    }
-
-    .btn-danger {
-        background-color: #dc3545 !important;
-        border-color: #dc3545 !important;
-    }
-
-    .btn-secondary {
-        background-color: #6c757d !important;
-        border-color: #6c757d !important;
-    }
-
-    .card {
-        border-radius: 12px;
-    }
-
-    .card-header {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .table th {
-        background-color: #343a40;
-        color: white;
-        font-weight: 600;
-    }
-
-    .btn:hover {
-        opacity: 0.9;
-        transition: 0.2s ease-in-out;
-    }
-
-    .alert {
-        border-radius: 8px;
-    }
-</style>
-
-<div class="container mt-4 mb-5">
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-primary">{% trans "Create New Client" %}</h2>
+    <!-- Top Bar: Title + Back/Add Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-1">
+                <i class="bi bi-people text-primary mr-2"></i>{% if edit_mode %}{% trans "Edit Customer Profile" %}{% else %}{% trans "Customer Management & Directory" %}{% endif %}
+            </h2>
+            <div class="text-muted small">{% trans "Manage customer ledgers, tax identification, contact details & vehicle links" %}</div>
+        </div>
         {% if edit_mode %}
-            <a href="{% url 'accounts_app:manage_customers' %}" class="btn btn-secondary">{% trans "Add New" %}</a>
+            <a href="{% url 'accounts_app:manage_customers' %}" class="btn btn-secondary shadow-sm">
+                <i class="bi bi-plus-lg mr-1"></i> {% trans "Create New Customer" %}
+            </a>
         {% endif %}
     </div>
 
-    <!-- Flash Messages -->
+    <!-- Alert Messages -->
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4 shadow-sm" role="alert" style="border-radius:8px;">
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
         {% endfor %}
     {% endif %}
 
-    <!-- Add/Edit Form -->
-    <form method="POST" class="needs-validation">
-        {% csrf_token %}
+    <!-- Customer Form Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header card-banner-header">
+            <span class="card-banner-title">
+                <i class="bi bi-person-vcard text-primary mr-2"></i>
+                {% if edit_mode %}{% trans "Edit Customer Information" %}{% else %}{% trans "Register New Customer" %}{% endif %}
+            </span>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST" class="needs-validation">
+                {% csrf_token %}
 
-        <!-- Client Information -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">{% trans "Client Information" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <!-- Row 1 -->
-                    <div class="col-md-2">
-                        {{ form.ledger_name.label_tag }}
+                <div class="row">
+                    <!-- Row 1: Key Identifiers -->
+                    <div class="col-md-4 col-lg-3 mb-3">
+                        <label>{% trans "Customer / Ledger Name" %} <span class="req">*</span></label>
                         {{ form.ledger_name }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.remark.label_tag }}
-                        {{ form.remark }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.trn_number.label_tag }}
+                    <div class="col-md-4 col-lg-3 mb-3">
+                        <label>{% trans "TRN / Tax Number" %}</label>
                         {{ form.trn_number }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.cr_no.label_tag }}
+                    <div class="col-md-4 col-lg-3 mb-3">
+                        <label>{% trans "CR / Reg No." %}</label>
                         {{ form.cr_no }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.email.label_tag }}
-                        {{ form.email }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.mobile.label_tag }}
-                        {{ form.mobile }}
+                    <div class="col-md-4 col-lg-3 mb-3">
+                        <label>{% trans "Remark / Tag" %}</label>
+                        {{ form.remark }}
                     </div>
 
-                    <!-- Row 2 -->
-                     
-                    <div class="col-md-2">
-                        {{ form.phone_no.label_tag }}
+                    <!-- Row 2: Contact Info -->
+                    <div class="col-md-4 col-lg-3 mb-3">
+                        <label>{% trans "Email Address" %}</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="col-md-4 col-lg-3 mb-3">
+                        <label>{% trans "Mobile Phone" %} <span class="req">*</span></label>
+                        {{ form.mobile }}
+                    </div>
+                    <div class="col-md-4 col-lg-3 mb-3">
+                        <label>{% trans "Telephone / Alt Phone" %}</label>
                         {{ form.phone_no }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.address1.label_tag }}
+                    <div class="col-md-4 col-lg-3 mb-3">
+                        <label>{% trans "Opening Balance" %}</label>
+                        {{ form.opening_balance }}
+                    </div>
+
+                    <!-- Row 3: Address & Location -->
+                    <div class="col-md-4 col-lg-4 mb-3">
+                        <label>{% trans "Street Address" %}</label>
                         {{ form.address1 }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.country.label_tag }}
-                        {{ form.country }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.state.label_tag }}
-                        {{ form.state }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.city.label_tag }}
+                    <div class="col-md-4 col-lg-2 mb-3">
+                        <label>{% trans "City" %}</label>
                         {{ form.city }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.zipcode.label_tag }}
+                    <div class="col-md-4 col-lg-2 mb-3">
+                        <label>{% trans "State / Region" %}</label>
+                        {{ form.state }}
+                    </div>
+                    <div class="col-md-4 col-lg-2 mb-3">
+                        <label>{% trans "Country" %}</label>
+                        {{ form.country }}
+                    </div>
+                    <div class="col-md-4 col-lg-2 mb-3">
+                        <label>{% trans "Zip / Postal Code" %}</label>
                         {{ form.zipcode }}
                     </div>
 
-                    <!-- Row 3 -->
-                    <div class="col-md-12">
-                        {{ form.description.label_tag }}
+                    <div class="col-12 mb-3">
+                        <label>{% trans "Additional Notes & Description" %}</label>
                         {{ form.description }}
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="text-end mt-4">
-            {% if edit_mode %}
-                <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">{% trans "Update" %}</button>
-            {% else %}
-                <button type="submit" class="btn btn-success px-4 py-2">{% trans "Save" %}</button>
-            {% endif %}
+                <div class="d-flex justify-content-end gap-2 mt-2">
+                    {% if edit_mode %}
+                        <a href="{% url 'accounts_app:manage_customers' %}" class="btn btn-secondary mr-2">{% trans "Cancel" %}</a>
+                        <button type="submit" class="btn btn-custom-primary">
+                            <i class="bi bi-check2-circle mr-1"></i> {% trans "Update Customer" %}
+                        </button>
+                    {% else %}
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-person-check mr-1"></i> {% trans "Save Customer" %}
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 
-    <!-- Client List -->
-    <div class="card shadow-sm mt-5">
-        <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">{% trans "Client List" %}</h5>
+    <!-- Customer Directory Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="card-banner-title"><i class="bi bi-list-columns-reverse mr-1 text-primary"></i> {% trans "Customer Directory" %}</span>
+            <span class="badge badge-secondary px-3 py-1">Total Registered: {{ customers|length }}</span>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             {% if customers %}
+            <div class="p-3 border-bottom bg-light">
+                <div class="input-group" style="max-width: 400px;">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
+                    </div>
+                    <input type="text" id="custSearch" oninput="filterCustTable()" placeholder="{% trans 'Search customers by name, phone or email...' %}" class="form-control border-left-0">
+                </div>
+            </div>
+
             <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle text-center">
-                    <thead class="table-dark">
+                <table class="table table-hover mb-0" id="custTable">
+                    <thead>
                         <tr>
-                            <th>#</th>
-                            <th>{% trans "Name" %}</th>
-                            <th>{% trans "Email" %}</th>
-                            <th>{% trans "Mobile" %}</th>
-                            <th>{% trans "City" %}</th>
-                            <th>{% trans "Country" %}</th>
-                            <th>{% trans "Opening Balance" %}</th>
-                            <th>{% trans "Actions" %}</th>
+                            <th style="width: 50px;">#</th>
+                            <th>{% trans "Customer Name" %}</th>
+                            <th>{% trans "Contact Info" %}</th>
+                            <th>{% trans "Tax / TRN" %}</th>
+                            <th>{% trans "Location" %}</th>
+                            <th class="text-right">{% trans "Opening Balance" %}</th>
+                            <th style="width: 140px;" class="text-center">{% trans "Action" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for customer in customers %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ customer.ledger_name }}</td>
-                            <td>{{ customer.email|default:"-" }}</td>
-                            <td>{{ customer.mobile|default:"-" }}</td>
-                            <td>{{ customer.city|default:"-" }}</td>
-                            <td>{{ customer.country|default:"-" }}</td>
-                            <td>{{ customer.opening_balance }}</td>
-                            <td>
-                                <a href="{% url 'accounts_app:edit_customer' customer.pk %}" class="btn btn-sm btn-primary">{% trans "Edit" %}</a>
-                                <form method="POST" style="display:inline;">
+                        <tr data-search="{{ customer.ledger_name|lower }} {{ customer.mobile|lower }} {{ customer.email|lower }} {{ customer.trn_number|lower }}">
+                            <td class="align-middle text-muted">{{ forloop.counter }}</td>
+                            <td class="align-middle font-weight-bold text-primary">
+                                <i class="bi bi-person-circle mr-1 text-secondary"></i> {{ customer.ledger_name }}
+                            </td>
+                            <td class="align-middle">
+                                {% if customer.mobile %}<div class="small font-weight-bold"><i class="bi bi-telephone mr-1 text-muted"></i> {{ customer.mobile }}</div>{% endif %}
+                                {% if customer.email %}<div class="small text-muted"><i class="bi bi-envelope mr-1"></i> {{ customer.email }}</div>{% endif %}
+                            </td>
+                            <td class="align-middle">
+                                {% if customer.trn_number %}
+                                    <span class="badge badge-light border text-dark font-mono"><i class="bi bi-hash mr-1"></i> {{ customer.trn_number }}</span>
+                                {% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                            <td class="align-middle text-muted">
+                                {{ customer.city|default:"" }}{% if customer.city and customer.country %}, {% endif %}{{ customer.country|default:"—" }}
+                            </td>
+                            <td class="align-middle text-right font-weight-bold">
+                                {{ customer.opening_balance|default:"0.00" }}
+                            </td>
+                            <td class="align-middle text-center">
+                                <a href="{% url 'accounts_app:edit_customer' customer.pk %}" class="btn btn-sm btn-outline-primary mr-1" title="{% trans 'Edit' %}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="POST" class="d-inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="delete_id" value="{{ customer.id }}">
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('{% trans 'Delete this customer?' %}');">{% trans "Delete" %}</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete' %}" onclick="return confirm('{% trans 'Delete this customer?' %}');">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </form>
                             </td>
                         </tr>
@@ -218,9 +195,23 @@
                 </table>
             </div>
             {% else %}
-                <p class="text-muted text-center">{% trans "No customers found." %}</p>
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-people display-4 d-block mb-2 text-secondary"></i>
+                {% trans "No customers found. Register your first customer above." %}
+            </div>
             {% endif %}
         </div>
     </div>
 </div>
+
+<script>
+function filterCustTable() {
+    let q = document.getElementById('custSearch').value.toLowerCase();
+    let rows = document.querySelectorAll('#custTable tbody tr');
+    rows.forEach(r => {
+        let text = r.getAttribute('data-search') || '';
+        r.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+</script>
 {% endblock %}

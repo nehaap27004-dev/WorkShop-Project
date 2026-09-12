@@ -104,7 +104,7 @@ table.dt tbody tr:last-child td{border-bottom:none}
         </div></div>
         <div><div class="info-lbl">From Job Card</div><div class="info-val">
           {% if quotation.jobcard %}
-          <a href="{% url 'jobcard_app:jobcard_details' quotation.jobcard.pk %}" style="color:#2563eb;font-weight:700">
+          <a href="{% url 'jobcard_app:jobcard_edit' quotation.jobcard.pk %}" style="color:#2563eb;font-weight:700">
             {{ quotation.jobcard.job_number }}
           </a>
           {% else %}—{% endif %}

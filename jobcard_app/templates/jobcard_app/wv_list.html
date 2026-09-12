@@ -1,208 +1,148 @@
 {% extends 'fleet_base1.html' %}
+{% load i18n %}
+{% block title %}{% trans "Vehicle Register" %}{% endblock %}
+
 {% block content %}
-<style>
-*{box-sizing:border-box}
-body{background:#f5f6fa}
-.wrap{max-width:1400px;margin:0 auto;padding:24px 28px}
+<div class="container-fluid p-0">
 
-/* Top bar */
-.top-bar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
-.page-title{font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:2px}
-.page-sub{font-size:13px;color:#6b7280}
-.btn-new{background:#2563eb;color:#fff;border:none;border-radius:7px;
-         padding:10px 20px;font-size:13px;font-weight:600;
-         text-decoration:none;display:inline-flex;align-items:center;gap:6px;
-         white-space:nowrap}
-.btn-new:hover{background:#1d4ed8;color:#fff}
-
-/* Search + filter bar */
-.search-bar{display:flex;gap:10px;margin-bottom:20px;align-items:center}
-.search-wrap{flex:1;position:relative}
-.search-wrap input{width:100%;border:1px solid #e5e7eb;border-radius:7px;
-                   padding:9px 12px 9px 36px;font-size:13px;color:#374151;
-                   background:#fff;outline:none}
-.search-wrap input:focus{border-color:#2563eb}
-.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);
-             color:#9ca3af;font-size:14px}
-.filter-sel{border:1px solid #e5e7eb;border-radius:7px;padding:9px 12px;
-            font-size:13px;color:#374151;background:#fff;outline:none;cursor:pointer;
-            min-width:140px}
-.filter-sel:focus{border-color:#2563eb}
-
-/* Table */
-.tbl-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
-table{width:100%;border-collapse:collapse}
-thead th{padding:11px 16px;font-size:11px;font-weight:700;color:#6b7280;
-         text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid #e5e7eb;
-         text-align:left;background:#fff;white-space:nowrap}
-tbody tr{border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .12s}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:#f8faff}
-tbody td{padding:13px 16px;vertical-align:middle}
-
-/* Vehicle / reg no cell */
-.reg-no{font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:2px}
-.veh-no{font-size:11px;color:#2563eb;font-family:monospace;font-weight:600}
-
-/* Make & model cell */
-.make{font-size:13px;font-weight:600;color:#1a1a2e;margin-bottom:2px}
-.model-color{font-size:11px;color:#6b7280}
-
-/* Customer cell */
-.cust-name{font-size:13px;font-weight:600;color:#1a1a2e;margin-bottom:2px}
-.cust-phone{font-size:11px;color:#6b7280}
-
-/* Year */
-.year-val{font-size:13px;font-weight:600;color:#374151}
-
-/* Fuel badge */
-.fuel-badge{display:inline-block;border-radius:4px;padding:3px 10px;
-            font-size:12px;font-weight:600}
-.fuel-petrol  {background:#dbeafe;color:#1d4ed8}
-.fuel-diesel  {background:#fef3c7;color:#92400e}
-.fuel-electric{background:#d1fae5;color:#065f46}
-.fuel-hybrid  {background:#ede9fe;color:#5b21b6}
-.fuel-cng     {background:#e0f2fe;color:#0369a1}
-.fuel-lpg     {background:#fce7f3;color:#9d174d}
-.fuel-other   {background:#f3f4f6;color:#6b7280}
-
-/* Insurance dot */
-.ins-cell{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600}
-.ins-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.ins-expired {color:#dc2626}.ins-dot-expired {background:#dc2626}
-.ins-expiring{color:#d97706}.ins-dot-expiring{background:#f59e0b}
-.ins-ok      {color:#374151}.ins-dot-ok      {background:#d1d5db}
-.ins-unknown {color:#9ca3af}.ins-dot-unknown {background:#e5e7eb}
-
-/* Empty state */
-.empty{text-align:center;padding:60px 20px;color:#9ca3af}
-.empty-icon{font-size:40px;margin-bottom:12px}
-.empty-text{font-size:14px;margin-bottom:16px}
-
-@media(max-width:768px){
-  .wrap{padding:16px}
-  .search-bar{flex-wrap:wrap}
-  thead th:nth-child(n+4){display:none}
-  tbody td:nth-child(n+4){display:none}
-}
-</style>
-
-<div class="wrap">
-
-  <!-- Top bar -->
-  <div class="top-bar">
-    <div>
-      <div class="page-title">Vehicle Master</div>
-      <div class="page-sub">{{ counts.total }} vehicle{{ counts.total|pluralize }} registered</div>
+    <!-- Top Header Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-1">
+                <i class="bi bi-truck text-primary mr-2"></i>{% trans "Vehicle Register & Master" %}
+            </h2>
+            <div class="text-muted small">{% trans "Track customer vehicle registrations, fuel specifications, VIN numbers & insurance statuses" %}</div>
+        </div>
+        <a href="{% url 'jobcard_app:wv_create' %}" class="btn btn-custom-primary shadow-sm">
+            <i class="bi bi-plus-lg mr-1"></i> {% trans "Register New Vehicle" %}
+        </a>
     </div>
-    <a href="{% url 'jobcard_app:wv_create' %}" class="btn-new">+ New Vehicle</a>
-  </div>
 
-  {% if messages %}{% for m in messages %}
-  <div style="padding:10px 16px;border-radius:7px;margin-bottom:14px;
-    background:{% if 'error' in m.tags %}#fef2f2{% else %}#f0fdf4{% endif %};
-    border:1px solid {% if 'error' in m.tags %}#fca5a5{% else %}#86efac{% endif %};
-    color:{% if 'error' in m.tags %}#b91c1c{% else %}#15803d{% endif %};font-size:13px">
-    {{ m }}</div>
-  {% endfor %}{% endif %}
-
-  <!-- Search + filter -->
-  <form method="get" class="search-bar" id="filterForm">
-    <div class="search-wrap">
-      <span class="search-icon">🔍</span>
-      <input type="text" name="q" value="{{ q }}"
-             placeholder="Search by reg no., make, model, customer..."
-             id="searchInp" autocomplete="off">
-    </div>
-    <select name="fuel" class="filter-sel" onchange="this.form.submit()">
-      <option value="">All Fuel Types</option>
-      {% for val,lbl in fuel_choices %}
-      <option value="{{ val }}" {% if fuel_filter == val %}selected{% endif %}>{{ lbl }}</option>
-      {% endfor %}
-    </select>
-    <input type="hidden" name="customer" value="{{ customer_id }}">
-  </form>
-
-  <!-- Table -->
-  <div class="tbl-card">
-    <table>
-      <thead>
-        <tr>
-          <th>Vehicle / Reg No.</th>
-          <th>Make &amp; Model</th>
-          <th>Customer</th>
-          <th>Year</th>
-          <th>Fuel</th>
-          <th>Insurance</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for v in vehicles %}
-        <tr onclick="window.location='{% url 'jobcard_app:wv_list'%}'">
-          <td>
-            <div class="reg-no">{{ v.registration_number }}</div>
-            <div class="veh-no">{{ v.vehicle_number }}</div>
-          </td>
-          <td>
-            <div class="make">{{ v.manufacturer.manufacturer_name|default:"—" }}</div>
-            <div class="model-color">
-              {{ v.vehicle_model.model_name|default:"—" }}{% if v.color %} · {{ v.color }}{% endif %}
+    <!-- Flash Messages -->
+    {% if messages %}
+        {% for m in messages %}
+            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm" style="border-radius:8px;" role="alert">
+                {{ m }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-          </td>
-          <td>
-            <div class="cust-name">{{ v.customer.ledger_name }}</div>
-            <div class="cust-phone">
-              {{ v.customer.mobile|default:v.customer.phone_no |default:"" }}
-            </div>
-          </td>
-          <td><span class="year-val">{{ v.year|default:"—" }}</span></td>
-          <td>
-            {% if v.fuel_type %}
-            <span class="fuel-badge fuel-{{ v.fuel_type }}">
-              {{ v.get_fuel_type_display }}
-            </span>
-            {% else %}—{% endif %}
-          </td>
-          <td>
-            {% with s=v.get_insurance_status %}
-            <div class="ins-cell ins-{{ s }}">
-              <span class="ins-dot ins-dot-{{ s }}"></span>
-              {% if s == 'expired' %}{{ v.insurance_expiry_date|date:"d M Y" }}
-              {% elif s == 'expiring' %}{{ v.insurance_expiry_date|date:"d M Y" }}
-              {% elif s == 'ok' %}{{ v.insurance_expiry_date|date:"d M Y" }}
-              {% else %}Not set{% endif %}
-            </div>
-            {% endwith %}
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="6">
-            <div class="empty">
-              <div class="empty-icon">🚗</div>
-              <div class="empty-text">No vehicles registered yet</div>
-              <a href="{% url 'jobcard_app:wv_create' %}"
-                 style="background:#2563eb;color:#fff;border-radius:7px;
-                        padding:9px 20px;text-decoration:none;
-                        font-size:13px;font-weight:600">
-                Register First Vehicle
-              </a>
-            </div>
-          </td>
-        </tr>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    {% endif %}
 
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header card-banner-header">
+            <span class="card-banner-title"><i class="bi bi-funnel text-primary mr-1"></i> {% trans "Filter Vehicle Master" %}</span>
+        </div>
+        <div class="card-body p-3">
+            <form method="get" class="form-row align-items-center">
+                <div class="col-md-8 mb-2 mb-md-0">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
+                        </div>
+                        <input type="text" name="q" value="{{ q }}" placeholder="{% trans 'Search by reg plate, vehicle no, make, model or customer...' %}" class="form-control border-left-0">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="fuel" class="form-control" onchange="this.form.submit()">
+                        <option value="">{% trans "All Fuel Types" %}</option>
+                        {% for val,lbl in fuel_choices %}
+                            <option value="{{ val }}" {% if fuel_filter == val %}selected{% endif %}>{{ lbl }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <input type="hidden" name="customer" value="{{ customer_id }}">
+            </form>
+        </div>
+    </div>
+
+    <!-- Vehicles Table Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="card-banner-title"><i class="bi bi-list-task mr-1 text-primary"></i> {% trans "Registered Vehicles" %}</span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold">Total Registered: {{ counts.total }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if vehicles %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Registration & Vehicle No." %}</th>
+                            <th>{% trans "Make & Model" %}</th>
+                            <th>{% trans "Customer Owner" %}</th>
+                            <th>{% trans "Year" %}</th>
+                            <th>{% trans "Fuel Type" %}</th>
+                            <th>{% trans "Insurance Status" %}</th>
+                            <th style="width: 140px;" class="text-center">{% trans "Action" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in vehicles %}
+                        <tr>
+                            <td class="align-middle">
+                                <a href="{% url 'jobcard_app:wv_edit' v.pk %}" class="font-weight-bold text-primary d-block" style="font-size:14px;">
+                                    <i class="bi bi-card-text mr-1"></i> {{ v.registration_number }}
+                                </a>
+                                <span class="badge badge-light border font-mono small text-muted">{{ v.vehicle_number }}</span>
+                            </td>
+                            <td class="align-middle">
+                                <div class="font-weight-bold text-dark">{{ v.manufacturer.manufacturer_name|default:"—" }}</div>
+                                <div class="small text-muted">{{ v.vehicle_model.model_name|default:"—" }}{% if v.color %} · {{ v.color }}{% endif %}</div>
+                            </td>
+                            <td class="align-middle">
+                                <div class="font-weight-600 text-dark">{{ v.customer.ledger_name|default:"—" }}</div>
+                                {% if v.customer.mobile %}<div class="small text-muted"><i class="bi bi-telephone mr-1"></i> {{ v.customer.mobile }}</div>{% endif %}
+                            </td>
+                            <td class="align-middle font-weight-600 text-muted">
+                                {{ v.year|default:"—" }}
+                            </td>
+                            <td class="align-middle">
+                                {% if v.fuel_type == 'petrol' %}
+                                    <span class="badge badge-primary">{% trans "Petrol" %}</span>
+                                {% elif v.fuel_type == 'diesel' %}
+                                    <span class="badge badge-warning">{% trans "Diesel" %}</span>
+                                {% elif v.fuel_type == 'electric' %}
+                                    <span class="badge badge-success">{% trans "Electric" %}</span>
+                                {% elif v.fuel_type == 'hybrid' %}
+                                    <span class="badge badge-info">{% trans "Hybrid" %}</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">{{ v.get_fuel_type_display|default:v.fuel_type|default:"—" }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle">
+                                {% if v.insurance_status == 'expired' %}
+                                    <span class="badge badge-danger"><i class="bi bi-exclamation-triangle mr-1"></i> {% trans "Expired" %}</span>
+                                {% elif v.insurance_status == 'expiring' %}
+                                    <span class="badge badge-warning"><i class="bi bi-clock-history mr-1"></i> {% trans "Expiring Soon" %}</span>
+                                {% elif v.insurance_status == 'ok' %}
+                                    <span class="badge badge-success"><i class="bi bi-check-circle mr-1"></i> {% trans "Valid" %}</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle text-center">
+                                <a href="{% url 'jobcard_app:wv_edit' v.pk %}" class="btn btn-sm btn-outline-primary mr-1" title="{% trans 'View Details' %}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'jobcard_app:wv_edit' v.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans 'Edit' %}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-truck display-4 d-block mb-2 text-secondary"></i>
+                {% trans "No registered vehicles found." %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
-
-<script>
-// Live search on type
-let timer;
-document.getElementById('searchInp').addEventListener('input', function() {
-  clearTimeout(timer);
-  timer = setTimeout(() => document.getElementById('filterForm').submit(), 400);
-});
-</script>
 {% endblock %}

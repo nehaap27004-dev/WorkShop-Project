@@ -9,7 +9,7 @@ from django.utils import timezone
 import logging
 import json
 from .models import (
-   DeliveryNoteVehicle, Estimate, EstimateItem, InvoiceLabour, InvoiceOtherCharge, InvoicePart, InvoiceVehicle, JobCardVehicle, Quotation, QuotationItem, ServiceCategory, ServiceType, SkillTag, ComplaintType
+   DeliveryNoteVehicle, Estimate, EstimateComplaint, EstimateItem, EstimateVehicle, InvoiceLabour, InvoiceOtherCharge, InvoicePart, InvoiceVehicle, JobCardVehicle, Quotation, QuotationItem, ServiceCategory, ServiceType, SkillTag, ComplaintType
 )
 from fleet_app.models import FleetCustomer, Vehicle
 from item_master.models import Item
@@ -545,7 +545,7 @@ def inspection_create(request, vehicle_id=None):
         messages.success(
             request,
             f"Inspection {insp.inspection_number} saved successfully!")
-        return redirect('jobcard_app:inspection_detail', pk=insp.pk)
+        return redirect('jobcard_app:inspection_list')
  
     ctx = _inspection_context()
     ctx.update({
@@ -566,38 +566,7 @@ def inspection_create(request, vehicle_id=None):
 # ─────────────────────────────────────────────────────────────
 # DETAIL
 # ─────────────────────────────────────────────────────────────
-def inspection_detail(request, pk):
-    insp = get_object_or_404(
-        VehicleInspection.objects.select_related(
-            'vehicle', 'customer', 'inspector', 'jobcard'
-        ).prefetch_related(
-            'exterior_damages', 'findings'
-        ),
-        pk=pk
-    )
- 
-    try:    interior   = insp.interior
-    except: interior   = None
-    try:    mechanical = insp.mechanical
-    except: mechanical = None
-    try:    accessories = insp.accessories
-    except: accessories = None
- 
-    complaints = insp.findings.filter(finding_type='complaint').order_by('order')
-    findings   = insp.findings.filter(finding_type='finding').order_by('order')
- 
-    ctx = _inspection_context()
-    ctx.update({
-        'insp':        insp,
-        'interior':    interior,
-        'mechanical':  mechanical,
-        'accessories': accessories,
-        'complaints':  complaints,
-        'findings':    findings,
-    })
-    return render(request, 'jobcard_app/inspection_detail.html', ctx)
- 
- 
+
 # ─────────────────────────────────────────────────────────────
 # EDIT
 # ─────────────────────────────────────────────────────────────
@@ -631,7 +600,7 @@ def inspection_edit(request, pk):
         insp.save()
         _save_inspection(request, insp)
         messages.success(request, f"Inspection {insp.inspection_number} updated successfully.")
-        return redirect('jobcard_app:inspection_detail', pk=pk)
+        return redirect('jobcard_app:inspection_list')
  
     ctx = _inspection_context()
     ctx.update({
@@ -983,8 +952,15 @@ def _save_jobcard(request, job=None):
 
         ct_id  = complaint_type_ids[i] if i < len(complaint_type_ids) else None
         ct_obj = None
-        if ct_id and str(ct_id).isdigit():
-            ct_obj = ComplaintType.objects.filter(pk=ct_id).first()
+        st_obj = None
+        if ct_id:
+            ct_id_str = str(ct_id).strip()
+            if ct_id_str.isdigit():
+                ct_obj = ComplaintType.objects.filter(pk=ct_id_str).first()
+            elif ct_id_str.startswith('st_'):
+                st_pk = ct_id_str.replace('st_', '')
+                if st_pk.isdigit():
+                    st_obj = ServiceType.objects.filter(pk=st_pk).first()
 
         tech_id = tech_ids[i] if i < len(tech_ids) else None
         tech    = Staff.objects.filter(pk=tech_id).first() if tech_id else None
@@ -995,16 +971,27 @@ def _save_jobcard(request, job=None):
         raw_override = manual_overrides[i] if i < len(manual_overrides) else '0'
         override_flag = (str(raw_override).strip() == '1' or str(raw_override).lower() == 'true')
 
-        # Validation: If technician selected and complaint type requires a skill, check qualification
-        if tech and ct_obj and ct_obj.required_skill and not override_flag:
-            has_skill = TechnicianSkill.objects.filter(technician=tech, skill=ct_obj.required_skill).exists()
+        req_skill = None
+        complaint_title = types[i] if (i < len(types) and types[i]) else 'Mechanical'
+        if ct_obj:
+            req_skill = ct_obj.required_skill
+            complaint_title = ct_obj.complaint_name
+        elif st_obj:
+            req_skill = st_obj.required_skill
+            complaint_title = st_obj.type_name
+
+        type_val = (complaint_title or 'Mechanical')[:200]
+
+        # Validation: If technician selected and complaint/service type requires a skill, check qualification
+        if tech and req_skill and not override_flag:
+            has_skill = TechnicianSkill.objects.filter(technician=tech, skill=req_skill).exists()
             if not has_skill:
                 if is_new_job and job.pk:
                     job.delete()
                 messages.error(
                     request,
-                    f"Technician '{tech.full_name}' lacks required skill '{ct_obj.required_skill.name}' "
-                    f"for complaint '{ct_obj.complaint_name}'. Enable Manual Override to proceed."
+                    f"Technician '{tech.full_name}' lacks required skill '{req_skill.name}' "
+                    f"for complaint '{complaint_title}'. Enable Manual Override to proceed."
                 )
                 return redirect(request.path)
 
@@ -1014,8 +1001,9 @@ def _save_jobcard(request, job=None):
             service_category   = cat_obj,
             category           = cat_txt,
             complaint_type_ref = ct_obj,
+            service_type_ref   = st_obj,
             description        = desc.strip(),
-            type               = ct_obj.complaint_name if ct_obj else (types[i] if i < len(types) else 'Mechanical'),
+            type               = type_val,
             technician         = tech,
             status             = statuses[i] if i < len(statuses) else 'Open',
             is_manual_override = override_flag,
@@ -1538,6 +1526,7 @@ def _save_estimate(request, estimate=None):
     quantities   = request.POST.getlist('quantity[]')
     unit_prices  = request.POST.getlist('unit_price[]')
     warranties   = request.POST.getlist('part_warranty[]')
+    part_veh_ids = request.POST.getlist('part_vehicle_id[]')   # ← add this line
     
     max_len = max(len(descriptions), len(part_ids), len(part_nos), len(quantities))
     for i in range(max_len):
@@ -1558,7 +1547,7 @@ def _save_estimate(request, estimate=None):
                 desc = f"Part {p_no}"
             if not desc.strip():
                 continue
-
+        
         qty_val = 1.0
         if i < len(quantities) and quantities[i]:
             try:
@@ -1572,7 +1561,8 @@ def _save_estimate(request, estimate=None):
                 price_val = float(unit_prices[i])
             except ValueError:
                 price_val = 0.0
-
+        p_veh_id  = part_veh_ids[i] if i < len(part_veh_ids) else None
+        p_veh_obj = WorkshopVehicle.objects.filter(pk=p_veh_id).first() if p_veh_id else first_vehicle
         EstimateItem.objects.create(
             estimate    = estimate,
             vehicle     = p_veh_obj,
@@ -1614,20 +1604,52 @@ def _save_estimate(request, estimate=None):
         )
  
     # ── Customer Complaints ───────────────────────────────
+    from .models import ServiceCategory, ComplaintType, ServiceType
 
-    complaint_veh_ids = request.POST.getlist('customer_complaint_vehicle_id[]')
+    complaint_veh_ids    = request.POST.getlist('customer_complaint_vehicle_id[]')
+    complaint_cat_ids    = request.POST.getlist('customer_complaint_cat_id[]')
+    complaint_cat_texts  = request.POST.getlist('customer_complaint_cat[]')
+    complaint_type_ids   = request.POST.getlist('customer_complaint_type_id[]')
+    complaint_type_texts = request.POST.getlist('customer_complaint_type[]')
+    complaint_descriptions = request.POST.getlist('customer_complaint[]')
+    complaint_tech_ids   = request.POST.getlist('customer_complaint_technician[]')
+    complaint_overrides  = request.POST.getlist('customer_complaint_manual_override[]')
+    complaint_statuses   = request.POST.getlist('customer_complaint_status[]')
 
-    for i, c in enumerate(request.POST.getlist('customer_complaint[]')):
+    for i, c in enumerate(complaint_descriptions):
         if c.strip():
             c_veh_id  = complaint_veh_ids[i] if i < len(complaint_veh_ids) else None
             c_veh_obj = WorkshopVehicle.objects.filter(pk=c_veh_id).first() if c_veh_id else first_vehicle
-            
+
+            cat_id  = complaint_cat_ids[i] if i < len(complaint_cat_ids) else None
+            cat_obj = ServiceCategory.objects.filter(pk=cat_id).first() if cat_id else None
+
+            type_id_raw = complaint_type_ids[i] if i < len(complaint_type_ids) else ''
+            ct_obj = None
+            if type_id_raw:
+                if type_id_raw.startswith('st_'):
+                    pass
+                else:
+                    ct_obj = ComplaintType.objects.filter(pk=type_id_raw).first()
+
+            tech_id = complaint_tech_ids[i] if i < len(complaint_tech_ids) else None
+            tech_obj = Staff.objects.filter(pk=tech_id).first() if tech_id else None
+
+            override_flag = (complaint_overrides[i] == '1') if i < len(complaint_overrides) else False
+
             EstimateComplaint.objects.create(
-                estimate       = estimate,
-                vehicle        = c_veh_obj,
-                complaint_type = 'customer',
-                description    = c.strip(),
-                order          = i,
+                estimate            = estimate,
+                vehicle             = c_veh_obj,
+                service_category    = cat_obj,
+                category            = complaint_cat_texts[i] if i < len(complaint_cat_texts) else '',
+                complaint_type_ref  = ct_obj,
+                complaint_type      = 'customer',
+                description         = c.strip(),
+                type                = complaint_type_texts[i] if i < len(complaint_type_texts) else 'Mechanical',
+                technician          = tech_obj,
+                is_manual_override  = override_flag,
+                status              = complaint_statuses[i] if i < len(complaint_statuses) else 'Open',
+                order               = i,
             )
  
     # ── Technician Findings ───────────────────────────────
@@ -1723,6 +1745,7 @@ def estimate_create(request):
         'technicians': technicians,
         'advisors': advisors,      
         'categories': categories,
+        'relational_mapping_json': json.dumps(_get_relational_mapping_dict()),
 
         'prefill_job': prefill_job,
         
@@ -1767,7 +1790,9 @@ def estimate_edit(request, pk):
     technicians = Staff.objects.filter(
                     status='Active',
                     staff_category__name='Technician').order_by('full_name')
- 
+    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
+    categories  = ServiceCategory.objects.filter(is_active=True).order_by('name')
+
     if request.method == 'POST':
         updated = _save_estimate(request, estimate=est)
         if updated:
@@ -1785,6 +1810,9 @@ def estimate_edit(request, pk):
         'estimate':    est,
         'customers':   customers,
         'technicians': technicians,
+        'advisors':    advisors,
+        'categories':  categories,
+        'relational_mapping_json': json.dumps(_get_relational_mapping_dict()),
         'parts':       parts,
         'labour':      labour,
         'complaints':  complaints,
@@ -2004,9 +2032,12 @@ def _save_quotation(request, quotation=None):
     jid  = request.POST.get('loaded_jobcard')
     aid  = request.POST.get('advisor')
     date = request.POST.get('date') or timezone.now().date()
-
+    from fleet_app.models import Vouchers
+    vt_id = request.POST.get('voucherType')
+    quotation.voucherType = Vouchers    .objects.filter(pk=vt_id).first() if vt_id else None
+    quotation.voucher_number = request.POST.get('voucher_number', '').strip() or None
     if not cid:
-        messages.error(request, 'Customer is required.')
+        messages.error(request, 'Customer is required.')        
         return None
 
     customer  = get_object_or_404(LedgerCreation, pk=cid)
@@ -2087,8 +2118,18 @@ def _save_quotation(request, quotation=None):
     warranties = request.POST.getlist('part_warranty[]')
     part_vehs = request.POST.getlist('part_vehicle_id[]')
 
-    for i, desc in enumerate(descriptions):
-        if not desc.strip():
+    max_len = max(len(part_ids), len(descriptions))
+    for i in range(max_len):
+        p_id = part_ids[i] if i < len(part_ids) else ''
+        desc = descriptions[i] if i < len(descriptions) else ''
+
+        if not desc.strip() and p_id:
+            from item_master.models import ItemMaster, Item
+            item_obj = ItemMaster.objects.filter(pk=p_id).first() or Item.objects.filter(pk=p_id).first()
+            if item_obj:
+                desc = getattr(item_obj, 'item_name', '') or str(item_obj)
+
+        if not desc.strip() and not p_id:
             continue
 
         p_veh_id = part_vehs[i] if i < len(part_vehs) else None
@@ -2098,7 +2139,7 @@ def _save_quotation(request, quotation=None):
             quotation=quotation,
             vehicle=p_veh_obj,
             item_type='part',
-            item_ref=part_ids[i] if i < len(part_ids) else '',
+            item_ref=p_id,
             description=desc.strip(),
             unit=units[i] if i < len(units) else '',
             quantity=quantities[i] if i < len(quantities) else 1,
@@ -2479,6 +2520,24 @@ def quotation_status_update(request, pk):
         else:
             messages.error(request, 'Invalid status value.')
     return redirect('jobcard_app:quotation_detail', pk=pk)
+
+def get_next_quotation_number(request):
+    """AJAX view to get next quotation voucher number"""
+    from fleet_app.models import Vouchers
+    from jobcard_app.utils import generate_voucher_number
+    from .models import Quotation
+
+    voucher_type_id = request.GET.get('voucher_type_id')
+    if voucher_type_id:
+        try:
+            vt = Vouchers.objects.get(pk=voucher_type_id)
+            num = vt.get_next_voucher_number(Quotation, 'voucher_number')
+            return JsonResponse({'job_number': num, 'success': True})
+        except Vouchers.DoesNotExist:
+            pass
+
+    next_num = generate_voucher_number('Quotation', Quotation, 'voucher_number', default_prefix='QUA-')
+    return JsonResponse({'job_number': next_num, 'success': True})
 # ─────────────────────────────────────────────────────────────
 # VEHICLE LIST
 # ─────────────────────────────────────────────────────────────
@@ -2776,7 +2835,8 @@ def _checklist_items():
 # HELPER — save delivery note from POST
 # ─────────────────────────────────────────────────────────────
 def _save_delivery(request, dn=None):
-    from item_master.models import Item
+    from item_master.models import Item, Stock, CostCenter
+    from item_master.common import upsert_stock, to_base_qty
     from django.utils import timezone
     from fleet_app.models import Vouchers
 
@@ -4488,11 +4548,12 @@ def invoice_delete(request, pk):
 @login_required
 def ajax_get_docs_for_invoice(request):
     """
-    Fetch active Delivery Notes and Job Cards for a given customer & vehicle
+    Fetch active Delivery Notes and Job Cards for a given customer & vehicle(s)
     to load data into the Invoice creation/editing form.
     """
     customer_id = request.GET.get('customer_id', '').strip()
-    vehicle_id  = request.GET.get('vehicle_id', '').strip()
+    vehicle_param = request.GET.get('vehicle_id', '').strip() or request.GET.get('vehicle_ids', '').strip()
+    vehicle_ids = [v.strip() for v in vehicle_param.split(',') if v.strip()]
 
     if not customer_id:
         return JsonResponse({'delivery_notes': [], 'jobcards': []})
@@ -4509,13 +4570,15 @@ def ajax_get_docs_for_invoice(request):
         # 1. Fetch Delivery Notes
         dn_qs = DeliveryNote.objects.select_related(
             'customer', 'vehicle', 'jobcard'
-        ).prefetch_related('parts', 'labours', 'services').filter(
+        ).prefetch_related('parts', 'labours', 'services', 'vehicles__vehicle').filter(
             customer_id=customer_id,
             is_active=True
         )
 
-        if vehicle_id:
-            dn_qs = dn_qs.filter(vehicle_id=vehicle_id)
+        if vehicle_ids:
+            dn_qs = dn_qs.filter(
+                Q(vehicle_id__in=vehicle_ids) | Q(vehicles__vehicle_id__in=vehicle_ids)
+            ).distinct()
 
         dn_qs = dn_qs.order_by('-date')[:15]
 
@@ -4554,13 +4617,29 @@ def ajax_get_docs_for_invoice(request):
                     'amount':         float(l.amount or 0),
                 })
 
+            vehicles_list = []
+            if dn.vehicle:
+                vehicles_list.append({
+                    'id': dn.vehicle.id,
+                    'name': str(dn.vehicle),
+                    'mileage': getattr(dn, 'odometer_out', None) or getattr(dn.vehicle, 'odometer', None) or ''
+                })
+            for dnv in dn.vehicles.all():
+                if dnv.vehicle and dnv.vehicle.id not in [v['id'] for v in vehicles_list]:
+                    vehicles_list.append({
+                        'id': dnv.vehicle.id,
+                        'name': str(dnv.vehicle),
+                        'mileage': dnv.mileage or getattr(dnv.vehicle, 'odometer', None) or ''
+                    })
+
             delivery_notes_result.append({
                 'id':              dn.id,
-                'number':          dn.voucher_number,
-                'date':            dn.date.strftime('%d %b %Y'),
+                'number':          dn.voucher_number or f"DN-{dn.id}",
+                'date':            dn.date.strftime('%d %b %Y') if dn.date else '',
                 'status':          dn.get_status_display(),
-                'vehicle_id':      dn.vehicle_id or '',
-                'vehicle_name':    str(dn.vehicle) if dn.vehicle else '',
+                'vehicle_id':      dn.vehicle_id or (vehicles_list[0]['id'] if vehicles_list else ''),
+                'vehicle_name':    str(dn.vehicle) if dn.vehicle else (vehicles_list[0]['name'] if vehicles_list else ''),
+                'vehicles':        vehicles_list,
                 'job_card_id':     dn.jobcard_id or '',
                 'job_number':      dn.jobcard.job_number if dn.jobcard else '',
                 'parts':           parts,
@@ -4572,13 +4651,15 @@ def ajax_get_docs_for_invoice(request):
         # 2. Fetch Job Cards
         jc_qs = JobCard.objects.select_related(
             'workshop_vehicle', 'advisor'
-        ).prefetch_related('parts', 'labours', 'complaints').filter(
+        ).prefetch_related('parts', 'labours', 'complaints', 'vehicles__vehicle').filter(
             customer_id=customer_id,
             is_active=True
         )
 
-        if vehicle_id:
-            jc_qs = jc_qs.filter(workshop_vehicle_id=vehicle_id)
+        if vehicle_ids:
+            jc_qs = jc_qs.filter(
+                Q(workshop_vehicle_id__in=vehicle_ids) | Q(vehicles__vehicle_id__in=vehicle_ids)
+            ).distinct()
 
         jc_qs = jc_qs.order_by('-date')[:15]
 
@@ -4617,13 +4698,29 @@ def ajax_get_docs_for_invoice(request):
                     'amount':         float(l.amount or (l.hours * l.rate if l.hours and l.rate else 0)),
                 })
 
+            vehicles_list = []
+            if jc.workshop_vehicle:
+                vehicles_list.append({
+                    'id': jc.workshop_vehicle.id,
+                    'name': str(jc.workshop_vehicle),
+                    'mileage': jc.mileage or getattr(jc.workshop_vehicle, 'odometer', None) or ''
+                })
+            for jcv in jc.vehicles.all():
+                if jcv.vehicle and jcv.vehicle.id not in [v['id'] for v in vehicles_list]:
+                    vehicles_list.append({
+                        'id': jcv.vehicle.id,
+                        'name': str(jcv.vehicle),
+                        'mileage': jcv.mileage or getattr(jcv.vehicle, 'odometer', None) or ''
+                    })
+
             jobcards_result.append({
                 'id':            jc.id,
                 'number':        jc.job_number,
-                'date':          jc.date.strftime('%d %b %Y'),
+                'date':          jc.date.strftime('%d %b %Y') if jc.date else '',
                 'status':        jc.get_status_display(),
-                'vehicle_id':    jc.workshop_vehicle_id or '',
-                'vehicle_name':  str(jc.workshop_vehicle) if jc.workshop_vehicle else '',
+                'vehicle_id':    jc.workshop_vehicle_id or (vehicles_list[0]['id'] if vehicles_list else ''),
+                'vehicle_name':  str(jc.workshop_vehicle) if jc.workshop_vehicle else (vehicles_list[0]['name'] if vehicles_list else ''),
+                'vehicles':      vehicles_list,
                 'parts':         parts,
                 'labours':       labours,
                 'parts_count':   len(parts),

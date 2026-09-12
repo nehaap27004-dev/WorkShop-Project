@@ -1,63 +1,102 @@
 {% extends 'fleet_base1.html' %}
-{% block title %}Customer List{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Customer Directory" %}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Customer List</h2>
-        <a href="{% url 'accounts_app:add_customer' %}" class="btn btn-success">Add New Customer</a>
+<div class="container-fluid p-0">
+
+    <!-- Top Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-1">
+                <i class="bi bi-people text-primary mr-2"></i>{% trans "Customer Directory" %}
+            </h2>
+            <div class="text-muted small">{% trans "Complete master list of active customer accounts and vehicle registrations" %}</div>
+        </div>
+        <a href="{% url 'accounts_app:manage_customers' %}" class="btn btn-custom-primary shadow-sm">
+            <i class="bi bi-person-plus mr-1"></i> {% trans "Add New Customer" %}
+        </a>
     </div>
 
-    {% if customers %}
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>#</th>
-                    <th>Customer Name</th>
-                    <th>Email</th>
-                    <th>Grp</th>
-                    <th>Typ</th>
-                    <th>Mobile</th>
-                    <th>Address</th>
-                    <th>Opening Balance</th>
-                    <th>City</th>
-                    <th>Country</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for customer in customers %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ customer.ledger_name }}</td>
-                    <td>{{ customer.email|default:"-" }}</td>
-                    <td>{{ customer.groups|default:"-" }}</td>
-                    <td>{{ customer.types|default:"-" }}</td>
-                    <td>{{ customer.mobile|default:"-" }}</td>
-                    <td>{{ customer.address1|truncatechars:40 }}</td>
-                    <td>{{ customer.opening_balance }}</td>
-                    <td>{{ customer.city|default:"-" }}</td>
-                    <td>{{ customer.country|default:"-" }}</td>
-                    <td>
-                        <!-- Replace these URLs if you implement edit/delete -->
-                        <a href="#" class="btn btn-sm btn-primary disabled">Edit</a>
-                        <a href="#" class="btn btn-sm btn-danger disabled">Delete</a>
-                        <a href="{% url 'jobcard_app:wv_create_for_customer' customer.id %}"
-                        style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
-                                border-radius:5px;padding:4px 10px;font-size:11px;
-                                font-weight:700;text-decoration:none;white-space:nowrap;
-                                display:inline-flex;align-items:center;gap:4px">
-                        🚗 Add Vehicle
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Table Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="card-banner-title"><i class="bi bi-list-task mr-1 text-primary"></i> {% trans "Customers Master Directory" %}</span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold">Total: {{ customers|length }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if customers %}
+            <div class="p-3 border-bottom bg-light">
+                <div class="input-group" style="max-width: 420px;">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
+                    </div>
+                    <input type="text" id="cSearch" oninput="filterCTable()" placeholder="{% trans 'Search by customer name, phone, city...' %}" class="form-control border-left-0">
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="cTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>{% trans "Customer Name" %}</th>
+                            <th>{% trans "Contact Information" %}</th>
+                            <th>{% trans "Group / Type" %}</th>
+                            <th>{% trans "Address / Location" %}</th>
+                            <th class="text-right">{% trans "Opening Balance" %}</th>
+                            <th style="width: 170px;" class="text-center">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                        <tr data-search="{{ customer.ledger_name|lower }} {{ customer.mobile|lower }} {{ customer.email|lower }} {{ customer.city|lower }}">
+                            <td class="align-middle text-muted">{{ forloop.counter }}</td>
+                            <td class="align-middle font-weight-bold text-primary">
+                                <i class="bi bi-person-circle mr-1 text-secondary"></i> {{ customer.ledger_name }}
+                            </td>
+                            <td class="align-middle">
+                                {% if customer.mobile %}<div class="small font-weight-bold"><i class="bi bi-telephone mr-1 text-muted"></i> {{ customer.mobile }}</div>{% endif %}
+                                {% if customer.email %}<div class="small text-muted"><i class="bi bi-envelope mr-1"></i> {{ customer.email }}</div>{% endif %}
+                            </td>
+                            <td class="align-middle">
+                                <span class="badge badge-light border text-dark">{{ customer.groups|default:"Customer" }}</span>
+                            </td>
+                            <td class="align-middle text-muted small">
+                                {{ customer.address1|truncatechars:35|default:"" }}
+                                {% if customer.city %}<div class="font-weight-bold">{{ customer.city }}, {{ customer.country|default:"" }}</div>{% endif %}
+                            </td>
+                            <td class="align-middle text-right font-weight-bold text-dark">
+                                {{ customer.opening_balance|default:"0.00" }}
+                            </td>
+                            <td class="align-middle text-center">
+                                <a href="{% url 'jobcard_app:wv_create_for_customer' customer.id %}" class="btn btn-sm btn-outline-primary shadow-2xs" title="{% trans 'Register Vehicle for this customer' %}">
+                                    <i class="bi bi-truck mr-1"></i> {% trans "+ Vehicle" %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-people display-4 d-block mb-2 text-secondary"></i>
+                {% trans "No customers found." %}
+            </div>
+            {% endif %}
+        </div>
     </div>
-    {% else %}
-        <p class="text-muted">No customers found.</p>
-    {% endif %}
 </div>
+
+<script>
+function filterCTable() {
+    let q = document.getElementById('cSearch').value.toLowerCase();
+    let rows = document.querySelectorAll('#cTable tbody tr');
+    rows.forEach(r => {
+        let text = r.getAttribute('data-search') || '';
+        r.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+</script>
 {% endblock %}

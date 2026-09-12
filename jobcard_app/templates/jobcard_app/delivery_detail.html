@@ -56,7 +56,7 @@ table.it tbody tr:last-child td{border-bottom:none}
   <div class="top-bar">
     <div>
       <a href="{% url 'jobcard_app:delivery_list' %}" class="back-link">← Delivery Notes</a>
-      <div class="page-title">{{ dn.delivery_number }}</div>
+      <div class="page-title">{{ dn.voucher_number }}</div>
       <div class="page-sub">
         {{ dn.date|date:"d M Y" }}
         &nbsp;·&nbsp; {{ dn.customer.ledger_name }}
@@ -69,7 +69,7 @@ table.it tbody tr:last-child td{border-bottom:none}
       <a href="{% url 'jobcard_app:invoice_create' %}?from_delivery={{ dn.pk }}"
          class="hbtn hb-inv">Create Invoice</a>
       <form method="post" action="{% url 'jobcard_app:delivery_delete' dn.pk %}"
-            onsubmit="return confirm('Delete {{ dn.voucher_number|default:dn.delivery_number }}?')" style="margin:0">
+            onsubmit="return confirm('Delete {{ dn.voucher_number|default:"this delivery note" }}?')" style="margin:0">
         {% csrf_token %}
         <button type="submit" class="hbtn hb-del">🗑 Delete</button>
       </form>
@@ -86,7 +86,7 @@ table.it tbody tr:last-child td{border-bottom:none}
     </div>
     <div class="sec-body">
       <div class="g4 mb">
-        <div><div class="il">Delivery No</div><div class="iv" style="color:#2563eb;font-family:monospace">{{ dn.voucher_number|default:dn.delivery_number }}</div></div>
+        <div><div class="il">Delivery No</div><div class="iv" style="color:#2563eb;font-family:monospace">{{ dn.voucher_number|default:"-" }}</div></div>
         <div><div class="il">Date</div><div class="iv">{{ dn.date|date:"d M Y" }}</div></div>
         <div><div class="il">Driver</div><div class="iv">{{ dn.driver_name|default:"—" }}</div></div>
         <div><div class="il">Odometer Out</div><div class="iv">{% if dn.odometer_out %}{{ dn.odometer_out }} km{% else %}—{% endif %}</div></div>
@@ -105,7 +105,7 @@ table.it tbody tr:last-child td{border-bottom:none}
         <div>
           <div class="il">Job Card</div>
           {% if dn.jobcard %}
-          <a href="{% url 'jobcard_app:jobcard_detail' dn.jobcard_id %}"
+          <a href="{% url 'jobcard_app:jobcard_edit' dn.jobcard_id %}"
              style="text-decoration:none"><span class="ref-chip ref-green">{{ dn.jobcard.job_number }}</span></a>
           {% else %}<div class="iv">—</div>{% endif %}
         </div>

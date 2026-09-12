@@ -1,136 +1,491 @@
 {% extends 'fleet_base1.html' %}
+{% load static %}
+{% load i18n %}
+
 {% block content %}
+<!-- Custom Styling for Job Card Form Redesign -->
 <style>
-*{box-sizing:border-box}
-body{background:#f0f2f5;font-family:'Segoe UI',sans-serif}
-.wrap{max-width:980px;margin:0 auto;padding:16px 16px 60px}
+  /* ── Design Tokens & Base Layout ── */
+  .jc-wrapper {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding-bottom: 90px;
+  }
 
-/* breadcrumb */
-.breadcrumb{font-size:12px;color:#6b7280;margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.breadcrumb a{color:#2563eb;text-decoration:none}
-.breadcrumb a:hover{text-decoration:underline}
-.breadcrumb span{color:#9ca3af}
-.page-title{font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:16px}
+  /* ── Header Banner ── */
+  .jc-page-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
 
-/* section cards */
-.sec{background:#fff;border:1px solid #d1d5db;border-radius:6px;margin-bottom:16px;overflow:hidden}
-.sec-hdr{background:#f3f4f6;border-bottom:1px solid #d1d5db;padding:10px 16px;
-         display:flex;align-items:center;justify-content:space-between}
-.sec-hdr-title{font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.6px}
-.sec-body{padding:16px}
+  .jc-page-hdr-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-/* field labels */
-.fl{display:block;font-size:11px;font-weight:600;color:#374151;margin-bottom:4px}
-.req{color:#ef4444}
+  .jc-page-icon {
+    width: 38px;
+    height: 38px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #2563eb;
+  }
 
-/* inputs */
-.fi{width:100%;border:1px solid #d1d5db;border-radius:4px;padding:7px 10px;
-    font-size:13px;color:#111827;background:#fff;outline:none;
-    transition:border-color .15s}
-.fi:focus{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.1)}
-.fi::placeholder{color:#9ca3af}
-.fi[readonly]{background:#f9fafb;color:#374151}
-select.fi{cursor:pointer}
+  .jc-page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+  }
 
-/* grids */
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.mb{margin-bottom:12px}
-@media(max-width:700px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
-@media(max-width:480px){.g4,.g3,.g2{grid-template-columns:1fr}}
+  .jc-page-sub {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+  }
 
-/* section tables */
-.stbl{width:100%;border-collapse:collapse}
-.stbl thead th{padding:8px 10px;font-size:11px;font-weight:700;color:#374151;
-               text-transform:uppercase;letter-spacing:.4px;
-               border-bottom:1px solid #e5e7eb;text-align:left;
-               background:#f9fafb;white-space:nowrap}
-.stbl tbody td{padding:7px 6px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
-.stbl tbody tr:last-child td{border-bottom:none}
-.stbl input,.stbl select{width:100%;border:1px solid #d1d5db;border-radius:4px;
-                          padding:6px 8px;font-size:12px;color:#111827;
-                          background:#fff;outline:none}
-.stbl input:focus,.stbl select:focus{border-color:#2563eb}
-.stbl input::placeholder{color:#9ca3af}
-.veh-mm-box {
-  background: #f9fafb;
-  color: #374151;
-  cursor: default;
-}
-/* add buttons */
-.btn-add{background:#2563eb;color:#fff;border:none;border-radius:5px;
-         padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;
-         display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-.btn-add:hover{background:#1d4ed8}
+  .jc-btn-back {
+    background: #ffffff;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+  }
 
-/* remove buttons */
-.btn-rm{background:#dc2626;color:#fff;border:none;border-radius:4px;
-        padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;
-        display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
-.btn-rm:hover{background:#b91c1c}
+  .jc-btn-back:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #94a3b8;
+  }
 
-/* totals bar */
-.totals-bar{padding:12px 16px;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:right}
-.totals-bar .t-row{display:flex;justify-content:flex-end;gap:16px;margin-bottom:4px;font-size:13px}
-.totals-bar .t-row:last-child{margin-bottom:0}
-.t-lbl{color:#374151;font-weight:500}
-.t-val{font-weight:700;color:#111827;min-width:100px;text-align:right}
+  /* ── Custom Cards & Section Panels ── */
+  .jc-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+  }
 
-/* grand totals section */
-.grand-totals{background:#fff;border:1px solid #d1d5db;border-radius:6px;padding:16px;text-align:right;margin-bottom:16px}
-.gt-row{display:flex;justify-content:flex-end;align-items:center;gap:20px;margin-bottom:8px;font-size:13px}
-.gt-row:last-child{margin-bottom:0;padding-top:8px;border-top:2px solid #e5e7eb}
-.gt-lbl{color:#374151;font-weight:500}
-.gt-val{font-weight:700;color:#111827;min-width:120px;text-align:right}
-.gt-val.grand{color:#2563eb;font-size:16px}
+  .jc-card-hdr {
+    background: #fafbfc;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
 
-/* save button */
-.btn-save{background:#16a34a;color:#fff;border:none;border-radius:6px;
-          padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;
-          display:inline-flex;align-items:center;gap:7px;
-          box-shadow:0 2px 8px rgba(22,163,74,.3)}
-.btn-save:hover{background:#15803d}
-.save-bar{padding:16px 0;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.btn-cancel{background:#f9fafb;color:#6b7280;border:1px solid #d1d5db;
-            border-radius:6px;padding:10px 22px;font-size:13px;font-weight:600;
-            text-decoration:none;display:inline-flex;align-items:center}
+  .jc-card-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+  }
 
-/* flash */
-.flash{padding:10px 16px;border-radius:6px;margin-bottom:14px;font-size:13px}
-.flash-ok {background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
-.flash-err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
+  .jc-card-body {
+    padding: 18px;
+  }
 
-.warranty-sel{min-width:100px}
+  /* ── Form Controls & Typography ── */
+  .fl {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+  }
+
+  .req {
+    color: #ef4444;
+    margin-left: 2px;
+  }
+
+  .fi {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 12.5px;
+    color: #0f172a;
+    background: #ffffff;
+    outline: none;
+    transition: all 0.15s ease-in-out;
+    font-family: inherit;
+  }
+
+  .fi:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+
+  .fi::placeholder {
+    color: #94a3b8;
+  }
+
+  .fi[readonly] {
+    background: #f8fafc;
+    color: #475569;
+    border-color: #e2e8f0;
+  }
+
+  select.fi {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%3c64748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px 10px;
+    padding-right: 28px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  /* ── Layout Grids ── */
+  .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .mb { margin-bottom: 14px; }
+
+  @media (max-width: 991px) {
+    .g4 { grid-template-columns: repeat(2, 1fr); }
+    .g3 { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 576px) {
+    .g4, .g3, .g2 { grid-template-columns: 1fr; }
+  }
+
+  /* ── Action Buttons ── */
+  .btn-add {
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    text-decoration: none !important;
+  }
+
+  .btn-add:hover {
+    background: #1d4ed8;
+    color: #ffffff;
+  }
+
+  .btn-rm {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .btn-rm:hover {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  .btn-insp-load {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .btn-insp-load:hover {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-color: #93c5fd;
+  }
+
+  /* ── Line Item Tables ── */
+  .stbl-container {
+    overflow-x: auto;
+  }
+
+  .stbl {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .stbl thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 9px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  .stbl tbody td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    font-size: 12.5px;
+  }
+
+  .stbl tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .stbl tbody tr:hover {
+    background-color: #f8fafc;
+  }
+
+  /* ── Parts Quick Adder Panel ── */
+  .parts-adder-panel {
+    padding: 14px 18px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .parts-adder-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 2fr 1.5fr 1fr 1fr 1fr auto;
+    gap: 10px;
+    align-items: end;
+  }
+
+  @media (max-width: 991px) {
+    .parts-adder-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* ── Summary & Totals ── */
+  .totals-bar-inline {
+    padding: 10px 18px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .totals-lbl {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  .totals-val {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2563eb;
+    font-family: monospace;
+  }
+
+  .grand-totals-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+  }
+
+  .gt-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    align-items: center;
+  }
+
+  .gt-item {
+    padding: 10px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .gt-item.highlight {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+
+  .gt-lbl {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+
+  .gt-item.highlight .gt-lbl {
+    color: #2563eb;
+  }
+
+  .gt-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    font-family: monospace;
+  }
+
+  .gt-val.grand {
+    font-size: 18px;
+    color: #2563eb;
+  }
+
+  /* ── Sticky Action Bar ── */
+  .save-bar {
+    position: sticky;
+    bottom: 16px;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    margin-top: 20px;
+  }
+
+  .btn-save {
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+  }
+
+  .btn-save:hover {
+    background: #1d4ed8;
+  }
+
+  .btn-cancel {
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: all 0.15s ease;
+  }
+
+  .btn-cancel:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #94a3b8;
+  }
 </style>
 
-<div class="wrap">
+<div class="container-fluid p-0 jc-wrapper">
 
-  <!-- Breadcrumb -->
-  <div class="breadcrumb">
-    {% if inspection %}
-    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;
-                padding:10px 16px;margin-bottom:14px;font-size:13px;color:#92400e;
-                display:flex;align-items:center;gap:10px">
-      <strong>Loaded from Inspection {{ inspection.inspection_number }}</strong>
-      &nbsp;—&nbsp;
-      {{ inspection.vehicle.vehicle_number }}
-      {{ inspection.vehicle.manufacturer.manufacturer_name }} {{ inspection.vehicle.vehicle_model.model_name }}
-      &nbsp;·&nbsp; {{ inspection.customer.ledger_name }}
-      &nbsp;·&nbsp; {{ inspection.inspection_date|date:"d M Y" }}
+  <!-- ── Header Banner ── -->
+  <div class="jc-page-hdr">
+    <div class="jc-page-hdr-left">
+      <div class="jc-page-icon">
+        <i class="bi bi-card-checklist"></i>
+      </div>
+      <div>
+        <h1 class="jc-page-title">
+          {% if edit_mode %}{% trans "Edit Job Card" %}: {{ job.job_number }}{% else %}{% trans "New Job Card" %}{% endif %}
+        </h1>
+        <div class="jc-page-sub">{% trans "Manage vehicle repair orders, customer complaints, spare parts & labor entries" %}</div>
+      </div>
     </div>
-    {% endif %}
-    <a href="#">Transactions</a>
-    <span>›</span>
-    <a href="{% url 'jobcard_app:jobcard_list' %}">Job Card</a>
-    <span>›</span>
-    <span>{% if edit_mode %}{{ job.job_number }}{% else %}New{% endif %}</span>
+    <a href="{% url 'jobcard_app:jobcard_list' %}" class="jc-btn-back">
+      <i class="bi bi-arrow-left"></i> {% trans "Back to List" %}
+    </a>
   </div>
-  <div class="page-title">Job Card Management</div>
 
-  {% if messages %}{% for m in messages %}
-  <div class="flash {% if 'error' in m.tags %}flash-err{% else %}flash-ok{% endif %}">{{ m }}</div>
-  {% endfor %}{% endif %}
+  <!-- Inspection Load Notice Banner -->
+  {% if inspection %}
+  <div class="alert alert-warning border-warning-subtle shadow-sm mb-3" style="border-radius:8px; font-size:12.5px;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-info-circle-fill text-warning mr-1"></i>
+      <div>
+        <strong>{% trans "Loaded from Inspection" %} {{ inspection.inspection_number }}</strong> —
+        {{ inspection.vehicle.vehicle_number }}
+        {{ inspection.vehicle.manufacturer.manufacturer_name }} {{ inspection.vehicle.vehicle_model.model_name }}
+        &nbsp;·&nbsp; {{ inspection.customer.ledger_name }}
+        &nbsp;·&nbsp; {{ inspection.inspection_date|date:"d M Y" }}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Flash Messages -->
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-3 shadow-sm" style="border-radius:8px; font-size:12.5px;" role="alert">
+        {{ m }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
 
   <form method="post" id="jcForm">{% csrf_token %}
   <input type="hidden" name="from_inspection" value="{{ prefill_inspection.pk|default:'' }}">
@@ -145,36 +500,36 @@ select.fi{cursor:pointer}
   </select>
 
   <!-- ════════════════════════════════
-       JOB CARD HEADER
+       1. JOB CARD HEADER
   ════════════════════════════════ -->
-  <div class="sec">
-    <div class="sec-hdr">
-      <span class="sec-hdr-title">Job Card Header</span>
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title">
+        <i class="bi bi-info-circle-fill text-primary"></i> {% trans "Job Card Header Details" %}
+      </h2>
     </div>
-    <div class="sec-body">
-
+    <div class="jc-card-body">
       <div class="g4 mb">
-      <input type="hidden" name="voucherType" id="id_voucherType"
-         value="{% if edit_mode and job.voucherType %}{{ job.voucherType.id }}{% else %}{% for vt in voucher_types %}{% if vt.VoucherName == 'JobCard' %}{{ vt.id }}{% endif %}{% endfor %}{% endif %}">        <div>
-          <label class="fl">Voucher Number</label>
+        <input type="hidden" name="voucherType" id="id_voucherType"
+          value="{% if edit_mode and job.voucherType %}{{ job.voucherType.id }}{% else %}{% for vt in voucher_types %}{% if vt.VoucherName == 'JobCard' %}{{ vt.id }}{% endif %}{% endfor %}{% endif %}">
+        <div>
+          <label class="fl">{% trans "Voucher Number" %}</label>
           <input type="text" name="voucher_number" id="id_voucher_number" class="fi"
             placeholder="e.g. JC-00001"
             value="{% if edit_mode %}{{ job.voucher_number|default:'' }}{% endif %}">
         </div>
         <div>
-          <label class="fl">Job Card No.<span class="req">*</span></label>
+          <label class="fl">{% trans "Job Card No." %}<span class="req">*</span></label>
           <input type="text" name="job_number" id="id_job_number" class="fi" required
             value="{% if edit_mode %}{{ job.job_number }}{% endif %}">
         </div>
         <div>
-          <label class="fl">Date <span class="req">*</span></label>
+          <label class="fl">{% trans "Date" %} <span class="req">*</span></label>
           <input type="date" name="date" class="fi" required
             value="{% if edit_mode %}{{ job.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
         </div>
-
-
         <div>
-          <label class="fl">Customer <span class="req">*</span></label>
+          <label class="fl">{% trans "Customer" %} <span class="req">*</span></label>
           <select name="customer" class="fi" required id="custSel"
             {% if edit_mode %}disabled{% endif %}
             onchange="loadVehicles(this.value)">
@@ -191,15 +546,15 @@ select.fi{cursor:pointer}
         </div>
       </div>
 
-      <div class="g4 mb">
+      <div class="g4">
         <div>
-          <label class="fl">Customer Phone</label>
+          <label class="fl">{% trans "Customer Phone" %}</label>
           <input type="text" name="customer_phone" class="fi" id="customerPhone"
             placeholder="e.g. +971 50 123 4567"
             value="{% if edit_mode %}{{ job.customer_phone|default:'' }}{% endif %}">
         </div>
         <div>
-          <label class="fl">Priority</label>
+          <label class="fl">{% trans "Priority" %}</label>
           <select name="priority" class="fi">
             <option value="normal"  {% if not edit_mode or job.priority == 'normal' %}selected{% endif %}>Normal</option>
             <option value="urgent"  {% if edit_mode and job.priority == 'urgent' %}selected{% endif %}>Urgent</option>
@@ -207,7 +562,7 @@ select.fi{cursor:pointer}
           </select>
         </div>
         <div>
-          <label class="fl">Status</label>
+          <label class="fl">{% trans "Status" %}</label>
           <select name="status" class="fi">
             <option value="open"         {% if not edit_mode or job.status == 'open' %}selected{% endif %}>Open</option>
             <option value="in_progress"  {% if edit_mode and job.status == 'in_progress' %}selected{% endif %}>In Progress</option>
@@ -218,7 +573,7 @@ select.fi{cursor:pointer}
           </select>
         </div>
         <div>
-          <label class="fl">Expected Delivery Date</label>
+          <label class="fl">{% trans "Expected Delivery Date" %}</label>
           <input type="date" name="delivery_date" class="fi"
             value="{% if edit_mode %}{{ job.delivery_date|date:'Y-m-d'|default:'' }}{% endif %}">
         </div>
@@ -227,155 +582,145 @@ select.fi{cursor:pointer}
   </div>
 
   <!-- ════════════════════════════════
-        VEHICLES
-    ════════════════════════════════ -->
-  <div class="sec">
-    <div class="sec-hdr">
-      <span class="sec-hdr-title">Vehicle</span>
-      <button type="button" class="btn-add" onclick="addVehicleRow()">+ Add Vehicle</button>
+       2. VEHICLE SELECTION
+  ════════════════════════════════ -->
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title">
+        <i class="bi bi-truck text-primary"></i> {% trans "Assigned Vehicles" %}
+      </h2>
+      <button type="button" class="btn-add" onclick="addVehicleRow()">
+        <i class="bi bi-plus"></i> {% trans "Add Vehicle" %}
+      </button>
     </div>
-    <div class="sec-body" style="padding:0">
-      <div style="overflow-x:auto">
-        <table class="stbl" id="vehTbl">
-          <thead>
+    <div class="stbl-container">
+      <table class="stbl" id="vehTbl">
+        <thead>
+          <tr>
+            <th style="width:30%">{% trans "Vehicle Number" %}</th>
+            <th style="width:26%">{% trans "Make & Model" %}</th>
+            <th style="width:18%">{% trans "Mileage (km)" %}</th>
+            <th style="width:16%">{% trans "Fuel Level" %}</th>
+            <th style="width:10%; text-align:center">{% trans "Action" %}</th>
+          </tr>
+        </thead>
+        <tbody id="vehBody">
+          {% if edit_mode %}
+            {% for jv in job.vehicles.all %}
             <tr>
-              <th style="width:26%">Vehicle Number</th>
-              <th style="width:24%">Model</th>
-              <th style="width:18%">Mileage (km)</th>
-              <th style="width:16%">Fuel Level</th>
-              <th style="width:10%">Action</th>
+              <td>
+                <select name="jc_vehicle_id[]" class="veh-select fi" onchange="onVehRowChange(this)">
+                  <option value="{{ jv.vehicle_id }}" data-veh-number="{{ jv.vehicle.vehicle_number }}" selected>{{ jv.vehicle.vehicle_number }}{% if jv.vehicle.registration_number %} ({{ jv.vehicle.registration_number }}){% endif %}</option>
+                </select>
+              </td>
+              <td>
+                <input type="text" class="fi veh-mm-box" readonly
+                      value="{{ jv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ jv.vehicle.vehicle_model.model_name|default:'' }}"
+                      placeholder="Make & Model">
+              </td>
+              <td><input type="number" name="jc_vehicle_mileage[]" value="{{ jv.mileage|default:'' }}" min="0" class="fi"></td>
+              <td>
+                <select name="jc_vehicle_fuel[]" class="fi">
+                  <option value="empty" {% if jv.fuel_level == 'empty' %}selected{% endif %}>Empty</option>
+                  <option value="1/4"   {% if jv.fuel_level == '1/4' %}selected{% endif %}>1/4</option>
+                  <option value="1/2"   {% if jv.fuel_level == '1/2' %}selected{% endif %}>1/2</option>
+                  <option value="3/4"   {% if jv.fuel_level == '3/4' %}selected{% endif %}>3/4</option>
+                  <option value="full"  {% if jv.fuel_level == 'full' %}selected{% endif %}>Full</option>
+                </select>
+                <input type="hidden" name="jc_vehicle_notes[]" value="{{ jv.notes }}">
+              </td>
+              <td style="text-align:center">
+                <button type="button" class="btn-rm" onclick="removeVehRow(this)">✕</button>
+              </td>
             </tr>
-          </thead>
-          <tbody id="vehBody">
-            {% if edit_mode %}
-              {% for jv in job.vehicles.all %}
-              <tr>
-                <td>
-                  <select name="jc_vehicle_id[]" class="veh-select" onchange="onVehRowChange(this)">
-                    <option value="{{ jv.vehicle_id }}" data-veh-number="{{ jv.vehicle.vehicle_number }}" selected>{{ jv.vehicle.vehicle_number }}{% if jv.vehicle.registration_number %} ({{ jv.vehicle.registration_number }}){% endif %}</option>
-                  </select>
-                </td>
-                <td>
-                  <input type="text" class="fi veh-mm-box" readonly
-                        value="{{ jv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ jv.vehicle.vehicle_model.model_name|default:'' }}"
-                        placeholder="Make & Model">
-                </td>
-                <td><input type="number" name="jc_vehicle_mileage[]" value="{{ jv.mileage|default:'' }}" min="0" class="fi"></td>
-                <td>
-                  <select name="jc_vehicle_fuel[]" class="fi">
-                    <option value="empty" {% if jv.fuel_level == 'empty' %}selected{% endif %}>Empty</option>
-                    <option value="1/4"   {% if jv.fuel_level == '1/4' %}selected{% endif %}>1/4</option>
-                    <option value="1/2"   {% if jv.fuel_level == '1/2' %}selected{% endif %}>1/2</option>
-                    <option value="3/4"   {% if jv.fuel_level == '3/4' %}selected{% endif %}>3/4</option>
-                    <option value="full"  {% if jv.fuel_level == 'full' %}selected{% endif %}>Full</option>
-                  </select>
-                  <input type="hidden" name="jc_vehicle_notes[]" value="{{ jv.notes }}">
-                </td>
-                <td><button type="button" class="btn-rm" onclick="removeVehRow(this)">✕ Remove</button></td>
-              </tr>
-              {% endfor %}
-            {% elif inspection and inspection.vehicle %}
-              <tr>
-                <td>
-                  <select name="jc_vehicle_id[]" class="veh-select" onchange="onVehRowChange(this)">
-                    <option value="{{ inspection.vehicle.id }}" data-veh-number="{{ inspection.vehicle.vehicle_number }}" selected>{{ inspection.vehicle.vehicle_number }}{% if inspection.vehicle.registration_number %} ({{ inspection.vehicle.registration_number }}){% endif %}</option>
-                  </select>
-                </td>
-                <td>
-                  <input type="text" class="fi veh-mm-box" readonly
-                        value="{{ inspection.vehicle.manufacturer.manufacturer_name|default:'' }} {{ inspection.vehicle.vehicle_model.model_name|default:'' }}"
-                        placeholder="Make & Model">
-                </td>
-                <td><input type="number" name="jc_vehicle_mileage[]" value="{{ inspection.odometer|default:'' }}" min="0" class="fi"></td>
-                <td>
-                  <select name="jc_vehicle_fuel[]" class="fi">
-                    <option value="empty" {% if inspection.fuel_level == 'empty' %}selected{% endif %}>Empty</option>
-                    <option value="1/4"   {% if inspection.fuel_level == '1/4' %}selected{% endif %}>1/4</option>
-                    <option value="1/2"   {% if inspection.fuel_level == '1/2' %}selected{% endif %}>1/2</option>
-                    <option value="3/4"   {% if inspection.fuel_level == '3/4' %}selected{% endif %}>3/4</option>
-                    <option value="full"  {% if inspection.fuel_level == 'full' %}selected{% endif %}>Full</option>
-                  </select>
-                  <input type="hidden" name="jc_vehicle_notes[]" value="">
-                </td>
-                <td><button type="button" class="btn-rm" onclick="removeVehRow(this)">✕ Remove</button></td>
-              </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-      <div id="vehEmpty" style="{% if edit_mode and job.vehicles.exists or inspection and inspection.vehicle %}display:none{% else %}display:block{% endif %};text-align:center;padding:20px;color:#9ca3af;font-size:13px">
-        No vehicles added yet. Select a customer first, then click "Add Vehicle".
+            {% endfor %}
+          {% elif inspection and inspection.vehicle %}
+            <tr>
+              <td>
+                <select name="jc_vehicle_id[]" class="veh-select fi" onchange="onVehRowChange(this)">
+                  <option value="{{ inspection.vehicle.id }}" data-veh-number="{{ inspection.vehicle.vehicle_number }}" selected>{{ inspection.vehicle.vehicle_number }}{% if inspection.vehicle.registration_number %} ({{ inspection.vehicle.registration_number }}){% endif %}</option>
+                </select>
+              </td>
+              <td>
+                <input type="text" class="fi veh-mm-box" readonly
+                      value="{{ inspection.vehicle.manufacturer.manufacturer_name|default:'' }} {{ inspection.vehicle.vehicle_model.model_name|default:'' }}"
+                      placeholder="Make & Model">
+              </td>
+              <td><input type="number" name="jc_vehicle_mileage[]" value="{{ inspection.odometer|default:'' }}" min="0" class="fi"></td>
+              <td>
+                <select name="jc_vehicle_fuel[]" class="fi">
+                  <option value="empty" {% if inspection.fuel_level == 'empty' %}selected{% endif %}>Empty</option>
+                  <option value="1/4"   {% if inspection.fuel_level == '1/4' %}selected{% endif %}>1/4</option>
+                  <option value="1/2"   {% if inspection.fuel_level == '1/2' %}selected{% endif %}>1/2</option>
+                  <option value="3/4"   {% if inspection.fuel_level == '3/4' %}selected{% endif %}>3/4</option>
+                  <option value="full"  {% if inspection.fuel_level == 'full' %}selected{% endif %}>Full</option>
+                </select>
+                <input type="hidden" name="jc_vehicle_notes[]" value="">
+              </td>
+              <td style="text-align:center">
+                <button type="button" class="btn-rm" onclick="removeVehRow(this)">✕</button>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+      <div id="vehEmpty" style="{% if edit_mode and job.vehicles.exists or inspection and inspection.vehicle %}display:none{% else %}display:block{% endif %}; text-align:center; padding:20px; color:#94a3b8; font-size:12.5px">
+        <i class="bi bi-info-circle text-muted mr-1"></i> {% trans "No vehicles added yet. Select a customer above, then click Add Vehicle." %}
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-     COMPLAINT MANAGEMENT SECTION
-══════════════════════════════════════════ -->
-  <div class="sec">
-    <div class="sec-hdr" style="background:#f3f4f6;padding:12px 16px;
-        border-bottom:1px solid #e5e7eb;display:flex;align-items:center;
-        justify-content:space-between;gap:10px;flex-wrap:wrap">
-      <span style="font-size:11px;font-weight:700;color:#374151;
-                  text-transform:uppercase;letter-spacing:.5px">
-        Complaint Management
-      </span>
-      <div style="display:flex;align-items:center;gap:8px">
-
-        <!-- Load Complaints & Findings Modal Button -->
-        <button type="button" onclick="openInspPicker()"
-                style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
-                      border-radius:5px;padding:6px 14px;font-size:12px;font-weight:600;
-                      cursor:pointer;display:inline-flex;align-items:center;gap:6px;
-                      white-space:nowrap">
-          🔍 Load Complaints & Technician Findings
+  <!-- ════════════════════════════════
+       3. COMPLAINT MANAGEMENT
+  ════════════════════════════════ -->
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title">
+        <i class="bi bi-exclamation-triangle-fill text-warning"></i> {% trans "Complaint Management" %}
+      </h2>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn-insp-load" onclick="openInspPicker()">
+          <i class="bi bi-search"></i> {% trans "Load Complaints & Findings" %}
         </button>
-
         <button type="button" class="btn-add" onclick="addComplaint()">
-          + Add Complaint
+          <i class="bi bi-plus"></i> {% trans "Add Complaint" %}
         </button>
       </div>
     </div>
 
-    <div id="inspBanner" style="display:none;background:#fffbeb;
-        border-bottom:1px solid #fde68a;padding:8px 16px;font-size:12px;
-        color:#92400e;display:flex;align-items:center;
-        justify-content:space-between;gap:10px">
+    <!-- Loaded Inspection Banner -->
+    <div id="inspBanner" style="display:none; background:#fffbeb; border-bottom:1px solid #fde68a; padding:9px 18px; font-size:12px; color:#92400e; align-items:center; justify-content:space-between; gap:10px">
       <span id="inspBannerText"></span>
-      <button type="button" onclick="this.parentElement.style.display='none'"
-              style="background:none;border:none;color:#ca8a04;
-                    cursor:pointer;font-size:14px">✕</button>
+      <button type="button" onclick="this.parentElement.style.display='none'" style="background:none; border:none; color:#ca8a04; cursor:pointer; font-size:15px;">✕</button>
     </div>
 
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;min-width:750px">
+    <div class="stbl-container">
+      <table class="stbl">
         <thead>
-          <tr style="background:#f9fafb">
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:12%">Vehicle</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:16%">Service Category</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:18%">Complaint Type</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:24%">Complaint Description</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:20%">Assigned Technician</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:10%">Status</th>
-            <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:center;width:6%">Action</th>
+          <tr>
+            <th style="width:13%">{% trans "Vehicle" %}</th>
+            <th style="width:16%">{% trans "Service Category" %}</th>
+            <th style="width:18%">{% trans "Complaint Type" %}</th>
+            <th style="width:23%">{% trans "Description" %}</th>
+            <th style="width:18%">{% trans "Technician" %}</th>
+            <th style="width:10%">{% trans "Status" %}</th>
+            <th style="width:6%; text-align:center">{% trans "Action" %}</th>
           </tr>
         </thead>
         <tbody id="complaintBody">
           {% if edit_mode %}
             {% for c in job.complaints.all %}
-            <tr style="border-bottom:1px solid #f3f4f6">
-              <td style="padding:6px 6px">
-                <select name="complaint_vehicle_id[]" class="row-veh-select fi"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;background:#fff;outline:none">
+            <tr>
+              <td>
+                <select name="complaint_vehicle_id[]" class="row-veh-select fi">
                   <option value="">— Vehicle —</option>
                   {% for jv in job.vehicles.all %}
                   <option value="{{ jv.vehicle_id }}" {% if c.vehicle_id == jv.vehicle_id %}selected{% endif %}>{{ jv.vehicle.vehicle_number }}</option>
                   {% endfor %}
                 </select>
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_category_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_category_id[]" class="complaint-cat-select fi" onchange="handleCategoryChange(this)">
                   <option value="">— Category —</option>
                   {% for cat in categories %}
                   <option value="{{ cat.id }}" {% if c.service_category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
@@ -383,157 +728,114 @@ select.fi{cursor:pointer}
                 </select>
                 <input type="hidden" name="complaint_category[]" class="cat-txt" value="{{ c.category }}">
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
-                        data-initial-type-id="{{ c.complaint_type_ref_id|default:'' }}"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_type_id[]" class="complaint-type-select fi" onchange="handleComplaintTypeChange(this)"
+                        data-initial-type-id="{{ c.complaint_type_ref_id|default:'' }}">
                   <option value="">— Complaint Type —</option>
                 </select>
                 <input type="hidden" name="complaint_type[]" class="type-txt" value="{{ c.type }}">
               </td>
-              <td style="padding:6px 6px">
-                <input type="text" name="complaint_description[]" value="{{ c.description }}"
-                      placeholder="Describe complaint..."
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
+              <td>
+                <input type="text" name="complaint_description[]" value="{{ c.description }}" class="fi" placeholder="Describe complaint...">
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_technician[]" class="complaint-tech-select"
-                        data-initial-tech-id="{{ c.technician_id|default:'' }}"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_technician[]" class="complaint-tech-select fi" data-initial-tech-id="{{ c.technician_id|default:'' }}">
                   <option value="">— Select Technician —</option>
                 </select>
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
-                  <div class="skill-badge-info"></div>
-                  <label style="font-size:10px;color:#4b5563;display:inline-flex;align-items:center;gap:3px;cursor:pointer;user-select:none" title="Show all technicians regardless of required skill matching">
-                    <input type="checkbox" class="override-cb" onchange="handleOverrideToggle(this)" {% if c.is_manual_override %}checked{% endif %}>
-                    <span>Show All</span>
-                  </label>
-                  <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="{% if c.is_manual_override %}1{% else %}0{% endif %}">
-                </div>
+                <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="{% if c.is_manual_override %}1{% else %}0{% endif %}">
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_status[]"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_status[]" class="fi">
                   <option value="Open"        {% if c.status == 'Open'        %}selected{% endif %}>Open</option>
                   <option value="In Progress" {% if c.status == 'In Progress' %}selected{% endif %}>In Progress</option>
                   <option value="Resolved"    {% if c.status == 'Resolved'    %}selected{% endif %}>Resolved</option>
                 </select>
               </td>
-              <td style="padding:6px 6px;text-align:center">
-                <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+              <td style="text-align:center">
+                <button type="button" class="btn-rm" onclick="removeRow(this)">✕</button>
               </td>
             </tr>
             {% endfor %}
-
           {% elif prefill_complaints %}
             {% for desc in prefill_complaints %}
-            <tr style="border-bottom:1px solid #f3f4f6;background:#fffbeb">
-              <td style="padding:6px 6px">
-                <select name="complaint_vehicle_id[]" class="row-veh-select fi"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;background:#fff;outline:none">
+            <tr style="background:#fffbeb">
+              <td>
+                <select name="complaint_vehicle_id[]" class="row-veh-select fi">
                   <option value="">— Vehicle —</option>
                 </select>
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_category_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_category_id[]" class="complaint-cat-select fi" onchange="handleCategoryChange(this)">
                   <option value="">— Category —</option>
                   {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
                 </select>
                 <input type="hidden" name="complaint_category[]" class="cat-txt">
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_type_id[]" class="complaint-type-select fi" onchange="handleComplaintTypeChange(this)">
                   <option value="">— Complaint Type —</option>
                 </select>
                 <input type="hidden" name="complaint_type[]" class="type-txt">
               </td>
-              <td style="padding:6px 6px">
-                <input type="text" name="complaint_description[]" value="{{ desc }}"
-                      placeholder="Describe complaint..."
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
+              <td>
+                <input type="text" name="complaint_description[]" value="{{ desc }}" class="fi" placeholder="Describe complaint...">
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_technician[]" class="complaint-tech-select"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_technician[]" class="complaint-tech-select fi">
                   <option value="">— Select Technician —</option>
                 </select>
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
-                  <div class="skill-badge-info"></div>
-                  <label style="font-size:10px;color:#4b5563;display:inline-flex;align-items:center;gap:3px;cursor:pointer;user-select:none" title="Show all technicians regardless of required skill matching">
-                    <input type="checkbox" class="override-cb" onchange="handleOverrideToggle(this)">
-                    <span>Show All</span>
-                  </label>
-                  <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
-                </div>
+                <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_status[]"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_status[]" class="fi">
                   <option value="Open" selected>Open</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
                 </select>
               </td>
-              <td style="padding:6px 6px;text-align:center">
-                <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+              <td style="text-align:center">
+                <button type="button" class="btn-rm" onclick="removeRow(this)">✕</button>
               </td>
             </tr>
             {% endfor %}
-
           {% else %}
-            <tr style="border-bottom:1px solid #f3f4f6" id="cmpDefaultRow">
-              <td style="padding:6px 6px">
-                <select name="complaint_vehicle_id[]" class="row-veh-select fi"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;background:#fff;outline:none">
+            <tr id="cmpDefaultRow">
+              <td>
+                <select name="complaint_vehicle_id[]" class="row-veh-select fi">
                   <option value="">— Vehicle —</option>
                 </select>
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_category_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_category_id[]" class="complaint-cat-select fi" onchange="handleCategoryChange(this)">
                   <option value="">— Category —</option>
                   {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
                 </select>
                 <input type="hidden" name="complaint_category[]" class="cat-txt">
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_type_id[]" class="complaint-type-select fi" onchange="handleComplaintTypeChange(this)">
                   <option value="">— Complaint Type —</option>
                 </select>
                 <input type="hidden" name="complaint_type[]" class="type-txt">
               </td>
-              <td style="padding:6px 6px">
-                <input type="text" name="complaint_description[]"
-                      placeholder="Describe complaint..."
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
+              <td>
+                <input type="text" name="complaint_description[]" class="fi" placeholder="Describe complaint...">
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_technician[]" class="complaint-tech-select"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_technician[]" class="complaint-tech-select fi">
                   <option value="">— Select Technician —</option>
                 </select>
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
-                  <div class="skill-badge-info"></div>
-                  <label style="font-size:10px;color:#4b5563;display:inline-flex;align-items:center;gap:3px;cursor:pointer;user-select:none" title="Show all technicians regardless of required skill matching">
-                    <input type="checkbox" class="override-cb" onchange="handleOverrideToggle(this)">
-                    <span>Show All</span>
-                  </label>
-                  <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
-                </div>
+                <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
               </td>
-              <td style="padding:6px 6px">
-                <select name="complaint_status[]"
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+              <td>
+                <select name="complaint_status[]" class="fi">
                   <option value="Open">Open</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
                 </select>
               </td>
-              <td style="padding:6px 6px;text-align:center">
-                <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+              <td style="text-align:center">
+                <button type="button" class="btn-rm" onclick="removeRow(this)">✕</button>
               </td>
             </tr>
           {% endif %}
@@ -542,124 +844,100 @@ select.fi{cursor:pointer}
     </div>
   </div>
 
-
-
-  <!-- ══════════════════════════════════════════
-      SPARE PARTS MANAGEMENT
-  ══════════════════════════════════════════ -->
-  <div class="sec">
-    <div class="sec-hdr" style="background:#f3f4f6;padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px">Spare Parts Management</span>
+  <!-- ════════════════════════════════
+       4. SPARE PARTS MANAGEMENT
+  ════════════════════════════════ -->
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title">
+        <i class="bi bi-boxes text-primary"></i> {% trans "Spare Parts Management" %}
+      </h2>
     </div>
 
-    <div style="padding:16px;background:#f9fafb;border-bottom:1px solid #e5e7eb">
-      <div style="display:grid;grid-template-columns:1.5fr 2fr 2fr 1fr 1fr 1fr auto;gap:12px;align-items:end">
-
+    <!-- Quick Item Adder Panel -->
+    <div class="parts-adder-panel">
+      <div class="parts-adder-grid">
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Vehicle</label>
-          <select id="addPartVehicle" style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:9px 10px;font-size:13px;background:#fff;outline:none;cursor:pointer">
+          <label class="fl">{% trans "Vehicle" %}</label>
+          <select id="addPartVehicle" class="fi">
             <option value="">— Vehicle —</option>
           </select>
         </div>
-
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Item</label>
-          <select id="addPartItem"
-                  style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:9px 10px;font-size:13px;color:#111827;background:#fff;outline:none;cursor:pointer"
-                  onchange="onAddPartItemChange(this)">
+          <label class="fl">{% trans "Item" %}</label>
+          <select id="addPartItem" class="fi" onchange="onAddPartItemChange(this)">
             <option value="">— Select Item —</option>
           </select>
         </div>
-
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Part Number</label>
-          <input type="text" id="addPartNo" placeholder="Part No."
-                style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:9px 10px;font-size:13px;color:#111827;background:#fff;outline:none">
+          <label class="fl">{% trans "Part Number" %}</label>
+          <input type="text" id="addPartNo" placeholder="Part No." class="fi">
         </div>
-
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Quantity</label>
-          <input type="number" id="addPartQty" value="1" min="0" step="0.01"
-                style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:9px 10px;font-size:13px;color:#111827;background:#fff;outline:none;text-align:right"
-                oninput="calcAddPartAmount()">
+          <label class="fl">{% trans "Quantity" %}</label>
+          <input type="number" id="addPartQty" value="1" min="0" step="0.01" class="fi" style="text-align:right" oninput="calcAddPartAmount()">
         </div>
-
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Rate</label>
-          <input type="number" id="addPartRate" value="0" min="0" step="0.001"
-                style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:9px 10px;font-size:13px;color:#111827;background:#fff;outline:none;text-align:right"
-                oninput="calcAddPartAmount()">
+          <label class="fl">{% trans "Rate" %}</label>
+          <input type="number" id="addPartRate" value="0" min="0" step="0.001" class="fi" style="text-align:right" oninput="calcAddPartAmount()">
         </div>
-
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Amount</label>
-          <input type="text" id="addPartAmount" value="0.000" readonly
-                style="width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:9px 10px;font-size:13px;color:#374151;background:#f3f4f6;outline:none;text-align:right;font-weight:700">
+          <label class="fl">{% trans "Amount" %}</label>
+          <input type="text" id="addPartAmount" value="0.000" readonly class="fi" style="text-align:right; font-weight:700; background:#f8fafc;">
         </div>
-
         <div>
-          <label style="display:block;font-size:10px;font-weight:700;color:transparent;margin-bottom:5px">-</label>
-          <button type="button" onclick="commitAddPart()"
-                  style="background:#2563eb;color:#fff;border:none;border-radius:6px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;height:40px">
-            Add
+          <button type="button" class="btn-add" onclick="commitAddPart()" style="height:35px; width:100%; justify-content:center;">
+            <i class="bi bi-plus"></i> {% trans "Add Part" %}
           </button>
         </div>
       </div>
     </div>
 
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;min-width:700px">
+    <div class="stbl-container">
+      <table class="stbl">
         <thead>
-          <tr style="background:#f9fafb">
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:left;width:14%">Vehicle</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:left">Item</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:left;width:16%">Part Number</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:right;width:10%">Quantity</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:right;width:13%">Rate</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:right;width:13%">Total Amount</th>
-            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;text-align:center;width:8%">Action</th>
+          <tr>
+            <th style="width:14%">{% trans "Vehicle" %}</th>
+            <th>{% trans "Item Description" %}</th>
+            <th style="width:16%">{% trans "Part Number" %}</th>
+            <th style="width:10%; text-align:right">{% trans "Quantity" %}</th>
+            <th style="width:13%; text-align:right">{% trans "Rate" %}</th>
+            <th style="width:13%; text-align:right">{% trans "Total Amount" %}</th>
+            <th style="width:8%; text-align:center">{% trans "Action" %}</th>
           </tr>
         </thead>
         <tbody id="partsBody">
           {% if edit_mode %}
             {% for p in job.parts.all %}
-            <tr style="border-bottom:1px solid #f3f4f6" data-item-id="{{ p.part_number|default:'' }}">
-              <td style="padding:10px 14px">
-                <select name="part_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
+            <tr data-item-id="{{ p.part_number|default:'' }}">
+              <td>
+                <select name="part_vehicle_id[]" class="row-veh-select fi">
                   <option value="">— Vehicle —</option>
                   {% for jv in job.vehicles.all %}
                   <option value="{{ jv.vehicle_id }}" {% if p.vehicle_id == jv.vehicle_id %}selected{% endif %}>{{ jv.vehicle.vehicle_number }}</option>
                   {% endfor %}
                 </select>
               </td>
-              <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:500">
+              <td style="font-weight:500; color:#0f172a">
                 {{ p.description }}
                 <input type="hidden" name="part_item[]"   value="{{ p.description }}">
                 <input type="hidden" name="part_item_id[]" value="">
               </td>
-              <td style="padding:10px 14px">
-                <input type="text" name="part_number[]" value="{{ p.part_number|default:'' }}"
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;color:#374151;outline:none">
+              <td>
+                <input type="text" name="part_number[]" value="{{ p.part_number|default:'' }}" class="fi">
               </td>
-              <td style="padding:10px 14px">
-                <input type="number" name="part_qty[]" value="{{ p.quantity }}" min="0" step="0.01"
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;text-align:right;outline:none"
-                      class="pq" oninput="calcPartRow(this)">
+              <td>
+                <input type="number" name="part_qty[]" value="{{ p.quantity }}" min="0" step="0.01" class="fi pq" style="text-align:right" oninput="calcPartRow(this)">
               </td>
-              <td style="padding:10px 14px">
-                <input type="number" name="part_rate[]" value="{{ p.unit_price }}" min="0" step="0.001"
-                      style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;text-align:right;outline:none"
-                      class="pr" oninput="calcPartRow(this)">
+              <td>
+                <input type="number" name="part_rate[]" value="{{ p.unit_price }}" min="0" step="0.001" class="fi pr" style="text-align:right" oninput="calcPartRow(this)">
               </td>
-              <td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#111827;font-family:monospace">
+              <td style="text-align:right; font-weight:700; font-family:monospace">
                 <span class="pa">{{ p.total_price|floatformat:3 }}</span>
                 <input type="hidden" name="part_amount[]" class="pa-inp" value="{{ p.total_price }}">
               </td>
-              <td style="padding:10px 14px;text-align:center">
-                <button type="button" onclick="removePartRow(this)"
-                        style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">
-                  Remove
-                </button>
+              <td style="text-align:center">
+                <button type="button" class="btn-rm" onclick="removePartRow(this)">✕</button>
               </td>
             </tr>
             {% endfor %}
@@ -668,120 +946,124 @@ select.fi{cursor:pointer}
       </table>
 
       <div id="partsEmpty"
-          style="{% if edit_mode and job.parts.exists %}display:none{% else %}display:block{% endif %};
-                  text-align:center;padding:24px;color:#9ca3af;font-size:13px;border-top:1px solid #f3f4f6">
-        No parts added yet. Select an item above and click Add.
+          style="{% if edit_mode and job.parts.exists %}display:none{% else %}display:block{% endif %}; text-align:center; padding:20px; color:#94a3b8; font-size:12.5px">
+        <i class="bi bi-info-circle text-muted mr-1"></i> {% trans "No spare parts added yet. Select an item above and click Add Part." %}
       </div>
     </div>
 
-    <div style="padding:12px 16px;background:#f9fafb;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;align-items:center;gap:12px">
-      <span style="font-size:13px;font-weight:700;color:#374151">Parts Total</span>
-      <span id="partsTotal" style="font-size:15px;font-weight:700;color:#2563eb;font-family:monospace">0.000</span>
+    <div class="totals-bar-inline">
+      <span class="totals-lbl">{% trans "Parts Total" %}</span>
+      <span id="partsTotal" class="totals-val">0.000</span>
     </div>
   </div>
 
   <!-- ════════════════════════════════
-       LABOUR MANAGEMENT
+       5. LABOUR MANAGEMENT
   ════════════════════════════════ -->
-  <div class="sec">
-    <div class="sec-hdr">
-      <span class="sec-hdr-title">Labour Management</span>
-      <button type="button" class="btn-add" onclick="addLabour()">+ Add Labour</button>
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title">
+        <i class="bi bi-wrench-adjustable text-primary"></i> {% trans "Labour & Service Charges" %}
+      </h2>
+      <button type="button" class="btn-add" onclick="addLabour()">
+        <i class="bi bi-plus"></i> {% trans "Add Labour" %}
+      </button>
     </div>
-    <div class="sec-body" style="padding:0">
-      <div style="overflow-x:auto">
-        <table class="stbl" id="labourTbl">
-          <thead>
+    <div class="stbl-container">
+      <table class="stbl" id="labourTbl">
+        <thead>
+          <tr>
+            <th style="width:16%">{% trans "Vehicle" %}</th>
+            <th style="width:22%">{% trans "Technician" %}</th>
+            <th style="width:32%">{% trans "Labour Description" %}</th>
+            <th style="width:12%">{% trans "Hours Worked" %}</th>
+            <th style="width:12%">{% trans "Rate" %}</th>
+            <th style="width:12%; text-align:right">{% trans "Amount" %}</th>
+            <th style="width:6%; text-align:center">{% trans "Action" %}</th>
+          </tr>
+        </thead>
+        <tbody id="labourBody">
+          {% if edit_mode %}
+            {% for l in job.labours.all %}
             <tr>
-              <th style="width:16%">Vehicle</th>
-              <th style="width:22%">Technician</th>
-              <th style="width:32%">Labour Description</th>
-              <th style="width:14%">Hours Worked</th>
-              <th style="width:14%">Rate</th>
-              <th style="width:12%">Amount</th>
-              <th style="width:6%">Action</th>
+              <td>
+                <select name="labour_vehicle_id[]" class="row-veh-select fi">
+                  <option value="">— Vehicle —</option>
+                  {% for jv in job.vehicles.all %}
+                  <option value="{{ jv.vehicle_id }}" {% if l.vehicle_id == jv.vehicle_id %}selected{% endif %}>{{ jv.vehicle.vehicle_number }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <select name="labour_technician[]" class="fi">
+                  <option value="">----------</option>
+                  {% for s in staff %}
+                  <option value="{{ s.id }}" {% if l.technician_id == s.id %}selected{% endif %}>{{ s.staff_id }} — {{ s.full_name }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input type="text" name="labour_description[]" value="{{ l.description }}" class="fi"></td>
+              <td><input type="number" name="labour_hours[]" value="{{ l.hours|default:1 }}" min="0" step="0.5" class="fi lab-hrs" oninput="calcLabourRow(this)"></td>
+              <td><input type="number" name="labour_rate[]" value="{{ l.rate|default:0 }}" min="0" step="0.01" class="fi lab-rate" oninput="calcLabourRow(this)"></td>
+              <td style="text-align:right"><input type="number" name="labour_amount[]" value="{{ l.amount }}" readonly class="fi lab-amount" style="text-align:right; font-weight:700; font-family:monospace; background:#f8fafc"></td>
+              <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>
             </tr>
-          </thead>
-          <tbody id="labourBody">
-            {% if edit_mode %}
-              {% for l in job.labours.all %}
-              <tr>
-                <td>
-                  <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
-                    <option value="">— Vehicle —</option>
-                    {% for jv in job.vehicles.all %}
-                    <option value="{{ jv.vehicle_id }}" {% if l.vehicle_id == jv.vehicle_id %}selected{% endif %}>{{ jv.vehicle.vehicle_number }}</option>
-                    {% endfor %}
-                  </select>
-                </td>
-                <td>
-                  <select name="labour_technician[]">
-                    <option value="">----------</option>
-                    {% for s in staff %}
-                    <option value="{{ s.id }}" {% if l.technician_id == s.id %}selected{% endif %}>{{ s.staff_id }} — {{ s.full_name }}</option>
-                    {% endfor %}
-                  </select>
-                </td>
-                <td><input type="text" name="labour_description[]" value="{{ l.description }}"></td>
-                <td><input type="number" name="labour_hours[]" value="{{ l.hours|default:1 }}" min="0" step="0.5" class="lab-hrs" oninput="calcLabourRow(this)"></td>
-                <td><input type="number" name="labour_rate[]" value="{{ l.rate|default:0 }}" min="0" step="0.01" class="lab-rate" oninput="calcLabourRow(this)"></td>
-                <td><input type="number" name="labour_amount[]" value="{{ l.amount }}" readonly class="lab-amount" style="background:#f9fafb"></td>
-                <td><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕ Remove</button></td>
-              </tr>
-              {% endfor %}
-            {% else %}
-              <tr>
-                <td>
-                  <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
-                    <option value="">— Vehicle —</option>
-                  </select>
-                </td>
-                <td>
-                  <select name="labour_technician[]">
-                    <option value="">----------</option>
-                    {% for s in staff %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}
-                  </select>
-                </td>
-                <td><input type="text" name="labour_description[]" placeholder="Labour description..."></td>
-                <td><input type="number" name="labour_hours[]" value="1" min="0" step="0.5" class="lab-hrs" oninput="calcLabourRow(this)"></td>
-                <td><input type="number" name="labour_rate[]" value="0" min="0" step="0.01" class="lab-rate" oninput="calcLabourRow(this)"></td>
-                <td><input type="number" name="labour_amount[]" value="0" readonly class="lab-amount" style="background:#f9fafb"></td>
-                <td><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕ Remove</button></td>
-              </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-      <div class="totals-bar">
-        <div class="t-row">
-          <span class="t-lbl">Labour Total</span>
-          <span class="t-val" id="labourTotal">0.000 </span>
-        </div>
-      </div>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td>
+                <select name="labour_vehicle_id[]" class="row-veh-select fi">
+                  <option value="">— Vehicle —</option>
+                </select>
+              </td>
+              <td>
+                <select name="labour_technician[]" class="fi">
+                  <option value="">----------</option>
+                  {% for s in staff %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}
+                </select>
+              </td>
+              <td><input type="text" name="labour_description[]" placeholder="Labour description..." class="fi"></td>
+              <td><input type="number" name="labour_hours[]" value="1" min="0" step="0.5" class="fi lab-hrs" oninput="calcLabourRow(this)"></td>
+              <td><input type="number" name="labour_rate[]" value="0" min="0" step="0.01" class="fi lab-rate" oninput="calcLabourRow(this)"></td>
+              <td style="text-align:right"><input type="number" name="labour_amount[]" value="0" readonly class="fi lab-amount" style="text-align:right; font-weight:700; font-family:monospace; background:#f8fafc"></td>
+              <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    <div class="totals-bar-inline">
+      <span class="totals-lbl">{% trans "Labour Total" %}</span>
+      <span id="labourTotal" class="totals-val">0.000</span>
     </div>
   </div>
 
   <!-- ════════════════════════════════
-       GRAND TOTALS
+       6. GRAND TOTALS SUMMARY
   ════════════════════════════════ -->
-  <div class="grand-totals">
-    <div class="gt-row">
-      <span class="gt-lbl">Parts Total</span>
-      <span class="gt-val" id="gtParts">0.000</span>
-    </div>
-    <div class="gt-row">
-      <span class="gt-lbl">Labour Total</span>
-      <span class="gt-val" id="gtLabour">0.000</span>
-    </div>
-    <div class="gt-row">
-      <span class="gt-lbl" style="font-weight:700;font-size:14px">Grand Total</span>
-      <span class="gt-val grand" id="gtGrand">0.000</span>
+  <div class="grand-totals-card">
+    <div class="gt-grid">
+      <div class="gt-item">
+        <div class="gt-lbl">{% trans "Parts Total" %}</div>
+        <div class="gt-val" id="gtParts">0.000</div>
+      </div>
+      <div class="gt-item">
+        <div class="gt-lbl">{% trans "Labour Total" %}</div>
+        <div class="gt-val" id="gtLabour">0.000</div>
+      </div>
+      <div class="gt-item highlight">
+        <div class="gt-lbl">{% trans "Grand Total" %}</div>
+        <div class="gt-val grand" id="gtGrand">0.000</div>
+      </div>
     </div>
   </div>
 
+  <!-- Sticky Save Bar -->
   <div class="save-bar">
-    <button type="submit" class="btn-save">💾 Save Job Card</button>
-    <a href="{% url 'jobcard_app:jobcard_list' %}" class="btn-cancel">Cancel</a>
+    <a href="{% url 'jobcard_app:jobcard_list' %}" class="btn-cancel">{% trans "Cancel" %}</a>
+    <button type="submit" class="btn-save">
+      <i class="bi bi-check2-circle"></i> {% trans "Save Job Card" %}
+    </button>
   </div>
 
   </form>
@@ -791,27 +1073,28 @@ select.fi{cursor:pointer}
 <div id="inspModalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(3px);">
   <div style="background:#fff; border-radius:12px; width:92%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 40px rgba(0,0,0,0.3); overflow:hidden; border:1px solid #cbd5e1;">
     <!-- Modal Header -->
-    <div style="background:#1e293b; color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+    <div style="background:#1e293b; color:#fff; padding:14px 18px; display:flex; justify-content:space-between; align-items:center;">
       <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:16px;">🔍</span>
-        <span style="font-size:14px; font-weight:700; letter-spacing:0.3px;">Select Customer Complaints & Technician Findings</span>
+        <i class="bi bi-search text-primary"></i>
+        <span style="font-size:13.5px; font-weight:700; letter-spacing:0.3px;">{% trans "Select Customer Complaints & Technician Findings" %}</span>
       </div>
-      <button type="button" onclick="closeInspPicker()" style="background:none; border:none; color:#94a3b8; font-size:22px; cursor:pointer; line-height:1; padding:0 4px;" title="Close Modal">✕</button>
+      <button type="button" onclick="closeInspPicker()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height:1; padding:0 4px;" title="Close Modal">✕</button>
     </div>
     <!-- Modal Body -->
-    <div style="padding:16px 20px; flex:1; overflow-y:auto; background:#f8fafc;">
-      <div id="inspNoCustomer" style="padding:30px 20px; font-size:13px; color:#64748b; text-align:center; background:#fff; border-radius:8px; border:1px dashed #cbd5e1;">
-        ⚠️ Please select a customer and at least one vehicle on the job card form first.
+    <div style="padding:18px; flex:1; overflow-y:auto; background:#f8fafc;">
+      <div id="inspNoCustomer" style="padding:24px 18px; font-size:12.5px; color:#64748b; text-align:center; background:#fff; border-radius:8px; border:1px dashed #cbd5e1;">
+        <i class="bi bi-exclamation-triangle text-warning d-block mb-2" style="font-size:18px;"></i>
+        {% trans "Please select a customer and at least one vehicle on the job card form first." %}
       </div>
       <div id="inspList" style="display:none;"></div>
-      <div id="inspEmpty" style="display:none; padding:30px 20px; font-size:13px; color:#64748b; text-align:center; background:#fff; border-radius:8px; border:1px dashed #cbd5e1;">
-        No inspection records found for the selected customer & vehicle(s).
+      <div id="inspEmpty" style="display:none; padding:24px 18px; font-size:12.5px; color:#64748b; text-align:center; background:#fff; border-radius:8px; border:1px dashed #cbd5e1;">
+        {% trans "No inspection records found for the selected customer & vehicle(s)." %}
       </div>
     </div>
     <!-- Modal Footer -->
-    <div id="inspPickerFooter" style="display:none; padding:12px 20px; border-top:1px solid #e2e8f0; background:#fff; text-align:right;">
-      <button type="button" onclick="closeInspPicker()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:6px; padding:8px 18px; font-size:12px; font-weight:600; cursor:pointer; margin-right:8px;">Cancel</button>
-      <button type="button" onclick="loadSelectedInspectionItems()" style="background:#2563eb; color:#fff; border:none; border-radius:6px; padding:8px 22px; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 2px 6px rgba(37,99,235,0.3);">Load Selected into Job Card</button>
+    <div id="inspPickerFooter" style="display:none; padding:12px 18px; border-top:1px solid #e2e8f0; background:#fff; text-align:right;">
+      <button type="button" onclick="closeInspPicker()" class="btn-cancel" style="padding:6px 14px; font-size:12px; margin-right:6px;">{% trans "Cancel" %}</button>
+      <button type="button" onclick="loadSelectedInspectionItems()" class="btn-add" style="padding:6px 16px; font-size:12px;">{% trans "Load Selected into Job Card" %}</button>
     </div>
   </div>
 </div>
@@ -821,10 +1104,6 @@ const VEH_URL = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
 const INSP_URL = "{% url 'jobcard_app:ajax_get_inspections' %}";
 const catOpts  = `<option value="">— Category —</option>{% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}`;
 const techOpts = `{% for s in technicians %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}`;
-const inpStyle = 'width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none';
-const selStyle = 'width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer';
-const rowStyle = 'border-bottom:1px solid #f3f4f6';
-const cellStyle = 'padding:6px 6px';
 
 let customerVehicleCache = [];
 
@@ -895,7 +1174,7 @@ function addVehicleRow(vehicleIdToSelect, mileageVal, fuelVal) {
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td><select name="jc_vehicle_id[]" class="veh-select" onchange="onVehRowChange(this)"></select></td>
+    <td><select name="jc_vehicle_id[]" class="veh-select fi" onchange="onVehRowChange(this)"></select></td>
     <td><input type="text" class="fi veh-mm-box" readonly placeholder="Model"></td>
     <td><input type="number" name="jc_vehicle_mileage[]" min="0" class="fi" placeholder="Mileage"></td>
     <td>
@@ -908,7 +1187,7 @@ function addVehicleRow(vehicleIdToSelect, mileageVal, fuelVal) {
       </select>
       <input type="hidden" name="jc_vehicle_notes[]" value="">
     </td>
-    <td><button type="button" class="btn-rm" onclick="removeVehRow(this)">✕ Remove</button></td>`;
+    <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeVehRow(this)">✕</button></td>`;
   document.getElementById('vehBody').appendChild(tr);
 
   const sel = tr.querySelector('.veh-select');
@@ -989,7 +1268,7 @@ function checkVehEmpty() {
 }
 
 /* ══════════════════════════════════════════
-   VEHICLE DROPDOWN SYNC (used by Complaints/Findings/Parts/Labour)
+   VEHICLE DROPDOWN SYNC
 ══════════════════════════════════════════ */
 function getJobVehicleOptions() {
   const opts = [];
@@ -1098,7 +1377,7 @@ function toggleGroupCheckboxes(masterCb, groupSelector) {
 }
 
 /* ══════════════════════════════════════════
-   INSPECTION PICKER MODAL (checkbox-based, multi-vehicle)
+   INSPECTION PICKER MODAL
 ══════════════════════════════════════════ */
 function openInspPicker() {
   const overlay = document.getElementById('inspModalOverlay');
@@ -1124,7 +1403,7 @@ function openInspPicker() {
   noCustomer.style.display = 'none';
   empty.style.display      = 'none';
   list.style.display       = 'block';
-  list.innerHTML = '<div style="padding:30px;text-align:center;font-size:13px;color:#64748b">Loading complaints & technician findings...</div>';
+  list.innerHTML = '<div style="padding:24px;text-align:center;font-size:12.5px;color:#64748b">Loading complaints & technician findings...</div>';
 
   const url = INSP_URL + '?customer_id=' + custId + '&vehicle_ids=' + vehIds;
 
@@ -1138,68 +1417,68 @@ function openInspPicker() {
       }
 
       list.innerHTML = data.inspections.map(insp => `
-        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:14px 16px; margin-bottom:14px; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:12px 14px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
           <!-- Vehicle Identification Header -->
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:8px; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
             <div>
-              <span style="font-size:13px; font-weight:700; color:#1e293b;">📋 Inspection ${insp.inspection_number}</span>
+              <span style="font-size:12.5px; font-weight:700; color:#1e293b;">📋 Inspection ${insp.inspection_number}</span>
               <span style="font-size:11px; color:#64748b; margin-left:6px;">(${insp.date})</span>
             </div>
-            <div style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:5px;">
+            <div style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; padding:3px 8px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
               🚗 Vehicle: ${insp.vehicle_number || 'N/A'}
             </div>
           </div>
-          <div style="font-size:11px; color:#475569; margin-bottom:12px; background:#f8fafc; padding:6px 10px; border-radius:6px; border:1px solid #e2e8f0;">
+          <div style="font-size:11px; color:#475569; margin-bottom:10px; background:#f8fafc; padding:5px 8px; border-radius:5px; border:1px solid #e2e8f0;">
             <strong>Vehicle Details:</strong> ${insp.vehicle_label || '—'} ${insp.odometer ? ' &nbsp;•&nbsp; 📍 ' + insp.odometer + ' km' : ''}
           </div>
 
           <!-- Customer Complaints Section -->
           ${insp.complaints && insp.complaints.length > 0 ? `
-            <div class="insp-group-box" style="margin-bottom:12px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:10px 12px;">
-              <div style="font-size:11px; font-weight:700; color:#0369a1; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:8px;">
+            <div class="insp-group-box" style="margin-bottom:10px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:8px 10px;">
+              <div style="font-size:10.5px; font-weight:700; color:#0369a1; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:6px;">
                   <span>🗣️ CUSTOMER COMPLAINTS</span>
-                  <label style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#0369a1; cursor:pointer; background:#e0f2fe; padding:2px 8px; border-radius:4px; font-weight:600; border:1px solid #93c5fd;" onclick="event.stopPropagation();">
-                    <input type="checkbox" onchange="toggleGroupCheckboxes(this, '.pick-complaint')" style="cursor:pointer; width:14px; height:14px; accent-color:#2563eb;">
+                  <label style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#0369a1; cursor:pointer; background:#e0f2fe; padding:2px 6px; border-radius:4px; font-weight:600; border:1px solid #93c5fd;" onclick="event.stopPropagation();">
+                    <input type="checkbox" onchange="toggleGroupCheckboxes(this, '.pick-complaint')" style="cursor:pointer; width:13px; height:13px; accent-color:#2563eb;">
                     <span>Select All</span>
                   </label>
                 </div>
-                <span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:12px; font-weight:700;">Vehicle: ${insp.vehicle_number}</span>
+                <span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:10px; font-weight:700;">Vehicle: ${insp.vehicle_number}</span>
               </div>
               ${insp.complaints.map(c => `
                 <div class="insp-item-row" onclick="toggleInspItem(this, event)"
-                     style="display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:6px; border-radius:6px; background:#ffffff; border:1px solid #cbd5e1; cursor:pointer; user-select:none; transition:all 0.15s ease;">
+                     style="display:flex; align-items:center; gap:8px; padding:6px 10px; margin-bottom:5px; border-radius:5px; background:#ffffff; border:1px solid #cbd5e1; cursor:pointer; user-select:none; transition:all 0.15s ease;">
                   <input type="checkbox" class="pick-complaint" onchange="onInspItemCheckChange(this)"
-                         style="display:inline-block !important; visibility:visible !important; opacity:1 !important; width:18px !important; height:18px !important; min-width:18px !important; margin:0 !important; cursor:pointer !important; accent-color:#2563eb !important; position:relative !important; z-index:10 !important; -webkit-appearance:checkbox !important; appearance:checkbox !important;"
+                         style="display:inline-block !important; visibility:visible !important; opacity:1 !important; width:16px !important; height:16px !important; min-width:16px !important; margin:0 !important; cursor:pointer !important; accent-color:#2563eb !important; position:relative !important; z-index:10 !important; -webkit-appearance:checkbox !important; appearance:checkbox !important;"
                          data-desc="${c.description.replace(/"/g,'&quot;')}"
                          data-veh="${insp.vehicle_id}"
                          data-veh-num="${insp.vehicle_number}">
-                  <span style="font-size:13px; font-weight:600; color:#1e293b; flex:1; line-height:1.4;">${c.description}</span>
+                  <span style="font-size:12px; font-weight:600; color:#1e293b; flex:1; line-height:1.4;">${c.description}</span>
                 </div>`).join('')}
             </div>` : ''}
 
           <!-- Technician Findings Section -->
           ${insp.findings && insp.findings.length > 0 ? `
-            <div class="insp-group-box" style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px 12px;">
-              <div style="font-size:11px; font-weight:700; color:#b45309; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:8px;">
+            <div class="insp-group-box" style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:8px 10px;">
+              <div style="font-size:10.5px; font-weight:700; color:#b45309; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:6px;">
                   <span>🔧 TECHNICIAN FINDINGS</span>
-                  <label style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#b45309; cursor:pointer; background:#fef3c7; padding:2px 8px; border-radius:4px; font-weight:600; border:1px solid #fcd34d;" onclick="event.stopPropagation();">
-                    <input type="checkbox" onchange="toggleGroupCheckboxes(this, '.pick-finding')" style="cursor:pointer; width:14px; height:14px; accent-color:#d97706;">
+                  <label style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#b45309; cursor:pointer; background:#fef3c7; padding:2px 6px; border-radius:4px; font-weight:600; border:1px solid #fcd34d;" onclick="event.stopPropagation();">
+                    <input type="checkbox" onchange="toggleGroupCheckboxes(this, '.pick-finding')" style="cursor:pointer; width:13px; height:13px; accent-color:#d97706;">
                     <span>Select All</span>
                   </label>
                 </div>
-                <span style="font-size:10px; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:12px; font-weight:700;">Vehicle: ${insp.vehicle_number}</span>
+                <span style="font-size:10px; background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:10px; font-weight:700;">Vehicle: ${insp.vehicle_number}</span>
               </div>
               ${insp.findings.map(f => `
                 <div class="insp-item-row" onclick="toggleInspItem(this, event)"
-                     style="display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:6px; border-radius:6px; background:#ffffff; border:1px solid #cbd5e1; cursor:pointer; user-select:none; transition:all 0.15s ease;">
+                     style="display:flex; align-items:center; gap:8px; padding:6px 10px; margin-bottom:5px; border-radius:5px; background:#ffffff; border:1px solid #cbd5e1; cursor:pointer; user-select:none; transition:all 0.15s ease;">
                   <input type="checkbox" class="pick-finding" onchange="onInspItemCheckChange(this)"
-                         style="display:inline-block !important; visibility:visible !important; opacity:1 !important; width:18px !important; height:18px !important; min-width:18px !important; margin:0 !important; cursor:pointer !important; accent-color:#d97706 !important; position:relative !important; z-index:10 !important; -webkit-appearance:checkbox !important; appearance:checkbox !important;"
+                         style="display:inline-block !important; visibility:visible !important; opacity:1 !important; width:16px !important; height:16px !important; min-width:16px !important; margin:0 !important; cursor:pointer !important; accent-color:#d97706 !important; position:relative !important; z-index:10 !important; -webkit-appearance:checkbox !important; appearance:checkbox !important;"
                          data-desc="${f.description.replace(/"/g,'&quot;')}"
                          data-veh="${insp.vehicle_id}"
                          data-veh-num="${insp.vehicle_number}">
-                  <span style="font-size:13px; font-weight:600; color:#1e293b; flex:1; line-height:1.4;">${f.description}</span>
+                  <span style="font-size:12px; font-weight:600; color:#1e293b; flex:1; line-height:1.4;">${f.description}</span>
                 </div>`).join('')}
             </div>` : ''}
         </div>`).join('');
@@ -1208,7 +1487,7 @@ function openInspPicker() {
       updateInspSelectedCount();
     })
     .catch(err => {
-      list.innerHTML = '<div style="padding:20px;font-size:12px;color:#ef4444;text-align:center">Failed to load inspections. Please try again.</div>';
+      list.innerHTML = '<div style="padding:18px;font-size:12px;color:#ef4444;text-align:center">Failed to load inspections. Please try again.</div>';
       console.error('Inspection load error:', err);
     });
 }
@@ -1227,7 +1506,6 @@ function loadSelectedInspectionItems() {
     return;
   }
 
-  // If there's an empty default row in complaintBody, remove it if empty
   const defaultRow = document.getElementById('cmpDefaultRow');
   const tbody = document.getElementById('complaintBody');
 
@@ -1257,7 +1535,7 @@ function loadSelectedInspectionItems() {
 }
 
 /* ══════════════════════════════════════════
-   RELATIONAL MAPPING: Category -> Complaint Type -> Skill -> Technician
+   RELATIONAL MAPPING
 ══════════════════════════════════════════ */
 let relationalMappingData = { categories: [], technicians: [], skills: [] };
 try {
@@ -1398,7 +1676,7 @@ function updateTechnicianOptions(tr, skillId, isOverride, skillName = '') {
     }
   });
 
-  if (currentTechVal && techSelect.querySelector(`opti on[value="${currentTechVal}"]`)) {
+  if (currentTechVal && techSelect.querySelector(`option[value="${currentTechVal}"]`)) {
     techSelect.value = currentTechVal;
   }
 
@@ -1452,97 +1730,50 @@ function initComplaintRows() {
 ══════════════════════════════════════════ */
 function addComplaint(desc = '', bg = '', vehId = '') {
   const tr = document.createElement('tr');
-  tr.style.cssText = rowStyle + (bg ? ';background:' + bg : '');
+  if (bg) tr.style.background = bg;
   tr.innerHTML = `
-    <td style="${cellStyle}">
-      <select name="complaint_vehicle_id[]" class="row-veh-select fi" style="${selStyle}">
+    <td>
+      <select name="complaint_vehicle_id[]" class="row-veh-select fi">
         ${buildVehSelectHtml(vehId)}
       </select>
     </td>
-    <td style="${cellStyle}">
-      <select name="complaint_category_id[]" class="complaint-cat-select" style="${selStyle}" onchange="handleCategoryChange(this)">
+    <td>
+      <select name="complaint_category_id[]" class="complaint-cat-select fi" onchange="handleCategoryChange(this)">
         ${catOpts}
       </select>
       <input type="hidden" name="complaint_category[]" class="cat-txt">
     </td>
-    <td style="${cellStyle}">
-      <select name="complaint_type_id[]" class="complaint-type-select" style="${selStyle}" onchange="handleComplaintTypeChange(this)">
+    <td>
+      <select name="complaint_type_id[]" class="complaint-type-select fi" onchange="handleComplaintTypeChange(this)">
         <option value="">— Complaint Type —</option>
       </select>
       <input type="hidden" name="complaint_type[]" class="type-txt">
     </td>
-    <td style="${cellStyle}">
+    <td>
       <input type="text" name="complaint_description[]"
              value="${desc.replace(/"/g,'&quot;')}"
              placeholder="Describe complaint..."
-             style="${inpStyle}">
+             class="fi">
     </td>
-    <td style="${cellStyle}">
-      <select name="complaint_technician[]" class="complaint-tech-select" style="${selStyle}">
+    <td>
+      <select name="complaint_technician[]" class="complaint-tech-select fi">
         <option value="">— Select Technician —</option>
       </select>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
-        <div class="skill-badge-info"></div>
-        <label style="font-size:10px;color:#4b5563;display:inline-flex;align-items:center;gap:3px;cursor:pointer;user-select:none" title="Show all technicians regardless of required skill matching">
-          <input type="checkbox" class="override-cb" onchange="handleOverrideToggle(this)">
-          <span>Show All</span>
-        </label>
-        <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
-      </div>
+      <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
     </td>
-    <td style="${cellStyle}">
-      <select name="complaint_status[]" style="${selStyle}">
+    <td>
+      <select name="complaint_status[]" class="fi">
         <option value="Open">Open</option>
         <option value="In Progress">In Progress</option>
         <option value="Resolved">Resolved</option>
       </select>
     </td>
-    <td style="${cellStyle};text-align:center">
-      <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
+    <td style="text-align:center">
+      <button type="button" class="btn-rm" onclick="removeRow(this)">✕</button>
     </td>`;
   document.getElementById('complaintBody').appendChild(tr);
   updateTechnicianOptions(tr, 0, false);
   refreshAllVehicleDropdowns();
-}
-
-function addFinding(desc = '', bg = '', vehId = '') {
-  const tr = document.createElement('tr');
-  tr.style.cssText = rowStyle + (bg ? ';background:' + bg : '');
-  tr.innerHTML = `
-    <td style="${cellStyle}">
-      <select name="finding_vehicle_id[]" class="row-veh-select fi" style="${selStyle}">
-        ${buildVehSelectHtml(vehId)}
-      </select>
-    </td>
-    <td style="${cellStyle}">
-      <input type="text" name="finding_description[]"
-             value="${desc.replace(/"/g,'&quot;')}"
-             placeholder="Describe finding..."
-             style="${inpStyle}">
-    </td>
-    <td style="${cellStyle}">
-      <select name="finding_technician[]" style="${selStyle}">
-        <option value="">----------</option>
-        ${techOpts}
-      </select>
-    </td>
-    <td style="${cellStyle}">
-      <select name="finding_status[]" style="${selStyle}">
-        <option value="Pending">Pending</option>
-        <option value="Confirmed">Confirmed</option>
-        <option value="Resolved">Resolved</option>
-      </select>
-    </td>
-    <td style="${cellStyle};text-align:center">
-      <button type="button" class="btn-rm" onclick="removeRow(this)">✕ Remove</button>
-    </td>`;
-  document.getElementById('findingsBody').appendChild(tr);
-  refreshAllVehicleDropdowns();
-}
-
-function setCatText(sel) {
-  const hidden = sel.closest('td').querySelector('.cat-txt');
-  if (hidden) hidden.value = sel.options[sel.selectedIndex]?.text || '';
 }
 
 /* ══════════════════════════════════════════
@@ -1686,44 +1917,32 @@ function commitAddPart() {
 function addPartRowToTable(itemId, itemName, partNo, qty, rate, amtVal, vehId = '') {
   const tbody = document.getElementById('partsBody');
   const tr    = document.createElement('tr');
-  tr.style.borderBottom = '1px solid #f3f4f6';
   tr.innerHTML = `
-    <td style="padding:10px 14px">
-      <select name="part_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
+    <td>
+      <select name="part_vehicle_id[]" class="row-veh-select fi">
         ${buildVehSelectHtml(vehId)}
       </select>
     </td>
-    <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:500">
+    <td style="font-weight:500; color:#0f172a">
       ${itemName}
       <input type="hidden" name="part_item[]"    value="${itemName}">
       <input type="hidden" name="part_item_id[]" value="${itemId}">
     </td>
-    <td style="padding:10px 14px">
-      <input type="text" name="part_number[]" value="${partNo}"
-             placeholder="Part No."
-             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;color:#374151;outline:none">
+    <td>
+      <input type="text" name="part_number[]" value="${partNo}" placeholder="Part No." class="fi">
     </td>
-    <td style="padding:10px 14px">
-      <input type="number" name="part_qty[]" value="${qty}"
-             min="0" step="0.01" class="pq"
-             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;text-align:right;outline:none"
-             oninput="calcPartRow(this)">
+    <td>
+      <input type="number" name="part_qty[]" value="${qty}" min="0" step="0.01" class="fi pq" style="text-align:right" oninput="calcPartRow(this)">
     </td>
-    <td style="padding:10px 14px">
-      <input type="number" name="part_rate[]" value="${parseFloat(rate).toFixed(3)}"
-             min="0" step="0.001" class="pr"
-             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;text-align:right;outline:none"
-             oninput="calcPartRow(this)">
+    <td>
+      <input type="number" name="part_rate[]" value="${parseFloat(rate).toFixed(3)}" min="0" step="0.001" class="fi pr" style="text-align:right" oninput="calcPartRow(this)">
     </td>
-    <td style="padding:10px 14px;text-align:right">
-      <span class="pa" style="font-size:13px;font-weight:700;color:#111827;font-family:monospace">${amtVal}</span>
+    <td style="text-align:right; font-weight:700; font-family:monospace">
+      <span class="pa">${amtVal}</span>
       <input type="hidden" name="part_amount[]" class="pa-inp" value="${amtVal}">
     </td>
-    <td style="padding:10px 14px;text-align:center">
-      <button type="button" onclick="removePartRow(this)"
-              style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">
-        Remove
-      </button>
+    <td style="text-align:center">
+      <button type="button" class="btn-rm" onclick="removePartRow(this)">✕</button>
     </td>`;
   tbody.appendChild(tr);
   refreshAllVehicleDropdowns();
@@ -1766,16 +1985,16 @@ function addLabour() {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td>
-      <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
+      <select name="labour_vehicle_id[]" class="row-veh-select fi">
         ${buildVehSelectHtml('')}
       </select>
     </td>
-    <td><select name="labour_technician[]"><option value="">----------</option>${techOpts}</select></td>
-    <td><input type="text" name="labour_description[]" placeholder="Labour description..."></td>
-    <td><input type="number" name="labour_hours[]" value="1" min="0" step="0.5" class="lab-hrs" oninput="calcLabourRow(this)"></td>
-    <td><input type="number" name="labour_rate[]" value="0" min="0" step="0.01" class="lab-rate" oninput="calcLabourRow(this)"></td>
-    <td><input type="number" name="labour_amount[]" value="0" readonly class="lab-amount" style="background:#f9fafb"></td>
-    <td><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕ Remove</button></td>`;
+    <td><select name="labour_technician[]" class="fi"><option value="">----------</option>${techOpts}</select></td>
+    <td><input type="text" name="labour_description[]" placeholder="Labour description..." class="fi"></td>
+    <td><input type="number" name="labour_hours[]" value="1" min="0" step="0.5" class="fi lab-hrs" oninput="calcLabourRow(this)"></td>
+    <td><input type="number" name="labour_rate[]" value="0" min="0" step="0.01" class="fi lab-rate" oninput="calcLabourRow(this)"></td>
+    <td style="text-align:right"><input type="number" name="labour_amount[]" value="0" readonly class="fi lab-amount" style="text-align:right; font-weight:700; font-family:monospace; background:#f8fafc"></td>
+    <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>`;
   document.getElementById('labourBody').appendChild(tr);
   refreshAllVehicleDropdowns();
 }
@@ -1830,7 +2049,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-
 {# ── Item Master data for JS dropdowns ─────────────────────────────── #}
 <script id="itemMasterData" type="application/json">{{ items_json|safe }}</script>
 
@@ -1841,18 +2059,11 @@ document.addEventListener('DOMContentLoaded', function () {
 </ul>
 {% endif %}
 
-
-
 {# Inspection Complaints prefill data for JS and test assertions #}
-
 {% if insp_complaints %}
-
 <ul id="inspComplaintsList" style="display:none;">
-
   {% for c in insp_complaints %}<li>{{ c.description }}</li>{% endfor %}
-
 </ul>
-
 {% endif %}
 
 {% endblock %}
