@@ -65,26 +65,65 @@ textarea.fc{resize:vertical;min-height:72px}
 .btn-doc-load{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .15s;box-shadow:0 2px 6px rgba(37,99,235,.25)}
 .btn-doc-load:hover{background:#1d4ed8;transform:translateY(-1px)}
 
-/* ── Document Picker Panel ── */
-.doc-picker-panel{display:none;position:absolute;right:0;top:115%;background:#fff;border:1.5px solid #2563eb;border-radius:12px;width:520px;max-width:92vw;z-index:500;box-shadow:0 12px 32px rgba(0,0,0,.15);overflow:hidden}
-.doc-picker-hdr{background:#1e40af;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
-.doc-picker-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
-.doc-picker-close{background:none;border:none;color:#93c5fd;font-size:18px;cursor:pointer;line-height:1}
-.doc-picker-close:hover{color:#fff}
-.doc-tabs{display:flex;background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:4px 8px 0}
-.doc-tab{padding:8px 14px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px}
-.doc-tab.active{color:#2563eb;border-bottom-color:#2563eb;background:#fff;border-radius:6px 6px 0 0}
-.doc-tab-badge{background:#e2e8f0;color:#475569;border-radius:10px;padding:1px 6px;font-size:10px}
-.doc-tab.active .doc-tab-badge{background:#dbeafe;color:#1e40af}
-.doc-body{max-height:360px;overflow-y:auto;padding:12px}
-.doc-item{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:all .15s}
-.doc-item:hover{border-color:#93c5fd;background:#f0f9ff;transform:translateX(2px)}
-.doc-item-main{flex:1}
-.doc-item-num{font-size:13px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:8px}
-.doc-item-sub{font-size:11px;color:#64748b;margin-top:3px;display:flex;gap:12px}
-.doc-item-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:#f1f5f9;color:#475569}
-.btn-doc-select{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
-.btn-doc-select:hover{background:#1d4ed8}
+/* ── Document Loader Modal ── */
+.doc-modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.65);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:99999;display:none;align-items:center;justify-content:center;padding:16px;animation:docModalFadeIn .18s ease-out}
+@keyframes docModalFadeIn{from{opacity:0}to{opacity:1}}
+.doc-modal-dialog{background:#fff;border-radius:14px;width:820px;max-width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,.25),0 0 0 1px rgba(0,0,0,.06);overflow:hidden;animation:docModalZoomIn .2s cubic-bezier(.16,1,.3,1)}
+@keyframes docModalZoomIn{from{transform:scale(.96) translateY(8px)}to{transform:scale(1) translateY(0)}}
+.doc-modal-header{padding:16px 22px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center}
+.doc-modal-title-wrap{display:flex;align-items:center;gap:12px}
+.doc-modal-icon{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:18px}
+.doc-modal-title{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.2px}
+.doc-modal-subtitle{font-size:11.5px;color:#94a3b8;margin-top:2px}
+.doc-modal-close{background:transparent;border:none;color:#94a3b8;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;transition:all .15s}
+.doc-modal-close:hover{background:rgba(255,255,255,.15);color:#fff}
+.doc-modal-filter-bar{padding:12px 22px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;flex-direction:column;gap:10px}
+.doc-modal-search-box{position:relative;display:flex;align-items:center}
+.doc-modal-search-icon{position:absolute;left:12px;font-size:13px;color:#94a3b8;pointer-events:none}
+.doc-modal-search-input{width:100%;padding:9px 34px 9px 34px;font-size:13px;border:1.5px solid #cbd5e1;border-radius:8px;outline:none;background:#fff;color:#0f172a;transition:all .15s}
+.doc-modal-search-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.doc-modal-search-clear{position:absolute;right:10px;background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;padding:4px}
+.doc-modal-search-clear:hover{color:#ef4444}
+.doc-modal-tabs-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.doc-modal-tabs{display:flex;gap:8px}
+.doc-modal-tab{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;color:#475569;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s}
+.doc-modal-tab:hover{background:#f1f5f9;color:#1e293b}
+.doc-modal-tab.active{background:#eff6ff;border-color:#3b82f6;color:#1d4ed8;box-shadow:0 1px 2px rgba(37,99,235,.1)}
+.doc-modal-tab-badge{background:#e2e8f0;color:#475569;border-radius:20px;padding:1px 7px;font-size:10.5px;font-weight:700}
+.doc-modal-tab.active .doc-modal-tab-badge{background:#bfdbfe;color:#1e40af}
+.doc-modal-cust-filter{font-size:11.5px;color:#64748b;display:flex;align-items:center;gap:6px}
+.doc-modal-cust-tag{background:#e2e8f0;color:#1e293b;padding:2px 8px;border-radius:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.doc-modal-cust-tag button{background:none;border:none;cursor:pointer;color:#64748b;font-weight:bold;padding:0 2px}
+.doc-modal-cust-tag button:hover{color:#ef4444}
+.doc-modal-body{padding:14px 22px;overflow-y:auto;max-height:430px;min-height:220px;background:#fff}
+.doc-modal-list{display:flex;flex-direction:column;gap:9px}
+.doc-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 16px;cursor:pointer;transition:all .15s ease-in-out;display:flex;align-items:center;justify-content:space-between;gap:14px;user-select:none}
+.doc-card:hover{border-color:#93c5fd;background:#f8fafc;transform:translateY(-1px);box-shadow:0 4px 10px -2px rgba(0,0,0,.05)}
+.doc-card.selected{border-color:#2563eb;background:#eff6ff;box-shadow:0 0 0 2px rgba(37,99,235,.2)}
+.doc-card-radio{width:20px;height:20px;border-radius:50%;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff;transition:all .15s}
+.doc-card.selected .doc-card-radio{border-color:#2563eb;background:#2563eb}
+.doc-card-radio::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff;opacity:0;transition:opacity .15s}
+.doc-card.selected .doc-card-radio::after{opacity:1}
+.doc-card-details{flex:1;min-width:0}
+.doc-card-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.doc-card-num{font-size:13.5px;font-weight:700;color:#0f172a;letter-spacing:-.2px}
+.doc-card.selected .doc-card-num{color:#1d4ed8}
+.doc-card-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:#f1f5f9;color:#475569}
+.doc-card-date{font-size:11px;color:#64748b;display:flex;align-items:center;gap:4px}
+.doc-card-cust{font-size:12.5px;font-weight:600;color:#1e293b;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.doc-card-mobile{font-size:11.5px;font-weight:600;color:#0369a1;background:#e0f2fe;padding:1px 7px;border-radius:10px;display:inline-flex;align-items:center;gap:4px}
+.doc-card-meta{font-size:11px;color:#64748b;display:flex;gap:14px;flex-wrap:wrap}
+.doc-card-meta span{display:inline-flex;align-items:center;gap:4px}
+.doc-modal-footer{padding:12px 22px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.doc-modal-selection-info{font-size:12px;font-weight:500;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doc-modal-actions{display:flex;gap:10px;flex-shrink:0}
+.btn-doc-modal-cancel{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:600;color:#475569;cursor:pointer;transition:all .15s}
+.btn-doc-modal-cancel:hover{background:#f1f5f9}
+.btn-doc-modal-confirm{background:#2563eb;border:none;border-radius:8px;padding:8px 20px;font-size:12.5px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 2px 6px rgba(37,99,235,.25);transition:all .15s}
+.btn-doc-modal-confirm:hover:not(:disabled){background:#1d4ed8;transform:translateY(-1px)}
+.btn-doc-modal-confirm:disabled{background:#94a3b8;cursor:not-allowed;box-shadow:none;opacity:.65}
+.doc-spinner{width:28px;height:28px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── Buttons ── */
 .btn-add{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s}
@@ -164,96 +203,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 .iopt:last-child{border-bottom:none}
 .iopt-code{font-size:10px;color:#94a3b8;font-family:monospace;flex-shrink:0}
 
-/* Toast banner */
-.toast-banner {
-  display: none;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  border: 1.5px solid #86efac;
-  border-radius: 12px;
-  padding: 16px 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 10px 25px -5px rgba(22, 163, 74, 0.15), 0 8px 10px -6px rgba(22, 163, 74, 0.1);
-  animation: toastSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
-}
 
-@keyframes toastSlideDown {
-  from { opacity: 0; transform: translateY(-12px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.toast-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-
-.toast-title {
-  font-size: 14.5px;
-  font-weight: 700;
-  color: #14532d;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.toast-icon-badge {
-  width: 26px;
-  height: 26px;
-  background: #22c55e;
-  color: #fff;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: bold;
-  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
-  flex-shrink: 0;
-}
-
-.toast-close-btn {
-  background: transparent;
-  border: none;
-  color: #15803d;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 6px;
-  transition: all 0.15s;
-}
-
-.toast-close-btn:hover {
-  background: rgba(22, 163, 74, 0.15);
-  color: #14532d;
-}
-
-.toast-details-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  font-size: 12.5px;
-  color: #166534;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed #bbf7d0;
-}
-
-.toast-pill {
-  background: #ffffff;
-  border: 1px solid #bbf7d0;
-  border-radius: 20px;
-  padding: 3px 12px;
-  font-weight: 600;
-  font-size: 11.5px;
-  color: #15803d;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
 </style>
 
 <div class="iw">
@@ -265,56 +215,89 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
   </div>
 </div>
 
-<!-- Loaded Toast Banner -->
-<div class="toast-banner" id="loadToast">
-  <div class="toast-header">
-    <div class="toast-title">
-      <span class="toast-icon-badge">✓</span>
-      <span id="loadToastTitle">Document Details Successfully Loaded</span>
-    </div>
-    <button type="button" class="toast-close-btn" onclick="document.getElementById('loadToast').style.display='none'">✕</button>
-  </div>
-  <div id="loadToastText" style="font-size:13px;color:#166534;font-weight:500;margin-left:36px"></div>
-  <div class="toast-details-grid" id="toastDetailsGrid" style="margin-left:36px;display:none"></div>
-</div>
-
 <!-- Document Loader Banner -->
 <div class="doc-loader-card" id="docLoaderCard">
   <div class="doc-loader-info">
+    <div class="doc-loader-icon">📥</div>
     <div>
       <div class="doc-loader-title">Load Data from Delivery Note / Job Card</div>
+      <div class="doc-loader-sub">Quickly import customer details, mobile number, vehicles, parts, and labour into this invoice</div>
     </div>
   </div>
-  <div style="position:relative">
+  <div>
     <button type="button" class="btn-doc-load" id="btnLoadDetails" onclick="handleLoadDetailsClick()">
-      📥 Load Details ▾
+      📥 Load Details
     </button>
+  </div>
+</div>
 
-    <!-- Document Picker Panel Dropdown -->
-    <div class="doc-picker-panel" id="docPickerPanel">
-      <div class="doc-picker-hdr">
-        <div class="doc-picker-title">Select Document to Import</div>
-        <button type="button" class="doc-picker-close" onclick="closeDocPicker()">✕</button>
-      </div>
-
-      <div class="doc-tabs">
-        <div class="doc-tab active" id="tabDN" onclick="switchDocTab('DN')">
-          Delivery Notes <span class="doc-tab-badge" id="badgeDN">0</span>
-        </div>
-        <div class="doc-tab" id="tabJC" onclick="switchDocTab('JC')">
-          Job Cards <span class="doc-tab-badge" id="badgeJC">0</span>
+<!-- Modal for selecting Delivery Note or Job Card -->
+<div id="docLoaderModal" class="doc-modal-overlay" style="display:none;" onclick="handleDocModalBackdropClick(event)">
+  <div class="doc-modal-dialog" onclick="event.stopPropagation()">
+    <div class="doc-modal-header">
+      <div class="doc-modal-title-wrap">
+        <div class="doc-modal-icon">📄</div>
+        <div>
+          <div class="doc-modal-title">Select Document to Load</div>
+          <div class="doc-modal-subtitle">Choose a Delivery Note or Job Card to automatically populate invoice details</div>
         </div>
       </div>
+      <button type="button" class="doc-modal-close" onclick="closeDocModal()" title="Close">✕</button>
+    </div>
 
-      <div class="doc-body" id="docBody">
-        <div id="docPromptSelectCust" style="padding:24px 16px;text-align:center;color:#94a3b8;font-size:12.5px">
-           Please select a Customer first to load available documents.
+    <!-- Search & Filters -->
+    <div class="doc-modal-filter-bar">
+      <div class="doc-modal-search-box">
+        <span class="doc-modal-search-icon">🔍</span>
+        <input type="text" id="docModalSearch" class="doc-modal-search-input" placeholder="Search by voucher #, customer name, mobile, vehicle plate..." oninput="onDocModalSearch(this.value)">
+        <button type="button" id="docModalClearSearch" class="doc-modal-search-clear" onclick="clearDocModalSearch()" style="display:none;">✕</button>
+      </div>
+      <div class="doc-modal-tabs-row">
+        <div class="doc-modal-tabs">
+          <button type="button" class="doc-modal-tab active" id="modalTabDN" onclick="switchDocModalTab('DN')">
+            <span>🚚 Delivery Notes</span>
+            <span class="doc-modal-tab-badge" id="modalBadgeDN">0</span>
+          </button>
+          <button type="button" class="doc-modal-tab" id="modalTabJC" onclick="switchDocModalTab('JC')">
+            <span>🔧 Job Cards</span>
+            <span class="doc-modal-tab-badge" id="modalBadgeJC">0</span>
+          </button>
         </div>
-        <div id="docListDN" style="display:none"></div>
-        <div id="docListJC" style="display:none"></div>
-        <div id="docEmptyMsg" style="display:none;padding:24px 16px;text-align:center;color:#94a3b8;font-size:12.5px">
-          No documents found for this customer.
+        <div class="doc-modal-cust-filter" id="docModalCustFilter" style="display:none;">
+          <span>Filtered by:</span>
+          <span class="doc-modal-cust-tag">
+            <span id="docModalCustName">Customer</span>
+            <button type="button" onclick="clearModalCustFilter()" title="Remove customer filter">✕</button>
+          </span>
         </div>
+      </div>
+    </div>
+
+    <!-- Body / List -->
+    <div class="doc-modal-body" id="docModalBody">
+      <div id="docModalLoading" style="display:none;padding:40px 20px;text-align:center;color:#64748b;">
+        <div class="doc-spinner"></div>
+        <div style="margin-top:12px;font-size:13px;font-weight:600;color:#334155;">Loading documents...</div>
+      </div>
+      <div id="docModalListDN" class="doc-modal-list"></div>
+      <div id="docModalListJC" class="doc-modal-list" style="display:none;"></div>
+      <div id="docModalEmpty" style="display:none;padding:48px 20px;text-align:center;color:#64748b;">
+        <div style="font-size:32px;margin-bottom:8px">📭</div>
+        <div style="font-size:14px;font-weight:600;color:#334155">No documents found</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">No active documents match your search or filter.</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="doc-modal-footer">
+      <div class="doc-modal-selection-info" id="docModalSelectionInfo">
+        <span style="color:#64748b;">Click a document to select, then click Load Selected Details</span>
+      </div>
+      <div class="doc-modal-actions">
+        <button type="button" class="btn-doc-modal-cancel" onclick="closeDocModal()">Cancel</button>
+        <button type="button" class="btn-doc-modal-confirm" id="btnConfirmDocLoad" onclick="confirmSelectedDocLoad()" disabled>
+          Load Selected Details
+        </button>
       </div>
     </div>
   </div>
@@ -422,7 +405,8 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
             <option value="">— Select Customer —</option>
             {% for c in customers %}
             <option value="{{ c.id }}"
-              data-mobile="{{ c.contact_number|default:'' }}"
+              data-mobile="{{ c.mobile|default:c.phone_no|default:'' }}"
+              data-address="{{ c.address1|default:'' }}"
               {% if invoice and invoice.customer_id == c.id or prefill_dn and prefill_dn.customer_id == c.id %}selected{% endif %}>
               {{ c.ledger_name }}
             </option>
@@ -1164,10 +1148,15 @@ function removeInvVehRow(btn) {
 ══════════════════════════════════════════ */
 document.getElementById('custSel').addEventListener('change', function () {
   const opt = this.options[this.selectedIndex];
-  document.getElementById('custMobile').value = opt.dataset.mobile || '';
+  if (opt) {
+    document.getElementById('custMobile').value = opt.dataset.mobile || '';
+    const addrField = document.querySelector('[name="customer_address"]');
+    if (addrField && opt.dataset.address && !addrField.value) {
+      addrField.value = opt.dataset.address;
+    }
+  }
 
   loadInvVehicles(this.value);
-  fetchDocsForInvoice();
 });
 
 // ── Job card search ───────────────────────────────────────────────────────────
@@ -1202,140 +1191,512 @@ document.getElementById('jcSearch').addEventListener('input', function () {
   }, 250);
 });
 
-// ── Document Loader Fetch & Picker logic ──────────────────────────────────────
-function fetchDocsForInvoice() {
-  const custId = document.getElementById('custSel').value;
+/* ══════════════════════════════════════════════════════════
+   DOCUMENT LOADER MODAL (Delivery Notes & Job Cards)
+══════════════════════════════════════════════════════════ */
+let selectedDoc = null;
+let docModalSearchTimer = null;
+let currentModalTab = 'DN';
+let activeCustFilterId = null;
 
-  if (!custId) {
-    cachedDocs = { delivery_notes: [], jobcards: [] };
-    updateDocBadges();
-    return Promise.resolve(cachedDocs);
-  }
-
-  const vehSelElements = document.querySelectorAll('#invVehBody .inv-veh-select');
-  const selectedVehIds = Array.from(vehSelElements)
-    .map(s => s.value)
-    .filter(v => v !== '');
-
-  let url = `${GET_DOCS_INVOICE_URL}?customer_id=${encodeURIComponent(custId)}`;
-  if (selectedVehIds.length > 0) {
-    url += `&vehicle_id=${encodeURIComponent(selectedVehIds.join(','))}`;
-  }
-
-  return fetch(url)
-    .then(r => r.json())
-    .then(data => {
-      cachedDocs = data || { delivery_notes: [], jobcards: [] };
-      updateDocBadges();
-      renderDocLists();
-      return cachedDocs;
-    })
-    .catch(err => {
-      console.error("Error fetching docs:", err);
-      return { delivery_notes: [], jobcards: [] };
-    });
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function handleLoadDetailsClick() {
-  const custId = document.getElementById('custSel').value;
-  if (!custId) {
-    alert('Please select a Customer first to load details.');
-    document.getElementById('custSel').focus();
+  openDocModal();
+}
+
+function openDocModal() {
+  const modal = document.getElementById('docLoaderModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  const custSel = document.getElementById('custSel');
+  const custId = custSel ? custSel.value : '';
+  const custName = (custSel && custSel.selectedIndex >= 0) ? custSel.options[custSel.selectedIndex].text : '';
+
+  const custFilterEl = document.getElementById('docModalCustFilter');
+  const custNameEl = document.getElementById('docModalCustName');
+
+  if (custId && custName && custName !== '— Select Customer —') {
+    activeCustFilterId = custId;
+    if (custFilterEl) custFilterEl.style.display = 'inline-flex';
+    if (custNameEl) custNameEl.textContent = custName.trim();
+  } else {
+    activeCustFilterId = null;
+    if (custFilterEl) custFilterEl.style.display = 'none';
+  }
+
+  const searchInput = document.getElementById('docModalSearch');
+  if (searchInput) searchInput.value = '';
+  const clearBtn = document.getElementById('docModalClearSearch');
+  if (clearBtn) clearBtn.style.display = 'none';
+
+  selectedDoc = null;
+  updateModalSelectionUI();
+
+  fetchDocsForModal('');
+  if (searchInput) setTimeout(() => searchInput.focus(), 150);
+}
+
+function closeDocModal() {
+  const modal = document.getElementById('docLoaderModal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+  selectedDoc = null;
+}
+
+function handleDocModalBackdropClick(e) {
+  if (e.target && e.target.id === 'docLoaderModal') {
+    closeDocModal();
+  }
+}
+
+function clearModalCustFilter() {
+  activeCustFilterId = null;
+  const custFilterEl = document.getElementById('docModalCustFilter');
+  if (custFilterEl) custFilterEl.style.display = 'none';
+  const searchInput = document.getElementById('docModalSearch');
+  fetchDocsForModal(searchInput ? searchInput.value.trim() : '');
+}
+
+function onDocModalSearch(val) {
+  clearTimeout(docModalSearchTimer);
+  const clearBtn = document.getElementById('docModalClearSearch');
+  if (clearBtn) clearBtn.style.display = val.trim() ? 'block' : 'none';
+
+  docModalSearchTimer = setTimeout(() => {
+    fetchDocsForModal(val.trim());
+  }, 250);
+}
+
+function clearDocModalSearch() {
+  const searchInput = document.getElementById('docModalSearch');
+  if (searchInput) searchInput.value = '';
+  const clearBtn = document.getElementById('docModalClearSearch');
+  if (clearBtn) clearBtn.style.display = 'none';
+  fetchDocsForModal('');
+}
+
+function switchDocModalTab(tab) {
+  currentModalTab = tab;
+  const tabDN = document.getElementById('modalTabDN');
+  const tabJC = document.getElementById('modalTabJC');
+  const listDN = document.getElementById('docModalListDN');
+  const listJC = document.getElementById('docModalListJC');
+
+  if (tab === 'DN') {
+    if (tabDN) tabDN.classList.add('active');
+    if (tabJC) tabJC.classList.remove('active');
+    if (listDN) listDN.style.display = 'flex';
+    if (listJC) listJC.style.display = 'none';
+  } else {
+    if (tabJC) tabJC.classList.add('active');
+    if (tabDN) tabDN.classList.remove('active');
+    if (listJC) listJC.style.display = 'flex';
+    if (listDN) listDN.style.display = 'none';
+  }
+
+  const dns = cachedDocs.delivery_notes || [];
+  const jcs = cachedDocs.jobcards || [];
+  const emptyEl = document.getElementById('docModalEmpty');
+  if (emptyEl) {
+    emptyEl.style.display = (tab === 'DN' && dns.length === 0) || (tab === 'JC' && jcs.length === 0) ? 'block' : 'none';
+  }
+}
+
+function fetchDocsForModal(searchQuery = '') {
+  const loadingEl = document.getElementById('docModalLoading');
+  const emptyEl = document.getElementById('docModalEmpty');
+  const listDN = document.getElementById('docModalListDN');
+  const listJC = document.getElementById('docModalListJC');
+
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (listDN) listDN.style.display = 'none';
+  if (listJC) listJC.style.display = 'none';
+
+  const params = [];
+  if (activeCustFilterId) params.push(`customer_id=${encodeURIComponent(activeCustFilterId)}`);
+  if (searchQuery) params.push(`q=${encodeURIComponent(searchQuery)}`);
+
+  let url = GET_DOCS_INVOICE_URL;
+  if (params.length > 0) url += '?' + params.join('&');
+
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      cachedDocs = data || { delivery_notes: [], jobcards: [] };
+      if (loadingEl) loadingEl.style.display = 'none';
+      renderModalDocLists();
+    })
+    .catch(err => {
+      console.error('Error loading documents:', err);
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'block';
+    });
+}
+
+function renderModalDocLists() {
+  const dns = cachedDocs.delivery_notes || [];
+  const jcs = cachedDocs.jobcards || [];
+
+  const badgeDN = document.getElementById('modalBadgeDN');
+  const badgeJC = document.getElementById('modalBadgeJC');
+  if (badgeDN) badgeDN.textContent = dns.length;
+  if (badgeJC) badgeJC.textContent = jcs.length;
+
+  const listDN = document.getElementById('docModalListDN');
+  const listJC = document.getElementById('docModalListJC');
+
+  // If current tab is empty but other has records, auto-switch
+  if (currentModalTab === 'DN' && dns.length === 0 && jcs.length > 0) {
+    currentModalTab = 'JC';
+    document.getElementById('modalTabJC')?.classList.add('active');
+    document.getElementById('modalTabDN')?.classList.remove('active');
+  } else if (currentModalTab === 'JC' && jcs.length === 0 && dns.length > 0) {
+    currentModalTab = 'DN';
+    document.getElementById('modalTabDN')?.classList.add('active');
+    document.getElementById('modalTabJC')?.classList.remove('active');
+  }
+
+  // Render Delivery Notes
+  if (listDN) {
+    listDN.innerHTML = dns.map(dn => `
+      <div class="doc-card ${selectedDoc && selectedDoc.type === 'DN' && selectedDoc.id === dn.id ? 'selected' : ''}"
+           id="docCard_DN_${dn.id}"
+           onclick="selectModalDoc('DN', ${dn.id})"
+           ondblclick="confirmSelectedDocLoad()">
+        <div class="doc-card-radio"></div>
+        <div class="doc-card-details">
+          <div class="doc-card-top">
+            <span class="doc-card-num">🚚 ${escapeHtml(dn.number)}</span>
+            <span class="doc-card-badge">${escapeHtml(dn.status || 'Active')}</span>
+            <span class="doc-card-date">📅 ${escapeHtml(dn.date)}</span>
+            ${dn.job_number ? `<span class="doc-card-badge" style="background:#e0f2fe;color:#0369a1;">Job: ${escapeHtml(dn.job_number)}</span>` : ''}
+          </div>
+          <div class="doc-card-cust">
+            <span>👤 <strong>${escapeHtml(dn.customer_name || 'Customer N/A')}</strong></span>
+            ${dn.customer_mobile ? `<span class="doc-card-mobile">📞 ${escapeHtml(dn.customer_mobile)}</span>` : ''}
+          </div>
+          <div class="doc-card-meta">
+            <span>🚗 <strong>${escapeHtml(dn.vehicle_name || 'No vehicle')}</strong></span>
+            <span>📦 ${dn.parts_count || 0} Parts</span>
+            <span>🛠️ ${dn.labours_count || 0} Labour</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Render Job Cards
+  if (listJC) {
+    listJC.innerHTML = jcs.map(jc => `
+      <div class="doc-card ${selectedDoc && selectedDoc.type === 'JC' && selectedDoc.id === jc.id ? 'selected' : ''}"
+           id="docCard_JC_${jc.id}"
+           onclick="selectModalDoc('JC', ${jc.id})"
+           ondblclick="confirmSelectedDocLoad()">
+        <div class="doc-card-radio"></div>
+        <div class="doc-card-details">
+          <div class="doc-card-top">
+            <span class="doc-card-num">🔧 ${escapeHtml(jc.number)}</span>
+            <span class="doc-card-badge">${escapeHtml(jc.status || 'Active')}</span>
+            <span class="doc-card-date">📅 ${escapeHtml(jc.date)}</span>
+          </div>
+          <div class="doc-card-cust">
+            <span>👤 <strong>${escapeHtml(jc.customer_name || 'Customer N/A')}</strong></span>
+            ${jc.customer_mobile ? `<span class="doc-card-mobile">📞 ${escapeHtml(jc.customer_mobile)}</span>` : ''}
+          </div>
+          <div class="doc-card-meta">
+            <span>🚗 <strong>${escapeHtml(jc.vehicle_name || 'No vehicle')}</strong></span>
+            <span>📦 ${jc.parts_count || 0} Parts</span>
+            <span>🛠️ ${jc.labours_count || 0} Labour</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const isDN = currentModalTab === 'DN';
+  if (listDN) listDN.style.display = isDN ? 'flex' : 'none';
+  if (listJC) listJC.style.display = isDN ? 'none' : 'flex';
+
+  const emptyEl = document.getElementById('docModalEmpty');
+  if (emptyEl) {
+    emptyEl.style.display = (isDN && dns.length === 0) || (!isDN && jcs.length === 0) ? 'block' : 'none';
+  }
+
+  updateModalSelectionUI();
+}
+
+function selectModalDoc(type, id) {
+  let doc = null;
+  if (type === 'DN') {
+    doc = (cachedDocs.delivery_notes || []).find(d => d.id === id);
+  } else {
+    doc = (cachedDocs.jobcards || []).find(d => d.id === id);
+  }
+  if (!doc) return;
+
+  selectedDoc = { type, id, doc };
+
+  document.querySelectorAll('.doc-card').forEach(card => card.classList.remove('selected'));
+  const activeCard = document.getElementById(`docCard_${type}_${id}`);
+  if (activeCard) activeCard.classList.add('selected');
+
+  updateModalSelectionUI();
+}
+
+function updateModalSelectionUI() {
+  const confirmBtn = document.getElementById('btnConfirmDocLoad');
+  const infoEl = document.getElementById('docModalSelectionInfo');
+
+  if (!selectedDoc || !selectedDoc.doc) {
+    if (confirmBtn) confirmBtn.disabled = true;
+    if (infoEl) infoEl.innerHTML = '<span style="color:#64748b;">Click a document to select, then click Load Selected Details</span>';
     return;
   }
 
-  fetchDocsForInvoice().then(docs => {
-    const dns = docs.delivery_notes || [];
-    const jcs = docs.jobcards || [];
+  const doc = selectedDoc.doc;
+  const typeLabel = selectedDoc.type === 'DN' ? 'Delivery Note' : 'Job Card';
+  if (confirmBtn) confirmBtn.disabled = false;
+  if (infoEl) {
+    infoEl.innerHTML = `Selected ${typeLabel}: <strong>${escapeHtml(doc.number)}</strong> &bull; ${escapeHtml(doc.customer_name || '')} ${doc.customer_mobile ? `(${escapeHtml(doc.customer_mobile)})` : ''}`;
+  }
+}
 
-    if (dns.length === 0 && jcs.length === 0) {
-      closeDocPicker();
-      showToastBanner(
-        'No Records Found',
-        'No matching active Delivery Notes or Job Cards were found for the selected Customer and Vehicle criteria.',
-        [],
-        true
+function confirmSelectedDocLoad() {
+  if (!selectedDoc || !selectedDoc.doc) return;
+  const doc = selectedDoc.doc;
+
+  if (selectedDoc.type === 'DN') {
+    populateFromDeliveryNote(doc);
+  } else {
+    populateFromJobCard(doc);
+  }
+
+  // Automatically close modal without any persistent message
+  closeDocModal();
+}
+
+/* ══════════════════════════════════════════════════════════
+   POPULATE FORM FIELDS
+══════════════════════════════════════════════════════════ */
+function addInvVehicleWithData(v) {
+  const vId = typeof v === 'object' ? v.id : v;
+  const vName = typeof v === 'object' ? (v.name || `Vehicle #${vId}`) : `Vehicle #${vId}`;
+  const vModel = typeof v === 'object' ? (v.model || '') : '';
+  const vMileage = typeof v === 'object' ? (v.mileage || '') : '';
+
+  document.getElementById('invVehEmpty').style.display = 'none';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>
+      <select name="inv_vehicle_id[]" class="inv-veh-select" onchange="onInvVehRowChange(this)">
+        <option value="${vId}" selected data-mm="${vModel}" data-odo="${vMileage}">${escapeHtml(vName)}</option>
+      </select>
+    </td>
+    <td><input type="text" class="fc" readonly value="${escapeHtml(vModel)}" placeholder="Model"></td>
+    <td><input type="number" name="inv_vehicle_mileage[]" value="${vMileage}" min="0" class="fc" placeholder="Mileage"></td>
+    <td>
+      <input type="hidden" name="inv_vehicle_notes[]" value="">
+      <button type="button" onclick="removeInvVehRow(this)"
+              style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">✕ Remove</button>
+    </td>`;
+  document.getElementById('invVehBody').appendChild(tr);
+  return tr;
+}
+
+function populateFromDeliveryNote(dn) {
+  // 1. Customer
+  if (dn.customer_id) {
+    const custSel = document.getElementById('custSel');
+    if (custSel) {
+      let optExists = [...custSel.options].some(o => String(o.value) === String(dn.customer_id));
+      if (!optExists && dn.customer_name) {
+        const newOpt = new Option(dn.customer_name, dn.customer_id);
+        newOpt.dataset.mobile = dn.customer_mobile || '';
+        newOpt.dataset.address = dn.customer_address || '';
+        custSel.add(newOpt);
+      }
+      custSel.value = dn.customer_id;
+    }
+    loadInvVehicles(dn.customer_id);
+  }
+
+  // 2. Customer Mobile & Address
+  if (dn.customer_mobile !== undefined) {
+    const m = document.getElementById('custMobile');
+    if (m) m.value = dn.customer_mobile || '';
+  }
+  if (dn.customer_address) {
+    const addr = document.querySelector('[name="customer_address"]');
+    if (addr) addr.value = dn.customer_address;
+  }
+
+  // 3. Payment Mode
+  if (dn.payment_mode) {
+    const pm = document.querySelector('[name="payment_mode"]');
+    if (pm) pm.value = dn.payment_mode;
+  }
+
+  // 4. Job Card Ref & Trackers
+  document.getElementById('loadedDN').value = dn.id;
+  document.getElementById('loadedJC').value = '';
+  if (dn.job_number) {
+    document.getElementById('jcSearch').value = dn.job_number;
+    document.getElementById('jcId').value     = dn.job_card_id || '';
+  }
+
+  // 5. Vehicles
+  const vehBody = document.getElementById('invVehBody');
+  vehBody.innerHTML = '';
+  const docVehicles = (dn.vehicles && dn.vehicles.length > 0)
+    ? dn.vehicles
+    : (dn.vehicle_id ? [{ id: dn.vehicle_id, name: dn.vehicle_name, model: '', mileage: '' }] : []);
+
+  if (docVehicles.length > 0) {
+    docVehicles.forEach(v => addInvVehicleWithData(v));
+  } else {
+    document.getElementById('invVehEmpty').style.display = 'block';
+  }
+
+  // 6. Spare Parts
+  const partsTbody = document.getElementById('partsTbody');
+  partsTbody.innerHTML = '';
+  if (dn.parts && dn.parts.length > 0) {
+    dn.parts.forEach(p => {
+      addInvPartRow(
+        p.item_id || '',
+        p.part_code || '',
+        p.quantity || 1,
+        p.unit || 'Pcs',
+        p.rate || 0,
+        p.discount_pct || 0,
+        p.tax_percent !== undefined ? p.tax_percent : 8,
+        p.vehicle_id || dn.vehicle_id || ''
       );
-      return;
-    }
+      const lastRow = partsTbody.lastElementChild;
+      if (lastRow && p.description) {
+        const nameInp = lastRow.querySelector('.inv-pname');
+        if (nameInp) nameInp.value = p.description;
+      }
+    });
+  }
 
-    // Auto-populate form fields with the retrieved data (first matching Delivery Note or Job Card)
-    if (dns.length > 0) {
-      loadDeliveryNoteData(dns[0].id);
-    } else if (jcs.length > 0) {
-      loadJobCardData(jcs[0].id);
-    }
+  // 7. Labour Charges
+  const labourTbody = document.getElementById('labourTbody');
+  labourTbody.innerHTML = '';
+  if (dn.labours && dn.labours.length > 0) {
+    dn.labours.forEach(l => {
+      addLabourDataRow(
+        l.description || '',
+        l.technician_id || '',
+        l.hours || 1,
+        l.rate || 0,
+        l.tax_percent !== undefined ? l.tax_percent : 8
+      );
+    });
+  }
 
-    // Open doc picker panel so user can view/select other matching documents if available
-    const panel = document.getElementById('docPickerPanel');
-    if (panel) panel.style.display = 'block';
-  });
+  syncRowVehicleDropdowns();
+  calcAll();
 }
 
-function showToastBanner(title, msg, pills = [], isInfo = false) {
-  const toast   = document.getElementById('loadToast');
-  const titleEl = document.getElementById('loadToastTitle');
-  const textEl  = document.getElementById('loadToastText');
-  const gridEl  = document.getElementById('toastDetailsGrid');
-
-  if (!toast) return;
-
-  const iconBadge = toast.querySelector('.toast-icon-badge');
-
-  if (isInfo) {
-    toast.style.background = 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
-    toast.style.borderColor = '#93c5fd';
-    if (titleEl) titleEl.style.color = '#1e40af';
-    if (textEl)  textEl.style.color  = '#1e3a8a';
-    if (iconBadge) {
-      iconBadge.style.background = '#3b82f6';
-      iconBadge.textContent = 'ℹ';
+function populateFromJobCard(jc) {
+  // 1. Customer
+  if (jc.customer_id) {
+    const custSel = document.getElementById('custSel');
+    if (custSel) {
+      let optExists = [...custSel.options].some(o => String(o.value) === String(jc.customer_id));
+      if (!optExists && jc.customer_name) {
+        const newOpt = new Option(jc.customer_name, jc.customer_id);
+        newOpt.dataset.mobile = jc.customer_mobile || '';
+        newOpt.dataset.address = jc.customer_address || '';
+        custSel.add(newOpt);
+      }
+      custSel.value = jc.customer_id;
     }
+    loadInvVehicles(jc.customer_id);
+  }
+
+  // 2. Customer Mobile & Address
+  if (jc.customer_mobile !== undefined) {
+    const m = document.getElementById('custMobile');
+    if (m) m.value = jc.customer_mobile || '';
+  }
+  if (jc.customer_address) {
+    const addr = document.querySelector('[name="customer_address"]');
+    if (addr) addr.value = jc.customer_address;
+  }
+
+  // 3. Job Card Ref & Trackers
+  document.getElementById('loadedJC').value = jc.id;
+  document.getElementById('loadedDN').value = '';
+  document.getElementById('jcSearch').value = jc.number;
+  document.getElementById('jcId').value     = jc.id;
+
+  // 4. Vehicles
+  const vehBody = document.getElementById('invVehBody');
+  vehBody.innerHTML = '';
+  const docVehicles = (jc.vehicles && jc.vehicles.length > 0)
+    ? jc.vehicles
+    : (jc.vehicle_id ? [{ id: jc.vehicle_id, name: jc.vehicle_name, model: '', mileage: '' }] : []);
+
+  if (docVehicles.length > 0) {
+    docVehicles.forEach(v => addInvVehicleWithData(v));
   } else {
-    toast.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
-    toast.style.borderColor = '#86efac';
-    if (titleEl) titleEl.style.color = '#14532d';
-    if (textEl)  textEl.style.color  = '#166534';
-    if (iconBadge) {
-      iconBadge.style.background = '#22c55e';
-      iconBadge.textContent = '✓';
-    }
+    document.getElementById('invVehEmpty').style.display = 'block';
   }
 
-  if (titleEl) titleEl.textContent = title;
-  if (textEl)  textEl.textContent  = msg || '';
-
-  if (pills && pills.length > 0 && gridEl) {
-    gridEl.style.display = 'flex';
-    gridEl.innerHTML = pills.map(p => `<span class="toast-pill">${p}</span>`).join('');
-  } else if (gridEl) {
-    gridEl.style.display = 'none';
-    gridEl.innerHTML = '';
+  // 5. Spare Parts
+  const partsTbody = document.getElementById('partsTbody');
+  partsTbody.innerHTML = '';
+  if (jc.parts && jc.parts.length > 0) {
+    jc.parts.forEach(p => {
+      addInvPartRow(
+        p.item_id || '',
+        p.part_code || '',
+        p.quantity || 1,
+        p.unit || 'Pcs',
+        p.rate || 0,
+        p.discount_pct || 0,
+        p.tax_percent !== undefined ? p.tax_percent : 8,
+        p.vehicle_id || jc.vehicle_id || ''
+      );
+      const lastRow = partsTbody.lastElementChild;
+      if (lastRow && p.description) {
+        const nameInp = lastRow.querySelector('.inv-pname');
+        if (nameInp) nameInp.value = p.description;
+      }
+    });
   }
 
-  toast.style.display = 'block';
-  toast.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function updateDocBadges() {
-  const dnCount = cachedDocs.delivery_notes ? cachedDocs.delivery_notes.length : 0;
-  const jcCount = cachedDocs.jobcards ? cachedDocs.jobcards.length : 0;
-  document.getElementById('badgeDN').textContent = dnCount;
-  document.getElementById('badgeJC').textContent = jcCount;
-}
-
-function toggleDocPicker() {
-  const panel = document.getElementById('docPickerPanel');
-  if (panel.style.display === 'block') {
-    panel.style.display = 'none';
-  } else {
-    panel.style.display = 'block';
-    renderDocLists();
+  // 6. Labour Charges
+  const labourTbody = document.getElementById('labourTbody');
+  labourTbody.innerHTML = '';
+  if (jc.labours && jc.labours.length > 0) {
+    jc.labours.forEach(l => {
+      addLabourDataRow(
+        l.description || '',
+        l.technician_id || '',
+        l.hours || 1,
+        l.rate || 0,
+        l.tax_percent !== undefined ? l.tax_percent : 8
+      );
+    });
   }
-}
 
-function closeDocPicker() {
-  document.getElementById('docPickerPanel').style.display = 'none';
+  syncRowVehicleDropdowns();
+  calcAll();
 }
 function restorePostedInvoiceData() {
   const tag = document.getElementById('posted-invoice-data');
@@ -1444,207 +1805,7 @@ function applyPostedOtherCharges(d) {
   });
   calcAll();
 }
-function switchDocTab(tab) {
-  document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
-  if (tab === 'DN') {
-    document.getElementById('tabDN').classList.add('active');
-    document.getElementById('docListDN').style.display = 'block';
-    document.getElementById('docListJC').style.display = 'none';
-  } else {
-    document.getElementById('tabJC').classList.add('active');
-    document.getElementById('docListDN').style.display = 'none';
-    document.getElementById('docListJC').style.display = 'block';
-  }
-}
 
-function renderDocLists() {
-  const custId = document.getElementById('custSel').value;
-  const promptEl = document.getElementById('docPromptSelectCust');
-  const listDN   = document.getElementById('docListDN');
-  const listJC   = document.getElementById('docListJC');
-  const emptyEl  = document.getElementById('docEmptyMsg');
-
-  if (!custId) {
-    promptEl.style.display = 'block';
-    listDN.style.display   = 'none';
-    listJC.style.display   = 'none';
-    emptyEl.style.display  = 'none';
-    return;
-  }
-
-  promptEl.style.display = 'none';
-
-  // Render Delivery Notes
-  const dns = cachedDocs.delivery_notes || [];
-  if (dns.length === 0) {
-    listDN.innerHTML = `<div style="padding:16px;text-align:center;color:#94a3b8;font-size:12px">No Delivery Notes found</div>`;
-  } else {
-    listDN.innerHTML = dns.map(dn => `
-      <div class="doc-item">
-        <div class="doc-item-main">
-          <div class="doc-item-num">
-            <span>🚚 ${dn.number}</span>
-            <span class="doc-item-badge">${dn.status}</span>
-          </div>
-          <div class="doc-item-sub">
-            <span>📅 ${dn.date}</span>
-            <span>🚗 ${dn.vehicle_name || 'Vehicle N/A'}</span>
-            <span>⚙️ ${dn.parts_count} parts, ${dn.labours_count} labour</span>
-          </div>
-        </div>
-        <button type="button" class="btn-doc-select" onclick="loadDeliveryNoteData(${dn.id})">Load Data</button>
-      </div>
-    `).join('');
-  }
-
-  // Render Job Cards
-  const jcs = cachedDocs.jobcards || [];
-  if (jcs.length === 0) {
-    listJC.innerHTML = `<div style="padding:16px;text-align:center;color:#94a3b8;font-size:12px">No Job Cards found</div>`;
-  } else {
-    listJC.innerHTML = jcs.map(jc => `
-      <div class="doc-item">
-        <div class="doc-item-main">
-          <div class="doc-item-num">
-            <span>🔧 ${jc.number}</span>
-            <span class="doc-item-badge">${jc.status}</span>
-          </div>
-          <div class="doc-item-sub">
-            <span>📅 ${jc.date}</span>
-            <span>🚗 ${jc.vehicle_name || 'Vehicle N/A'}</span>
-            <span>⚙️ ${jc.parts_count} parts, ${jc.labours_count} labour</span>
-          </div>
-        </div>
-        <button type="button" class="btn-doc-select" onclick="loadJobCardData(${jc.id})">Load Data</button>
-      </div>
-    `).join('');
-  }
-
-  const isDNActive = document.getElementById('tabDN').classList.contains('active');
-  listDN.style.display = isDNActive ? 'block' : 'none';
-  listJC.style.display = isDNActive ? 'none' : 'block';
-  emptyEl.style.display = 'none';
-}
-
-function loadDeliveryNoteData(dnId) {
-  const dn = (cachedDocs.delivery_notes || []).find(d => d.id === dnId);
-  if (!dn) return;
-
-  // Auto add vehicle row if available and not already present
-  if (dn.vehicles && dn.vehicles.length > 0) {
-    dn.vehicles.forEach(v => {
-      const vId = typeof v === 'object' ? v.id : v;
-      if (vId) {
-        const already = [...document.querySelectorAll('.inv-veh-select')].some(s => String(s.value) === String(vId));
-        if (!already) addInvVehicleRow(vId);
-      }
-    });
-  } else if (dn.vehicle_id) {
-    const already = [...document.querySelectorAll('.inv-veh-select')].some(s => String(s.value) === String(dn.vehicle_id));
-    if (!already) addInvVehicleRow(dn.vehicle_id);
-  }
-
-  // Job card ref if linked
-  if (dn.job_number) {
-    document.getElementById('jcSearch').value = dn.job_number;
-    document.getElementById('jcId').value     = dn.job_card_id || '';
-  }
-
-  document.getElementById('loadedDN').value = dn.id;
-
-  // Populate parts
-  if (dn.parts && dn.parts.length > 0) {
-    clearEmptyPartsRows();
-    dn.parts.forEach(p => {
-      addInvPartRow(p.item_id, p.part_code, p.quantity, p.unit, p.rate, p.discount_pct || 0, p.tax_percent || 8);
-      const lastRow = document.querySelector('#partsTbody tr:last-child');
-      if (lastRow && p.description) {
-        lastRow.querySelector('.inv-pname').value = p.description;
-      }
-    });
-  }
-
-  // Populate labour
-  if (dn.labours && dn.labours.length > 0) {
-    clearEmptyLabourRows();
-    dn.labours.forEach(l => {
-      addLabourDataRow(l.description, l.technician_id, l.hours, l.rate, l.tax_percent || 8);
-    });
-  }
-
-  const pills = [
-    `🚚 Delivery Note: ${dn.number}`,
-    `📅 ${dn.date}`,
-    `📦 ${dn.parts_count || 0} Spare Parts`,
-    `🔧 ${dn.labours_count || 0} Labour Charges`,
-  ];
-  if (dn.vehicle_name) pills.push(`🚗 ${dn.vehicle_name}`);
-
-  showToastBanner(
-    'Delivery Note Successfully Imported',
-    `All items, vehicle details, and charges from Delivery Note ${dn.number} have been loaded into the invoice form.`,
-    pills
-  );
-  calcAll();
-}
-
-function loadJobCardData(jcId) {
-  const jc = (cachedDocs.jobcards || []).find(j => j.id === jcId);
-  if (!jc) return;
-
-  // Auto add vehicle row if available and not already present
-  if (jc.vehicles && jc.vehicles.length > 0) {
-    jc.vehicles.forEach(v => {
-      const vId = typeof v === 'object' ? v.id : v;
-      if (vId) {
-        const already = [...document.querySelectorAll('.inv-veh-select')].some(s => String(s.value) === String(vId));
-        if (!already) addInvVehicleRow(vId);
-      }
-    });
-  } else if (jc.vehicle_id) {
-    const already = [...document.querySelectorAll('.inv-veh-select')].some(s => String(s.value) === String(jc.vehicle_id));
-    if (!already) addInvVehicleRow(jc.vehicle_id);
-  }
-
-  document.getElementById('jcSearch').value = jc.number;
-  document.getElementById('jcId').value     = jc.id;
-  document.getElementById('loadedJC').value = jc.id;
-
-  // Populate parts
-  if (jc.parts && jc.parts.length > 0) {
-    clearEmptyPartsRows();
-    jc.parts.forEach(p => {
-      addInvPartRow(p.item_id, p.part_code, p.quantity, p.unit || 'Pcs', p.rate, p.discount_pct || 0, p.tax_percent || 8);
-      const lastRow = document.querySelector('#partsTbody tr:last-child');
-      if (lastRow && p.description) {
-        lastRow.querySelector('.inv-pname').value = p.description;
-      }
-    });
-  }
-
-  // Populate labour
-  if (jc.labours && jc.labours.length > 0) {
-    clearEmptyLabourRows();
-    jc.labours.forEach(l => {
-      addLabourDataRow(l.description, l.technician_id, l.hours, l.rate, l.tax_percent || 8);
-    });
-  }
-
-  const pills = [
-    `🔧 Job Card: ${jc.number}`,
-    `📅 ${jc.date}`,
-    `📦 ${jc.parts_count || 0} Spare Parts`,
-    `🛠️ ${jc.labours_count || 0} Labour Charges`,
-  ];
-  if (jc.vehicle_name) pills.push(`🚗 ${jc.vehicle_name}`);
-
-  showToastBanner(
-    'Job Card Details Successfully Imported',
-    `All items, vehicle details, and charges from Job Card ${jc.number} have been loaded into the invoice form.`,
-    pills
-  );
-  calcAll();
-}
 
 function clearEmptyPartsRows() {
   const tbody = document.getElementById('partsTbody');
@@ -1688,11 +1849,7 @@ function addLabourDataRow(desc='', techId='', hrs=1, rate=0, tax=8) {
   renumber('labourTbody');
 }
 
-function showToastBanner(msg) {
-  const toast = document.getElementById('loadToast');
-  document.getElementById('loadToastText').textContent = msg;
-  toast.style.display = 'flex';
-}
+
 
 // ── Row calculations ──────────────────────────────────────────────────────────
 function calcPartRow(tr) {

@@ -46,17 +46,24 @@
             <div class="card-body p-4">
                 <div class="form-group mb-0" style="max-width: 650px;">
                     <label>{% trans "Linked Customer Owner" %} <span class="req">*</span></label>
-                    <select name="customer" class="form-control" required {% if edit_mode %}disabled{% endif %}>
-                        <option value="">— {% trans "Select Customer" %} —</option>
-                        {% for c in customers %}
-                        <option value="{{ c.id }}"
-                            {% if edit_mode and v.customer_id == c.id %}selected{% endif %}
-                            {% if preselected and preselected.id == c.id %}selected{% endif %}>
-                            {{ c.ledger_name }}{% if c.mobile_number %} · {{ c.mobile_number }}{% endif %}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    {% if edit_mode %}<input type="hidden" name="customer" value="{{ v.customer_id }}">{% endif %}
+                    <div class="d-flex align-items-center">
+                        <select name="customer" class="form-control" required {% if edit_mode %}disabled{% endif %}>
+                            <option value="">— {% trans "Select Customer" %} —</option>
+                            {% for c in customers %}
+                            <option value="{{ c.id }}"
+                                {% if edit_mode and v.customer_id == c.id %}selected{% endif %}
+                                {% if preselected and preselected.id == c.id %}selected{% endif %}>
+                                {{ c.ledger_name }}{% if c.mobile_number %} · {{ c.mobile_number }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if edit_mode %}<input type="hidden" name="customer" value="{{ v.customer_id }}">{% endif %}
+                        <a href="{% url 'accounts_app:manage_customers' %}" target="_blank"
+                           class="btn btn-sm btn-outline-primary ml-2 flex-shrink-0"
+                           title="{% trans 'Register a new customer' %}">
+                            <i class="bi bi-person-plus"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -74,26 +81,47 @@
                     </div>
                     <div class="col-md-6 col-lg-3 mb-3">
                         <label>{% trans "Vehicle Category / Type" %}</label>
-                        <select name="vehicle_type" id="id_vehicle_type" class="form-control">
-                            <option value="">— {% trans "Select Type" %} —</option>
-                            {% for vt in vehicle_types %}
-                            <option value="{{ vt.id }}" {% if edit_mode and v.vehicle_type_id == vt.id %}selected{% endif %}>
-                                {{ vt.category_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex align-items-center">
+                            <select name="vehicle_type" id="id_vehicle_type" class="form-control">
+                                <option value="">— {% trans "Select Type" %} —</option>
+                                {% for vt in vehicle_types %}
+                                <option value="{{ vt.id }}" {% if edit_mode and v.vehicle_type_id == vt.id %}selected{% endif %}>
+                                    {{ vt.category_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <a href="{% url 'fleet_app:create_vehicle_category' %}" target="_blank"
+                               class="btn btn-sm btn-outline-primary ml-2 flex-shrink-0"
+                               title="{% trans 'Add a new vehicle category' %}">
+                                <i class="bi bi-plus-circle"></i>
+                            </a>
+                        </div>
                     </div>
                     <div class="col-md-6 col-lg-3 mb-3">
                         <label>{% trans "Manufacturer" %} <span class="req">*</span></label>
-                        <select name="manufacturer" id="id_manufacturer" class="form-control" required>
-                            <option value="">---------</option>
-                        </select>
+                        <div class="d-flex align-items-center">
+                            <select name="manufacturer" id="id_manufacturer" class="form-control" required>
+                                <option value="">---------</option>
+                            </select>
+                            <a href="{% url 'fleet_app:manufacturer_list' %}" target="_blank"
+                               class="btn btn-sm btn-outline-primary ml-2 flex-shrink-0"
+                               title="{% trans 'Add a new manufacturer' %}">
+                                <i class="bi bi-plus-circle"></i>
+                            </a>
+                        </div>
                     </div>
                     <div class="col-md-6 col-lg-3 mb-3">
                         <label>{% trans "Model" %} <span class="req">*</span></label>
-                        <select name="vehicle_model" id="id_vehicle_model" class="form-control" required>
-                            <option value="">---------</option>
-                        </select>
+                        <div class="d-flex align-items-center">
+                            <select name="vehicle_model" id="id_vehicle_model" class="form-control" required>
+                                <option value="">---------</option>
+                            </select>
+                            <a href="{% url 'fleet_app:vehicle_model_list' %}" target="_blank"
+                               class="btn btn-sm btn-outline-primary ml-2 flex-shrink-0"
+                               title="{% trans 'Add a new vehicle model' %}">
+                                <i class="bi bi-plus-circle"></i>
+                            </a>
+                        </div>
                     </div>
 
                     <div class="col-md-6 col-lg-3 mb-3">
@@ -149,47 +177,36 @@
         </div>
 
         <!-- 3. Registration & Insurance -->
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header card-banner-header">
-                        <span class="card-banner-title"><i class="bi bi-file-earmark-check text-primary mr-2"></i> {% trans "Registration Validity" %}</span>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="form-group mb-3">
-                            <label>{% trans "Registration Date" %}</label>
-                            <input type="date" name="registration_date" class="form-control" value="{% if edit_mode %}{{ v.registration_date|date:'Y-m-d'|default:'' }}{% endif %}">
-                        </div>
-                        <div class="form-group mb-0">
-                            <label>{% trans "Registration Expiry Date" %}</label>
-                            <input type="date" name="registration_expiry_date" class="form-control" value="{% if edit_mode %}{{ v.registration_expiry_date|date:'Y-m-d'|default:'' }}{% endif %}">
-                            {% if edit_mode %}{% with s=v.get_registration_status %}
-                            {% if s == 'expired' %}<div class="alert alert-danger mt-2 py-1 px-2 small font-weight-bold">⚠️ {% trans "Registration EXPIRED" %}</div>
-                            {% elif s == 'expiring' %}<div class="alert alert-warning mt-2 py-1 px-2 small font-weight-bold">🕐 {% trans "Expiring within 30 days" %}</div>
-                            {% endif %}{% endwith %}{% endif %}
-                        </div>
-                    </div>
-                </div>
+        <!-- 3. Registration & Insurance -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header card-banner-header">
+                <span class="card-banner-title"><i class="bi bi-file-earmark-check text-primary mr-2"></i> {% trans "Registration Validity & Insurance Information" %}</span>
             </div>
-
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header card-banner-header">
-                        <span class="card-banner-title"><i class="bi bi-shield-check text-primary mr-2"></i> {% trans "Insurance Information" %}</span>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <label>{% trans "Registration Date" %}</label>
+                        <input type="date" name="registration_date" class="form-control" value="{% if edit_mode %}{{ v.registration_date|date:'Y-m-d'|default:'' }}{% else %}{{ post.registration_date|default:'' }}{% endif %}">
                     </div>
-                    <div class="card-body p-4">
-                        <div class="form-group mb-3">
-                            <label>{% trans "Insurance Policy Number" %}</label>
-                            <input type="text" name="insurance_policy_number" class="form-control" placeholder="INS-2026-MH-88712" value="{% if edit_mode %}{{ v.insurance_policy_number|default:'' }}{% endif %}">
-                        </div>
-                        <div class="form-group mb-0">
-                            <label>{% trans "Insurance Expiry Date" %}</label>
-                            <input type="date" name="insurance_expiry_date" class="form-control" value="{% if edit_mode %}{{ v.insurance_expiry_date|date:'Y-m-d'|default:'' }}{% endif %}">
-                            {% if edit_mode %}{% with s=v.get_insurance_status %}
-                            {% if s == 'expired' %}<div class="alert alert-danger mt-2 py-1 px-2 small font-weight-bold">⚠️ {% trans "Insurance EXPIRED" %}</div>
-                            {% elif s == 'expiring' %}<div class="alert alert-warning mt-2 py-1 px-2 small font-weight-bold">🕐 {% trans "Expiring within 30 days" %}</div>
-                            {% endif %}{% endwith %}{% endif %}
-                        </div>
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <label>{% trans "Registration Expiry Date" %}</label>
+                        <input type="date" name="registration_expiry_date" class="form-control" value="{% if edit_mode %}{{ v.registration_expiry_date|date:'Y-m-d'|default:'' }}{% else %}{{ post.registration_expiry_date|default:'' }}{% endif %}">
+                        {% if edit_mode %}{% with s=v.get_registration_status %}
+                        {% if s == 'expired' %}<div class="alert alert-danger mt-2 py-1 px-2 small font-weight-bold">⚠️ {% trans "Registration EXPIRED" %}</div>
+                        {% elif s == 'expiring' %}<div class="alert alert-warning mt-2 py-1 px-2 small font-weight-bold">🕐 {% trans "Expiring within 30 days" %}</div>
+                        {% endif %}{% endwith %}{% endif %}
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <label>{% trans "Insurance Policy Number" %}</label>
+                        <input type="text" name="insurance_policy_number" class="form-control" placeholder="INS-2026-MH-88712" value="{% if edit_mode %}{{ v.insurance_policy_number|default:'' }}{% else %}{{ post.insurance_policy_number|default:'' }}{% endif %}">
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <label>{% trans "Insurance Expiry Date" %}</label>
+                        <input type="date" name="insurance_expiry_date" class="form-control" value="{% if edit_mode %}{{ v.insurance_expiry_date|date:'Y-m-d'|default:'' }}{% else %}{{ post.insurance_expiry_date|default:'' }}{% endif %}">
+                        {% if edit_mode %}{% with s=v.get_insurance_status %}
+                        {% if s == 'expired' %}<div class="alert alert-danger mt-2 py-1 px-2 small font-weight-bold">⚠️ {% trans "Insurance EXPIRED" %}</div>
+                        {% elif s == 'expiring' %}<div class="alert alert-warning mt-2 py-1 px-2 small font-weight-bold">🕐 {% trans "Expiring within 30 days" %}</div>
+                        {% endif %}{% endwith %}{% endif %}
                     </div>
                 </div>
             </div>
@@ -204,11 +221,11 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label>{% trans "Last Service Date" %}</label>
-                        <input type="date" name="last_service_date" class="form-control" value="{% if edit_mode %}{{ v.last_service_date|date:'Y-m-d'|default:'' }}{% endif %}">
+                        <input type="date" name="last_service_date" class="form-control" value="{% if edit_mode %}{{ v.last_service_date|date:'Y-m-d'|default:'' }}{% else %}{{ post.last_service_date|default:'' }}{% endif %}">
                     </div>
                     <div class="col-md-4 mb-3">
                         <label>{% trans "Next Service Date" %}</label>
-                        <input type="date" name="next_service_date" class="form-control" value="{% if edit_mode %}{{ v.next_service_date|date:'Y-m-d'|default:'' }}{% endif %}">
+                        <input type="date" name="next_service_date" class="form-control" value="{% if edit_mode %}{{ v.next_service_date|date:'Y-m-d'|default:'' }}{% else %}{{ post.next_service_date|default:'' }}{% endif %}">
                         {% if edit_mode %}{% with s=v.get_service_status %}
                         {% if s == 'overdue' %}<div class="alert alert-danger mt-2 py-1 px-2 small font-weight-bold">⚠️ {% trans "Service OVERDUE" %}</div>
                         {% elif s == 'due_soon' %}<div class="alert alert-warning mt-2 py-1 px-2 small font-weight-bold">🕐 {% trans "Service due soon" %}</div>
@@ -216,7 +233,7 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <label>{% trans "Service Interval (KM)" %}</label>
-                        <input type="number" name="service_interval" class="form-control" min="0" placeholder="10000" value="{% if edit_mode %}{{ v.service_interval|default:'' }}{% else %}10000{% endif %}">
+                        <input type="number" name="service_interval" class="form-control" min="0" placeholder="10000" value="{% if edit_mode %}{{ v.service_interval|default:'' }}{% else %}{{ post.service_interval|default:'10000' }}{% endif %}">
                     </div>
                 </div>
             </div>

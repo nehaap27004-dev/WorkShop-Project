@@ -4548,15 +4548,13 @@ def invoice_delete(request, pk):
 @login_required
 def ajax_get_docs_for_invoice(request):
     """
-    Fetch active Delivery Notes and Job Cards for a given customer & vehicle(s)
-    to load data into the Invoice creation/editing form.
+    Fetch active Delivery Notes and Job Cards to load data into the Invoice creation/editing form.
+    Can be filtered by customer_id, vehicle_id(s), or search query q.
     """
     customer_id = request.GET.get('customer_id', '').strip()
     vehicle_param = request.GET.get('vehicle_id', '').strip() or request.GET.get('vehicle_ids', '').strip()
     vehicle_ids = [v.strip() for v in vehicle_param.split(',') if v.strip()]
-
-    if not customer_id:
-        return JsonResponse({'delivery_notes': [], 'jobcards': []})
+    q = request.GET.get('q', '').strip()
 
     delivery_notes_result = []
     jobcards_result = []
@@ -4571,16 +4569,29 @@ def ajax_get_docs_for_invoice(request):
         dn_qs = DeliveryNote.objects.select_related(
             'customer', 'vehicle', 'jobcard'
         ).prefetch_related('parts', 'labours', 'services', 'vehicles__vehicle').filter(
-            customer_id=customer_id,
             is_active=True
         )
+
+        if customer_id:
+            dn_qs = dn_qs.filter(customer_id=customer_id)
 
         if vehicle_ids:
             dn_qs = dn_qs.filter(
                 Q(vehicle_id__in=vehicle_ids) | Q(vehicles__vehicle_id__in=vehicle_ids)
             ).distinct()
 
-        dn_qs = dn_qs.order_by('-date')[:15]
+        if q:
+            dn_qs = dn_qs.filter(
+                Q(voucher_number__icontains=q) |
+                Q(customer__ledger_name__icontains=q) |
+                Q(contact_number__icontains=q) |
+                Q(customer__mobile__icontains=q) |
+                Q(customer__phone_no__icontains=q) |
+                Q(vehicle__registration_number__icontains=q) |
+                Q(jobcard__job_number__icontains=q)
+            ).distinct()
+
+        dn_qs = dn_qs.order_by('-date', '-id')[:30]
 
         for dn in dn_qs:
             parts = []
@@ -4622,6 +4633,7 @@ def ajax_get_docs_for_invoice(request):
                 vehicles_list.append({
                     'id': dn.vehicle.id,
                     'name': str(dn.vehicle),
+                    'model': str(getattr(dn.vehicle, 'vehicle_model', '') or getattr(dn.vehicle, 'model', '') or ''),
                     'mileage': getattr(dn, 'odometer_out', None) or getattr(dn.vehicle, 'odometer', None) or ''
                 })
             for dnv in dn.vehicles.all():
@@ -4629,14 +4641,24 @@ def ajax_get_docs_for_invoice(request):
                     vehicles_list.append({
                         'id': dnv.vehicle.id,
                         'name': str(dnv.vehicle),
+                        'model': str(getattr(dnv.vehicle, 'vehicle_model', '') or getattr(dnv.vehicle, 'model', '') or ''),
                         'mileage': dnv.mileage or getattr(dnv.vehicle, 'odometer', None) or ''
                     })
+
+            cust_mobile = dn.contact_number or (dn.customer.mobile if dn.customer else '') or (dn.customer.phone_no if dn.customer else '') or ''
+            cust_name = dn.customer.ledger_name if dn.customer else ''
+            cust_address = dn.customer.address1 if (dn.customer and dn.customer.address1) else ''
 
             delivery_notes_result.append({
                 'id':              dn.id,
                 'number':          dn.voucher_number or f"DN-{dn.id}",
                 'date':            dn.date.strftime('%d %b %Y') if dn.date else '',
                 'status':          dn.get_status_display(),
+                'customer_id':     dn.customer_id or '',
+                'customer_name':   cust_name,
+                'customer_mobile': cust_mobile,
+                'customer_address': cust_address,
+                'payment_mode':    dn.payment_mode or '',
                 'vehicle_id':      dn.vehicle_id or (vehicles_list[0]['id'] if vehicles_list else ''),
                 'vehicle_name':    str(dn.vehicle) if dn.vehicle else (vehicles_list[0]['name'] if vehicles_list else ''),
                 'vehicles':        vehicles_list,
@@ -4650,18 +4672,31 @@ def ajax_get_docs_for_invoice(request):
 
         # 2. Fetch Job Cards
         jc_qs = JobCard.objects.select_related(
-            'workshop_vehicle', 'advisor'
+            'customer', 'workshop_vehicle', 'advisor'
         ).prefetch_related('parts', 'labours', 'complaints', 'vehicles__vehicle').filter(
-            customer_id=customer_id,
             is_active=True
         )
+
+        if customer_id:
+            jc_qs = jc_qs.filter(customer_id=customer_id)
 
         if vehicle_ids:
             jc_qs = jc_qs.filter(
                 Q(workshop_vehicle_id__in=vehicle_ids) | Q(vehicles__vehicle_id__in=vehicle_ids)
             ).distinct()
 
-        jc_qs = jc_qs.order_by('-date')[:15]
+        if q:
+            jc_qs = jc_qs.filter(
+                Q(job_number__icontains=q) |
+                Q(voucher_number__icontains=q) |
+                Q(customer__ledger_name__icontains=q) |
+                Q(customer_phone__icontains=q) |
+                Q(customer__mobile__icontains=q) |
+                Q(customer__phone_no__icontains=q) |
+                Q(workshop_vehicle__registration_number__icontains=q)
+            ).distinct()
+
+        jc_qs = jc_qs.order_by('-date', '-id')[:30]
 
         for jc in jc_qs:
             parts = []
@@ -4703,6 +4738,7 @@ def ajax_get_docs_for_invoice(request):
                 vehicles_list.append({
                     'id': jc.workshop_vehicle.id,
                     'name': str(jc.workshop_vehicle),
+                    'model': str(getattr(jc.workshop_vehicle, 'vehicle_model', '') or getattr(jc.workshop_vehicle, 'model', '') or ''),
                     'mileage': jc.mileage or getattr(jc.workshop_vehicle, 'odometer', None) or ''
                 })
             for jcv in jc.vehicles.all():
@@ -4710,14 +4746,23 @@ def ajax_get_docs_for_invoice(request):
                     vehicles_list.append({
                         'id': jcv.vehicle.id,
                         'name': str(jcv.vehicle),
+                        'model': str(getattr(jcv.vehicle, 'vehicle_model', '') or getattr(jcv.vehicle, 'model', '') or ''),
                         'mileage': jcv.mileage or getattr(jcv.vehicle, 'odometer', None) or ''
                     })
+
+            cust_mobile = jc.customer_phone or (jc.customer.mobile if jc.customer else '') or (jc.customer.phone_no if jc.customer else '') or ''
+            cust_name = jc.customer.ledger_name if jc.customer else ''
+            cust_address = jc.customer.address1 if (jc.customer and jc.customer.address1) else ''
 
             jobcards_result.append({
                 'id':            jc.id,
                 'number':        jc.job_number,
                 'date':          jc.date.strftime('%d %b %Y') if jc.date else '',
                 'status':        jc.get_status_display(),
+                'customer_id':   jc.customer_id or '',
+                'customer_name': cust_name,
+                'customer_mobile': cust_mobile,
+                'customer_address': cust_address,
                 'vehicle_id':    jc.workshop_vehicle_id or (vehicles_list[0]['id'] if vehicles_list else ''),
                 'vehicle_name':  str(jc.workshop_vehicle) if jc.workshop_vehicle else (vehicles_list[0]['name'] if vehicles_list else ''),
                 'vehicles':      vehicles_list,
