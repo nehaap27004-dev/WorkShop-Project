@@ -29,10 +29,11 @@
                             <thead class="thead-light">
                                 <tr>
                                     <th>Timestamp</th>
-                                    <th>User</th>
-                                    <th>Screen</th>
-                                    <th>Action Type</th>
-                                    <th>Remark</th>
+                                    <th>User & Role</th>
+                                    <th>Module & Target</th>
+                                    <th>Action</th>
+                                    <th>Description / Changes</th>
+                                    <th>Client Network & Device</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -43,14 +44,26 @@
                                         <div class="small text-muted">{{ log.created_at|date:"H:i:s" }}</div>
                                     </td>
                                     <td>
-                                        <span class="text-dark">{{ log.user.username|default:"System" }}</span>
+                                        <div class="font-weight-bold text-dark">{{ log.user_username|default:log.user.username|default:"System" }}</div>
+                                        {% if log.user_role %}
+                                            <span class="badge badge-light border text-secondary">{{ log.user_role }}</span>
+                                        {% endif %}
                                     </td>
-                                    <td><code>{{ log.screen_name }}</code></td>
+                                    <td>
+                                        <span class="badge badge-info mb-1">{{ log.get_module_display|default:log.module }}</span>
+                                        {% if log.entity_reference %}
+                                            <div class="small font-weight-bold text-dark">{{ log.entity_type }}: <code>{{ log.entity_reference }}</code></div>
+                                        {% elif log.screen_name %}
+                                            <div class="small text-muted">{{ log.screen_name }}</div>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if log.action_type == 'CREATE' %}
                                             <span class="badge badge-create px-3">CREATE</span>
                                         {% elif log.action_type == 'UPDATE' %}
                                             <span class="badge badge-update px-3">UPDATE</span>
+                                        {% elif log.action_type == 'STATUS_CHANGE' %}
+                                            <span class="badge badge-warning px-3">STATUS CHANGE</span>
                                         {% elif log.action_type == 'DELETE' or log.action_type == 'CANCEL' %}
                                             <span class="badge badge-delete px-3">{{ log.action_type }}</span>
                                         {% elif log.action_type == 'LOGIN' or log.action_type == 'LOGOUT' %}
@@ -60,9 +73,25 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <p class="small mb-0 text-wrap" style="max-width: 300px;">
-                                            {{ log.remark|default:"<span class='text-light'>-</span>"|safe }}
+                                        <p class="small mb-1 text-wrap" style="max-width: 380px;">
+                                            {{ log.description|default:log.remark|default:"<span class='text-muted'>-</span>"|safe }}
                                         </p>
+                                        {% if log.changes_diff %}
+                                            <details class="small text-muted">
+                                                <summary class="cursor-pointer text-primary" style="cursor: pointer;">View Field Diffs ({{ log.changes_diff|length }})</summary>
+                                                <div class="bg-light p-2 rounded mt-1 border" style="font-size: 11px;">
+                                                    {% for field, val in log.changes_diff.items %}
+                                                        <div><strong>{{ field }}</strong>: <span class="text-danger">{{ val.old|default:"(empty)" }}</span> &rarr; <span class="text-success">{{ val.new|default:"(empty)" }}</span></div>
+                                                    {% endfor %}
+                                                </div>
+                                            </details>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="small font-weight-bold text-monospace">{{ log.ip_address|default:"127.0.0.1" }}</div>
+                                        <div class="small text-muted">
+                                            <i class="fas fa-desktop mr-1"></i>{{ log.browser|default:"Browser" }} / {{ log.operating_system|default:"OS" }}
+                                        </div>
                                     </td>
                                 </tr>
                                 {% empty %}

@@ -583,7 +583,8 @@ class Vouchers(models.Model):
         """Generate the next voucher number for this voucher type"""
         if model_cls and number_field:
             from jobcard_app.utils import generate_voucher_number
-            return generate_voucher_number(self.VoucherType, model_cls, number_field, default_prefix=self.Prefix or "")
+            default_pfx = self.Prefix if self.Prefix is not None else ("JC-" if self.VoucherName == 'JobCard' else "")
+            return generate_voucher_number(self, model_cls, number_field, default_prefix=default_pfx)
 
         from django.apps import apps
         from django.db.models import ForeignKey
@@ -593,17 +594,21 @@ class Vouchers(models.Model):
 
         # Loop through all installed models
         for model in apps.get_models():
-            # Check if model has both fields
-            if hasattr(model, 'voucher_no') and hasattr(model, 'voucherType'):
+            # Check if model has voucher_no or voucher_number and voucherType
+            field_name = None
+            if hasattr(model, 'voucher_number'):
+                field_name = 'voucher_number'
+            elif hasattr(model, 'voucher_no'):
+                field_name = 'voucher_no'
+
+            if field_name and hasattr(model, 'voucherType'):
                 try:
-                    # Ensure voucherType is a ForeignKey to THIS model
                     field = model._meta.get_field('voucherType')
                     if isinstance(field, ForeignKey) and field.remote_field.model == type(self):
-                        # Only then try to query
-                        vouchers = model.objects.filter(voucherType=self).values_list('voucher_no', flat=True)
+                        vouchers = model.objects.filter(voucherType=self).values_list(field_name, flat=True)
                         all_voucher_numbers.extend(vouchers)
                 except Exception:
-                    continue  # skip any models that don't match cleanly
+                    continue
 
         # If no existing vouchers found
         if not all_voucher_numbers:

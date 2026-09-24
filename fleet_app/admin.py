@@ -570,3 +570,11 @@ class EMIInstallmentAdmin(admin.ModelAdmin):
     list_display = ('emi_plan', 'due_date', 'amount', 'is_paid')
     # minimal filters to check what is unpaid
     list_filter = ('is_paid', 'due_date')    
+
+@admin.register(Vouchers)
+class VouchersAdmin(admin.ModelAdmin):
+    list_display = ('id', 'VoucherName', 'VoucherType', 'Prefix', 'Suffix', 'MinLength', 'StartingNo', 'isDefault', 'created_on', 'updated_on')
+    search_fields = ('VoucherName', 'VoucherType', 'Prefix')
+    list_filter = ('VoucherType', 'isDefault')
+    list_editable = ('Prefix', 'Suffix', 'MinLength', 'StartingNo')
+    ordering = ('id',)    

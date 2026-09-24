@@ -285,6 +285,11 @@ class WorkshopVehicle(models.Model):
             return 'expiring'
         return 'ok'
 
+    @property
+    def insurance_status(self):
+        """Property alias so templates can use {{ v.insurance_status }}."""
+        return self.get_insurance_status()
+
     def get_registration_status(self):
         from django.utils import timezone
         from datetime import timedelta
@@ -336,6 +341,13 @@ class JobCard(models.Model):
         ('full',  'Full'),
     ]
 
+    voucherType = models.ForeignKey(
+        'fleet_app.Vouchers',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='job_cards',
+        verbose_name='Voucher Type'
+    )
     job_number      = models.CharField(max_length=20, unique=True, blank=True,
                           help_text='Auto-generated: JC-00001')
     voucher_number  = models.CharField(max_length=50, blank=True, null=True)
@@ -382,21 +394,40 @@ class JobCard(models.Model):
     created_by = models.IntegerField(null=True, blank=True)
 
     def save(self, *args, **kwargs): 
+        if not self.voucherType_id:
+            from fleet_app.models import Vouchers
+            self.voucherType = Vouchers.objects.filter(VoucherName='JobCard').first()
+
+        if not self.voucher_number:
+            if self.voucherType:
+                self.voucher_number = self.voucherType.get_next_voucher_number(JobCard, 'voucher_number')
+            else:
+                from jobcard_app.utils import generate_voucher_number
+                self.voucher_number = generate_voucher_number('JobCard', JobCard, 'voucher_number', default_prefix='JC-')
+
         if not self.job_number:
-            from jobcard_app.utils import generate_voucher_number
-            self.job_number = generate_voucher_number('JobCard', JobCard, 'job_number', default_prefix='JC-')
+            self.job_number = self.voucher_number
+
         super().save(*args, **kwargs)
+
+    @property
+    def display_voucher_number(self):
+        return self.voucher_number or self.job_number
 
 
 
     def get_parts_total(self):
-        return sum((p.total_price or 0) for p in self.parts.all())
+        return sum((Decimal(str(p.total_price)) for p in self.parts.all() if p.total_price is not None), Decimal('0.000'))
 
     def get_labour_total(self):
-        return sum((l.amount or 0) for l in self.labours.all())
+        return sum((Decimal(str(l.amount)) for l in self.labours.all() if l.amount is not None), Decimal('0.000'))
 
     def get_grand_total(self):
         return self.get_parts_total() + self.get_labour_total()
+
+    @property
+    def grand_total(self):
+        return self.get_grand_total()
 
     def __str__(self):
         return f"{self.job_number} — {self.customer}"
@@ -683,6 +714,10 @@ class Estimate(models.Model):
         discount = self.discount or Decimal('0.000')
 
         return subtotal + tax - discount
+
+    @property
+    def grand_total(self):
+        return self.get_grand_total()
     def get_parts_total(self):
         return sum((Decimal(str(item.total_price())) for item in self.items.filter(item_type='part')), Decimal('0.000'))
 
@@ -885,6 +920,10 @@ class Quotation(models.Model):
 
     def get_grand_total(self):
         return self.get_subtotal() + self.get_tax_amount() - self.discount
+
+    @property
+    def grand_total(self):
+        return self.get_grand_total()
 
     def parts(self):
         return self.items.filter(item_type='part')
@@ -1733,59 +1772,66 @@ class Invoice(models.Model):
     updated_by = models.IntegerField(null=True, blank=True)
     
     
-    # ── Totals ────────────────────────────────────────────────
+    # ── Backward Compatibility Accessors ──────────────────────
+    @property
+    def parts(self):
+        """Compatibility accessor returning parts from unified items table."""
+        return self.items.filter(item_type='part')
+
+    @property
+    def labours(self):
+        """Compatibility accessor returning labour items from unified items table."""
+        return self.items.filter(item_type='labour')
+
+    @property
+    def other_charges(self):
+        """Compatibility accessor returning other charges from unified items table."""
+        return self.items.filter(item_type='other')
+
+    # ── Totals (Calculated from unified items) ──────────────────
     def get_parts_subtotal(self):
-        return sum(float(i.quantity) * float(i.unit_price) * (1 - float(i.discount_pct) / 100)
-                   for i in self.parts.all())
+        return sum(item.get_base() for item in self.items.filter(item_type='part'))
 
     def get_parts_tax(self):
-        return sum(
-            float(i.quantity) * float(i.unit_price) *
-            (1 - float(i.discount_pct) / 100) *
-            float(i.tax_percent) / 100
-            for i in self.parts.all())
+        return sum(item.get_tax_amount() for item in self.items.filter(item_type='part'))
 
     def get_parts_total(self):
         return self.get_parts_subtotal() + self.get_parts_tax()
 
     def get_labour_subtotal(self):
-        return sum(float(i.hours) * float(i.rate)
-                   for i in self.labours.all())
+        return sum(item.get_base() for item in self.items.filter(item_type='labour'))
 
     def get_labour_tax(self):
-        return sum(
-            float(i.hours) * float(i.rate) *
-            float(i.tax_percent) / 100
-            for i in self.labours.all())
+        return sum(item.get_tax_amount() for item in self.items.filter(item_type='labour'))
 
     def get_labour_total(self):
         return self.get_labour_subtotal() + self.get_labour_tax()
 
     def get_other_subtotal(self):
-        return sum(float(i.amount) for i in self.other_charges.all())
+        return sum(item.get_base() for item in self.items.filter(item_type='other'))
 
     def get_other_tax(self):
-        return sum(
-            float(i.amount) * float(i.tax_percent) / 100
-            for i in self.other_charges.all())
+        return sum(item.get_tax_amount() for item in self.items.filter(item_type='other'))
 
     def get_other_total(self):
         return self.get_other_subtotal() + self.get_other_tax()
 
     def get_subtotal(self):
-        return (self.get_parts_subtotal() +
-                self.get_labour_subtotal() +
-                self.get_other_subtotal())
+        # Single query pass over all items
+        return sum(item.get_base() for item in self.items.all())
 
     def get_total_tax(self):
-        return (self.get_parts_tax() +
-                self.get_labour_tax() +
-                self.get_other_tax())
+        # Single query pass over all items
+        return sum(item.get_tax_amount() for item in self.items.all())
 
     def get_grand_total(self):
         before_disc = self.get_subtotal() + self.get_total_tax()
         disc_amt    = before_disc * float(self.discount_pct) / 100
         return before_disc - disc_amt
+
+    @property
+    def grand_total(self):
+        return self.get_grand_total()
 
     def get_balance_due(self):
         return self.get_grand_total() - float(self.amount_paid)
@@ -1809,15 +1855,143 @@ class Invoice(models.Model):
         verbose_name = 'Invoice'
         verbose_name_plural = 'Invoices'
 
+
+# ─────────────────────────────────────────────────────────────
+# UNIFIED INVOICE ITEM (Line Items)
+# ─────────────────────────────────────────────────────────────
+class InvoiceItem(models.Model):
+    """
+    Unified line-item model for Invoices (Spare Parts, Labour, Other Charges).
+    Eliminates 3-way table joins and optimizes ledger & inventory reconciliation.
+    """
+    ITEM_TYPE_CHOICES = [
+        ('part',   'Spare Part'),
+        ('labour', 'Labour / Service'),
+        ('other',  'Other Charge'),
+    ]
+
+    invoice = models.ForeignKey(
+        Invoice, on_delete=models.CASCADE, related_name='items'
+    )
+    vehicle = models.ForeignKey(
+        'WorkshopVehicle', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='invoice_items'
+    )
+    item_type = models.CharField(
+        max_length=10, choices=ITEM_TYPE_CHOICES, default='part', db_index=True
+    )
+
+    # Item Master reference for spare parts
+    item = models.ForeignKey(
+        'item_master.Item', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='invoice_items', verbose_name='Item Master'
+    )
+    item_ref = models.CharField(max_length=50, blank=True, null=True)
+    item_code = models.CharField(max_length=100, blank=True)
+    description = models.CharField(max_length=300)
+
+    # Labour / Technician tracking
+    technician = models.ForeignKey(
+        'fleet_app.Staff', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='invoice_items'
+    )
+    hours = models.DecimalField(max_digits=6, decimal_places=2, default=1)
+
+    # Quantity, pricing, discounts, and tax
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    unit = models.CharField(max_length=20, default='Pcs', blank=True)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    discount_pct = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    tax_percent = models.DecimalField(max_digits=5, decimal_places=2, default=8)
+    order = models.PositiveIntegerField(default=0)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+        indexes = [
+            models.Index(fields=['invoice', 'item_type'], name='idx_invitem_inv_type'),
+            models.Index(fields=['item_type', 'item_code'], name='idx_invitem_type_code'),
+        ]
+
+    # Backward-compatible property aliases
+    @property
+    def rate(self):
+        return self.unit_price
+
+    @rate.setter
+    def rate(self, val):
+        self.unit_price = val
+
+    @property
+    def amount(self):
+        return self.unit_price
+
+    @amount.setter
+    def amount(self, val):
+        self.unit_price = val
+
+    def get_item_obj(self):
+        if self.item:
+            return self.item
+        if self.item_ref:
+            try:
+                from item_master.models import Item
+                item_found = Item.objects.filter(pk=self.item_ref).first()
+                if item_found:
+                    return item_found
+            except Exception:
+                pass
+        if self.item_code:
+            try:
+                from item_master.models import Item
+                item_found = Item.objects.filter(item_code__iexact=self.item_code.strip()).first()
+                if item_found:
+                    return item_found
+            except Exception:
+                pass
+        if self.description:
+            try:
+                from item_master.models import Item
+                item_found = Item.objects.filter(item_name__iexact=self.description.strip()).first()
+                if item_found:
+                    return item_found
+            except Exception:
+                pass
+        return None
+
+    def get_base(self):
+        if self.item_type == 'labour':
+            return float(self.hours or 1) * float(self.unit_price or 0) * (1 - float(self.discount_pct or 0) / 100)
+        elif self.item_type == 'other':
+            qty = float(self.quantity or 1)
+            return qty * float(self.unit_price or 0) * (1 - float(self.discount_pct or 0) / 100)
+        else:
+            return float(self.quantity or 1) * float(self.unit_price or 0) * (1 - float(self.discount_pct or 0) / 100)
+
+    def get_tax_amount(self):
+        return self.get_base() * float(self.tax_percent or 0) / 100
+
+    def total_price(self):
+        return self.get_base() + self.get_tax_amount()
+
+    def __str__(self):
+        return f"[{self.get_item_type_display()}] {self.description}"
+
+
 class InvoiceVehicle(models.Model):
     invoice  = models.ForeignKey(Invoice, related_name='vehicles', on_delete=models.CASCADE)
     vehicle  = models.ForeignKey('WorkshopVehicle', on_delete=models.CASCADE)
     mileage  = models.PositiveIntegerField(null=True, blank=True)
     notes    = models.CharField(max_length=255, blank=True, default='')
-# ── Invoice Parts ─────────────────────────────────────────────
+
+
+# ── Legacy Models (Kept for migration & backward compatibility) ─
 class InvoicePart(models.Model):
     invoice      = models.ForeignKey(
-        Invoice, on_delete=models.CASCADE, related_name='parts')
+        Invoice, on_delete=models.CASCADE, related_name='legacy_parts')
+
     vehicle      = models.ForeignKey(
         'WorkshopVehicle', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='invoice_parts')
@@ -1883,7 +2057,7 @@ class InvoicePart(models.Model):
 # ── Invoice Labour ────────────────────────────────────────────
 class InvoiceLabour(models.Model):
     invoice     = models.ForeignKey(
-        Invoice, on_delete=models.CASCADE, related_name='labours')
+        Invoice, on_delete=models.CASCADE, related_name='legacy_labours')
     vehicle     = models.ForeignKey(
         'WorkshopVehicle', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='invoice_labours')
@@ -1915,7 +2089,8 @@ class InvoiceLabour(models.Model):
 
 # ── Invoice Other Charges ─────────────────────────────────────
 class InvoiceOtherCharge(models.Model):
-    invoice     = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='other_charges')
+    invoice     = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='legacy_other_charges')
+
     vehicle     = models.ForeignKey(
         'WorkshopVehicle', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='invoice_other_charges')

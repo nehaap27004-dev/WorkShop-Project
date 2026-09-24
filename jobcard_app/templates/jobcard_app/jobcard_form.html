@@ -449,7 +449,7 @@
       </div>
       <div>
         <h1 class="jc-page-title">
-          {% if edit_mode %}{% trans "Edit Job Card" %}: {{ job.job_number }}{% else %}{% trans "New Job Card" %}{% endif %}
+          {% if edit_mode %}{% trans "Edit Job Card" %}: {{ job.voucher_number|default:job.job_number }}{% else %}{% trans "New Job Card" %}{% endif %}
         </h1>
         <div class="jc-page-sub">{% trans "Manage vehicle repair orders, customer complaints, spare parts & labor entries" %}</div>
       </div>
@@ -512,16 +512,14 @@
       <div class="g4 mb">
         <input type="hidden" name="voucherType" id="id_voucherType"
           value="{% if edit_mode and job.voucherType %}{{ job.voucherType.id }}{% else %}{% for vt in voucher_types %}{% if vt.VoucherName == 'JobCard' %}{{ vt.id }}{% endif %}{% endfor %}{% endif %}">
+        {# Hidden job_number — always mirrors the voucher number for backward compatibility #}
+        <input type="hidden" name="job_number" id="id_job_number"
+          value="{% if edit_mode %}{{ job.voucher_number|default:job.job_number }}{% else %}{{ next_job_number }}{% endif %}">
         <div>
-          <label class="fl">{% trans "Voucher Number" %}</label>
-          <input type="text" name="voucher_number" id="id_voucher_number" class="fi"
+          <label class="fl">{% trans "Voucher Number" %}<span class="req">*</span></label>
+          <input type="text" name="voucher_number" id="id_voucher_number" class="fi" required
             placeholder="e.g. JC-00001"
-            value="{% if edit_mode %}{{ job.voucher_number|default:'' }}{% endif %}">
-        </div>
-        <div>
-          <label class="fl">{% trans "Job Card No." %}<span class="req">*</span></label>
-          <input type="text" name="job_number" id="id_job_number" class="fi" required
-            value="{% if edit_mode %}{{ job.job_number }}{% endif %}">
+            value="{% if edit_mode %}{{ job.voucher_number|default:job.job_number }}{% else %}{{ next_job_number }}{% endif %}">
         </div>
         <div>
           <label class="fl">{% trans "Date" %} <span class="req">*</span></label>
@@ -2028,15 +2026,27 @@ function updateJobVoucherNumber(voucherTypeId) {
   fetch("{% url 'jobcard_app:get_next_jobcard_number' %}?voucher_type_id=" + voucherTypeId)
     .then(response => response.json())
     .then(data => {
-      if (data.success && data.job_number) {
+      const num = data.voucher_number || data.job_number;
+      if (data.success && num) {
         const voucherNumInput = document.getElementById('id_voucher_number');
-        if (voucherNumInput) {
-          voucherNumInput.value = data.job_number;
-        }
+        const jobNumInput     = document.getElementById('id_job_number');
+        if (voucherNumInput) voucherNumInput.value = num;
+        if (jobNumInput)     jobNumInput.value     = num;
       }
     })
     .catch(err => console.error('Error fetching next jobcard voucher number:', err));
 }
+
+/* Keep hidden job_number in sync whenever user edits the voucher number field */
+document.addEventListener('DOMContentLoaded', function () {
+  const voucherInput = document.getElementById('id_voucher_number');
+  const jobNumInput  = document.getElementById('id_job_number');
+  if (voucherInput && jobNumInput) {
+    voucherInput.addEventListener('input', function () {
+      jobNumInput.value = voucherInput.value;
+    });
+  }
+});
 
 document.addEventListener('DOMContentLoaded', calcTotals);
 document.addEventListener('DOMContentLoaded', function () {

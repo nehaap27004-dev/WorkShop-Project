@@ -670,7 +670,8 @@ def insp_get_vehicles(request):
 def jobcard_list(request):
     jobs = (
         JobCard.objects
-        .select_related('customer', 'workshop_vehicle', 'advisor')
+        .select_related('customer', 'workshop_vehicle', 'advisor', 'voucherType')
+        .prefetch_related('parts', 'labours')
         .all()
     )
     return render(request, 'jobcard_app/jobcard_list.html', {'jobs': jobs})
@@ -730,7 +731,7 @@ def jobcard_create(request):
 
     from jobcard_app.utils import generate_voucher_number
     from fleet_app.models import Vouchers
-    next_job_number = generate_voucher_number('JobCard', JobCard, 'job_number', default_prefix='JC-')
+    next_job_number = generate_voucher_number('JobCard', JobCard, 'voucher_number', default_prefix='JC-')
     voucher_types = Vouchers.objects.all().order_by('VoucherName')
 
     if request.method == 'POST':
@@ -775,13 +776,13 @@ def get_next_jobcard_number(request):
     if voucher_type_id:
         try:
             vt = Vouchers.objects.get(pk=voucher_type_id)
-            num = vt.get_next_voucher_number(JobCard, 'job_number')
-            return JsonResponse({'job_number': num, 'success': True})
+            num = vt.get_next_voucher_number(JobCard, 'voucher_number')
+            return JsonResponse({'job_number': num, 'voucher_number': num, 'success': True})
         except Vouchers.DoesNotExist:
             pass
 
-    next_num = generate_voucher_number('JobCard', JobCard, 'job_number', default_prefix='JC-')
-    return JsonResponse({'job_number': next_num, 'success': True})
+    next_num = generate_voucher_number('JobCard', JobCard, 'voucher_number', default_prefix='JC-')
+    return JsonResponse({'job_number': next_num, 'voucher_number': next_num, 'success': True})
 def get_next_estimate_number(request):
     """AJAX view to get next estimate voucher number"""
     from fleet_app.models import Vouchers
@@ -860,21 +861,44 @@ def _save_jobcard(request, job=None):
     customer = get_object_or_404(LedgerCreation, pk=cid)
 
     # ── Create or update JobCard ──────────────────────────
-    is_new_job = (job is None)
+    is_new_job = (job is None or not getattr(job, 'pk', None))
+    old_job_snapshot = None
+    if not is_new_job:
+        old_job_snapshot = {
+            'status': job.status,
+            'priority': job.priority,
+            'advisor': str(job.advisor) if job.advisor else '',
+            'mileage': str(job.mileage or ''),
+            'delivery_date': str(job.delivery_date or ''),
+        }
+
     if job is None:
         job = JobCard(created_by=request.user.id)
 
+    vt_id = request.POST.get('voucherType')
+    if vt_id:
+        job.voucherType = Vouchers.objects.filter(pk=vt_id).first()
+    elif not job.voucherType_id:
+        job.voucherType = Vouchers.objects.filter(VoucherName='JobCard').first()
+
+    v_num = request.POST.get('voucher_number', '').strip()
     job_num = request.POST.get('job_number', '').strip()
+
+    if v_num:
+        job.voucher_number = v_num
+    elif job_num:
+        job.voucher_number = job_num
+
     if job_num:
         job.job_number = job_num
-
+    elif v_num:
+        job.job_number = v_num
 
     job.customer          = customer
     job.customer_phone    = request.POST.get('customer_phone', '')
     job.vehicle_model     = request.POST.get('vehicle_model', '')
     job.advisor            = advisor
     job.date               = date
-    job.voucher_number      = request.POST.get('voucher_number', '') or None
     job.priority            = request.POST.get('priority', 'normal')
     job.status               = request.POST.get('status', 'open')
     job.delivery_date         = request.POST.get('delivery_date') or None
@@ -1097,10 +1121,67 @@ def _save_jobcard(request, job=None):
         except VehicleInspection.DoesNotExist:
             pass
 
+    # ── Audit Log Event ──────────────────────────────────
+    try:
+        from audit_app.services import log_audit_event
+        if is_new_job:
+            log_audit_event(
+                action='CREATE',
+                module='JOBCARD',
+                entity_type='JobCard',
+                entity_id=job.pk,
+                entity_reference=job.job_number,
+                description=f"Created Job Card #{job.job_number} for customer '{customer.ledger_name}' (Model: {job.vehicle_model or 'N/A'}, Status: {job.status}, Priority: {job.priority}).",
+                changes_diff={'initial_state': {
+                    'job_number': job.job_number,
+                    'customer': str(customer.ledger_name),
+                    'vehicle_model': job.vehicle_model,
+                    'status': job.status,
+                    'priority': job.priority,
+                    'advisor': str(advisor) if advisor else '',
+                    'mileage': str(job.mileage or ''),
+                }},
+                user=request.user,
+                request=request
+            )
+        else:
+            new_job_snapshot = {
+                'status': job.status,
+                'priority': job.priority,
+                'advisor': str(job.advisor) if job.advisor else '',
+                'mileage': str(job.mileage or ''),
+                'delivery_date': str(job.delivery_date or ''),
+            }
+            job_diff = {}
+            job_desc_changes = []
+            if old_job_snapshot:
+                for k, old_v in old_job_snapshot.items():
+                    new_v = new_job_snapshot[k]
+                    if str(old_v) != str(new_v):
+                        job_diff[k] = {'old': old_v, 'new': new_v}
+                        job_desc_changes.append(f"{k.replace('_', ' ').title()} changed from '{old_v}' to '{new_v}'")
+            
+            action = 'STATUS_CHANGE' if (list(job_diff.keys()) == ['status']) else 'UPDATE'
+            desc = f"Updated Job Card #{job.job_number}. " + ("; ".join(job_desc_changes) if job_desc_changes else "Items/complaints updated.")
+            log_audit_event(
+                action=action,
+                module='JOBCARD',
+                entity_type='JobCard',
+                entity_id=job.pk,
+                entity_reference=job.job_number,
+                description=desc,
+                changes_diff=job_diff,
+                user=request.user,
+                request=request
+            )
+    except Exception:
+        pass
+
     messages.success(
         request,
         f"Job Card {job.job_number} saved successfully!")
     return redirect('jobcard_app:jobcard_list')
+
 
 # ─────────────────────────────────────────────────────────────
 # DELETE
@@ -3702,13 +3783,24 @@ def _save_invoice(request, invoice=None):
     adv_id  = request.POST.get('advisor', '').strip()
     advisor = Staff.objects.filter(pk=adv_id).first() if adv_id else None
 
+    is_new_invoice = (invoice is None or not getattr(invoice, 'pk', None))
     old_inv_num = None
     old_vt = None
-    if invoice and invoice.pk:
+    old_inv_snapshot = None
+    if not is_new_invoice:
         old_inv_num = invoice.invoice_number
         old_vt = invoice.voucherType
+        old_inv_snapshot = {
+            'status': invoice.status,
+            'payment_mode': invoice.payment_mode,
+            'discount_pct': str(invoice.discount_pct or 0),
+            'amount_paid': str(invoice.amount_paid or 0),
+            'grand_total': str(invoice.get_grand_total()) if hasattr(invoice, 'get_grand_total') else '0',
+            'customer': str(invoice.customer) if invoice.customer else '',
+        }
 
     if invoice is None: invoice = Invoice(created_by=request.user.id)
+
 
     invoice.customer         = customer
     from fleet_app.models import Vouchers
@@ -3937,7 +4029,66 @@ def _save_invoice(request, invoice=None):
     _sync_invoice_stock(invoice)
     _post_invoice_to_ledger(invoice)
     _sync_invoice_billwise_opening(invoice)
+
+    # ── Audit Log Event ──────────────────────────────────
+    try:
+        from audit_app.services import log_audit_event
+        total_amt = float(invoice.get_grand_total()) if hasattr(invoice, 'get_grand_total') else float(invoice.amount_paid or 0)
+        if is_new_invoice:
+            log_audit_event(
+                action='CREATE',
+                module='INVOICE',
+                entity_type='Invoice',
+                entity_id=invoice.pk,
+                entity_reference=invoice.invoice_number,
+                description=f"Created Invoice #{invoice.invoice_number} for customer '{invoice.customer}' (Total: {total_amt:.2f}, Status: {invoice.status}, Mode: {invoice.payment_mode}).",
+                changes_diff={'initial_state': {
+                    'invoice_number': invoice.invoice_number,
+                    'customer': str(invoice.customer),
+                    'status': invoice.status,
+                    'grand_total': total_amt,
+                    'amount_paid': float(invoice.amount_paid or 0),
+                    'payment_mode': invoice.payment_mode,
+                }},
+                user=request.user,
+                request=request
+            )
+        else:
+            new_inv_snapshot = {
+                'status': invoice.status,
+                'payment_mode': invoice.payment_mode,
+                'discount_pct': str(invoice.discount_pct or 0),
+                'amount_paid': str(invoice.amount_paid or 0),
+                'grand_total': str(total_amt),
+                'customer': str(invoice.customer) if invoice.customer else '',
+            }
+            inv_diff = {}
+            inv_desc_changes = []
+            if old_inv_snapshot:
+                for k, old_v in old_inv_snapshot.items():
+                    new_v = new_inv_snapshot[k]
+                    if str(old_v) != str(new_v):
+                        inv_diff[k] = {'old': old_v, 'new': new_v}
+                        inv_desc_changes.append(f"{k.replace('_', ' ').title()} changed from '{old_v}' to '{new_v}'")
+            
+            action = 'STATUS_CHANGE' if (list(inv_diff.keys()) == ['status']) else 'UPDATE'
+            desc = f"Updated Invoice #{invoice.invoice_number}. " + ("; ".join(inv_desc_changes) if inv_desc_changes else "Line items / notes updated.")
+            log_audit_event(
+                action=action,
+                module='INVOICE',
+                entity_type='Invoice',
+                entity_id=invoice.pk,
+                entity_reference=invoice.invoice_number,
+                description=desc,
+                changes_diff=inv_diff,
+                user=request.user,
+                request=request
+            )
+    except Exception:
+        pass
+
     return invoice
+
 
 
 

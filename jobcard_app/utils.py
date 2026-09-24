@@ -3,14 +3,20 @@ import re
 def get_voucher_master(voucher_type_name):
     """
     Lookup Voucher Master record from fleet_app.models.Vouchers.
-    Flexible matching by exact VoucherType, VoucherName, or case/space-insensitive match.
+    Accepts Vouchers instance, integer ID, exact VoucherType, VoucherName, or case/space-insensitive match.
     """
     from fleet_app.models import Vouchers
-    v = Vouchers.objects.filter(VoucherType__iexact=voucher_type_name).first()
+    if isinstance(voucher_type_name, Vouchers):
+        return voucher_type_name
+    if isinstance(voucher_type_name, int):
+        return Vouchers.objects.filter(pk=voucher_type_name).first()
+    if not voucher_type_name:
+        return None
+    v = Vouchers.objects.filter(VoucherType__iexact=str(voucher_type_name)).first()
     if not v:
-        v = Vouchers.objects.filter(VoucherName__iexact=voucher_type_name).first()
+        v = Vouchers.objects.filter(VoucherName__iexact=str(voucher_type_name)).first()
     if not v:
-        clean_name = voucher_type_name.replace(' ', '').lower()
+        clean_name = str(voucher_type_name).replace(' ', '').lower()
         for voucher in Vouchers.objects.all():
             v_type_clean = (voucher.VoucherType or '').replace(' ', '').lower()
             v_name_clean = (voucher.VoucherName or '').replace(' ', '').lower()

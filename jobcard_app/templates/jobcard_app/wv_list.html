@@ -120,7 +120,13 @@
                                 {% elif v.insurance_status == 'ok' %}
                                     <span class="badge badge-success"><i class="bi bi-check-circle mr-1"></i> {% trans "Valid" %}</span>
                                 {% else %}
-                                    <span class="badge badge-secondary">—</span>
+                                    <span class="badge badge-secondary">{% trans "Not Set" %}</span>
+                                {% endif %}
+                                {% if v.insurance_policy_number %}
+                                    <div class="small text-muted mt-1"><i class="bi bi-file-earmark-text mr-1"></i>{{ v.insurance_policy_number }}</div>
+                                {% endif %}
+                                {% if v.insurance_expiry_date %}
+                                    <div class="small text-muted"><i class="bi bi-calendar-event mr-1"></i>{{ v.insurance_expiry_date|date:"d M Y" }}</div>
                                 {% endif %}
                             </td>
                             <td class="align-middle text-center">

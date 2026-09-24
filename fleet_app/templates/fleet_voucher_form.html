@@ -10,6 +10,9 @@
             <div class="col-md-6 mb-3">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
+                {% if field.name == 'Prefix' %}
+                    <small class="text-muted">Include any separator, e.g. <strong>JC-</strong> not just <strong>JC</strong></small>
+                {% endif %}
                 {% if field.errors %}
                     <div class="text-danger">{{ field.errors }}</div>
                 {% endif %}
@@ -21,3 +24,5 @@
     </form>
 </div>
 {% endblock %}
+
+

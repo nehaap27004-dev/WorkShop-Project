@@ -2587,7 +2587,7 @@ def fleet_voucher_create_update(request, pk=None):
         form = VouchersForm(request.POST, instance=voucher)
         if form.is_valid():
             form.save()
-            return redirect('fleet_app:fleet_voucher_list')  # Make sure you define this view too
+            return redirect('fleet_app:fleet_voucher_list')
     else:
         form = VouchersForm(instance=voucher)
 

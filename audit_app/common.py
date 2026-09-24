@@ -1,9 +1,16 @@
-from audit_app.models import ActivityLog
+from audit_app.services import log_audit_event
+
 
 def log_activity(user, screen_name, action_type, remark=""):
-    ActivityLog.objects.create(
-        user=user if user and user.is_authenticated else None,
+    """
+    Backward-compatible entry point for logging screen-level actions.
+    Enriched with client IP, device, browser, and user role.
+    """
+    return log_audit_event(
+        action=action_type,
+        module='GENERAL',
         screen_name=screen_name,
-        action_type=action_type,
-        remark=remark
+        description=remark,
+        user=user,
     )
+

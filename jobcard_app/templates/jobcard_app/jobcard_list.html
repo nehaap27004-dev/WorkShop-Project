@@ -42,7 +42,7 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
                         </div>
-                        <input type="text" id="jcSearch" placeholder="{% trans 'Search by job card number, customer name, vehicle plate...' %}" oninput="filterRows()" class="form-control border-left-0">
+                        <input type="text" id="jcSearch" placeholder="{% trans 'Search by job card number, voucher number, customer name, vehicle plate...' %}" oninput="filterRows()" class="form-control border-left-0">
                     </div>
                 </div>
                 <div class="col-md-5">
@@ -72,7 +72,7 @@
                 <table class="table table-hover mb-0" id="jcTable">
                     <thead>
                         <tr>
-                            <th>{% trans "Job Card No." %}</th>
+                            <th>{% trans "Voucher No." %}</th>
                             <th>{% trans "Date" %}</th>
                             <th>{% trans "Customer Name" %}</th>
                             <th>{% trans "Vehicle Registered" %}</th>
@@ -85,10 +85,10 @@
                     <tbody>
                         {% for job in jobs %}
                         <tr data-status="{{ job.status }}"
-                            data-search="{{ job.job_number|lower }} {{ job.customer|lower }} {{ job.workshop_vehicle|default_if_none:''|lower }}">
+                            data-search="{{ job.voucher_number|default:job.job_number|lower }} {{ job.customer|lower }} {{ job.workshop_vehicle|default_if_none:''|lower }}">
                             <td class="align-middle">
                                 <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="font-weight-bold text-primary" style="font-size:14px;">
-                                    {{ job.job_number }}
+                                    <i class="bi bi-receipt text-secondary mr-1"></i>{{ job.voucher_number|default:job.job_number }}
                                 </a>
                             </td>
                             <td class="align-middle text-muted">{{ job.date|date:'d M Y' }}</td>
@@ -125,7 +125,7 @@
                                 {% endif %}
                             </td>
                             <td class="align-middle text-right font-weight-bold text-dark">
-                                {{ job.grand_total|floatformat:2|default:"0.00" }}
+                                {{ job.grand_total|floatformat:3|default:"0.000" }}
                             </td>
                             <td class="align-middle text-center">
                                 <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="btn btn-sm btn-outline-primary mr-1" title="{% trans 'View Job Card' %}">
