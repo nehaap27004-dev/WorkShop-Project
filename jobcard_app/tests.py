@@ -280,52 +280,83 @@ class RelationalMappingTests(TestCase):
         customer = create_test_customer('Customer X')
         vehicle = create_test_vehicle(customer, 'REG-1001', 'Toyota', 'Corolla')
 
-        response = self.client.post(reverse('jobcard_app:jobcard_create'), {
+        payload = {
+            'voucher_number': 'JC-TEST-001',
             'customer': customer.pk,
             'date': timezone.now().date().strftime('%Y-%m-%d'),
-            'jc_vehicle_id[]': [vehicle.pk],
-            'jc_vehicle_mileage[]': ['5000'],
-            'jc_vehicle_fuel[]': ['1/2'],
-            'jc_vehicle_notes[]': [''],
-            'priority': 'normal',
-            'status': 'open',
-            'complaint_category_id[]': [str(self.category.pk)],
-            'complaint_category[]': [self.category.name],
-            'complaint_type_id[]': [str(self.complaint_type.pk)],
-            'complaint_description[]': ['AC noise'],
-            'complaint_type[]': [self.complaint_type.complaint_name],
-            'complaint_technician[]': [str(self.technician.pk)],
-            'complaint_status[]': ['Open'],
-            'complaint_manual_override[]': ['0'],
-        })
+            'priority': 'Normal',
+            'status': 'Open',
+            'vehicles-TOTAL_FORMS': '1',
+            'vehicles-INITIAL_FORMS': '0',
+            'vehicles-MIN_NUM_FORMS': '0',
+            'vehicles-MAX_NUM_FORMS': '1000',
+            'vehicles-0-vehicle': str(vehicle.pk),
+            'vehicles-0-mileage': '5000',
+            'vehicles-0-fuel_level': 'Half',
+            'complaints-TOTAL_FORMS': '1',
+            'complaints-INITIAL_FORMS': '0',
+            'complaints-MIN_NUM_FORMS': '0',
+            'complaints-MAX_NUM_FORMS': '1000',
+            'complaints-0-vehicle': str(vehicle.pk),
+            'complaints-0-service_category': str(self.category.pk),
+            'complaints-0-complaint_type_ref': str(self.complaint_type.pk),
+            'complaints-0-description': 'AC noise',
+            'complaints-0-technician': str(self.technician.pk),
+            'complaints-0-status': 'Open',
+            'complaints-0-is_manual_override': '',
+            'parts-TOTAL_FORMS': '0',
+            'parts-INITIAL_FORMS': '0',
+            'parts-MIN_NUM_FORMS': '0',
+            'parts-MAX_NUM_FORMS': '1000',
+            'labours-TOTAL_FORMS': '0',
+            'labours-INITIAL_FORMS': '0',
+            'labours-MIN_NUM_FORMS': '0',
+            'labours-MAX_NUM_FORMS': '1000',
+        }
 
-        self.assertEqual(response.status_code, 302)
-        # JobCard should not have saved complaint due to validation error redirect
+        response = self.client.post(reverse('jobcard_app:jobcard_create'), payload)
+        # JobCard should not have saved complaint due to skill validation error
         self.assertEqual(JobCard.objects.count(), 0)
 
     def test_unqualified_technician_allowed_with_manual_override(self):
         customer = create_test_customer('Customer Y')
         vehicle = create_test_vehicle(customer, 'REG-1002', 'Honda', 'Civic')
 
-        response = self.client.post(reverse('jobcard_app:jobcard_create'), {
+        payload = {
+            'voucher_number': 'JC-TEST-002',
             'customer': customer.pk,
             'date': timezone.now().date().strftime('%Y-%m-%d'),
-            'jc_vehicle_id[]': [vehicle.pk],
-            'jc_vehicle_mileage[]': ['5000'],
-            'jc_vehicle_fuel[]': ['1/2'],
-            'jc_vehicle_notes[]': [''],
-            'priority': 'normal',
-            'status': 'open',
-            'complaint_category_id[]': [str(self.category.pk)],
-            'complaint_category[]': [self.category.name],
-            'complaint_type_id[]': [str(self.complaint_type.pk)],
-            'complaint_description[]': ['AC noise'],
-            'complaint_type[]': [self.complaint_type.complaint_name],
-            'complaint_technician[]': [str(self.technician.pk)],
-            'complaint_status[]': ['Open'],
-            'complaint_manual_override[]': ['1'],
-        })
+            'priority': 'Normal',
+            'status': 'Open',
+            'vehicles-TOTAL_FORMS': '1',
+            'vehicles-INITIAL_FORMS': '0',
+            'vehicles-MIN_NUM_FORMS': '0',
+            'vehicles-MAX_NUM_FORMS': '1000',
+            'vehicles-0-vehicle': str(vehicle.pk),
+            'vehicles-0-mileage': '5000',
+            'vehicles-0-fuel_level': 'Half',
+            'complaints-TOTAL_FORMS': '1',
+            'complaints-INITIAL_FORMS': '0',
+            'complaints-MIN_NUM_FORMS': '0',
+            'complaints-MAX_NUM_FORMS': '1000',
+            'complaints-0-vehicle': str(vehicle.pk),
+            'complaints-0-service_category': str(self.category.pk),
+            'complaints-0-complaint_type_ref': str(self.complaint_type.pk),
+            'complaints-0-description': 'AC noise',
+            'complaints-0-technician': str(self.technician.pk),
+            'complaints-0-status': 'Open',
+            'complaints-0-is_manual_override': '1',
+            'parts-TOTAL_FORMS': '0',
+            'parts-INITIAL_FORMS': '0',
+            'parts-MIN_NUM_FORMS': '0',
+            'parts-MAX_NUM_FORMS': '1000',
+            'labours-TOTAL_FORMS': '0',
+            'labours-INITIAL_FORMS': '0',
+            'labours-MIN_NUM_FORMS': '0',
+            'labours-MAX_NUM_FORMS': '1000',
+        }
 
+        response = self.client.post(reverse('jobcard_app:jobcard_create'), payload)
         self.assertEqual(response.status_code, 302)
         job_card = JobCard.objects.order_by('-created_on').first()
         self.assertIsNotNone(job_card)
@@ -341,25 +372,41 @@ class RelationalMappingTests(TestCase):
         customer = create_test_customer('Customer Z')
         vehicle = create_test_vehicle(customer, 'REG-1003', 'Nissan', 'Sunny')
 
-        response = self.client.post(reverse('jobcard_app:jobcard_create'), {
+        payload = {
+            'voucher_number': 'JC-TEST-003',
             'customer': customer.pk,
             'date': timezone.now().date().strftime('%Y-%m-%d'),
-            'jc_vehicle_id[]': [vehicle.pk],
-            'jc_vehicle_mileage[]': ['5000'],
-            'jc_vehicle_fuel[]': ['1/2'],
-            'jc_vehicle_notes[]': [''],
-            'priority': 'normal',
-            'status': 'open',
-            'complaint_category_id[]': [str(self.category.pk)],
-            'complaint_category[]': [self.category.name],
-            'complaint_type_id[]': [str(self.complaint_type.pk)],
-            'complaint_description[]': ['AC noise'],
-            'complaint_type[]': [self.complaint_type.complaint_name],
-            'complaint_technician[]': [str(self.technician.pk)],
-            'complaint_status[]': ['Open'],
-            'complaint_manual_override[]': ['0'],
-        })
+            'priority': 'Normal',
+            'status': 'Open',
+            'vehicles-TOTAL_FORMS': '1',
+            'vehicles-INITIAL_FORMS': '0',
+            'vehicles-MIN_NUM_FORMS': '0',
+            'vehicles-MAX_NUM_FORMS': '1000',
+            'vehicles-0-vehicle': str(vehicle.pk),
+            'vehicles-0-mileage': '5000',
+            'vehicles-0-fuel_level': 'Half',
+            'complaints-TOTAL_FORMS': '1',
+            'complaints-INITIAL_FORMS': '0',
+            'complaints-MIN_NUM_FORMS': '0',
+            'complaints-MAX_NUM_FORMS': '1000',
+            'complaints-0-vehicle': str(vehicle.pk),
+            'complaints-0-service_category': str(self.category.pk),
+            'complaints-0-complaint_type_ref': str(self.complaint_type.pk),
+            'complaints-0-description': 'AC noise',
+            'complaints-0-technician': str(self.technician.pk),
+            'complaints-0-status': 'Open',
+            'complaints-0-is_manual_override': '',
+            'parts-TOTAL_FORMS': '0',
+            'parts-INITIAL_FORMS': '0',
+            'parts-MIN_NUM_FORMS': '0',
+            'parts-MAX_NUM_FORMS': '1000',
+            'labours-TOTAL_FORMS': '0',
+            'labours-INITIAL_FORMS': '0',
+            'labours-MIN_NUM_FORMS': '0',
+            'labours-MAX_NUM_FORMS': '1000',
+        }
 
+        response = self.client.post(reverse('jobcard_app:jobcard_create'), payload)
         self.assertEqual(response.status_code, 302)
         job_card = JobCard.objects.order_by('-created_on').first()
         self.assertIsNotNone(job_card)

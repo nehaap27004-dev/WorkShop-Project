@@ -354,3 +354,10 @@ class ReceiptDetailsAdmin(admin.ModelAdmin):
     list_display = ("Receipt", "Ledger", "Amount", "Desc")
     search_fields = ("Receipt__voucher_no", "Ledger__LedgerName", "Desc")
     list_filter = ("Receipt__Date",)    
+
+from .models import InvoicePostingConfig
+
+@admin.register(InvoicePostingConfig)
+class InvoicePostingConfigAdmin(admin.ModelAdmin):
+    list_display = ('voucher_type', 'sales_ledger', 'tax_ledger', 'discount_ledger',
+                    'cash_ledger', 'bank_ledger')

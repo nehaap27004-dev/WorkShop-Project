@@ -8,9 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 import logging
 import json
-from .models import (
-   DeliveryNoteVehicle, Estimate, EstimateComplaint, EstimateItem, EstimateVehicle, InvoiceLabour, InvoiceOtherCharge, InvoicePart, InvoiceVehicle, JobCardVehicle, Quotation, QuotationItem, ServiceCategory, ServiceType, SkillTag, ComplaintType
-)
+
 from fleet_app.models import FleetCustomer, Vehicle
 from item_master.models import Item
 from accounts_app   .models import LedgerCreation
@@ -37,6 +35,32 @@ from fleet_app.models import VehicleCategory
 
 from fleet_app.models import  Manufacturer, VehicleModel
 from fleet_app.models import VehicleCategory
+
+import logging
+from decimal import Decimal
+ 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+ 
+from accounts_app.models import LedgerCreation
+from fleet_app.models import Staff
+from .models import (
+    DeliveryNoteVehicle, Estimate, EstimateComplaint, EstimateItem, EstimateVehicle,
+    Invoice, InvoiceItem, InvoiceVehicle, JobCardVehicle, Quotation, QuotationItem,
+    ServiceCategory, ServiceType, SkillTag, ComplaintType,
+)
+from .models import Invoice, InvoiceItem, InvoiceVehicle, JobCard, WorkshopVehicle
+from .utils import get_next_document_number
+from .common import (
+    PostingError,
+    create_ledger_postings_for_invoice,
+    delete_ledger_postings_for_invoice,
+)
 # ─────────────────────────────────────────────────────────────
 # SERVICE CATEGORY
 # ─────────────────────────────────────────────────────────────
@@ -668,14 +692,86 @@ def insp_get_vehicles(request):
 # ─────────────────────────────────────────────────────────────
 @login_required
 def jobcard_list(request):
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+
     jobs = (
         JobCard.objects
-        .select_related('customer', 'workshop_vehicle', 'advisor', 'voucherType')
-        .prefetch_related('parts', 'labours')
+        .select_related(
+            'customer',
+            'workshop_vehicle',
+            'advisor',
+            'voucherType'
+        )
+        .prefetch_related(
+            'parts',
+            'labours',
+            'vehicles',
+        )
         .all()
+        .order_by('-id')
     )
-    return render(request, 'jobcard_app/jobcard_list.html', {'jobs': jobs})
 
+    # Search
+    q = request.GET.get('q', '').strip()
+    if q:
+        jobs = jobs.filter(
+            Q(voucher_number__icontains=q) |
+            Q(customer__ledger_name__icontains=q) |
+            Q(vehicle_model__icontains=q)
+        )
+
+    # Status filter
+    status = request.GET.get('status', '').strip()
+    if status:
+        jobs = jobs.filter(status=status)
+
+    # Priority filter
+    priority = request.GET.get('priority', '').strip()
+    if priority:
+        jobs = jobs.filter(priority=priority)
+
+    # Date filters
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+
+    if date_from:
+        jobs = jobs.filter(date__gte=date_from)
+
+    if date_to:
+        jobs = jobs.filter(date__lte=date_to)
+
+    # Pagination
+    paginator = Paginator(jobs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Status tabs
+    priority_choices = JobCard.PRIORITY_CHOICES
+
+    tabs = []
+    for key, label in JobCard.STATUS_CHOICES:
+        tabs.append({
+            'key': key,
+            'label': label,
+            'count': JobCard.objects.filter(status=key).count(),
+        })
+
+    return render(
+        request,
+        'jobcard_app/jobcard_list.html',
+        {
+            'jobs': jobs,
+            'page_obj': page_obj,
+            'q': q,
+            'status': status,
+            'priority': priority,
+            'date_from': date_from,
+            'date_to': date_to,
+            'priority_choices': priority_choices,
+            'tabs': tabs,
+        }
+    )
 
 # ─────────────────────────────────────────────────────────────
 # CREATE / EDIT (same template renders both)
@@ -697,18 +793,11 @@ def jobcard_create(request):
     from .models import WorkshopVehicle, VehicleInspection
     from .models import ServiceCategory
 
-    customers = LedgerCreation.objects.filter(
-        groups_id=18).order_by('ledger_name')
-
-
-
+    customers = LedgerCreation.objects.filter(groups_id=18).order_by('ledger_name')
     items = Item.objects.filter(isDeleted=False).order_by('item_name')
-    categories = ServiceCategory.objects.filter(
-                     is_active=True).order_by('name')
+    categories = ServiceCategory.objects.filter(is_active=True).order_by('name')
     inspections = VehicleInspection.objects.select_related('vehicle', 'customer').order_by('-inspection_date', '-created_on')
-    technicians = Staff.objects.filter(
-                  status='Active',
-                  staff_category__name='Technician').order_by('full_name')
+    technicians = Staff.objects.filter(status='Active', staff_category__name='Technician').order_by('full_name')
     advisors    = Staff.objects.filter(status='Active').order_by('full_name')
     all_staff   = Staff.objects.filter(status='Active').order_by('full_name')
     inspection      = None
@@ -731,8 +820,16 @@ def jobcard_create(request):
 
     from jobcard_app.utils import generate_voucher_number
     from fleet_app.models import Vouchers
-    next_job_number = generate_voucher_number('JobCard', JobCard, 'voucher_number', default_prefix='JC-')
     voucher_types = Vouchers.objects.all().order_by('VoucherName')
+    # Use the selected/default Job Card voucher type
+    jobcard_voucher = voucher_types.filter(VoucherName='Repair').first()
+    next_job_number = None
+    if jobcard_voucher:
+        next_job_number = get_next_document_number(
+            jobcard_voucher.id,
+            JobCard,
+            'voucher_number'
+        )
 
     if request.method == 'POST':
         return _save_jobcard(request, job=None)
@@ -767,40 +864,52 @@ def jobcard_create(request):
 
 
 def get_next_jobcard_number(request):
-    """AJAX view to get next jobcard voucher number"""
-    from fleet_app.models import Vouchers
-    from jobcard_app.utils import generate_voucher_number
-    from .models import JobCard
-
+    """AJAX view to get next Job Card number"""
     voucher_type_id = request.GET.get('voucher_type_id')
-    if voucher_type_id:
-        try:
-            vt = Vouchers.objects.get(pk=voucher_type_id)
-            num = vt.get_next_voucher_number(JobCard, 'voucher_number')
-            return JsonResponse({'job_number': num, 'voucher_number': num, 'success': True})
-        except Vouchers.DoesNotExist:
-            pass
-
-    next_num = generate_voucher_number('JobCard', JobCard, 'voucher_number', default_prefix='JC-')
-    return JsonResponse({'job_number': next_num, 'voucher_number': next_num, 'success': True})
+    try:
+        number = get_next_document_number(voucher_type_id,JobCard,'voucher_number')
+        return JsonResponse({'success': True,'job_number': number,'voucher_number': number })
+    except ValueError as e:
+        return JsonResponse({'success': False,'error': str(e) }, status=400)
+@login_required
 def get_next_estimate_number(request):
-    """AJAX view to get next estimate voucher number"""
+    """Next voucher number for Estimate."""
     from fleet_app.models import Vouchers
     from jobcard_app.utils import generate_voucher_number
     from .models import Estimate
 
     voucher_type_id = request.GET.get('voucher_type_id')
+
     if voucher_type_id:
         try:
             vt = Vouchers.objects.get(pk=voucher_type_id)
-            num = vt.get_next_voucher_number(Estimate, 'voucher_number')
-            return JsonResponse({'job_number': num, 'success': True})
+
+            num = vt.get_next_voucher_number(
+                Estimate,
+                'voucher_number'
+            )
+
+            return JsonResponse({
+                'success': True,
+                'job_number': num,
+                'voucher_number': num,
+            })
+
         except Vouchers.DoesNotExist:
             pass
 
-    next_num = generate_voucher_number('Estimate', Estimate, 'voucher_number', default_prefix='VCH-')
-    return JsonResponse({'job_number': next_num, 'success': True})
+    next_num = generate_voucher_number(
+        'Estimate',
+        Estimate,
+        'voucher_number',
+        default_prefix='EST-'
+    )
 
+    return JsonResponse({
+        'success': True,
+        'job_number': next_num,
+        'voucher_number': next_num,
+    })
 @login_required
 def jobcard_edit(request, pk):
     from .models import ServiceCategory
@@ -1759,9 +1868,7 @@ def estimate_list(request):
     q      = request.GET.get('q', '').strip()
     status = request.GET.get('status', '')
  
-    qs = Estimate.objects.select_related(
-        'customer', 'vehicle', 'jobcard'
-    ).filter(is_active=True)
+    qs = Estimate.objects.select_related('customer','vehicle','jobcard').prefetch_related('vehicles__vehicle').filter(is_active=True)
  
     if q:
         qs = qs.filter(
@@ -1818,7 +1925,7 @@ def estimate_create(request):
             messages.success(
                 request,
                 f"Estimate {est.estimate_number} saved!")
-            return redirect('jobcard_app:estimate_detail', pk=est.pk)
+            return redirect('jobcard_app:estimate_list')
  
     from jobcard_app.utils import generate_voucher_number
     return render(request, 'jobcard_app/estimate_form.html', {
@@ -1835,30 +1942,7 @@ def estimate_create(request):
     })
  
  
-# ─────────────────────────────────────────────────────────────
-# DETAIL
-# ─────────────────────────────────────────────────────────────
-@login_required
-def estimate_detail(request, pk):
-    est = get_object_or_404(
-        Estimate.objects.select_related(
-            'customer', 'vehicle', 'jobcard', 'advisor'
-        ).prefetch_related('items', 'complaints'),
-        pk=pk)
- 
-    parts      = est.items.filter(item_type='part')
-    labour     = est.items.filter(item_type='labour')
-    complaints = est.complaints.filter(complaint_type='customer')
-    findings   = est.complaints.filter(complaint_type='technician')
- 
-    return render(request, 'jobcard_app/estimate_detail.html', {
-        'est':        est,
-        'parts':      parts,
-        'labour':     labour,
-        'complaints': complaints,
-        'findings':   findings,
-    })
- 
+
  
 # ─────────────────────────────────────────────────────────────
 # EDIT
@@ -1880,7 +1964,7 @@ def estimate_edit(request, pk):
             messages.success(
                 request,
                 f"Estimate {est.estimate_number} updated!")
-            return redirect('jobcard_app:estimate_detail', pk=pk)
+            return redirect('jobcard_app:estimate_list')
  
     parts      = est.items.filter(item_type='part')
     labour     = est.items.filter(item_type='labour')
@@ -3339,85 +3423,6 @@ def delivery_delete(request, pk):
         {'dn': dn})
 
 
-# ─────────────────────────────────────────────────────────────
-# AJAX — search delivery notes (for invoice form)
-# ─────────────────────────────────────────────────────────────
-@login_required
-def ajax_search_deliveries(request):
-    q = request.GET.get('q', '').strip()
-    if not q:
-        return JsonResponse({'deliveries': []})
-
-    # ── Spare Parts ───────────────────────────────────────────────────────────────
-    # New fields from item master dropdown
-    part_item_ids = request.POST.getlist('part_item_id[]')
-    part_names    = request.POST.getlist('part_name[]')
-    part_codes    = request.POST.getlist('part_code[]')
-    part_qtys     = request.POST.getlist('part_qty[]')
-    part_units    = request.POST.getlist('part_unit[]')
-    part_rates    = request.POST.getlist('part_rate[]')
-    part_discs    = request.POST.getlist('part_disc[]')
-    part_taxs     = request.POST.getlist('part_tax[]')
-
-    # Build item master lookup for description/code resolution
-    try:
-        from item_master.models import Item as _Item
-        _all_items = {str(i.id): i for i in _Item.objects.filter(isDeleted=False)}
-    except Exception:
-        _all_items = {}
-
-    max_len = max(len(part_item_ids), len(part_names), len(part_codes)) if (part_item_ids or part_names or part_codes) else 0
-
-    for i in range(max_len):
-        item_id   = part_item_ids[i] if i < len(part_item_ids) else ''
-        name_val  = part_names[i]    if i < len(part_names)    else ''
-        code_val  = part_codes[i]    if i < len(part_codes)    else ''
-
-        # Resolve description and code from Item Master if item_id given
-        if item_id and item_id in _all_items:
-            im_item   = _all_items[item_id]
-            description = im_item.item_name
-            code_val    = code_val or im_item.item_code or ''
-        elif name_val.strip():
-            description = name_val.strip()
-        elif code_val.strip():
-            description = code_val.strip()
-        else:
-            continue  # skip completely empty rows
-
-        InvoicePart.objects.create(
-            invoice      = invoice,
-            item_ref     = item_id or '',
-            item_code    = code_val,
-            description  = description,
-            quantity     = float(part_qtys[i])  if i < len(part_qtys)  else 1,
-            unit         = part_units[i]         if i < len(part_units) else 'Pcs',
-            unit_price   = float(part_rates[i])  if i < len(part_rates) else 0,
-            discount_pct = float(part_discs[i])  if i < len(part_discs) else 0,
-            tax_percent  = float(part_taxs[i])   if i < len(part_taxs)  else 8,
-            order        = i,
-        )
-
-    qs = DeliveryNote.objects.select_related(
-        'customer', 'vehicle'
-    ).filter(is_active=True).filter(
-        Q(voucher_number__icontains=q) |
-        Q(customer__ledger_name__icontains=q) |
-        Q(reg_number__icontains=q)
-    )[:10]
-
-    result = [{
-        'id':              d.id,
-        'voucher_number':  d.voucher_number,
-        'customer_id':     d.customer_id,
-        'customer_name':   d.customer.ledger_name,
-        'vehicle_id':      d.vehicle_id or '',
-        'vehicle_name':    str(d.vehicle) if d.vehicle else '',
-        'date':            d.date.strftime('%d %b %Y'),
-        'grand_total':     d.get_grand_total(),
-    } for d in qs]
-
-    return JsonResponse({'deliveries': result})
 @login_required
 def ajax_get_jobcard_for_delivery(request):
     """
@@ -3765,1175 +3770,708 @@ def ajax_get_docs_for_delivery(request):
 # INVOICE
 # ═══════════════════════════════════════════════════════
 
+import logging
+from decimal import Decimal, InvalidOperation
+ 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Count, Q, Sum
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+ 
+from accounts_app.models import LedgerCreation, LedgerPosting
+from fleet_app.models import Staff, Vouchers
+ 
+from .forms import InvoiceHeaderForm
+from .models import (
+    DeliveryNote, Invoice, InvoiceItem, InvoiceVehicle, JobCard, WorkshopVehicle,
+)
+ 
+log = logging.getLogger(__name__)
+ 
+INVOICE_VOUCHER_PK = 2         # "Invoice" row in Vouchers
+CASH_LEDGER_PK = 23
+BANK_LEDGER_PK = 24
+DISCOUNT_LEDGER_PK = 10
+OTHER_INCOME_LEDGER_PK = 11
+OUTPUT_GST_LEDGER_PK = 12
+ 
+ 
+# ─────────────────────────────────────────────────────────────
+# small helpers
+# ─────────────────────────────────────────────────────────────
+def _num(lst, idx, default):
+    """float(lst[idx]) with a safe fallback for missing / blank / bad values."""
+    try:
+        v = lst[idx] if idx < len(lst) else ''
+        return float(v) if str(v).strip() != '' else default
+    except (ValueError, TypeError):
+        return default
+ 
+ 
+def _at(lst, idx, default=''):
+    return lst[idx].strip() if idx < len(lst) and lst[idx] is not None else default
+ 
+ 
+def _vehicle(pk):
+    return WorkshopVehicle.objects.filter(pk=pk).first() if pk else None
+ 
+ 
+def _invoice_voucher_type(invoice=None):
+    return Vouchers.objects.get(pk=INVOICE_VOUCHER_PK)
+ 
+ 
+# ─────────────────────────────────────────────────────────────
+# AJAX — search delivery notes (for invoice form)
+# ─────────────────────────────────────────────────────────────
+@login_required
+def ajax_search_deliveries(request):
+    q = request.GET.get('q', '').strip()
+    if not q:
+        return JsonResponse({'deliveries': []})
+ 
+    qs = DeliveryNote.objects.select_related('customer', 'vehicle').filter(is_active=True).filter(
+        Q(voucher_number__icontains=q) |
+        Q(customer__ledger_name__icontains=q) |
+        Q(reg_number__icontains=q)
+    )[:10]
+ 
+    result = [{
+        'id':             d.id,
+        'voucher_number': d.voucher_number,
+        'customer_id':    d.customer_id,
+        'customer_name':  d.customer.ledger_name,
+        'vehicle_id':     d.vehicle_id or '',
+        'vehicle_name':   str(d.vehicle) if d.vehicle else '',
+        'date':           d.date.strftime('%d %b %Y'),
+        'grand_total':    d.get_grand_total(),
+    } for d in qs]
+    return JsonResponse({'deliveries': result})
+ 
+ 
+# ═════════════════════════════════════════════════════════════
+# INVOICE — SAVE
+# ═════════════════════════════════════════════════════════════
+def _snapshot(invoice):
+    return {
+        'status':       invoice.status,
+        'payment_mode': invoice.payment_mode,
+        'discount_pct': str(invoice.discount_pct or 0),
+        'amount_paid':  str(invoice.amount_paid or 0),
+        'grand_total':  str(round(invoice.get_grand_total(), 3)) if invoice.pk else '0',
+        'customer':     str(invoice.customer) if invoice.customer_id else '',
+        'display_number': invoice.display_number,
+    }
+ 
+ 
+def _save_items(invoice, post):
+    """Rebuild every InvoiceItem (parts, labour, other) from the POSTed arrays."""
+    invoice.items.all().delete()
+    order = 0
+ 
+    # ── Spare parts ──
+    p_veh   = post.getlist('part_vehicle_id[]')
+    p_ids   = post.getlist('part_item_id[]')
+    p_names = post.getlist('part_name[]')
+    p_codes = post.getlist('part_code[]')
+    p_qty   = post.getlist('part_qty[]')
+    p_unit  = post.getlist('part_unit[]')
+    p_rate  = post.getlist('part_rate[]')
+    p_disc  = post.getlist('part_disc[]')
+    p_tax   = post.getlist('part_tax[]')
+ 
+    try:
+        from item_master.models import Item
+    except Exception:           # item master not installed
+        Item = None
+ 
+    for i in range(max(len(p_ids), len(p_names))):
+        item_id = _at(p_ids, i)
+        name    = _at(p_names, i)
+        code    = _at(p_codes, i)
+ 
+        item_obj = None
+        if item_id and Item is not None and item_id.isdigit():
+            item_obj = Item.objects.filter(pk=item_id).first()
+            if item_obj:
+                name = name or item_obj.item_name
+                code = code or (item_obj.item_code or '')
+        if not name:
+            continue                                   # empty row
+ 
+        InvoiceItem.objects.create(
+            invoice=invoice, item_type='part',
+            vehicle=_vehicle(_at(p_veh, i)),
+            item=item_obj, item_ref=item_id or None, item_code=code, description=name,
+            quantity=_num(p_qty, i, 1), unit=_at(p_unit, i) or 'Pcs',
+            unit_price=_num(p_rate, i, 0), discount_pct=_num(p_disc, i, 0),
+            tax_percent=_num(p_tax, i, 8), order=order,
+        )
+        order += 1
+ 
+    # ── Labour ──
+    l_veh  = post.getlist('labour_vehicle_id[]')
+    l_desc = post.getlist('lab_desc[]')
+    l_tech = post.getlist('lab_tech[]')
+    l_hrs  = post.getlist('lab_hrs[]')
+    l_rate = post.getlist('lab_rate[]')
+    l_tax  = post.getlist('lab_tax[]')
+ 
+    for i, desc in enumerate(l_desc):
+        if not desc.strip():
+            continue
+        tech_id = _at(l_tech, i)
+        InvoiceItem.objects.create(
+            invoice=invoice, item_type='labour',
+            vehicle=_vehicle(_at(l_veh, i)), description=desc.strip(),
+            technician=Staff.objects.filter(pk=tech_id).first() if tech_id else None,
+            hours=_num(l_hrs, i, 1), unit_price=_num(l_rate, i, 0),
+            tax_percent=_num(l_tax, i, 8), quantity=1, order=order,
+        )
+        order += 1
+ 
+    # ── Other charges ──
+    o_veh  = post.getlist('other_vehicle_id[]')
+    o_desc = post.getlist('oth_desc[]')
+    o_amt  = post.getlist('oth_amt[]')
+    o_tax  = post.getlist('oth_tax[]')
+ 
+    for i, desc in enumerate(o_desc):
+        if not desc.strip():
+            continue
+        InvoiceItem.objects.create(
+            invoice=invoice, item_type='other',
+            vehicle=_vehicle(_at(o_veh, i)), description=desc.strip(),
+            quantity=1, unit_price=_num(o_amt, i, 0),
+            tax_percent=_num(o_tax, i, 0), order=order,
+        )
+        order += 1
+ 
+def _save_vehicles(invoice, post):
+    invoice.vehicles.all().delete()
+    ids      = post.getlist('inv_vehicle_id[]')
+    mileages = post.getlist('inv_vehicle_mileage[]')
+    notes    = post.getlist('inv_vehicle_notes[]')
+
+    first, seen = None, set()
+    for i, v_id in enumerate(ids):
+        if not v_id or v_id in seen:
+            continue
+        seen.add(v_id)
+        veh = _vehicle(v_id)
+        if not veh:
+            continue
+        first = first or veh
+        mileage = _at(mileages, i)
+        InvoiceVehicle.objects.create(
+            invoice=invoice, vehicle=veh,
+            mileage=int(float(mileage)) if mileage else None,
+            notes=_at(notes, i),
+        )
+    invoice.vehicle = first                             # legacy single-vehicle field
+    invoice.save(update_fields=['vehicle'])
+
+def _assign_voucher_number(post, invoice, vt):
+    is_new = invoice is None or not invoice.pk
+    if is_new:
+        post['voucher_number'] = get_next_document_number(vt.pk, Invoice, 'voucher_number')
+    else:
+        post['voucher_number'] = invoice.voucher_number or get_next_document_number(vt.pk, Invoice, 'voucher_number')
+
+ 
 def _save_invoice(request, invoice=None):
-    cid = request.POST.get('customer', '').strip()
+    """Create or update an invoice from request.POST. Returns the Invoice, or None on error."""
+    post = request.POST.copy()                          # mutable copy
+
+    cid = post.get('customer', '').strip()
     if not cid:
         messages.error(request, 'Customer is required.')
         return None
-
     customer = get_object_or_404(LedgerCreation, pk=cid)
 
-    
+    sel_vt = _invoice_voucher_type()
+    post['voucherType'] = str(sel_vt.pk)
+    _assign_voucher_number(post, invoice, sel_vt)
 
-    jc_id   = (request.POST.get('job_card', '').strip() or
-               request.POST.get('loaded_job_card', '').strip())
-    jobcard = JobCard.objects.filter(pk=jc_id).first() \
-              if jc_id and jc_id.isdigit() else None
-
-    adv_id  = request.POST.get('advisor', '').strip()
-    advisor = Staff.objects.filter(pk=adv_id).first() if adv_id else None
-
-    is_new_invoice = (invoice is None or not getattr(invoice, 'pk', None))
-    old_inv_num = None
-    old_vt = None
-    old_inv_snapshot = None
-    if not is_new_invoice:
-        old_inv_num = invoice.invoice_number
+    is_new = invoice is None or not invoice.pk
+    old_vt = old_snapshot = None
+    if not is_new:
         old_vt = invoice.voucherType
-        old_inv_snapshot = {
-            'status': invoice.status,
-            'payment_mode': invoice.payment_mode,
-            'discount_pct': str(invoice.discount_pct or 0),
-            'amount_paid': str(invoice.amount_paid or 0),
-            'grand_total': str(invoice.get_grand_total()) if hasattr(invoice, 'get_grand_total') else '0',
-            'customer': str(invoice.customer) if invoice.customer else '',
-        }
+        old_snapshot = _snapshot(invoice)
+    if invoice is None:
+        invoice = Invoice(created_by=request.user.id)
+    else:
+        invoice.updated_by = request.user.id
 
-    if invoice is None: invoice = Invoice(created_by=request.user.id)
+    form = InvoiceHeaderForm(post, instance=invoice if invoice.pk else None)
+    if not form.is_valid():
+        for field, errs in form.errors.items():
+            for e in errs:
+                label = '' if field == '__all__' else f'{field.replace("_", " ").title()}: '
+                messages.error(request, f'{label}{e}')
+        return None
+    cd = form.cleaned_data
 
+    jc_id = post.get('job_card', '').strip() or post.get('loaded_job_card', '').strip()
+    jobcard = JobCard.objects.filter(pk=jc_id).first() if jc_id.isdigit() else None
+    adv_id = post.get('advisor', '').strip()
+    posted_paid = cd['amount_paid']
 
-    invoice.customer         = customer
-    from fleet_app.models import Vouchers
-    vt_id = request.POST.get('voucherType')
-    invoice.voucherType = Vouchers.objects.filter(pk=vt_id).first() if vt_id else None
-    invoice.voucher_number = request.POST.get('voucher_number', '').strip() or None
+    try:
+        with transaction.atomic():
+            invoice.customer         = customer
+            invoice.voucherType      = sel_vt
+            invoice.voucher_number   = post['voucher_number']
+            invoice.invoice_number   = cd.get('invoice_number') or None
+            invoice.jobcard          = jobcard
+            invoice.advisor          = Staff.objects.filter(pk=adv_id).first() if adv_id else None
+            invoice.invoice_date     = cd['invoice_date']
+            invoice.due_date         = cd.get('due_date') or None
+            invoice.status           = cd.get('status') or 'draft'
+            invoice.payment_mode     = cd['payment_mode']
+            invoice.customer_mobile  = cd.get('customer_mobile') or ''
+            invoice.customer_address = cd.get('customer_address') or ''
+            invoice.vehicle_model    = post.get('vehicle_model', '')
+            invoice.discount_pct     = cd['discount_pct']
+            invoice.amount_paid      = posted_paid
+            invoice.notes            = cd.get('notes') or ''
+            invoice.save()
 
-    inv_num = request.POST.get('invoice_number', '').strip()
-    if inv_num:
-        dup_qs = Invoice.objects.filter(invoice_number=inv_num)
-        if invoice.pk:
-            dup_qs = dup_qs.exclude(pk=invoice.pk)
-        if dup_qs.exists():
-            messages.error(
-                request,
-                f'Invoice number "{inv_num}" is already in use. Please choose a different number.')
-            return None
-        invoice.invoice_number = inv_num
+            _save_vehicles(invoice, post)
+            _save_items(invoice, post)
 
-    if old_inv_num and old_inv_num != invoice.invoice_number:
-        try:
-            from accounts_app.models import BillWiseOpening
-            inv_vt = old_vt or invoice.voucherType or Vouchers.objects.filter(VoucherType__icontains='Invoice').first() or Vouchers.objects.filter(pk=5).first() or Vouchers.objects.first()
-            if inv_vt:
-                BillWiseOpening.objects.filter(voucherType=inv_vt, InvNo=old_inv_num).delete()
-        except Exception:
-            pass
-    
-  
-    invoice.jobcard          = jobcard        # ← correct field name
-    invoice.advisor          = advisor
-    invoice.invoice_date     = request.POST.get('invoice_date') or timezone.now().date()
-    invoice.due_date         = request.POST.get('due_date') or None
-    invoice.status           = request.POST.get('status', 'draft')
-    invoice.payment_mode     = request.POST.get('payment_mode', 'cash')
-    invoice.customer_mobile  = request.POST.get('customer_mobile', '')
-    invoice.customer_address = request.POST.get('customer_address', '')
-    invoice.vehicle_model    = request.POST.get('vehicle_model', '')
-    invoice.discount_pct     = request.POST.get('discount_pct') or 0
-    posted_paid = Decimal(request.POST.get('amount_paid') or 0)
-    invoice.amount_paid = posted_paid
-    invoice._auto_settle_cash_bank = (
-        invoice.payment_mode in ('cash', 'bank') and posted_paid == 0
-    )
-    invoice.notes            = request.POST.get('notes', '')
-    invoice.save()
-    # ── Vehicles ────────────────────────────────────────
-    invoice.vehicles.all().delete()
-    inv_veh_ids      = request.POST.getlist('inv_vehicle_id[]')
-    inv_veh_mileages = request.POST.getlist('inv_vehicle_mileage[]')
-    inv_veh_notes    = request.POST.getlist('inv_vehicle_notes[]')
-    first_vehicle = None
-    seen_vehicles = set()
-    for i, v_id in enumerate(inv_veh_ids):
-        if not v_id or v_id in seen_vehicles:
-            continue
-        seen_vehicles.add(v_id)
-        veh = WorkshopVehicle.objects.filter(pk=v_id).first()
-        if not veh:
-            continue
-        if first_vehicle is None:
-            first_vehicle = veh
-        InvoiceVehicle.objects.create(
-            invoice = invoice,
-            vehicle = veh,
-            mileage = inv_veh_mileages[i] if i < len(inv_veh_mileages) and inv_veh_mileages[i] else None,
-            notes   = inv_veh_notes[i] if i < len(inv_veh_notes) else '',
-        )
+            if invoice.payment_mode in ('cash', 'bank') and posted_paid == 0:
+                invoice.amount_paid = Decimal(str(round(invoice.get_grand_total(), 3)))
+                invoice.save(update_fields=['amount_paid'])
 
-    # Keep legacy single-vehicle field in sync (first vehicle)
-    invoice.vehicle = first_vehicle
-    invoice.save(update_fields=['vehicle'])
-    # ── Clear old lines ───────────────────────────────────
-    invoice.parts.all().delete()
-    invoice.labours.all().delete()
-    invoice.other_charges.all().delete()
+            invoice.update_status()
+            _sync_invoice_stock(invoice)
 
-    # ── Spare Parts ───────────────────────────────────────
-    part_vehs     = request.POST.getlist('part_vehicle_id[]')
-    part_item_ids = request.POST.getlist('part_item_id[]')
-    part_names    = request.POST.getlist('part_name[]')
-    part_codes    = request.POST.getlist('part_code[]')
-    part_qtys     = request.POST.getlist('part_qty[]')
-    part_units    = request.POST.getlist('part_unit[]')
-    part_rates    = request.POST.getlist('part_rate[]')
-    part_discs    = request.POST.getlist('part_disc[]')
-    part_taxs     = request.POST.getlist('part_tax[]')
+            if old_vt and old_vt.pk != sel_vt.pk:
+                delete_ledger_postings_for_invoice(invoice)
+            create_ledger_postings_for_invoice(invoice)
 
-    row_count = max(len(part_item_ids), len(part_names), 0)
+            # _sync_invoice_billwise_opening(invoice)   # add later, keyed on voucher_number
+    except PostingError as e:
+        messages.error(request, f'Accounting posting failed: {e}. Nothing was saved.')
+        return None
+    except Exception:
+        log.exception('Invoice save failed')
+        messages.error(request, 'Could not save the invoice. Nothing was changed — please try again.')
+        return None
 
-    for i in range(row_count):
-        item_id  = part_item_ids[i].strip() if i < len(part_item_ids) else ''
-        name_val = part_names[i].strip()    if i < len(part_names)    else ''
-        code_val = part_codes[i].strip()    if i < len(part_codes)    else ''
-        v_id     = part_vehs[i].strip()     if i < len(part_vehs)     else ''
-        p_veh    = WorkshopVehicle.objects.filter(pk=v_id).first() if v_id else None
-
-        # skip completely empty rows
-        if not item_id and not name_val:
-            continue
-
-        # resolve name from item master if hidden field was empty
-        item_obj = None
-        if item_id:
-            try:
-                from item_master.models import Item
-                item_obj = Item.objects.filter(pk=item_id).first()
-                if item_obj:
-                    if not name_val:
-                        name_val = item_obj.item_name
-                    if not code_val:
-                        code_val = item_obj.item_code or ''
-            except Exception:
-                pass
-
-        if not name_val:
-            continue
-
-        def safe_float(lst, idx, default):
-            try:
-                return float(lst[idx]) if idx < len(lst) and lst[idx] else default
-            except (ValueError, TypeError):
-                return default
-
-        qty  = safe_float(part_qtys,  i, 1)
-        rate = safe_float(part_rates, i, 0)
-        disc = safe_float(part_discs, i, 0)
-        tax  = safe_float(part_taxs,  i, 8)
-        unit = part_units[i] if i < len(part_units) and part_units[i] else 'Pcs'
-
-        InvoicePart.objects.create(
-            invoice      = invoice,
-            vehicle      = p_veh,
-            item         = item_obj,
-            item_ref     = item_id,
-            item_code    = code_val,
-            description  = name_val,
-            quantity     = qty,
-            unit         = unit,
-            unit_price   = rate,
-            discount_pct = disc,
-            tax_percent  = tax,
-            order        = i,
-        )
-
-    # ── Labour ────────────────────────────────────────────
-    # InvoiceLabour fields: vehicle, description, technician, hours, rate, tax_percent, order
-    lab_vehs  = request.POST.getlist('labour_vehicle_id[]')
-    lab_descs = request.POST.getlist('lab_desc[]')
-    lab_techs = request.POST.getlist('lab_tech[]')
-    lab_hrs   = request.POST.getlist('lab_hrs[]')
-    lab_rates = request.POST.getlist('lab_rate[]')
-    lab_taxs  = request.POST.getlist('lab_tax[]')
-
-    for i, desc in enumerate(lab_descs):
-        if not desc.strip():
-            continue
-
-        tech_id = lab_techs[i].strip() if i < len(lab_techs) else ''
-        tech    = Staff.objects.filter(pk=tech_id).first() if tech_id else None
-        v_id    = lab_vehs[i].strip()  if i < len(lab_vehs)  else ''
-        l_veh   = WorkshopVehicle.objects.filter(pk=v_id).first() if v_id else None
-
-        try:
-            hrs  = float(lab_hrs[i])   if i < len(lab_hrs)   and lab_hrs[i]   else 1
-        except (ValueError, TypeError):
-            hrs  = 1
-        try:
-            rate = float(lab_rates[i]) if i < len(lab_rates) and lab_rates[i] else 0
-        except (ValueError, TypeError):
-            rate = 0
-        try:
-            tax  = float(lab_taxs[i])  if i < len(lab_taxs)  and lab_taxs[i]  else 8
-        except (ValueError, TypeError):
-            tax  = 8
-
-        InvoiceLabour.objects.create(
-            invoice     = invoice,
-            vehicle     = l_veh,
-            description = desc.strip(),
-            technician  = tech,
-            hours       = hrs,
-            rate        = rate,       # ← confirmed field name
-            tax_percent = tax,
-            order       = i,
-        )
-
-    # ── Other Charges ─────────────────────────────────────
-    oth_vehs  = request.POST.getlist('other_vehicle_id[]')
-    oth_descs = request.POST.getlist('oth_desc[]')
-    oth_amts  = request.POST.getlist('oth_amt[]')
-    oth_taxs  = request.POST.getlist('oth_tax[]')
-
-    for i, desc in enumerate(oth_descs):
-        if not desc.strip():
-            continue
-
-        v_id  = oth_vehs[i].strip() if i < len(oth_vehs) else ''
-        o_veh = WorkshopVehicle.objects.filter(pk=v_id).first() if v_id else None
-
-        try:
-            amt = float(oth_amts[i]) if i < len(oth_amts) and oth_amts[i] else 0
-        except (ValueError, TypeError):
-            amt = 0
-        try:
-            tax = float(oth_taxs[i]) if i < len(oth_taxs) and oth_taxs[i] else 0
-        except (ValueError, TypeError):
-            tax = 0
-
-        InvoiceOtherCharge.objects.create(
-            invoice     = invoice,
-            vehicle     = o_veh,
-            description = desc.strip(),
-            amount      = amt,
-            tax_percent = tax,
-            order       = i,
-        )
-
-    # ── Auto update status, sync stock, create ledger postings & sync bill-wise opening ──────
-        # ── Auto-settle cash/bank invoices before computing status ──
-    if getattr(invoice, '_auto_settle_cash_bank', False):
-        invoice.amount_paid = Decimal(str(invoice.get_grand_total()))
-
-    # ── Auto update status, sync stock, create ledger postings & sync bill-wise opening ──────
-    invoice.update_status()
-    _sync_invoice_stock(invoice)
-    _post_invoice_to_ledger(invoice)
-    _sync_invoice_billwise_opening(invoice)
-
-    # ── Audit Log Event ──────────────────────────────────
+    _audit(request, invoice, is_new, old_snapshot)
+    return invoice
+def _audit(request, invoice, is_new, old_snapshot):
     try:
         from audit_app.services import log_audit_event
-        total_amt = float(invoice.get_grand_total()) if hasattr(invoice, 'get_grand_total') else float(invoice.amount_paid or 0)
-        if is_new_invoice:
+        total = round(invoice.get_grand_total(), 3)
+        common = dict(module='INVOICE', entity_type='Invoice', entity_id=invoice.pk,
+                      entity_reference=invoice.invoice_number, user=request.user, request=request)
+        if is_new:
             log_audit_event(
                 action='CREATE',
-                module='INVOICE',
-                entity_type='Invoice',
-                entity_id=invoice.pk,
-                entity_reference=invoice.invoice_number,
-                description=f"Created Invoice #{invoice.invoice_number} for customer '{invoice.customer}' (Total: {total_amt:.2f}, Status: {invoice.status}, Mode: {invoice.payment_mode}).",
+                description=(f"Created Invoice #{invoice.invoice_number} for customer '{invoice.customer}' "
+                             f"(Total: {total:.3f}, Status: {invoice.status}, Mode: {invoice.payment_mode})."),
                 changes_diff={'initial_state': {
-                    'invoice_number': invoice.invoice_number,
-                    'customer': str(invoice.customer),
-                    'status': invoice.status,
-                    'grand_total': total_amt,
-                    'amount_paid': float(invoice.amount_paid or 0),
-                    'payment_mode': invoice.payment_mode,
+                    'invoice_number': invoice.invoice_number, 'customer': str(invoice.customer),
+                    'status': invoice.status, 'grand_total': total,
+                    'amount_paid': float(invoice.amount_paid or 0), 'payment_mode': invoice.payment_mode,
                 }},
-                user=request.user,
-                request=request
-            )
-        else:
-            new_inv_snapshot = {
-                'status': invoice.status,
-                'payment_mode': invoice.payment_mode,
-                'discount_pct': str(invoice.discount_pct or 0),
-                'amount_paid': str(invoice.amount_paid or 0),
-                'grand_total': str(total_amt),
-                'customer': str(invoice.customer) if invoice.customer else '',
-            }
-            inv_diff = {}
-            inv_desc_changes = []
-            if old_inv_snapshot:
-                for k, old_v in old_inv_snapshot.items():
-                    new_v = new_inv_snapshot[k]
-                    if str(old_v) != str(new_v):
-                        inv_diff[k] = {'old': old_v, 'new': new_v}
-                        inv_desc_changes.append(f"{k.replace('_', ' ').title()} changed from '{old_v}' to '{new_v}'")
-            
-            action = 'STATUS_CHANGE' if (list(inv_diff.keys()) == ['status']) else 'UPDATE'
-            desc = f"Updated Invoice #{invoice.invoice_number}. " + ("; ".join(inv_desc_changes) if inv_desc_changes else "Line items / notes updated.")
-            log_audit_event(
-                action=action,
-                module='INVOICE',
-                entity_type='Invoice',
-                entity_id=invoice.pk,
-                entity_reference=invoice.invoice_number,
-                description=desc,
-                changes_diff=inv_diff,
-                user=request.user,
-                request=request
-            )
-    except Exception:
-        pass
-
-    return invoice
-
-
-
-
-
-def _sync_invoice_stock(invoice):
-    """
-    Reduces stock in Item Master Stock table when an invoice is created or updated.
-    If the invoice status is 'cancelled', associated stock entries are removed.
-    """
-    try:
-        from item_master.models import Stock, CostCenter, Item
-        from item_master.common import upsert_stock, to_base_qty
-        from fleet_app.models import Vouchers
-        from decimal import Decimal
-
-        inv_voucher_type = invoice.voucherType or Vouchers.objects.filter(VoucherType__icontains='Invoice').first() or Vouchers.objects.filter(pk=5).first() or Vouchers.objects.first()
-        if not inv_voucher_type:
+                **common)
             return
-
-        # Clear existing stock entries for this invoice to support clean re-saves/updates
-        Stock.objects.filter(voucherType=inv_voucher_type, voucherNo=invoice.id).delete()
-
+ 
+        new = _snapshot(invoice)
+        diff = {k: {'old': v, 'new': new[k]} for k, v in (old_snapshot or {}).items() if str(v) != str(new[k])}
+        changes = [f"{k.replace('_', ' ').title()} changed from '{d['old']}' to '{d['new']}'" for k, d in diff.items()]
+        log_audit_event(
+            action='STATUS_CHANGE' if list(diff) == ['status'] else 'UPDATE',
+            description=f"Updated Invoice #{invoice.display_number}. " + ('; '.join(changes) or 'Line items / notes updated.'),
+            changes_diff=diff, **common)
+    except Exception:
+        log.exception('Invoice audit log failed')
+ 
+ 
+# ═════════════════════════════════════════════════════════════
+# STOCK / LEDGER / BILL-WISE SYNC
+# ═════════════════════════════════════════════════════════════
+def _sync_invoice_stock(invoice):
+    """Issue stock for inventory parts. Cancelled invoices leave no stock rows."""
+    try:
+        from item_master.models import Stock, CostCenter
+        from item_master.common import upsert_stock, to_base_qty
+ 
+        vt = _invoice_voucher_type(invoice)
+        if not vt:
+            return
+        Stock.objects.filter(voucherType=vt, voucherNo=invoice.id).delete()
         if invoice.status == 'cancelled':
             return
-
-        default_cost_center = CostCenter.objects.filter(isDefault=True).first() or CostCenter.objects.first()
-
-        for part in invoice.parts.all():
-            item_obj = part.get_item_obj()
-            if item_obj and not getattr(item_obj, 'IsNonInventory', False):
-                qty_val = Decimal(str(part.quantity or 0))
-                if qty_val <= 0:
-                    continue
-
-                rate_val = Decimal(str(part.unit_price or 0))
-                cost_center = item_obj.cost_center or default_cost_center
-
-                base_qty = to_base_qty(item_obj, item_obj.item_unit_id, qty_val)
-
-                upsert_stock(
-                    item=item_obj,
-                    batch_id=None,
-                    base_unit_id=item_obj.item_unit_id,
-                    base_qty_delta=-base_qty,
-                    rate=rate_val,
-                    voucher_date=invoice.invoice_date,
-                    voucher_type=inv_voucher_type,
-                    voucher_id=invoice.id,
-                    cost_center=cost_center,
-                )
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).error(f"Error syncing invoice stock: {e}")
-
-from decimal import Decimal
-from accounts_app.models import LedgerPosting, LedgerCreation
-from fleet_app.models import Vouchers
-def _post_invoice_to_ledger(invoice):
-    generate_invoice_ledger_postings(invoice, invoice.payment_mode)
-    """
-    Posts itemized double-entry LedgerPosting entries for a jobcard_app Invoice.
-
-    DEBIT  Customer (credit mode) or invoice.ledger (cash/bank mode)   grand_total
-    CREDIT Labour Income     get_labour_subtotal()
-    CREDIT Spare Parts Sales get_parts_subtotal()
-    CREDIT Other Income      get_other_subtotal()      (only if > 0)
-    CREDIT Output GST        get_total_tax()            (only if > 0)
-    DEBIT  Discount Allowed  discount amount            (only if > 0)
-
-    Total debits == Total credits == grand_total, always, by construction.
-    Runs on every save (create + edit) — deletes old postings first.
-    """
-    try:
-        from decimal import Decimal
-        from accounts_app.models import LedgerPosting, LedgerCreation
-
-        voucher_type = Vouchers.objects.filter(pk=5).first()  # "Invoice"
-        if not voucher_type:
-            print(f"[ERROR] Cannot post Invoice #{invoice.id}: 'Invoice' voucher type not found.")
-            return
-
-        _delete_invoice_ledger_postings(invoice)
-
-        grand_total = Decimal(str(invoice.get_grand_total() or 0))
-        if grand_total <= Decimal('0'):
-            return
-
-        labour_amt = Decimal(str(invoice.get_labour_subtotal() or 0))
-        parts_amt  = Decimal(str(invoice.get_parts_subtotal() or 0))
-        other_amt  = Decimal(str(invoice.get_other_subtotal() or 0))
-        gst_amt    = Decimal(str(invoice.get_total_tax() or 0))
-
-        subtotal_before_disc = labour_amt + parts_amt + other_amt + gst_amt
-        discount_amt = subtotal_before_disc - grand_total
-        if discount_amt < Decimal('0.01'):
-            discount_amt = Decimal('0')
-
-        labour_ledger   = LedgerCreation.objects.filter(ledger_name='Labour Income').first()
-        parts_ledger    = LedgerCreation.objects.filter(ledger_name='Spare Parts Sales').first()
-        other_ledger    = LedgerCreation.objects.filter(pk=11).first()   # Other Income
-        gst_ledger      = LedgerCreation.objects.filter(pk=12).first()   # Output GST
-        discount_ledger = LedgerCreation.objects.filter(pk=10).first()   # Discount Allowed
-
-        payment_mode = (invoice.payment_mode or 'cash').lower()
-        if payment_mode == 'credit':
-            debit_ledger = invoice.customer
-        else:
-            debit_ledger = invoice.ledger or invoice.customer
-
-        if not debit_ledger:
-            print(f"[ERROR] Cannot post Invoice #{invoice.id}: no customer/ledger to debit.")
-            return
-
-        entries = []
-        entries.append(dict(ledger=debit_ledger, debit=grand_total, credit=None))
-
-        if labour_amt > 0 and labour_ledger:
-            entries.append(dict(ledger=labour_ledger, debit=None, credit=labour_amt))
-        if parts_amt > 0 and parts_ledger:
-            entries.append(dict(ledger=parts_ledger, debit=None, credit=parts_amt))
-        if other_amt > 0 and other_ledger:
-            entries.append(dict(ledger=other_ledger, debit=None, credit=other_amt))
-        if gst_amt > 0 and gst_ledger:
-            entries.append(dict(ledger=gst_ledger, debit=None, credit=gst_amt))
-        if discount_amt > 0 and discount_ledger:
-            entries.append(dict(ledger=discount_ledger, debit=discount_amt, credit=None))
-
-        missing = [
-            name for name, obj in [
-                ('Labour Income', labour_ledger), ('Spare Parts Sales', parts_ledger),
-                ('Other Income', other_ledger), ('Output GST', gst_ledger),
-                ('Discount Allowed', discount_ledger),
-            ] if obj is None
-        ]
-        if missing:
-            print(f"[WARNING] Invoice #{invoice.id}: missing ledgers {missing} -- some entries skipped, postings may not balance.")
-
-        for e in entries:
-            LedgerPosting.objects.create(
-                date=invoice.invoice_date,
-                VoucherType=voucher_type,
-                VoucherNo=invoice.id,
-                ledger=e['ledger'],
-                debit=e['debit'],
-                credit=e['credit'],
+ 
+        default_cc = CostCenter.objects.filter(isDefault=True).first() or CostCenter.objects.first()
+        for part in invoice.parts:
+            item = part.get_item_obj()
+            if not item or getattr(item, 'IsNonInventory', False):
+                continue
+            qty = Decimal(str(part.quantity or 0))
+            if qty <= 0:
+                continue
+            upsert_stock(
+                item=item, batch_id=None, base_unit_id=item.item_unit_id,
+                base_qty_delta=-to_base_qty(item, item.item_unit_id, qty),
+                rate=Decimal(str(part.unit_price or 0)),
+                voucher_date=invoice.invoice_date, voucher_type=vt, voucher_id=invoice.id,
+                cost_center=item.cost_center or default_cc,
             )
+    except Exception:
+        log.exception('Error syncing invoice stock')
+ 
+ 
 
-        total_dr = sum(e['debit'] or 0 for e in entries)
-        total_cr = sum(e['credit'] or 0 for e in entries)
-        print(f"[OK] Invoice #{invoice.id} posted -- Dr: {total_dr}, Cr: {total_cr}, "
-              f"{'BALANCED' if total_dr == total_cr else '[MISMATCH]'}")
+ 
 
-    except Exception as e:
-        print(f"[ERROR] Ledger posting failed for Invoice #{invoice.id}: {e}")
-def generate_invoice_ledger_postings(invoice, payment_mode):
-    """
-    Automatically generates double-entry ledger postings for an invoice.
-
-    DEBIT side (determined by payment_mode):
-        'credit' → Client/Customer ledger
-        'cash'   → Cash ledger
-        'bank'   → Main Bank Account ledger
-
-    CREDIT side (always, regardless of payment mode):
-        Spare Parts Sales   — invoice.get_parts_subtotal()
-        Labour Income       — invoice.get_labour_subtotal()
-        Other Income        — invoice.get_other_subtotal()   (if > 0)
-        Output GST          — invoice.get_total_tax()        (if > 0)
-
-    DEBIT (offsetting, if applicable):
-        Discount Allowed    — difference needed to balance, if a discount was applied
-
-    Debits always equal credits, by construction.
-    """
-    from decimal import Decimal
-    from accounts_app.models import LedgerPosting, LedgerCreation
-    from fleet_app.models import Vouchers
-
-    voucher_type = Vouchers.objects.filter(pk=5).first()  # "Invoice"
-    if not voucher_type:
-        print(f"❌ Cannot post Invoice #{invoice.id}: 'Invoice' voucher type not found.")
-        return
-
-    # Clear old postings first (safe for create + edit)
-    LedgerPosting.objects.filter(VoucherType=voucher_type, VoucherNo=invoice.id).delete()
-
-    grand_total = Decimal(str(invoice.get_grand_total() or 0))
-    if grand_total <= Decimal('0'):
-        return
-
-    # ── Determine DEBIT account based on payment mode ──
-    payment_mode = (payment_mode or 'cash').lower()
-
-    if payment_mode == 'credit':
-        debit_ledger = invoice.customer
-    elif payment_mode == 'bank':
-        debit_ledger = LedgerCreation.objects.filter(pk=24).first()  # Main Bank Account
-    else:  # cash (default)
-        debit_ledger = LedgerCreation.objects.filter(pk=23).first()  # Cash
-
-    if not debit_ledger:
-        print(f"❌ Cannot post Invoice #{invoice.id}: no ledger found for payment mode '{payment_mode}'.")
-        return
-
-    # ── CREDIT side: line items ──
-    labour_amt = Decimal(str(invoice.get_labour_subtotal() or 0))
-    parts_amt  = Decimal(str(invoice.get_parts_subtotal() or 0))
-    other_amt  = Decimal(str(invoice.get_other_subtotal() or 0))
-    gst_amt    = Decimal(str(invoice.get_total_tax() or 0))
-
-    labour_ledger   = LedgerCreation.objects.filter(ledger_name='Labour Income').first()
-    parts_ledger    = LedgerCreation.objects.filter(ledger_name='Spare Parts Sales').first()
-    other_ledger    = LedgerCreation.objects.filter(pk=11).first()   # Other Income
-    gst_ledger      = LedgerCreation.objects.filter(pk=12).first()   # Output GST
-    discount_ledger = LedgerCreation.objects.filter(pk=10).first()   # Discount Allowed
-
-    subtotal_before_disc = labour_amt + parts_amt + other_amt + gst_amt
-    discount_amt = subtotal_before_disc - grand_total
-    if discount_amt < Decimal('0.01'):
-        discount_amt = Decimal('0')
-
-    entries = [dict(ledger=debit_ledger, debit=grand_total, credit=None)]
-
-    if labour_amt > 0 and labour_ledger:
-        entries.append(dict(ledger=labour_ledger, debit=None, credit=labour_amt))
-    if parts_amt > 0 and parts_ledger:
-        entries.append(dict(ledger=parts_ledger, debit=None, credit=parts_amt))
-    if other_amt > 0 and other_ledger:
-        entries.append(dict(ledger=other_ledger, debit=None, credit=other_amt))
-    if gst_amt > 0 and gst_ledger:
-        entries.append(dict(ledger=gst_ledger, debit=None, credit=gst_amt))
-    if discount_amt > 0 and discount_ledger:
-        entries.append(dict(ledger=discount_ledger, debit=discount_amt, credit=None))
-
-    missing = [
-        name for name, obj in [
-            ('Labour Income', labour_ledger), ('Spare Parts Sales', parts_ledger),
-            ('Other Income', other_ledger), ('Output GST', gst_ledger),
-            ('Discount Allowed', discount_ledger),
-        ] if obj is None
-    ]
-    if missing:
-        print(f"⚠️ Invoice #{invoice.id}: missing ledgers {missing} — some entries skipped, postings may not balance.")
-
-    for e in entries:
-        LedgerPosting.objects.create(
-            date=invoice.invoice_date,
-            VoucherType=voucher_type,
-            VoucherNo=invoice.id,
-            ledger=e['ledger'],
-            debit=e['debit'],
-            credit=e['credit'],
-        )
-
-    total_dr = sum(e['debit'] or 0 for e in entries)
-    total_cr = sum(e['credit'] or 0 for e in entries)
-    print(f"✅ Invoice #{invoice.id} posted ({payment_mode}) — Dr: {total_dr}, Cr: {total_cr}, "
-          f"{'BALANCED' if total_dr == total_cr else '⚠️ MISMATCH'}")
-
-def _delete_invoice_ledger_postings(invoice):
-    from accounts_app.models import LedgerPosting
-    from fleet_app.models import Vouchers
-    voucher_type = Vouchers.objects.filter(pk=5).first()
-    if voucher_type:
-        LedgerPosting.objects.filter(VoucherType=voucher_type, VoucherNo=invoice.id).delete()
-
-
-def _sync_invoice_billwise_opening(invoice):
-    """
-    Creates or updates BillWiseOpening entry for an Invoice so that
-    outstanding bill tracking works for Receipt bill clearance allocation.
-    ONLY Credit invoices generate BillWiseOpening entries.
-    Cash and Bank invoices are paid upfront and must NOT have BillWiseOpening entries.
-    """
-    try:
-        from accounts_app.models import BillWiseOpening, ReceiptBillDetails
-        from fleet_app.models import Vouchers
-        from django.db.models import Sum
-        from decimal import Decimal
-
-        inv_vt = (
-            invoice.voucherType
-            or Vouchers.objects.filter(VoucherType__icontains='Invoice').first()
-            or Vouchers.objects.filter(pk=5).first()
-            or Vouchers.objects.first()
-        )
-        if not inv_vt or not invoice.invoice_number or not invoice.customer:
-            return
-
-        payment_mode = (invoice.payment_mode or '').strip().lower()
-        grand_total = Decimal(str(invoice.get_grand_total() or 0))
-
-        # ONLY Credit invoices are tracked as outstanding bills.
-        # Cash/bank invoices or cancelled invoices or zero-total invoices must be deleted from BillWiseOpening.
-        if payment_mode != 'credit' or invoice.status == 'cancelled' or grand_total <= Decimal('0'):
-            BillWiseOpening.objects.filter(
-                voucherType=inv_vt,
-                InvNo=invoice.invoice_number
-            ).delete()
-            return
-
-        opening_obj = BillWiseOpening.objects.filter(
-            voucherType=inv_vt,
-            InvNo=invoice.invoice_number,
-            ledger=invoice.customer
-        ).first()
-
-        total_cleared = Decimal('0.00')
-        if opening_obj:
-            tc = ReceiptBillDetails.objects.filter(
-                VoucherNo=opening_obj.id,
-                voucherType__id=12  # BillWiseOpening voucher type
-            ).aggregate(total=Sum('Amount'))['total']
-            if tc:
-                total_cleared = Decimal(str(tc))
-
-        direct_paid = Decimal(str(invoice.amount_paid or 0))
-        effective_cleared = total_cleared + direct_paid
-
-        inv_balance = grand_total - direct_paid
-        if inv_balance < Decimal('0'):
-            inv_balance = Decimal('0')
-
-        rem_balance = grand_total - effective_cleared
-        is_cleared = rem_balance <= Decimal('0.01') or invoice.status == 'paid'
-
-        BillWiseOpening.objects.update_or_create(
-            ledger=invoice.customer,
-            voucherType=inv_vt,
-            InvNo=invoice.invoice_number,
-            defaults={
-                'InvDate': invoice.invoice_date,
-                'InvAmount': grand_total,
-                'InvBalance': inv_balance,
-                'dr_cr': 'DR',
-                'IsCleared': is_cleared,
-                'IsClosed': False,
-            }
-        )
-        print(f"[OK] BillWiseOpening synced for Credit Invoice #{invoice.invoice_number}: Amount={grand_total}, Balance={inv_balance}, IsCleared={is_cleared}")
-
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).error(f"Error syncing invoice BillWiseOpening: {e}")
-        print(f"[ERROR] Syncing BillWiseOpening for Invoice #{invoice.invoice_number} failed: {e}")
-
-# ─────────────────────────────────────────────────────────────
-# LIST
-# ─────────────────────────────────────────────────────────────
-from django.db.models import Q
-
+ 
+# ═════════════════════════════════════════════════════════════
+# INVOICE — LIST / CREATE / EDIT / DELETE
+# ═════════════════════════════════════════════════════════════
+def _form_context():
+    return {
+        'customers':   LedgerCreation.objects.filter(groups_id=18).order_by('ledger_name'),
+        'technicians': Staff.objects.filter(status='Active', staff_category__name='Technician').order_by('full_name'),
+        'advisors':    Staff.objects.filter(status='Active').order_by('full_name'),
+        'today':       timezone.now().date(),
+    }
+ 
+ 
+ARRAY_FIELDS = [
+    'inv_vehicle_id', 'inv_vehicle_mileage', 'inv_vehicle_notes',
+    'part_item_id', 'part_name', 'part_code', 'part_qty', 'part_unit', 'part_rate', 'part_disc', 'part_tax',
+    'lab_desc', 'lab_tech', 'lab_hrs', 'lab_rate', 'lab_tax',
+    'oth_desc', 'oth_amt', 'oth_tax',
+]
+SCALAR_FIELDS = [
+    'voucherType', 'voucher_number', 'invoice_number', 'invoice_date', 'due_date', 'payment_mode',
+    'job_card_ref', 'job_card', 'status', 'customer', 'customer_mobile', 'customer_address', 'notes',
+    'discount_pct', 'amount_paid', 'loaded_delivery_note', 'loaded_job_card',
+]
+ 
+ 
+def _posted_data(request):
+    """Everything the user typed, so a failed save re-renders the form instead of wiping it."""
+    data = {f: request.POST.get(f, '') for f in SCALAR_FIELDS}
+    data.update({f: request.POST.getlist(f + '[]') for f in ARRAY_FIELDS})
+    return data
+ 
+ 
 @login_required
 def invoice_list(request):
-    q = request.GET.get('q', '').strip()
-    status = request.GET.get('status', '')
+    q         = request.GET.get('q', '').strip()
+    status    = request.GET.get('status', '')
     date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
-
-    qs = Invoice.objects.select_related(
-        'customer',
-        'vehicle',
-        'jobcard'
-    ).filter(is_active=True)
-
+    date_to   = request.GET.get('date_to')
+    
+    qs = Invoice.objects.select_related('customer', 'vehicle', 'jobcard').filter(is_active=True)
     if q:
         qs = qs.filter(
             Q(invoice_number__icontains=q) |
             Q(customer__ledger_name__icontains=q) |
-            Q(jobcard__job_number__icontains=q)
+            Q(jobcard__job_number__icontains=q) |
+            Q(voucher_number__icontains=q)
         )
-
     if status:
         qs = qs.filter(status=status)
-
     if date_from:
         qs = qs.filter(invoice_date__gte=date_from)
-
     if date_to:
         qs = qs.filter(invoice_date__lte=date_to)
-
-    # Dashboard Statistics
-    all_invoices = Invoice.objects.filter(is_active=True)
-
-    total_invoiced = 0
-    total_paid = 0
-    total_outstanding = 0
-
+ 
+    all_invoices = Invoice.objects.filter(is_active=True).prefetch_related('items')
+    total_invoiced = total_paid = total_outstanding = 0
     for inv in all_invoices:
-        grand = inv.get_grand_total()
-        balance = inv.get_balance_due()
-
-        total_invoiced += grand
-        total_paid += float(inv.amount_paid)
-        total_outstanding += balance
-
-    stats = {
-        'total_invoiced': total_invoiced,
-        'total_paid': total_paid,
-        'total_outstanding': total_outstanding,
-        'overdue_count': all_invoices.filter(status='overdue').count(),
-    }
-
-    counts = {
-        'total': all_invoices.count(),
-        'draft': all_invoices.filter(status='draft').count(),
-        'sent': all_invoices.filter(status='sent').count(),
-        'partial': all_invoices.filter(status='partial').count(),
-        'paid': all_invoices.filter(status='paid').count(),
-        'overdue': all_invoices.filter(status='overdue').count(),
-        'cancelled': all_invoices.filter(status='cancelled').count(),
-    }
-
+        total_invoiced    += inv.get_grand_total()
+        total_paid        += float(inv.amount_paid)
+        total_outstanding += inv.get_balance_due()
+ 
+    status_counts = {r['status']: r['n'] for r in
+                     Invoice.objects.filter(is_active=True).values('status').annotate(n=Count('id'))}
+    counts = {'total': sum(status_counts.values())}
+    for s in ('draft', 'sent', 'partial', 'paid', 'overdue', 'cancelled'):
+        counts[s] = status_counts.get(s, 0)
+ 
     return render(request, 'jobcard_app/invoice_list.html', {
-        'invoices': qs,
-        'q': q,
-        'status': status,
-        'counts': counts,
-        'stats': stats,
+        'invoices': qs, 'q': q, 'status': status, 'counts': counts,
+        'stats': {
+            'total_invoiced': total_invoiced, 'total_paid': total_paid,
+            'total_outstanding': total_outstanding, 'overdue_count': counts['overdue'],
+        },
     })
  
-# ─────────────────────────────────────────────────────────────
-# CREATE
-# ─────────────────────────────────────────────────────────────
-import json
-
-
+ 
+@login_required
 def invoice_create(request):
-    customers   = LedgerCreation.objects.filter(
-                      groups_id=18).order_by('ledger_name')
-    technicians = Staff.objects.filter(
-                      status='Active',
-                      staff_category__name='Technician').order_by('full_name')
-    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
+    ctx = _form_context()
 
-    # Pre-fill from job card
     prefill_jc = None
-    jcid = request.GET.get('from_jobcard')
-    if jcid:
-        prefill_jc = JobCard.objects.select_related(
-            'customer', 'workshop_vehicle', 'advisor'
-        ).prefetch_related(
-            'parts', 'labours', 'complaints'
-        ).filter(pk=jcid).first()
+    if request.GET.get('from_jobcard'):
+        prefill_jc = JobCard.objects.select_related('customer', 'workshop_vehicle', 'advisor').prefetch_related(
+            'parts', 'labours', 'complaints').filter(pk=request.GET['from_jobcard']).first()
 
-    # Pre-fill from delivery note
     prefill_dn = None
-    dnid = request.GET.get('from_delivery')
-    if dnid:
-        prefill_dn = DeliveryNote.objects.select_related(
-            'customer', 'vehicle', 'advisor'
-        ).prefetch_related(
-            'parts', 'labours', 'services', 'vehicles__vehicle'
-        ).filter(pk=dnid).first()
+    if request.GET.get('from_delivery'):
+        prefill_dn = DeliveryNote.objects.select_related('customer', 'vehicle', 'advisor').prefetch_related(
+            'parts', 'labours', 'services', 'vehicles__vehicle').filter(pk=request.GET['from_delivery']).first()
 
     posted_data = None
-
     if request.method == 'POST':
         inv = _save_invoice(request)
         if inv:
-            messages.success(
-                request,
-                f"Invoice {inv.invoice_number} created!")
+            messages.success(request, f'Invoice {inv.display_number} created!')
             return redirect('jobcard_app:invoice_detail', pk=inv.pk)
+        posted_data = _posted_data(request)
 
-        # Save failed (validation error) — preserve everything the user typed
-        # so the form re-renders with their data instead of wiping it.
-        array_fields = [
-            'inv_vehicle_id', 'inv_vehicle_mileage', 'inv_vehicle_notes',
-            'part_item_id', 'part_name', 'part_code', 'part_qty',
-            'part_unit', 'part_rate', 'part_disc', 'part_tax',
-            'lab_desc', 'lab_tech', 'lab_hrs', 'lab_rate', 'lab_tax',
-            'oth_desc', 'oth_amt', 'oth_tax',
-        ]
-        scalar_fields = [
-            'voucherType', 'voucher_number', 'invoice_number', 'invoice_date',
-            'due_date', 'payment_mode', 'job_card_ref', 'job_card', 'status',
-            'customer', 'customer_mobile', 'customer_address', 'notes',
-            'discount_pct', 'amount_paid', 'loaded_delivery_note', 'loaded_job_card',
-        ]
-
-        posted_data = {}
-        for f in scalar_fields:
-            posted_data[f] = request.POST.get(f, '')
-        for f in array_fields:
-            posted_data[f] = request.POST.getlist(f + '[]')
-
-    from jobcard_app.utils import generate_voucher_number
-    return render(request, 'jobcard_app/invoice_form.html', {
-        'customers':    customers,
-        'technicians':  technicians,
-        'advisors':     advisors,
-        'prefill_jc':   prefill_jc,
-        'prefill_dn':   prefill_dn,
-        'next_inv_no':  generate_voucher_number('Invoice', Invoice, 'invoice_number', default_prefix='INV-'),
-        'today':        timezone.now().date(),
-        'posted_data':  posted_data,
+    sel_vt = _invoice_voucher_type()
+    ctx.update({
+        'prefill_jc': prefill_jc,
+        'prefill_dn': prefill_dn,
+        'default_voucher_type': sel_vt,
+        'next_voucher_number': get_next_document_number(sel_vt.pk, Invoice, 'voucher_number'),
+        'posted_data': posted_data,
     })
+    return render(request, 'jobcard_app/invoice_form.html', ctx)
  
-def get_next_invoice_number(request):
-    """AJAX view to get next invoice voucher number"""
-    from fleet_app.models import Vouchers
-    from jobcard_app.utils import generate_voucher_number
-    from .models import Invoice
-
-    voucher_type_id = request.GET.get('voucher_type_id')
-    if voucher_type_id:
-        try:
-            vt = Vouchers.objects.get(pk=voucher_type_id)
-            num = vt.get_next_voucher_number(Invoice, 'voucher_number')
-            return JsonResponse({'job_number': num, 'success': True})
-        except Vouchers.DoesNotExist:
-            pass
-
-    next_num = generate_voucher_number('Invoice', Invoice, 'voucher_number', default_prefix='VCH-')
-    return JsonResponse({'job_number': next_num, 'success': True})
-
-# ─────────────────────────────────────────────────────────────
-# AJAX — GET NEXT DELIVERY NOTE VOUCHER NUMBER
-# ─────────────────────────────────────────────────────────────
-@login_required
-def get_next_delivery_number(request):
-    """AJAX view to get next delivery note voucher number"""
-    from fleet_app.models import Vouchers
-    from jobcard_app.utils import generate_voucher_number
-    from .models import DeliveryNote
-
-    voucher_type_id = request.GET.get('voucher_type_id')
-    if voucher_type_id:
-        try:
-            vt = Vouchers.objects.get(pk=voucher_type_id)
-            num = vt.get_next_voucher_number(DeliveryNote, 'voucher_number')
-            return JsonResponse({'job_number': num, 'success': True})
-        except Vouchers.DoesNotExist:
-            pass
-
-    next_num = generate_voucher_number('Delivery Note', DeliveryNote, 'voucher_number', default_prefix='DN-')
-    return JsonResponse({'job_number': next_num, 'success': True})
-# ─────────────────────────────────────────────────────────────
-# DETAIL
-# ─────────────────────────────────────────────────────────────
 @login_required
 def invoice_detail(request, pk):
     return redirect('jobcard_app:invoice_edit', pk=pk)
  
  
-# ─────────────────────────────────────────────────────────────
-# EDIT
-# ─────────────────────────────────────────────────────────────
 @login_required
 def invoice_edit(request, pk):
-    inv         = get_object_or_404(Invoice, pk=pk)
-    customers   = LedgerCreation.objects.filter(
-                      groups_id=18).order_by('ledger_name')
-    technicians = Staff.objects.filter(
-                      status='Active',
-                      staff_category__name='Technician').order_by('full_name')
-    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
-
+    inv = get_object_or_404(Invoice, pk=pk)
+    posted_data = None
  
     if request.method == 'POST':
         updated = _save_invoice(request, invoice=inv)
         if updated:
-            messages.success(
-                request,
-                f"Invoice {inv.invoice_number} updated!")
+            messages.success(request, f'Invoice {updated.display_number} updated!')
             return redirect('jobcard_app:invoice_list')
+        inv = get_object_or_404(Invoice, pk=pk)          # drop unsaved in-memory edits
+        posted_data = _posted_data(request)
  
-    return render(request, 'jobcard_app/invoice_form.html', {
+    ctx = _form_context()
+    ctx.update({
         'invoice':       inv,
-        'customers':     customers,
-        'technicians':   technicians,
-        'advisors':      advisors,
-        'parts':         inv.parts.all(),
-        'labour':        inv.labours.all(),
-        'other_charges': inv.other_charges.all(),
+        'parts':         inv.parts,
+        'labour':        inv.labours,
+        'other_charges': inv.other_charges,
         'edit_mode':     True,
-        'today':         timezone.now().date(),
+        'posted_data':   posted_data,
     })
+    return render(request, 'jobcard_app/invoice_form.html', ctx)
  
  
-# ─────────────────────────────────────────────────────────────
-# DELETE
-# ─────────────────────────────────────────────────────────────
 @login_required
 def invoice_delete(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
-
     try:
-        from item_master.models import Stock
-        from accounts_app.models import LedgerPosting, BillWiseOpening
-        from fleet_app.models import Vouchers
-        inv_vt = invoice.voucherType or Vouchers.objects.filter(VoucherType__icontains='Invoice').first() or Vouchers.objects.filter(pk=5).first() or Vouchers.objects.first()
-        if inv_vt:
-            Stock.objects.filter(voucherType=inv_vt, voucherNo=invoice.id).delete()
-            LedgerPosting.objects.filter(VoucherType=inv_vt, VoucherNo=invoice.id).delete()
-            BillWiseOpening.objects.filter(voucherType=inv_vt, InvNo=invoice.invoice_number).delete()
+        with transaction.atomic():
+            from item_master.models import Stock
+            from accounts_app.models import BillWiseOpening
+            vt = _invoice_voucher_type(invoice)
+            if vt:
+                Stock.objects.filter(voucherType=vt, voucherNo=invoice.id).delete()
+                BillWiseOpening.objects.filter(voucherType=vt, InvNo=invoice.invoice_number).delete()
+            unpost_invoice(invoice, vt)
+            invoice.delete()
+        messages.success(request, 'Invoice deleted.')
     except Exception:
-        pass
-
-    invoice.delete()
-
+        log.exception('Invoice delete failed')
+        messages.error(request, 'Could not delete the invoice.')
     return redirect('jobcard_app:invoice_list')
+ 
+ 
+# ═════════════════════════════════════════════════════════════
+# AJAX
+# ═════════════════════════════════════════════════════════════
+@login_required
+def get_next_invoice_number(request):
+ 
+    voucher_type_id = request.GET.get('voucher_type_id')
+    try:
+        number = get_next_document_number(voucher_type_id,Invoice,'voucher_number')
+        return JsonResponse({'success': True,'invoice_number': number,'voucher_number': number })
+    except ValueError as e:
+        return JsonResponse({'success': False,'error': str(e) }, status=400)
 
 
-# ─────────────────────────────────────────────────────────────
-# AJAX — GET DOCUMENTS FOR INVOICE (Delivery Notes & Job Cards)
-# ─────────────────────────────────────────────────────────────
+@login_required
+def get_next_delivery_number(request):
+ 
+    voucher_type_id = request.GET.get('voucher_type_id')
+    try:
+        number = get_next_document_number(voucher_type_id,DeliveryNote,'voucher_number')
+        return JsonResponse({'success': True,'delivery_number': number,'voucher_number': number })
+    except ValueError as e:
+        return JsonResponse({'success': False,'error': str(e) }, status=400)
+ 
+
+def _vehicles_payload(primary, extra_rows, primary_mileage):
+    """Merge a document's main vehicle with its attached vehicle rows, de-duplicated."""
+    out = []
+ 
+    def model_of(v):
+        return str(getattr(v, 'vehicle_model', '') or getattr(v, 'model', '') or '')
+ 
+    if primary:
+        out.append({'id': primary.id, 'name': str(primary), 'model': model_of(primary),
+                    'mileage': primary_mileage or getattr(primary, 'odometer', None) or ''})
+    seen = {v['id'] for v in out}
+    for row in extra_rows:
+        v = row.vehicle
+        if v and v.id not in seen:
+            seen.add(v.id)
+            out.append({'id': v.id, 'name': str(v), 'model': model_of(v),
+                        'mileage': row.mileage or getattr(v, 'odometer', None) or ''})
+    return out
+ 
+ 
 @login_required
 def ajax_get_docs_for_invoice(request):
-    """
-    Fetch active Delivery Notes and Job Cards to load data into the Invoice creation/editing form.
-    Can be filtered by customer_id, vehicle_id(s), or search query q.
-    """
+    """Active Delivery Notes and Job Cards for the invoice 'Load Details' picker."""
+    from item_master.models import Item
+ 
     customer_id = request.GET.get('customer_id', '').strip()
     vehicle_param = request.GET.get('vehicle_id', '').strip() or request.GET.get('vehicle_ids', '').strip()
     vehicle_ids = [v.strip() for v in vehicle_param.split(',') if v.strip()]
     q = request.GET.get('q', '').strip()
-
-    delivery_notes_result = []
-    jobcards_result = []
-
+ 
+    dn_result, jc_result = [], []
     try:
-        from item_master.models import Item
-        items_by_id = {str(i.id): i for i in Item.objects.filter(isDeleted=False)}
-        items_by_code = {i.item_code.lower(): i for i in Item.objects.filter(isDeleted=False) if i.item_code}
-        items_by_name = {i.item_name.lower(): i for i in Item.objects.filter(isDeleted=False) if i.item_name}
-
-        # 1. Fetch Delivery Notes
-        dn_qs = DeliveryNote.objects.select_related(
-            'customer', 'vehicle', 'jobcard'
-        ).prefetch_related('parts', 'labours', 'services', 'vehicles__vehicle').filter(
-            is_active=True
-        )
-
+        items = list(Item.objects.filter(isDeleted=False))
+        by_id   = {str(i.id): i for i in items}
+        by_code = {i.item_code.lower(): i for i in items if i.item_code}
+        by_name = {i.item_name.lower(): i for i in items if i.item_name}
+ 
+        def match(code, name, pk=None):
+            code, name = (code or '').strip(), (name or '').strip()
+            return ((pk and by_id.get(str(pk))) or by_code.get(code.lower()) or by_id.get(code)
+                    or by_name.get(name.lower())) if (pk or code or name) else None
+ 
+        # ── Delivery notes ──
+        dn_qs = DeliveryNote.objects.select_related('customer', 'vehicle', 'jobcard').prefetch_related(
+            'parts', 'labours__technician', 'services', 'vehicles__vehicle').filter(is_active=True)
         if customer_id:
             dn_qs = dn_qs.filter(customer_id=customer_id)
-
         if vehicle_ids:
-            dn_qs = dn_qs.filter(
-                Q(vehicle_id__in=vehicle_ids) | Q(vehicles__vehicle_id__in=vehicle_ids)
-            ).distinct()
-
+            dn_qs = dn_qs.filter(Q(vehicle_id__in=vehicle_ids) | Q(vehicles__vehicle_id__in=vehicle_ids)).distinct()
         if q:
             dn_qs = dn_qs.filter(
-                Q(voucher_number__icontains=q) |
-                Q(customer__ledger_name__icontains=q) |
-                Q(contact_number__icontains=q) |
-                Q(customer__mobile__icontains=q) |
-                Q(customer__phone_no__icontains=q) |
-                Q(vehicle__registration_number__icontains=q) |
-                Q(jobcard__job_number__icontains=q)
-            ).distinct()
-
-        dn_qs = dn_qs.order_by('-date', '-id')[:30]
-
-        for dn in dn_qs:
+                Q(voucher_number__icontains=q) | Q(customer__ledger_name__icontains=q) |
+                Q(contact_number__icontains=q) | Q(customer__mobile__icontains=q) |
+                Q(customer__phone_no__icontains=q) | Q(vehicle__registration_number__icontains=q) |
+                Q(jobcard__job_number__icontains=q)).distinct()
+ 
+        for dn in dn_qs.order_by('-date', '-id')[:30]:
             parts = []
             for p in dn.parts.all():
-                matched_item = None
-                if p.item_id and str(p.item_id) in items_by_id:
-                    matched_item = items_by_id[str(p.item_id)]
-                elif p.item_code and p.item_code.lower() in items_by_code:
-                    matched_item = items_by_code[p.item_code.lower()]
-                elif p.name and p.name.lower() in items_by_name:
-                    matched_item = items_by_name[p.name.lower()]
-
+                m = match(p.item_code, p.name, p.item_id)
                 parts.append({
-                    'item_id':      str(matched_item.id) if matched_item else (str(p.item_id) if p.item_id else ''),
-                    'part_code':    p.item_code or (matched_item.item_code if matched_item else ''),
-                    'description':  p.name or (matched_item.item_name if matched_item else ''),
-                    'quantity':     float(p.quantity or 1),
-                    'unit':         p.unit or 'Pcs',
-                    'rate':         float(p.rate or 0),
-                    'discount_pct': 0,
-                    'tax_percent':  8,
-                    'amount':       float(p.rate or 0) * float(p.quantity or 1),
+                    'item_id':     str(m.id) if m else (str(p.item_id) if p.item_id else ''),
+                    'part_code':   p.item_code or (m.item_code if m else ''),
+                    'description': p.name or (m.item_name if m else ''),
+                    'quantity':    float(p.quantity or 1),
+                    'unit':        p.unit or 'Pcs',
+                    'rate':        float(p.rate or 0),
+                    'discount_pct': 0, 'tax_percent': 8,
+                    'amount':      float(p.rate or 0) * float(p.quantity or 1),
                 })
-
-            labours = []
-            for l in dn.labours.all():
-                labours.append({
-                    'description':    l.description or '',
-                    'technician_id':  str(l.technician_id) if l.technician_id else '',
-                    'technician_name': l.technician.full_name if l.technician else '',
-                    'hours':          float(l.hours or 1),
-                    'rate':           float(l.rate or 0),
-                    'tax_percent':    8,
-                    'amount':         float(l.amount or 0),
-                })
-
-            vehicles_list = []
-            if dn.vehicle:
-                vehicles_list.append({
-                    'id': dn.vehicle.id,
-                    'name': str(dn.vehicle),
-                    'model': str(getattr(dn.vehicle, 'vehicle_model', '') or getattr(dn.vehicle, 'model', '') or ''),
-                    'mileage': getattr(dn, 'odometer_out', None) or getattr(dn.vehicle, 'odometer', None) or ''
-                })
-            for dnv in dn.vehicles.all():
-                if dnv.vehicle and dnv.vehicle.id not in [v['id'] for v in vehicles_list]:
-                    vehicles_list.append({
-                        'id': dnv.vehicle.id,
-                        'name': str(dnv.vehicle),
-                        'model': str(getattr(dnv.vehicle, 'vehicle_model', '') or getattr(dnv.vehicle, 'model', '') or ''),
-                        'mileage': dnv.mileage or getattr(dnv.vehicle, 'odometer', None) or ''
-                    })
-
-            cust_mobile = dn.contact_number or (dn.customer.mobile if dn.customer else '') or (dn.customer.phone_no if dn.customer else '') or ''
-            cust_name = dn.customer.ledger_name if dn.customer else ''
-            cust_address = dn.customer.address1 if (dn.customer and dn.customer.address1) else ''
-
-            delivery_notes_result.append({
-                'id':              dn.id,
-                'number':          dn.voucher_number or f"DN-{dn.id}",
-                'date':            dn.date.strftime('%d %b %Y') if dn.date else '',
-                'status':          dn.get_status_display(),
-                'customer_id':     dn.customer_id or '',
-                'customer_name':   cust_name,
-                'customer_mobile': cust_mobile,
-                'customer_address': cust_address,
-                'payment_mode':    dn.payment_mode or '',
-                'vehicle_id':      dn.vehicle_id or (vehicles_list[0]['id'] if vehicles_list else ''),
-                'vehicle_name':    str(dn.vehicle) if dn.vehicle else (vehicles_list[0]['name'] if vehicles_list else ''),
-                'vehicles':        vehicles_list,
-                'job_card_id':     dn.jobcard_id or '',
-                'job_number':      dn.jobcard.job_number if dn.jobcard else '',
-                'parts':           parts,
-                'labours':         labours,
-                'parts_count':     len(parts),
-                'labours_count':   len(labours),
+            labours = [{
+                'description': l.description or '',
+                'technician_id': str(l.technician_id) if l.technician_id else '',
+                'technician_name': l.technician.full_name if l.technician else '',
+                'hours': float(l.hours or 1), 'rate': float(l.rate or 0),
+                'tax_percent': 8, 'amount': float(l.amount or 0),
+            } for l in dn.labours.all()]
+ 
+            vehicles = _vehicles_payload(dn.vehicle, dn.vehicles.all(), getattr(dn, 'odometer_out', None))
+            cust = dn.customer
+            dn_result.append({
+                'id': dn.id, 'number': dn.voucher_number or f'DN-{dn.id}',
+                'date': dn.date.strftime('%d %b %Y') if dn.date else '',
+                'status': dn.get_status_display(),
+                'customer_id': dn.customer_id or '',
+                'customer_name': cust.ledger_name if cust else '',
+                'customer_mobile': dn.contact_number or (cust.mobile if cust else '') or (cust.phone_no if cust else '') or '',
+                'customer_address': (cust.address1 if cust and cust.address1 else ''),
+                'payment_mode': dn.payment_mode or '',
+                'vehicle_id': dn.vehicle_id or (vehicles[0]['id'] if vehicles else ''),
+                'vehicle_name': str(dn.vehicle) if dn.vehicle else (vehicles[0]['name'] if vehicles else ''),
+                'vehicles': vehicles,
+                'job_card_id': dn.jobcard_id or '',
+                'job_number': dn.jobcard.job_number if dn.jobcard else '',
+                'parts': parts, 'labours': labours,
+                'parts_count': len(parts), 'labours_count': len(labours),
             })
-
-        # 2. Fetch Job Cards
-        jc_qs = JobCard.objects.select_related(
-            'customer', 'workshop_vehicle', 'advisor'
-        ).prefetch_related('parts', 'labours', 'complaints', 'vehicles__vehicle').filter(
-            is_active=True
-        )
-
+ 
+        # ── Job cards ──
+        jc_qs = JobCard.objects.select_related('customer', 'workshop_vehicle', 'advisor').prefetch_related(
+            'parts', 'labours__technician', 'complaints', 'vehicles__vehicle').filter(is_active=True)
         if customer_id:
             jc_qs = jc_qs.filter(customer_id=customer_id)
-
         if vehicle_ids:
-            jc_qs = jc_qs.filter(
-                Q(workshop_vehicle_id__in=vehicle_ids) | Q(vehicles__vehicle_id__in=vehicle_ids)
-            ).distinct()
-
+            jc_qs = jc_qs.filter(Q(workshop_vehicle_id__in=vehicle_ids) | Q(vehicles__vehicle_id__in=vehicle_ids)).distinct()
         if q:
             jc_qs = jc_qs.filter(
-                Q(job_number__icontains=q) |
-                Q(voucher_number__icontains=q) |
-                Q(customer__ledger_name__icontains=q) |
-                Q(customer_phone__icontains=q) |
-                Q(customer__mobile__icontains=q) |
-                Q(customer__phone_no__icontains=q) |
-                Q(workshop_vehicle__registration_number__icontains=q)
-            ).distinct()
-
-        jc_qs = jc_qs.order_by('-date', '-id')[:30]
-
-        for jc in jc_qs:
+                Q(job_number__icontains=q) | Q(voucher_number__icontains=q) |
+                Q(customer__ledger_name__icontains=q) | Q(customer_phone__icontains=q) |
+                Q(customer__mobile__icontains=q) | Q(customer__phone_no__icontains=q) |
+                Q(workshop_vehicle__registration_number__icontains=q)).distinct()
+ 
+        for jc in jc_qs.order_by('-date', '-id')[:30]:
             parts = []
             for p in jc.parts.all():
-                code_str = (p.part_number or '').strip()
-                name_str = (p.description or '').strip()
-                matched_item = (
-                    items_by_code.get(code_str.lower()) or
-                    items_by_id.get(code_str) or
-                    items_by_name.get(name_str.lower())
-                ) if (code_str or name_str) else None
-
+                m = match(p.part_number, p.description)
                 parts.append({
-                    'item_id':      str(matched_item.id) if matched_item else '',
-                    'part_code':    matched_item.item_code if matched_item else code_str,
-                    'description':  name_str or (matched_item.item_name if matched_item else ''),
-                    'quantity':     float(p.quantity or 1),
-                    'unit':         'Pcs',
-                    'rate':         float(p.unit_price or 0),
-                    'discount_pct': 0,
-                    'tax_percent': 8,
-                    'amount':       float(p.total_price or 0),
+                    'item_id':     str(m.id) if m else '',
+                    'part_code':   m.item_code if m else (p.part_number or '').strip(),
+                    'description': (p.description or '').strip() or (m.item_name if m else ''),
+                    'quantity':    float(p.quantity or 1),
+                    'unit': 'Pcs',
+                    'rate':        float(p.unit_price or 0),
+                    'discount_pct': 0, 'tax_percent': 8,
+                    'amount':      float(p.total_price or 0),
                 })
-
-            labours = []
-            for l in jc.labours.all():
-                labours.append({
-                    'description':    l.description or '',
-                    'technician_id':  str(l.technician_id) if l.technician_id else '',
-                    'technician_name': l.technician.full_name if l.technician else '',
-                    'hours':          float(l.hours or 1),
-                    'rate':           float(l.rate or 0),
-                    'tax_percent':    float(getattr(l, 'tax_percent', 8) or 8),
-                    'amount':         float(l.amount or (l.hours * l.rate if l.hours and l.rate else 0)),
-                })
-
-            vehicles_list = []
-            if jc.workshop_vehicle:
-                vehicles_list.append({
-                    'id': jc.workshop_vehicle.id,
-                    'name': str(jc.workshop_vehicle),
-                    'model': str(getattr(jc.workshop_vehicle, 'vehicle_model', '') or getattr(jc.workshop_vehicle, 'model', '') or ''),
-                    'mileage': jc.mileage or getattr(jc.workshop_vehicle, 'odometer', None) or ''
-                })
-            for jcv in jc.vehicles.all():
-                if jcv.vehicle and jcv.vehicle.id not in [v['id'] for v in vehicles_list]:
-                    vehicles_list.append({
-                        'id': jcv.vehicle.id,
-                        'name': str(jcv.vehicle),
-                        'model': str(getattr(jcv.vehicle, 'vehicle_model', '') or getattr(jcv.vehicle, 'model', '') or ''),
-                        'mileage': jcv.mileage or getattr(jcv.vehicle, 'odometer', None) or ''
-                    })
-
-            cust_mobile = jc.customer_phone or (jc.customer.mobile if jc.customer else '') or (jc.customer.phone_no if jc.customer else '') or ''
-            cust_name = jc.customer.ledger_name if jc.customer else ''
-            cust_address = jc.customer.address1 if (jc.customer and jc.customer.address1) else ''
-
-            jobcards_result.append({
-                'id':            jc.id,
-                'number':        jc.job_number,
-                'date':          jc.date.strftime('%d %b %Y') if jc.date else '',
-                'status':        jc.get_status_display(),
-                'customer_id':   jc.customer_id or '',
-                'customer_name': cust_name,
-                'customer_mobile': cust_mobile,
-                'customer_address': cust_address,
-                'vehicle_id':    jc.workshop_vehicle_id or (vehicles_list[0]['id'] if vehicles_list else ''),
-                'vehicle_name':  str(jc.workshop_vehicle) if jc.workshop_vehicle else (vehicles_list[0]['name'] if vehicles_list else ''),
-                'vehicles':      vehicles_list,
-                'parts':         parts,
-                'labours':       labours,
-                'parts_count':   len(parts),
-                'labours_count': len(labours),
+            labours = [{
+                'description': l.description or '',
+                'technician_id': str(l.technician_id) if l.technician_id else '',
+                'technician_name': l.technician.full_name if l.technician else '',
+                'hours': float(l.hours or 1), 'rate': float(l.rate or 0),
+                'tax_percent': float(getattr(l, 'tax_percent', 8) or 8),
+                'amount': float(l.amount or (float(l.hours or 0) * float(l.rate or 0))),
+            } for l in jc.labours.all()]
+ 
+            vehicles = _vehicles_payload(jc.workshop_vehicle, jc.vehicles.all(), jc.mileage)
+            cust = jc.customer
+            jc_result.append({
+                'id': jc.id, 'number': jc.job_number,
+                'date': jc.date.strftime('%d %b %Y') if jc.date else '',
+                'status': jc.get_status_display(),
+                'customer_id': jc.customer_id or '',
+                'customer_name': cust.ledger_name if cust else '',
+                'customer_mobile': jc.customer_phone or (cust.mobile if cust else '') or (cust.phone_no if cust else '') or '',
+                'customer_address': (cust.address1 if cust and cust.address1 else ''),
+                'vehicle_id': jc.workshop_vehicle_id or (vehicles[0]['id'] if vehicles else ''),
+                'vehicle_name': str(jc.workshop_vehicle) if jc.workshop_vehicle else (vehicles[0]['name'] if vehicles else ''),
+                'vehicles': vehicles,
+                'parts': parts, 'labours': labours,
+                'parts_count': len(parts), 'labours_count': len(labours),
             })
-
-    except Exception as e:
-        import traceback
-        print(f"Error in ajax_get_docs_for_invoice: {e}")
-        traceback.print_exc()
-
-    return JsonResponse({
-        'delivery_notes': delivery_notes_result,
-        'jobcards':       jobcards_result,
-    })
-
-
+    except Exception:
+        log.exception('ajax_get_docs_for_invoice failed')
+ 
+    return JsonResponse({'delivery_notes': dn_result, 'jobcards': jc_result})
+ 
 # ── Skill Tag Master Views ───────────────────────────────────────────────────
 from django.utils.translation import gettext_lazy as _
 from .forms import SkillTagForm

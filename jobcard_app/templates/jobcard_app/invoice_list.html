@@ -3,177 +3,227 @@
 {% load i18n %}
 
 {% block content %}
-<div class="container-fluid p-0 mb-5">
+<style>
+  .inv-wrapper { max-width: 1200px; margin: 0 auto; padding-bottom: 60px; }
 
-    <!-- Top Bar: Title + New Invoice Button -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <div>
-            <h2 class="module-title mb-1">
-                <i class="bi bi-receipt text-primary mr-2"></i>{% trans "Invoices & Billing" %}
-            </h2>
-            <div class="text-muted small">{% trans "Track customer billing statements, payment collection & receivables balances" %}</div>
-        </div>
-        <a href="{% url 'jobcard_app:invoice_create' %}" class="btn btn-custom-primary shadow-sm">
-            <i class="bi bi-plus-lg mr-1"></i> {% trans "New Invoice" %}
-        </a>
+  .inv-page-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+  }
+  .inv-page-hdr-left { display: flex; align-items: center; gap: 10px; }
+  .inv-page-icon {
+    width: 38px; height: 38px; background: #eff6ff; border: 1px solid #bfdbfe;
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: #2563eb;
+  }
+  .inv-page-title { font-size: 20px; font-weight: 700; color: #0f172a; margin: 0; }
+  .inv-page-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+  .btn-new-inv {
+    background: #2563eb; color: #fff; border: none; border-radius: 6px;
+    padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; text-decoration: none !important;
+    transition: all .15s ease;
+  }
+  .btn-new-inv:hover { background: #1d4ed8; color: #fff; }
+
+  .inv-filter-bar {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 16px; display: flex; gap: 10px;
+    align-items: center; flex-wrap: wrap;
+  }
+  .inv-search-input {
+    flex: 1; min-width: 220px; border: 1px solid #cbd5e1; border-radius: 6px;
+    padding: 8px 12px; font-size: 13px; outline: none;
+  }
+  .inv-search-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+  .btn-search { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px;
+    padding: 8px 14px; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer; }
+  .btn-search:hover { background: #e2e8f0; }
+
+  .inv-table-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15,23,42,.04);
+  }
+  table.inv-list-tbl { width: 100%; border-collapse: collapse; }
+  table.inv-list-tbl thead th {
+    background: #f8fafc; color: #64748b; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .5px; padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0; text-align: left; white-space: nowrap;
+  }
+  table.inv-list-tbl thead th.num { text-align: right; }
+  table.inv-list-tbl tbody td {
+    padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px;
+    color: #0f172a; vertical-align: middle;
+  }
+  table.inv-list-tbl tbody tr:last-child td { border-bottom: none; }
+  table.inv-list-tbl tbody tr:hover { background: #f8fafc; }
+  .cell-num { text-align: right; font-family: monospace; font-weight: 600; white-space: nowrap; }
+
+  .inv-link { color: #2563eb; font-weight: 700; text-decoration: none; }
+  .inv-link:hover { text-decoration: underline; }
+
+  .badge-status {
+    display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px;
+    font-size: 10.5px; font-weight: 700; text-transform: capitalize; white-space: nowrap;
+  }
+  .badge-draft     { background: #f1f5f9; color: #475569; }
+  .badge-sent      { background: #eff6ff; color: #2563eb; }
+  .badge-paid      { background: #f0fdf4; color: #16a34a; }
+  .badge-partial   { background: #fffbeb; color: #b45309; }
+  .badge-overdue   { background: #fef2f2; color: #dc2626; }
+  .badge-cancelled { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
+
+  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .btn-icon-sm {
+    background: #fff; border: 1px solid #cbd5e1; border-radius: 6px;
+    padding: 5px 9px; font-size: 12px; color: #475569; cursor: pointer;
+    text-decoration: none !important; display: inline-flex; align-items: center; gap: 4px;
+    transition: all .15s ease;
+  }
+  .btn-icon-sm:hover { background: #f1f5f9; color: #0f172a; }
+  .btn-icon-sm.danger:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+
+  .inv-empty {
+    text-align: center; padding: 48px 20px; color: #94a3b8; font-size: 13px;
+  }
+  .inv-empty i { font-size: 28px; display: block; margin-bottom: 8px; color: #cbd5e1; }
+</style>
+
+<div class="container-fluid p-0 inv-wrapper">
+
+  <!-- Header -->
+  <div class="inv-page-hdr">
+    <div class="inv-page-hdr-left">
+      <div class="inv-page-icon"><i class="bi bi-receipt"></i></div>
+      <div>
+        <h1 class="inv-page-title">{% trans "Invoices" %}</h1>
+        <div class="inv-page-sub">{% trans "Manage customer invoices and payment status" %}</div>
+      </div>
     </div>
+    <a href="{% url 'jobcard_app:invoice_create' %}" class="btn-new-inv">
+      <i class="bi bi-plus-lg"></i> {% trans "New Invoice" %}
+    </a>
+  </div>
 
-    <!-- Alert Messages -->
-    {% if messages %}
-        {% for m in messages %}
-            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm" style="border-radius:8px;" role="alert">
-                {{ m }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        {% endfor %}
+  <!-- Flash Messages -->
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-3 shadow-sm" style="border-radius:8px; font-size:12.5px;" role="alert">
+        {{ m }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Search / Filter bar -->
+  <form method="get" class="inv-filter-bar">
+    <input type="text" name="q" value="{{ q }}" class="inv-search-input"
+           placeholder="{% trans 'Search by invoice number, customer, or job card...' %}">
+    <button type="submit" class="btn-search"><i class="bi bi-search"></i> {% trans "Search" %}</button>
+    {% if q %}
+      <a href="{% url 'jobcard_app:invoice_list' %}" class="btn-search" style="text-decoration:none;">
+        <i class="bi bi-x-lg"></i> {% trans "Clear" %}
+      </a>
     {% endif %}
+  </form>
 
-    <!-- Stat Grid -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
-            <div class="kpi-card">
-                <div class="kpi-icon primary"><i class="bi bi-receipt-cutoff"></i></div>
-                <div class="kpi-content">
-                    <div class="kpi-label">{% trans "TOTAL INVOICED" %}</div>
-                    <div class="kpi-value text-primary">{{ stats.total_invoiced|floatformat:2|default:"0.00" }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
-            <div class="kpi-card">
-                <div class="kpi-icon success" style="background:#d1fae5 !important; color:#059669 !important;"><i class="bi bi-cash-stack"></i></div>
-                <div class="kpi-content">
-                    <div class="kpi-label">{% trans "TOTAL COLLECTED" %}</div>
-                    <div class="kpi-value text-success">{{ stats.total_paid|floatformat:2|default:"0.00" }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
-            <div class="kpi-card">
-                <div class="kpi-icon danger" style="background:#fee2e2 !important; color:#dc2626 !important;"><i class="bi bi-exclamation-circle"></i></div>
-                <div class="kpi-content">
-                    <div class="kpi-label">{% trans "BALANCE DUE" %}</div>
-                    <div class="kpi-value text-danger">{{ stats.total_outstanding|floatformat:2|default:"0.00" }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
-            <div class="kpi-card">
-                <div class="kpi-icon info" style="background:#e0f2fe !important; color:#0284c7 !important;"><i class="bi bi-file-earmark-check"></i></div>
-                <div class="kpi-content">
-                    <div class="kpi-label">{% trans "TOTAL INVOICES" %}</div>
-                    <div class="kpi-value text-dark">{{ counts.total }}</div>
-                </div>
-            </div>
-        </div>
+  <!-- Table -->
+  <div class="inv-table-card">
+    <div class="table-responsive">
+      <table class="inv-list-tbl">
+        <thead>
+          <tr>
+            <th>{% trans "Invoice #" %}</th>
+            <th>{% trans "Date" %}</th>
+            <th>{% trans "Customer" %}</th>
+            <th>{% trans "Job Card" %}</th>
+            <th>{% trans "Vehicles" %}</th>
+            <th>{% trans "Payment Mode" %}</th>
+            <th class="num">{% trans "Grand Total" %}</th>
+            <th class="num">{% trans "Balance Due" %}</th>
+            <th>{% trans "Status" %}</th>
+            <th style="width:90px; text-align:right">{% trans "Actions" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in invoices %}
+          <tr>
+            <td>
+              <a href="{% url 'jobcard_app:invoice_edit' inv.pk %}" class="inv-link">
+                {{ inv.invoice_number }}
+              </a>
+              {% if inv.voucher_number and inv.voucher_number != inv.invoice_number %}
+                <div style="font-size:10.5px; color:#94a3b8;">{{ inv.voucher_number }}</div>
+              {% endif %}
+            </td>
+            <td>{{ inv.invoice_date|date:"d M Y" }}</td>
+            <td>{{ inv.customer.ledger_name|default:"—" }}</td>
+            <td>
+              {% if inv.jobcard %}
+                {{ inv.jobcard.job_number }}
+              {% else %}
+                <span style="color:#cbd5e1;">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% with vcount=inv.vehicles.count %}
+                {% if vcount %}
+                  {% for iv in inv.vehicles.all|slice:":2" %}
+                    <span style="font-size:11.5px; background:#f1f5f9; color:#334155; padding:1px 7px; border-radius:10px; margin-right:3px; white-space:nowrap;">
+                      {{ iv.vehicle.vehicle_number }}
+                    </span>
+                  {% endfor %}
+                  {% if vcount > 2 %}
+                    <span style="font-size:11px; color:#94a3b8;">+{{ vcount|add:"-2" }}</span>
+                  {% endif %}
+                {% else %}
+                  <span style="color:#cbd5e1;">—</span>
+                {% endif %}
+              {% endwith %}
+            </td>
+            <td style="text-transform:capitalize;">{{ inv.payment_mode }}</td>
+            <td class="cell-num">{{ inv.get_grand_total|floatformat:3 }}</td>
+            <td class="cell-num">
+              {% with bal=inv.get_balance_due %}
+                <span style="{% if bal > 0 %}color:#dc2626;{% else %}color:#16a34a;{% endif %}">
+                  {{ bal|floatformat:3 }}
+                </span>
+              {% endwith %}
+            </td>
+            <td>
+              <span class="badge-status badge-{{ inv.status }}">{{ inv.get_status_display }}</span>
+            </td>
+            <td>
+              <div class="row-actions">
+                <a href="{% url 'jobcard_app:invoice_edit' inv.pk %}" class="btn-icon-sm" title="{% trans 'Edit' %}">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{% url 'jobcard_app:invoice_delete' inv.pk %}" class="btn-icon-sm danger" title="{% trans 'Delete' %}"
+                   onclick="return confirm('{% trans "Delete this invoice? This cannot be undone." %}');">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="10">
+              <div class="inv-empty">
+                <i class="bi bi-receipt"></i>
+                {% if q %}
+                  {% trans "No invoices match your search." %}
+                {% else %}
+                  {% trans "No invoices yet. Create your first invoice to get started." %}
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
 
-    <!-- Filter Form Card -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header card-banner-header">
-            <span class="card-banner-title"><i class="bi bi-funnel text-primary mr-1"></i> {% trans "Filter Invoices" %}</span>
-        </div>
-        <div class="card-body p-3">
-            <form method="get" class="form-inline">
-                <div class="input-group mr-2 mb-2 mb-sm-0" style="flex: 1; min-width: 220px;">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
-                    </div>
-                    <input type="text" name="q" value="{{ q }}" placeholder="{% trans 'Invoice no, customer name...' %}" class="form-control border-left-0">
-                </div>
-                <select name="status" class="form-control mr-2 mb-2 mb-sm-0" style="min-width: 150px;">
-                    <option value="">{% trans "All Statuses" %}</option>
-                    <option value="draft" {% if status == 'draft' %}selected{% endif %}>{% trans "Draft" %}</option>
-                    <option value="sent" {% if status == 'sent' %}selected{% endif %}>{% trans "Sent" %}</option>
-                    <option value="paid" {% if status == 'paid' %}selected{% endif %}>{% trans "Paid" %}</option>
-                    <option value="partial" {% if status == 'partial' %}selected{% endif %}>{% trans "Partially Paid" %}</option>
-                    <option value="overdue" {% if status == 'overdue' %}selected{% endif %}>{% trans "Overdue" %}</option>
-                </select>
-                <input type="date" name="from_date" value="{{ from_date }}" class="form-control mr-2 mb-2 mb-sm-0" style="width: 150px;">
-                <input type="date" name="to_date" value="{{ to_date }}" class="form-control mr-2 mb-2 mb-sm-0" style="width: 150px;">
-                <button type="submit" class="btn btn-custom-primary mr-2 mb-2 mb-sm-0">{% trans "Filter" %}</button>
-                <a href="?" class="btn btn-secondary mb-2 mb-sm-0">✕ {% trans "Reset" %}</a>
-            </form>
-        </div>
-    </div>
-
-    <!-- Invoice List Card -->
-    <div class="card shadow-sm border-0">
-        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <span class="card-banner-title"><i class="bi bi-list-task mr-1 text-primary"></i> {% trans "Invoice Register" %}</span>
-            <span class="badge badge-secondary px-3 py-1 font-weight-bold">Total Invoices: {{ counts.total }}</span>
-        </div>
-        <div class="card-body p-0">
-            {% if invoices %}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>{% trans "Invoice No" %}</th>
-                            <th>{% trans "Date" %}</th>
-                            <th>{% trans "Customer Name" %}</th>
-                            <th>{% trans "Status" %}</th>
-                            <th class="text-right">{% trans "Grand Total" %}</th>
-                            <th class="text-right">{% trans "Paid" %}</th>
-                            <th class="text-right">{% trans "Balance Due" %}</th>
-                            <th style="width: 140px;" class="text-center">{% trans "Action" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for inv in invoices %}
-                        <tr>
-                            <td class="align-middle font-weight-bold">
-                                <a href="{% url 'jobcard_app:invoice_detail' inv.pk %}" class="text-primary" style="font-size:14px;">
-                                    {{ inv.invoice_number }}
-                                </a>
-                            </td>
-                            <td class="align-middle text-muted">{{ inv.date|date:"d M Y" }}</td>
-                            <td class="align-middle font-weight-600 text-dark">{{ inv.customer.ledger_name }}</td>
-                            <td class="align-middle">
-                                {% if inv.status == 'paid' %}
-                                    <span class="badge badge-paid"><i class="bi bi-check-circle mr-1"></i> {% trans "Paid" %}</span>
-                                {% elif inv.status == 'partial' %}
-                                    <span class="badge badge-warning"><i class="bi bi-pie-chart mr-1"></i> {% trans "Partially Paid" %}</span>
-                                {% elif inv.status == 'overdue' %}
-                                    <span class="badge badge-overdue"><i class="bi bi-exclamation-triangle mr-1"></i> {% trans "Overdue" %}</span>
-                                {% elif inv.status == 'sent' %}
-                                    <span class="badge badge-sent"><i class="bi bi-send mr-1"></i> {% trans "Sent" %}</span>
-                                {% else %}
-                                    <span class="badge badge-draft">{% trans "Draft" %}</span>
-                                {% endif %}
-                            </td>
-                            <td class="align-middle text-right font-weight-bold text-dark">{{ inv.get_grand_total|floatformat:2 }}</td>
-                            <td class="align-middle text-right text-success font-weight-600">{{ inv.amount_paid|floatformat:2 }}</td>
-                            <td class="align-middle text-right text-danger font-weight-bold">{{ inv.get_balance_due|floatformat:2 }}</td>
-                            <td class="align-middle text-center">
-                                <a href="{% url 'jobcard_app:invoice_detail' inv.pk %}" class="btn btn-sm btn-outline-primary mr-1" title="{% trans 'View Invoice' %}">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{% url 'jobcard_app:invoice_edit' inv.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit' %}">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <form method="post" action="{% url 'jobcard_app:invoice_delete' inv.pk %}"
-                                      onsubmit="return confirm('{% trans "Delete" %} {{ inv.invoice_number }}?')" class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete' %}">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-receipt display-4 d-block mb-2 text-secondary"></i>
-                {% trans "No invoices found." %}
-            </div>
-            {% endif %}
-        </div>
-    </div>
 </div>
 {% endblock %}

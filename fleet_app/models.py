@@ -24,7 +24,7 @@ class Company(models.Model):
     
 
 class Manufacturer(models.Model):
-    manufacturer_name = models.CharField(max_length=100, unique=True)
+    manufacturer_name = models.CharField(max_length=100)
     manufacturer_logo = models.ImageField(upload_to='manufacturer_logos/', null=True, blank=True)
 
     # single Vehicle Type per manufacturer
@@ -46,9 +46,12 @@ class Manufacturer(models.Model):
         return self.manufacturer_name
 
     class Meta:                 
-        verbose_name = "Manufacturer"
-        verbose_name_plural = "Manufacturers"
-        ordering = ['manufacturer_name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['manufacturer_name', 'vehicle_type'],
+                name='unique_manufacturer_vehicle_type'
+            )
+        ]
 
  
         
@@ -583,9 +586,9 @@ class Vouchers(models.Model):
         """Generate the next voucher number for this voucher type"""
         if model_cls and number_field:
             from jobcard_app.utils import generate_voucher_number
-            default_pfx = self.Prefix if self.Prefix is not None else ("JC-" if self.VoucherName == 'JobCard' else "")
-            return generate_voucher_number(self, model_cls, number_field, default_prefix=default_pfx)
+            default_pfx = self.Prefix or ""
 
+            return generate_voucher_number(self,model_cls,number_field,default_prefix=default_pfx)
         from django.apps import apps
         from django.db.models import ForeignKey
         from django.db.models.deletion import PROTECT, SET_NULL

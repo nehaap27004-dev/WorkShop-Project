@@ -3,9 +3,9 @@ import psycopg2
 from datetime import datetime
 
 
-DB_NAME = "SilverL"
+DB_NAME = "erp_db"
 DB_USER = "postgres"
-DB_PASS = "shnd6775"
+DB_PASS = "Admin"
 DB_HOST = "localhost"
 DB_PORT = "5432"
 # Database connection
@@ -15,7 +15,7 @@ DB_PORT = "5432"
 # DB_PASS = 'pass@12345678'
 # DB_PORT = '14102'
 
-CSV_FILE = "ledger.csv"
+CSV_FILE = "accounts_app/ledger.csv"
 
 def import_ledgers():
     try:
@@ -45,7 +45,10 @@ def import_ledgers():
                     INSERT INTO accounts_app_ledgercreation 
                         (id, ledger_name, groups_id, opening_balance, types, remark, "isDefault", created_on, updated_on)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (id) DO NOTHING;
+                    ON CONFLICT (id) DO UPDATE SET
+                        ledger_name = EXCLUDED.ledger_name,
+                        groups_id = EXCLUDED.groups_id,
+                        updated_on = EXCLUDED.updated_on;
                 """, (
                     ledger_id,
                     ledger_name,

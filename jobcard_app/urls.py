@@ -147,9 +147,7 @@ urlpatterns = [
          views.estimate_create,
          name='estimate_create'),
 
-    path('estimate/<int:pk>/',
-         views.estimate_detail,
-         name='estimate_detail'),
+
 
     path('estimate/<int:pk>/edit/',
          views.estimate_edit,
@@ -202,7 +200,6 @@ urlpatterns = [
     path('delivery/<int:pk>/edit/',
          views.delivery_edit,
          name='delivery_edit'),
-    path('delivery/get-next-number/', views.get_next_delivery_number, name='get_next_delivery_number'),
     path('delivery/<int:pk>/delete/',
          views.delivery_delete,
          name='delivery_delete'),
@@ -216,33 +213,24 @@ urlpatterns = [
     path('ajax/search-deliveries/',
          views.ajax_search_deliveries,
          name='ajax_search_deliveries'),
-    # ── Invoices ─────────────────────────────────────────────
-    path('invoice/',
-         views.invoice_list,
-         name='invoice_list'),
+    
 
-    path('invoice/create/',
-         views.invoice_create,
-         name='invoice_create'),
-    path('ajax/get-next-invoice-number/', views.get_next_invoice_number, name='get_next_invoice_number'),
-    path('invoice/<int:pk>/',
-         views.invoice_detail,
-         name='invoice_detail'),
-
-    path('invoice/<int:pk>/edit/',
-         views.invoice_edit,
-         name='invoice_edit'),
-
-    path('invoice/<int:pk>/delete/',
-         views.invoice_delete,
-         name='invoice_delete'),
-
-    path(
-          'ajax/get-docs-for-invoice/',
-          views.ajax_get_docs_for_invoice,
-          name='ajax_get_docs_for_invoice'
-          ),
-
+    path('invoices/',                         views.invoice_list,   name='invoice_list'),
+    path('invoices/create/',                  views.invoice_create, name='invoice_create'),
+    path('invoices/<int:pk>/',                views.invoice_detail, name='invoice_detail'),
+    path('invoices/<int:pk>/edit/',           views.invoice_edit,   name='invoice_edit'),
+    path('invoices/<int:pk>/delete/',         views.invoice_delete, name='invoice_delete'),
+ 
+    # AJAX
+    path('ajax/next-invoice-number/',         views.get_next_invoice_number,     name='get_next_invoice_number'),
+    path('ajax/next-delivery-number/',        views.get_next_delivery_number,    name='get_next_delivery_number'),
+    path('ajax/docs-for-invoice/',            views.ajax_get_docs_for_invoice,   name='ajax_get_docs_for_invoice'),
+    path('ajax/search-deliveries/',           views.ajax_search_deliveries,      name='ajax_search_deliveries'),
+    path('ajax/jobcard-for-delivery/',        views.ajax_get_jobcard_for_delivery, name='ajax_get_jobcard_for_delivery'),
+    path('ajax/docs-for-delivery/',           views.ajax_get_docs_for_delivery,  name='ajax_get_docs_for_delivery'),
+    path('ajax/vehicles-by-customer/', views.ajax_wv_by_customer, name='ajax_wv_by_customer'),
+    path('ajax/all-items/', views.ajax_get_all_items, name='ajax_get_all_items'),
+ 
    
 
     # ── AJAX ─────────────────────────────────────────────────

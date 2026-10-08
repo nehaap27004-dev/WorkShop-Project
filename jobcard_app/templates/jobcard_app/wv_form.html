@@ -102,6 +102,9 @@
                         <div class="d-flex align-items-center">
                             <select name="manufacturer" id="id_manufacturer" class="form-control" required>
                                 <option value="">---------</option>
+                                {% if edit_mode and v.manufacturer_id %}
+                                <option value="{{ v.manufacturer_id }}" selected>{{ v.manufacturer }}</option>
+                                {% endif %}
                             </select>
                             <a href="{% url 'fleet_app:manufacturer_list' %}" target="_blank"
                                class="btn btn-sm btn-outline-primary ml-2 flex-shrink-0"
@@ -115,6 +118,9 @@
                         <div class="d-flex align-items-center">
                             <select name="vehicle_model" id="id_vehicle_model" class="form-control" required>
                                 <option value="">---------</option>
+                                {% if edit_mode and v.vehicle_model_id %}
+                                <option value="{{ v.vehicle_model_id }}" selected>{{ v.vehicle_model }}</option>
+                                {% endif %}
                             </select>
                             <a href="{% url 'fleet_app:vehicle_model_list' %}" target="_blank"
                                class="btn btn-sm btn-outline-primary ml-2 flex-shrink-0"

@@ -23,3 +23,8 @@ id,ledger_name,groups_id,
 7,Sales Account,25
 8,Interest Receivable,9
 9,Interest Payable,10
+1001,Labour Charges,13
+1002,Parts Sales,25
+1003,Other Charges Income,13
+1004,Consumables Expense,12
+1005,Customer Advances,10

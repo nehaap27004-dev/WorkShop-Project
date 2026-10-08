@@ -30,33 +30,56 @@
         {% endfor %}
     {% endif %}
 
-    <!-- Filter Card -->
+    <!-- Filter Card (server-side: filters ALL job cards, not just the current page) -->
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header card-banner-header">
             <span class="card-banner-title"><i class="bi bi-funnel text-primary mr-1"></i> {% trans "Filter Job Cards" %}</span>
         </div>
         <div class="card-body p-3">
-            <div class="form-row align-items-center">
-                <div class="col-md-7 mb-2 mb-md-0">
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
+            <form method="get" id="jcFilterForm">
+                <div class="form-row align-items-end">
+                    <div class="col-md-4 mb-2">
+                        <label class="small text-muted mb-1">{% trans "Search" %}</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
+                            </div>
+                            <input type="text" name="q" value="{{ q }}" class="form-control border-left-0"
+                                   placeholder="{% trans 'Job card no., customer, vehicle plate...' %}">
                         </div>
-                        <input type="text" id="jcSearch" placeholder="{% trans 'Search by job card number, voucher number, customer name, vehicle plate...' %}" oninput="filterRows()" class="form-control border-left-0">
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="small text-muted mb-1">{% trans "Status" %}</label>
+                        <select name="status" class="form-control" onchange="this.form.submit()">
+                            <option value="">{% trans "All Statuses" %}</option>
+                            {% for t in tabs %}{% if t.key %}
+                            <option value="{{ t.key }}" {% if status == t.key %}selected{% endif %}>{{ t.label }} ({{ t.count }})</option>
+                            {% endif %}{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="small text-muted mb-1">{% trans "Priority" %}</label>
+                        <select name="priority" class="form-control" onchange="this.form.submit()">
+                            <option value="">{% trans "All Priorities" %}</option>
+                            {% for key, label in priority_choices %}
+                            <option value="{{ key }}" {% if priority == key %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="small text-muted mb-1">{% trans "From" %}</label>
+                        <input type="date" name="date_from" value="{{ date_from }}" class="form-control">
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="small text-muted mb-1">{% trans "To" %}</label>
+                        <input type="date" name="date_to" value="{{ date_to }}" class="form-control">
                     </div>
                 </div>
-                <div class="col-md-5">
-                    <select id="jcStatusFilter" onchange="filterRows()" class="form-control">
-                        <option value="">{% trans "All Statuses" %}</option>
-                        <option value="open">{% trans "Open" %}</option>
-                        <option value="in_progress">{% trans "In Progress" %}</option>
-                        <option value="waiting">{% trans "Waiting for Parts" %}</option>
-                        <option value="completed">{% trans "Completed" %}</option>
-                        <option value="closed">{% trans "Closed" %}</option>
-                        <option value="cancelled">{% trans "Cancelled" %}</option>
-                    </select>
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'jobcard_app:jobcard_list' %}" class="btn btn-sm btn-outline-secondary mr-2">{% trans "Clear" %}</a>
+                    <button type="submit" class="btn btn-sm btn-custom-primary">{% trans "Apply Filters" %}</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
@@ -64,10 +87,10 @@
     <div class="card shadow-sm border-0">
         <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span class="card-banner-title"><i class="bi bi-list-task mr-1 text-primary"></i> {% trans "Job Cards Directory" %}</span>
-            <span class="badge badge-secondary px-3 py-1 font-weight-bold">Total Job Orders: {{ jobs|length }}</span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold">Total Job Orders: {{ page_obj.paginator.count }}</span>
         </div>
         <div class="card-body p-0">
-            {% if jobs %}
+            {% if page_obj.paginator.count %}
             <div class="table-responsive">
                 <table class="table table-hover mb-0" id="jcTable">
                     <thead>
@@ -75,7 +98,7 @@
                             <th>{% trans "Voucher No." %}</th>
                             <th>{% trans "Date" %}</th>
                             <th>{% trans "Customer Name" %}</th>
-                            <th>{% trans "Vehicle Registered" %}</th>
+                            <th>{% trans "Vehicles" %}</th>
                             <th>{% trans "Priority" %}</th>
                             <th>{% trans "Status" %}</th>
                             <th class="text-right">{% trans "Grand Total" %}</th>
@@ -83,20 +106,23 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for job in jobs %}
-                        <tr data-status="{{ job.status }}"
-                            data-search="{{ job.voucher_number|default:job.job_number|lower }} {{ job.customer|lower }} {{ job.workshop_vehicle|default_if_none:''|lower }}">
+                        {% for job in page_obj %}
+                        <tr>
                             <td class="align-middle">
                                 <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="font-weight-bold text-primary" style="font-size:14px;">
-                                    <i class="bi bi-receipt text-secondary mr-1"></i>{{ job.voucher_number|default:job.job_number }}
+                                    <i class="bi bi-receipt text-secondary mr-1"></i>{{ job.voucher_number }}
                                 </a>
                             </td>
                             <td class="align-middle text-muted">{{ job.date|date:'d M Y' }}</td>
                             <td class="align-middle font-weight-600 text-dark">{{ job.customer }}</td>
                             <td class="align-middle">
-                                {% if job.workshop_vehicle %}
-                                    <span class="badge badge-light text-dark border"><i class="bi bi-truck mr-1 text-secondary"></i> {{ job.workshop_vehicle }}</span>
-                                {% else %}<span class="text-muted">—</span>{% endif %}
+                                {% for jv in job.vehicles.all %}
+                                    <span class="badge badge-light text-dark border mb-1">
+                                        <i class="bi bi-truck mr-1 text-secondary"></i>{{ jv.vehicle.vehicle_number }}
+                                    </span>
+                                {% empty %}
+                                    <span class="text-muted">—</span>
+                                {% endfor %}
                             </td>
                             <td class="align-middle">
                                 {% if job.priority == 'express' %}
@@ -125,7 +151,7 @@
                                 {% endif %}
                             </td>
                             <td class="align-middle text-right font-weight-bold text-dark">
-                                {{ job.grand_total|floatformat:3|default:"0.000" }}
+                                {{ job.total_amount|floatformat:3 }}
                             </td>
                             <td class="align-middle text-center">
                                 <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="btn btn-sm btn-outline-primary mr-1" title="{% trans 'View Job Card' %}">
@@ -140,6 +166,25 @@
                     </tbody>
                 </table>
             </div>
+
+            {% if page_obj.paginator.num_pages > 1 %}
+            <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                <span class="text-muted small">
+                    {% trans "Page" %} {{ page_obj.number }} {% trans "of" %} {{ page_obj.paginator.num_pages }}
+                </span>
+                <div>
+                    {% if page_obj.has_previous %}
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">&laquo; {% trans "Prev" %}</a>
+                    {% endif %}
+                    {% if page_obj.has_next %}
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}">{% trans "Next" %} &raquo;</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             {% else %}
             <div class="text-center py-5 text-muted">
                 <i class="bi bi-card-checklist display-4 d-block mb-2 text-secondary"></i>
@@ -149,19 +194,4 @@
         </div>
     </div>
 </div>
-
-<script>
-function filterRows() {
-    let q = document.getElementById('jcSearch').value.toLowerCase();
-    let st = document.getElementById('jcStatusFilter').value.toLowerCase();
-    let rows = document.querySelectorAll('#jcTable tbody tr');
-    rows.forEach(r => {
-        let text = r.getAttribute('data-search') || '';
-        let status = r.getAttribute('data-status') || '';
-        let matchQ = !q || text.includes(q);
-        let matchSt = !st || status === st;
-        r.style.display = (matchQ && matchSt) ? '' : 'none';
-    });
-}
-</script>
 {% endblock %}

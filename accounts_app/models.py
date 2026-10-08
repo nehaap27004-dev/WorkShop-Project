@@ -470,6 +470,23 @@ class LedgerPosting(models.Model):
     updated_on = models.DateTimeField(auto_now=True)
     created_by = models.IntegerField(null=True, blank=True)   
     updated_by = models.IntegerField(null=True, blank=True)          
+class InvoicePostingConfig(models.Model):
+    """Which ledgers an Invoice voucher type posts to. Chosen in admin, never hard-coded."""
+    voucher_type    = models.OneToOneField('fleet_app.Vouchers', on_delete=models.PROTECT,
+                                           related_name='invoice_posting_config')
+    sales_ledger    = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, null=True, blank=True,
+                                        related_name='+', help_text='Blank = use Vouchers.ledger')
+    tax_ledger      = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, null=True, blank=True,
+                                        related_name='+', help_text='Output VAT / tax payable')
+    discount_ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, null=True, blank=True,
+                                        related_name='+', help_text='Discount allowed. Blank = netted from Sales')
+    cash_ledger     = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, null=True, blank=True,
+                                        related_name='+', help_text='Used when payment mode = Cash')
+    bank_ledger     = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, null=True, blank=True,
+                                        related_name='+', help_text='Used when payment mode = Bank')
+
+    def __str__(self):
+        return f'Invoice posting config - {self.voucher_type}'
     
 class BillClearance(models.Model):
     PAYMENT_MODE_CHOICES = [

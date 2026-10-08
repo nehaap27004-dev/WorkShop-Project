@@ -3,450 +3,73 @@
 {% load i18n %}
 
 {% block content %}
-<!-- Custom Styling for Job Card Form Redesign -->
 <style>
-  /* ── Design Tokens & Base Layout ── */
-  .jc-wrapper {
-    max-width: 1140px;
-    margin: 0 auto;
-    padding-bottom: 90px;
-  }
-
-  /* ── Header Banner ── */
-  .jc-page-hdr {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .jc-page-hdr-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .jc-page-icon {
-    width: 38px;
-    height: 38px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    color: #2563eb;
-  }
-
-  .jc-page-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: #0f172a;
-    margin: 0;
-    line-height: 1.2;
-    letter-spacing: -0.3px;
-  }
-
-  .jc-page-sub {
-    font-size: 12px;
-    color: #64748b;
-    margin-top: 2px;
-  }
-
-  .jc-btn-back {
-    background: #ffffff;
-    color: #334155;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 7px 14px;
-    font-size: 12.5px;
-    font-weight: 600;
-    text-decoration: none !important;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.15s ease;
-  }
-
-  .jc-btn-back:hover {
-    background: #f8fafc;
-    color: #0f172a;
-    border-color: #94a3b8;
-  }
-
-  /* ── Custom Cards & Section Panels ── */
-  .jc-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    margin-bottom: 16px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.04);
-  }
-
-  .jc-card-hdr {
-    background: #fafbfc;
-    border-bottom: 1px solid #f1f5f9;
-    padding: 12px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .jc-card-title {
-    font-size: 13.5px;
-    font-weight: 700;
-    color: #0f172a;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-  }
-
-  .jc-card-body {
-    padding: 18px;
-  }
-
-  /* ── Form Controls & Typography ── */
-  .fl {
-    display: block;
-    font-size: 10px;
-    font-weight: 700;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 5px;
-  }
-
-  .req {
-    color: #ef4444;
-    margin-left: 2px;
-  }
-
-  .fi {
-    width: 100%;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 7px 10px;
-    font-size: 12.5px;
-    color: #0f172a;
-    background: #ffffff;
-    outline: none;
-    transition: all 0.15s ease-in-out;
-    font-family: inherit;
-  }
-
-  .fi:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-  }
-
-  .fi::placeholder {
-    color: #94a3b8;
-  }
-
-  .fi[readonly] {
-    background: #f8fafc;
-    color: #475569;
-    border-color: #e2e8f0;
-  }
-
-  select.fi {
-    cursor: pointer;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%3c64748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 12px 10px;
-    padding-right: 28px;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-  }
-
-  /* ── Layout Grids ── */
-  .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-  .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .mb { margin-bottom: 14px; }
-
-  @media (max-width: 991px) {
-    .g4 { grid-template-columns: repeat(2, 1fr); }
-    .g3 { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (max-width: 576px) {
-    .g4, .g3, .g2 { grid-template-columns: 1fr; }
-  }
-
-  /* ── Action Buttons ── */
-  .btn-add {
-    background: #2563eb;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-    text-decoration: none !important;
-  }
-
-  .btn-add:hover {
-    background: #1d4ed8;
-    color: #ffffff;
-  }
-
-  .btn-rm {
-    background: none;
-    border: none;
-    color: #94a3b8;
-    border-radius: 4px;
-    padding: 4px 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-  }
-
-  .btn-rm:hover {
-    background: #fef2f2;
-    color: #dc2626;
-  }
-
-  .btn-insp-load {
-    background: #eff6ff;
-    color: #2563eb;
-    border: 1px solid #bfdbfe;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    white-space: nowrap;
-    transition: all 0.15s ease;
-  }
-
-  .btn-insp-load:hover {
-    background: #dbeafe;
-    color: #1d4ed8;
-    border-color: #93c5fd;
-  }
-
-  /* ── Line Item Tables ── */
-  .stbl-container {
-    overflow-x: auto;
-  }
-
-  .stbl {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .stbl thead th {
-    background: #f8fafc;
-    color: #64748b;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 9px 10px;
-    border-bottom: 1px solid #e2e8f0;
-    white-space: nowrap;
-  }
-
-  .stbl tbody td {
-    padding: 6px 8px;
-    border-bottom: 1px solid #f1f5f9;
-    vertical-align: middle;
-    font-size: 12.5px;
-  }
-
-  .stbl tbody tr:last-child td {
-    border-bottom: none;
-  }
-
-  .stbl tbody tr:hover {
-    background-color: #f8fafc;
-  }
-
-  /* ── Parts Quick Adder Panel ── */
-  .parts-adder-panel {
-    padding: 14px 18px;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
-  }
-
-  .parts-adder-grid {
-    display: grid;
-    grid-template-columns: 1.5fr 2fr 1.5fr 1fr 1fr 1fr auto;
-    gap: 10px;
-    align-items: end;
-  }
-
-  @media (max-width: 991px) {
-    .parts-adder-grid {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  /* ── Summary & Totals ── */
-  .totals-bar-inline {
-    padding: 10px 18px;
-    background: #f8fafc;
-    border-top: 1px solid #e2e8f0;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .totals-lbl {
-    font-size: 12px;
-    font-weight: 700;
-    color: #475569;
-  }
-
-  .totals-val {
-    font-size: 14px;
-    font-weight: 700;
-    color: #2563eb;
-    font-family: monospace;
-  }
-
-  .grand-totals-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 16px 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.04);
-  }
-
-  .gt-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    align-items: center;
-  }
-
-  .gt-item {
-    padding: 10px 14px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    text-align: center;
-  }
-
-  .gt-item.highlight {
-    background: #eff6ff;
-    border-color: #bfdbfe;
-  }
-
-  .gt-lbl {
-    font-size: 10px;
-    font-weight: 700;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 3px;
-  }
-
-  .gt-item.highlight .gt-lbl {
-    color: #2563eb;
-  }
-
-  .gt-val {
-    font-size: 15px;
-    font-weight: 700;
-    color: #0f172a;
-    font-family: monospace;
-  }
-
-  .gt-val.grand {
-    font-size: 18px;
-    color: #2563eb;
-  }
-
-  /* ── Sticky Action Bar ── */
-  .save-bar {
-    position: sticky;
-    bottom: 16px;
-    z-index: 100;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(8px);
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    padding: 12px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    margin-top: 20px;
-  }
-
-  .btn-save {
-    background: #2563eb;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.15s ease;
-  }
-
-  .btn-save:hover {
-    background: #1d4ed8;
-  }
-
-  .btn-cancel {
-    background: #ffffff;
-    color: #475569;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none !important;
-    transition: all 0.15s ease;
-  }
-
-  .btn-cancel:hover {
-    background: #f8fafc;
-    color: #0f172a;
-    border-color: #94a3b8;
-  }
+  .jc-wrapper { max-width: 1140px; margin: 0 auto; padding-bottom: 90px; }
+  .jc-page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .jc-page-hdr-left { display:flex; align-items:center; gap:10px; }
+  .jc-page-icon { width:38px; height:38px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:20px; color:#2563eb; }
+  .jc-page-title { font-size:20px; font-weight:700; color:#0f172a; margin:0; line-height:1.2; letter-spacing:-0.3px; }
+  .jc-page-sub { font-size:12px; color:#64748b; margin-top:2px; }
+  .jc-btn-back { background:#fff; color:#334155; border:1px solid #cbd5e1; border-radius:6px; padding:7px 14px; font-size:12.5px; font-weight:600; text-decoration:none !important; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; }
+  .jc-btn-back:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
+  .jc-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:16px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,.04); }
+  .jc-card-hdr { background:#fafbfc; border-bottom:1px solid #f1f5f9; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .jc-card-title { font-size:13.5px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px; margin:0; }
+  .jc-card-body { padding:18px; }
+  .fl { display:block; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+  .req { color:#ef4444; margin-left:2px; }
+  .fi { width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 10px; font-size:12.5px; color:#0f172a; background:#fff; outline:none; transition:all .15s ease-in-out; font-family:inherit; }
+  .fi:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+  .fi::placeholder { color:#94a3b8; }
+  .fi[readonly] { background:#f8fafc; color:#475569; border-color:#e2e8f0; }
+  select.fi { cursor:pointer; background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 10px center; background-size:12px 10px; padding-right:28px; -webkit-appearance:none; -moz-appearance:none; appearance:none; text-overflow:ellipsis; }
+  .g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .g3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .mb { margin-bottom:14px; }
+  @media (max-width:991px) { .g4 { grid-template-columns:repeat(2,1fr); } .g3 { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:576px) { .g4,.g3,.g2 { grid-template-columns:1fr; } }
+  .btn-add { background:#2563eb; color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; white-space:nowrap; text-decoration:none !important; }
+  .btn-add:hover { background:#1d4ed8; color:#fff; }
+  .btn-rm { background:none; border:none; color:#94a3b8; border-radius:4px; padding:4px 6px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:3px; transition:all .15s ease; white-space:nowrap; }
+  .btn-rm:hover { background:#fef2f2; color:#dc2626; }
+  .btn-insp-load { background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; transition:all .15s ease; }
+  .btn-insp-load:hover { background:#dbeafe; color:#1d4ed8; border-color:#93c5fd; }
+  .stbl-container { overflow-x:auto; }
+  .stbl { width:100%; border-collapse:collapse; }
+  .stbl thead th { background:#f8fafc; color:#64748b; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; padding:9px 10px; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+  .stbl tbody td { padding:6px 8px; border-bottom:1px solid #f1f5f9; vertical-align:middle; font-size:12.5px; }
+  .stbl tbody tr:last-child td { border-bottom:none; }
+  .stbl tbody tr:hover { background-color:#f8fafc; }
+  .override-wrap { display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap; }
+  .override-wrap label { margin:0; font-size:10.5px; color:#64748b; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+  .parts-adder-panel { padding:14px 18px; background:#f8fafc; border-bottom:1px solid #e2e8f0; }
+  .parts-adder-grid { display:grid; grid-template-columns:1.5fr 2fr 1.5fr 1fr 1fr 1fr auto; gap:10px; align-items:end; }
+  @media (max-width:991px) { .parts-adder-grid { grid-template-columns:1fr 1fr; } }
+  .totals-bar-inline { padding:10px 18px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; align-items:center; gap:10px; }
+  .totals-lbl { font-size:12px; font-weight:700; color:#475569; }
+  .totals-val { font-size:14px; font-weight:700; color:#2563eb; font-family:monospace; }
+  .grand-totals-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px 20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(15,23,42,.04); }
+  .gt-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-items:center; }
+  .gt-item { padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; text-align:center; }
+  .gt-item.highlight { background:#eff6ff; border-color:#bfdbfe; }
+  .gt-lbl { font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px; }
+  .gt-item.highlight .gt-lbl { color:#2563eb; }
+  .gt-val { font-size:15px; font-weight:700; color:#0f172a; font-family:monospace; }
+  .gt-val.grand { font-size:18px; color:#2563eb; }
+  .save-bar { position:sticky; bottom:16px; z-index:100; background:rgba(255,255,255,.95); backdrop-filter:blur(8px); border:1px solid #cbd5e1; border-radius:10px; padding:12px 20px; display:flex; align-items:center; justify-content:flex-end; gap:10px; box-shadow:0 4px 16px rgba(0,0,0,.08); margin-top:20px; }
+  .btn-save { background:#2563eb; color:#fff; border:none; border-radius:6px; padding:8px 20px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .15s ease; }
+  .btn-save:hover { background:#1d4ed8; }
+  .btn-cancel { background:#fff; color:#475569; border:1px solid #cbd5e1; border-radius:6px; padding:8px 16px; font-size:13px; font-weight:600; text-decoration:none !important; transition:all .15s ease; }
+  .btn-cancel:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
 </style>
 
 <div class="container-fluid p-0 jc-wrapper">
 
-  <!-- ── Header Banner ── -->
+  <!-- Header -->
   <div class="jc-page-hdr">
     <div class="jc-page-hdr-left">
-      <div class="jc-page-icon">
-        <i class="bi bi-card-checklist"></i>
-      </div>
+      <div class="jc-page-icon"><i class="bi bi-card-checklist"></i></div>
       <div>
         <h1 class="jc-page-title">
           {% if edit_mode %}{% trans "Edit Job Card" %}: {{ job.voucher_number|default:job.job_number }}{% else %}{% trans "New Job Card" %}{% endif %}
@@ -454,12 +77,9 @@
         <div class="jc-page-sub">{% trans "Manage vehicle repair orders, customer complaints, spare parts & labor entries" %}</div>
       </div>
     </div>
-    <a href="{% url 'jobcard_app:jobcard_list' %}" class="jc-btn-back">
-      <i class="bi bi-arrow-left"></i> {% trans "Back to List" %}
-    </a>
+    <a href="{% url 'jobcard_app:jobcard_list' %}" class="jc-btn-back"><i class="bi bi-arrow-left"></i> {% trans "Back to List" %}</a>
   </div>
 
-  <!-- Inspection Load Notice Banner -->
   {% if inspection %}
   <div class="alert alert-warning border-warning-subtle shadow-sm mb-3" style="border-radius:8px; font-size:12.5px;">
     <div class="d-flex align-items-center gap-2">
@@ -475,51 +95,34 @@
   </div>
   {% endif %}
 
-  <!-- Flash Messages -->
   {% if messages %}
     {% for m in messages %}
       <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-3 shadow-sm" style="border-radius:8px; font-size:12.5px;" role="alert">
         {{ m }}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>
     {% endfor %}
   {% endif %}
 
   <form method="post" id="jcForm">{% csrf_token %}
-  <input type="hidden" name="from_inspection" value="{{ prefill_inspection.pk|default:'' }}">
-  <input type="hidden" name="source_inspection_id" value="{{ prefill_inspection.pk|default:'' }}">
+  {# Only ONE hidden inspection field. (The old hidden <select name="from_inspection"> was removed: it submitted the first inspection on every new job card.) #}
   {% if inspection %}
-  <input type="hidden" name="from_inspection_id" value="{{ inspection.pk }}">
+  <input type="hidden" name="source_inspection_id" value="{{ inspection.pk }}">
   {% endif %}
-  <select name="from_inspection" style="display:none">
-    {% for insp in inspections %}
-    <option value="{{ insp.pk }}" {% if prefill_inspection and prefill_inspection.pk == insp.pk %}selected{% endif %}>{{ insp.pk }}</option>
-    {% endfor %}
-  </select>
 
-  <!-- ════════════════════════════════
-       1. JOB CARD HEADER
-  ════════════════════════════════ -->
+  <!-- 1. HEADER -->
   <div class="jc-card">
     <div class="jc-card-hdr">
-      <h2 class="jc-card-title">
-        <i class="bi bi-info-circle-fill text-primary"></i> {% trans "Job Card Header Details" %}
-      </h2>
+      <h2 class="jc-card-title"><i class="bi bi-info-circle-fill text-primary"></i> {% trans "Job Card Header Details" %}</h2>
     </div>
     <div class="jc-card-body">
       <div class="g4 mb">
-        <input type="hidden" name="voucherType" id="id_voucherType"
-          value="{% if edit_mode and job.voucherType %}{{ job.voucherType.id }}{% else %}{% for vt in voucher_types %}{% if vt.VoucherName == 'JobCard' %}{{ vt.id }}{% endif %}{% endfor %}{% endif %}">
-        {# Hidden job_number — always mirrors the voucher number for backward compatibility #}
-        <input type="hidden" name="job_number" id="id_job_number"
-          value="{% if edit_mode %}{{ job.voucher_number|default:job.job_number }}{% else %}{{ next_job_number }}{% endif %}">
+        {# One voucher number only. It comes from the fleet Voucher (JobCard type, id 2) and is assigned by the server on save. #}
         <div>
-          <label class="fl">{% trans "Voucher Number" %}<span class="req">*</span></label>
-          <input type="text" name="voucher_number" id="id_voucher_number" class="fi" required
-            placeholder="e.g. JC-00001"
+          <label class="fl">{% trans "Voucher Number" %}</label>
+          <input type="text" id="id_voucher_number" class="fi" readonly
             value="{% if edit_mode %}{{ job.voucher_number|default:job.job_number }}{% else %}{{ next_job_number }}{% endif %}">
+         
         </div>
         <div>
           <label class="fl">{% trans "Date" %} <span class="req">*</span></label>
@@ -528,16 +131,12 @@
         </div>
         <div>
           <label class="fl">{% trans "Customer" %} <span class="req">*</span></label>
-          <select name="customer" class="fi" required id="custSel"
-            {% if edit_mode %}disabled{% endif %}
-            onchange="loadVehicles(this.value)">
+          <select name="customer" class="fi" required id="custSel" {% if edit_mode %}disabled{% endif %} onchange="loadVehicles(this.value)">
             <option value="">— Select Customer —</option>
             {% for c in customers %}
             <option value="{{ c.id }}"
               {% if edit_mode and job.customer_id == c.id %}selected{% endif %}
-              {% if inspection and inspection.customer_id == c.id %}selected{% endif %}>
-              {{ c.ledger_name }}
-            </option>
+              {% if inspection and inspection.customer_id == c.id %}selected{% endif %}>{{ c.ledger_name }}</option>
             {% endfor %}
           </select>
           {% if edit_mode %}<input type="hidden" name="customer" value="{{ job.customer_id }}">{% endif %}
@@ -547,8 +146,7 @@
       <div class="g4">
         <div>
           <label class="fl">{% trans "Customer Phone" %}</label>
-          <input type="text" name="customer_phone" class="fi" id="customerPhone"
-            placeholder="e.g. +971 50 123 4567"
+          <input type="text" name="customer_phone" class="fi" id="customerPhone" placeholder="e.g. +971 50 123 4567"
             value="{% if edit_mode %}{{ job.customer_phone|default:'' }}{% endif %}">
         </div>
         <div>
@@ -562,34 +160,27 @@
         <div>
           <label class="fl">{% trans "Status" %}</label>
           <select name="status" class="fi">
-            <option value="open"         {% if not edit_mode or job.status == 'open' %}selected{% endif %}>Open</option>
-            <option value="in_progress"  {% if edit_mode and job.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-            <option value="waiting"      {% if edit_mode and job.status == 'waiting' %}selected{% endif %}>Waiting</option>
-            <option value="completed"    {% if edit_mode and job.status == 'completed' %}selected{% endif %}>Completed</option>
-            <option value="closed"       {% if edit_mode and job.status == 'closed' %}selected{% endif %}>Closed</option>
-            <option value="cancelled"    {% if edit_mode and job.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            <option value="open"        {% if not edit_mode or job.status == 'open' %}selected{% endif %}>Open</option>
+            <option value="in_progress" {% if edit_mode and job.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+            <option value="waiting"     {% if edit_mode and job.status == 'waiting' %}selected{% endif %}>Waiting</option>
+            <option value="completed"   {% if edit_mode and job.status == 'completed' %}selected{% endif %}>Completed</option>
+            <option value="closed"      {% if edit_mode and job.status == 'closed' %}selected{% endif %}>Closed</option>
+            <option value="cancelled"   {% if edit_mode and job.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
           </select>
         </div>
         <div>
           <label class="fl">{% trans "Expected Delivery Date" %}</label>
-          <input type="date" name="delivery_date" class="fi"
-            value="{% if edit_mode %}{{ job.delivery_date|date:'Y-m-d'|default:'' }}{% endif %}">
+          <input type="date" name="delivery_date" class="fi" value="{% if edit_mode %}{{ job.delivery_date|date:'Y-m-d'|default:'' }}{% endif %}">
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ════════════════════════════════
-       2. VEHICLE SELECTION
-  ════════════════════════════════ -->
+  <!-- 2. VEHICLES -->
   <div class="jc-card">
     <div class="jc-card-hdr">
-      <h2 class="jc-card-title">
-        <i class="bi bi-truck text-primary"></i> {% trans "Assigned Vehicles" %}
-      </h2>
-      <button type="button" class="btn-add" onclick="addVehicleRow()">
-        <i class="bi bi-plus"></i> {% trans "Add Vehicle" %}
-      </button>
+      <h2 class="jc-card-title"><i class="bi bi-truck text-primary"></i> {% trans "Assigned Vehicles" %}</h2>
+      <button type="button" class="btn-add" onclick="addVehicleRow()"><i class="bi bi-plus"></i> {% trans "Add Vehicle" %}</button>
     </div>
     <div class="stbl-container">
       <table class="stbl" id="vehTbl">
@@ -608,14 +199,10 @@
             <tr>
               <td>
                 <select name="jc_vehicle_id[]" class="veh-select fi" onchange="onVehRowChange(this)">
-                  <option value="{{ jv.vehicle_id }}" data-veh-number="{{ jv.vehicle.vehicle_number }}" selected>{{ jv.vehicle.vehicle_number }}{% if jv.vehicle.registration_number %} ({{ jv.vehicle.registration_number }}){% endif %}</option>
+                  <option value="{{ jv.vehicle_id }}" data-veh-number="{{ jv.vehicle.vehicle_number }}" selected>{{ jv.vehicle.vehicle_number }}</option>
                 </select>
               </td>
-              <td>
-                <input type="text" class="fi veh-mm-box" readonly
-                      value="{{ jv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ jv.vehicle.vehicle_model.model_name|default:'' }}"
-                      placeholder="Make & Model">
-              </td>
+              <td><input type="text" class="fi veh-mm-box" readonly value="{{ jv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ jv.vehicle.vehicle_model.model_name|default:'' }}" placeholder="Make & Model"></td>
               <td><input type="number" name="jc_vehicle_mileage[]" value="{{ jv.mileage|default:'' }}" min="0" class="fi"></td>
               <td>
                 <select name="jc_vehicle_fuel[]" class="fi">
@@ -627,23 +214,17 @@
                 </select>
                 <input type="hidden" name="jc_vehicle_notes[]" value="{{ jv.notes }}">
               </td>
-              <td style="text-align:center">
-                <button type="button" class="btn-rm" onclick="removeVehRow(this)">✕</button>
-              </td>
+              <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeVehRow(this)">✕</button></td>
             </tr>
             {% endfor %}
           {% elif inspection and inspection.vehicle %}
             <tr>
               <td>
                 <select name="jc_vehicle_id[]" class="veh-select fi" onchange="onVehRowChange(this)">
-                  <option value="{{ inspection.vehicle.id }}" data-veh-number="{{ inspection.vehicle.vehicle_number }}" selected>{{ inspection.vehicle.vehicle_number }}{% if inspection.vehicle.registration_number %} ({{ inspection.vehicle.registration_number }}){% endif %}</option>
+                  <option value="{{ inspection.vehicle.id }}" data-veh-number="{{ inspection.vehicle.vehicle_number }}" selected>{{ inspection.vehicle.vehicle_number }}</option>
                 </select>
               </td>
-              <td>
-                <input type="text" class="fi veh-mm-box" readonly
-                      value="{{ inspection.vehicle.manufacturer.manufacturer_name|default:'' }} {{ inspection.vehicle.vehicle_model.model_name|default:'' }}"
-                      placeholder="Make & Model">
-              </td>
+              <td><input type="text" class="fi veh-mm-box" readonly value="{{ inspection.vehicle.manufacturer.manufacturer_name|default:'' }} {{ inspection.vehicle.vehicle_model.model_name|default:'' }}" placeholder="Make & Model"></td>
               <td><input type="number" name="jc_vehicle_mileage[]" value="{{ inspection.odometer|default:'' }}" min="0" class="fi"></td>
               <td>
                 <select name="jc_vehicle_fuel[]" class="fi">
@@ -655,9 +236,7 @@
                 </select>
                 <input type="hidden" name="jc_vehicle_notes[]" value="">
               </td>
-              <td style="text-align:center">
-                <button type="button" class="btn-rm" onclick="removeVehRow(this)">✕</button>
-              </td>
+              <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeVehRow(this)">✕</button></td>
             </tr>
           {% endif %}
         </tbody>
@@ -668,25 +247,16 @@
     </div>
   </div>
 
-  <!-- ════════════════════════════════
-       3. COMPLAINT MANAGEMENT
-  ════════════════════════════════ -->
+  <!-- 3. COMPLAINTS / SERVICES -->
   <div class="jc-card">
     <div class="jc-card-hdr">
-      <h2 class="jc-card-title">
-        <i class="bi bi-exclamation-triangle-fill text-warning"></i> {% trans "Complaint Management" %}
-      </h2>
+      <h2 class="jc-card-title"><i class="bi bi-exclamation-triangle-fill text-warning"></i> {% trans "Complaint Management" %}</h2>
       <div class="d-flex align-items-center gap-2">
-        <button type="button" class="btn-insp-load" onclick="openInspPicker()">
-          <i class="bi bi-search"></i> {% trans "Load Complaints & Findings" %}
-        </button>
-        <button type="button" class="btn-add" onclick="addComplaint()">
-          <i class="bi bi-plus"></i> {% trans "Add Complaint" %}
-        </button>
+        <button type="button" class="btn-insp-load" onclick="openInspPicker()"><i class="bi bi-search"></i> {% trans "Load Complaints & Findings" %}</button>
+        <button type="button" class="btn-add" onclick="addComplaint()"><i class="bi bi-plus"></i> {% trans "Add Complaint" %}</button>
       </div>
     </div>
 
-    <!-- Loaded Inspection Banner -->
     <div id="inspBanner" style="display:none; background:#fffbeb; border-bottom:1px solid #fde68a; padding:9px 18px; font-size:12px; color:#92400e; align-items:center; justify-content:space-between; gap:10px">
       <span id="inspBannerText"></span>
       <button type="button" onclick="this.parentElement.style.display='none'" style="background:none; border:none; color:#ca8a04; cursor:pointer; font-size:15px;">✕</button>
@@ -698,9 +268,9 @@
           <tr>
             <th style="width:13%">{% trans "Vehicle" %}</th>
             <th style="width:16%">{% trans "Service Category" %}</th>
-            <th style="width:18%">{% trans "Complaint Type" %}</th>
-            <th style="width:23%">{% trans "Description" %}</th>
-            <th style="width:18%">{% trans "Technician" %}</th>
+            <th style="width:18%">{% trans "Service Type" %}</th>
+            <th style="width:21%">{% trans "Description" %}</th>
+            <th style="width:20%">{% trans "Technician" %}</th>
             <th style="width:10%">{% trans "Status" %}</th>
             <th style="width:6%; text-align:center">{% trans "Action" %}</th>
           </tr>
@@ -710,7 +280,7 @@
             {% for c in job.complaints.all %}
             <tr>
               <td>
-                <select name="complaint_vehicle_id[]" class="row-veh-select fi">
+                <select name="complaint_vehicle_id[]" class="row-veh-select fi" data-saved="{{ c.vehicle_id|default:'' }}">
                   <option value="">— Vehicle —</option>
                   {% for jv in job.vehicles.all %}
                   <option value="{{ jv.vehicle_id }}" {% if c.vehicle_id == jv.vehicle_id %}selected{% endif %}>{{ jv.vehicle.vehicle_number }}</option>
@@ -727,81 +297,41 @@
                 <input type="hidden" name="complaint_category[]" class="cat-txt" value="{{ c.category }}">
               </td>
               <td>
+                {# Saved value: "st_<id>" for a Service Type, plain "<id>" for a Complaint Type #}
                 <select name="complaint_type_id[]" class="complaint-type-select fi" onchange="handleComplaintTypeChange(this)"
-                        data-initial-type-id="{{ c.complaint_type_ref_id|default:'' }}">
-                  <option value="">— Complaint Type —</option>
+                        data-initial-type-id="{% if c.service_type_ref_id %}st_{{ c.service_type_ref_id }}{% elif c.complaint_type_ref_id %}{{ c.complaint_type_ref_id }}{% endif %}">
+                  <option value="">— Service Type —</option>
                 </select>
                 <input type="hidden" name="complaint_type[]" class="type-txt" value="{{ c.type }}">
               </td>
-              <td>
-                <input type="text" name="complaint_description[]" value="{{ c.description }}" class="fi" placeholder="Describe complaint...">
-              </td>
+              <td><input type="text" name="complaint_description[]" value="{{ c.description }}" class="fi" placeholder="Describe complaint..."></td>
               <td>
                 <select name="complaint_technician[]" class="complaint-tech-select fi" data-initial-tech-id="{{ c.technician_id|default:'' }}">
                   <option value="">— Select Technician —</option>
                 </select>
                 <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="{% if c.is_manual_override %}1{% else %}0{% endif %}">
+                <div class="override-wrap">
+                  <label><input type="checkbox" class="override-cb" onchange="handleOverrideToggle(this)" {% if c.is_manual_override %}checked{% endif %}> Show all</label>
+                  <span class="skill-badge-info"></span>
+                </div>
               </td>
               <td>
                 <select name="complaint_status[]" class="fi">
-                  <option value="Open"        {% if c.status == 'Open'        %}selected{% endif %}>Open</option>
+                  <option value="Open"        {% if c.status == 'Open' %}selected{% endif %}>Open</option>
                   <option value="In Progress" {% if c.status == 'In Progress' %}selected{% endif %}>In Progress</option>
-                  <option value="Resolved"    {% if c.status == 'Resolved'    %}selected{% endif %}>Resolved</option>
+                  <option value="Resolved"    {% if c.status == 'Resolved' %}selected{% endif %}>Resolved</option>
                 </select>
               </td>
-              <td style="text-align:center">
-                <button type="button" class="btn-rm" onclick="removeRow(this)">✕</button>
-              </td>
+              <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this)">✕</button></td>
             </tr>
             {% endfor %}
-          {% elif prefill_complaints %}
-            {% for desc in prefill_complaints %}
-            <tr style="background:#fffbeb">
-              <td>
-                <select name="complaint_vehicle_id[]" class="row-veh-select fi">
-                  <option value="">— Vehicle —</option>
-                </select>
-              </td>
-              <td>
-                <select name="complaint_category_id[]" class="complaint-cat-select fi" onchange="handleCategoryChange(this)">
-                  <option value="">— Category —</option>
-                  {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
-                </select>
-                <input type="hidden" name="complaint_category[]" class="cat-txt">
-              </td>
-              <td>
-                <select name="complaint_type_id[]" class="complaint-type-select fi" onchange="handleComplaintTypeChange(this)">
-                  <option value="">— Complaint Type —</option>
-                </select>
-                <input type="hidden" name="complaint_type[]" class="type-txt">
-              </td>
-              <td>
-                <input type="text" name="complaint_description[]" value="{{ desc }}" class="fi" placeholder="Describe complaint...">
-              </td>
-              <td>
-                <select name="complaint_technician[]" class="complaint-tech-select fi">
-                  <option value="">— Select Technician —</option>
-                </select>
-                <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
-              </td>
-              <td>
-                <select name="complaint_status[]" class="fi">
-                  <option value="Open" selected>Open</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Resolved">Resolved</option>
-                </select>
-              </td>
-              <td style="text-align:center">
-                <button type="button" class="btn-rm" onclick="removeRow(this)">✕</button>
-              </td>
-            </tr>
-            {% endfor %}
-          {% else %}
+          {% endif %}
+
+          {# Blank starter row: new job cards, or an edited job card that has no complaints yet #}
+          {% if not edit_mode or not job.complaints.exists %}
             <tr id="cmpDefaultRow">
               <td>
-                <select name="complaint_vehicle_id[]" class="row-veh-select fi">
-                  <option value="">— Vehicle —</option>
-                </select>
+                <select name="complaint_vehicle_id[]" class="row-veh-select fi"><option value="">— Vehicle —</option></select>
               </td>
               <td>
                 <select name="complaint_category_id[]" class="complaint-cat-select fi" onchange="handleCategoryChange(this)">
@@ -812,18 +342,15 @@
               </td>
               <td>
                 <select name="complaint_type_id[]" class="complaint-type-select fi" onchange="handleComplaintTypeChange(this)">
-                  <option value="">— Complaint Type —</option>
+                  <option value="">— Service Type —</option>
                 </select>
                 <input type="hidden" name="complaint_type[]" class="type-txt">
               </td>
+              <td><input type="text" name="complaint_description[]" class="fi" placeholder="Describe complaint..."></td>
               <td>
-                <input type="text" name="complaint_description[]" class="fi" placeholder="Describe complaint...">
-              </td>
-              <td>
-                <select name="complaint_technician[]" class="complaint-tech-select fi">
-                  <option value="">— Select Technician —</option>
-                </select>
+                <select name="complaint_technician[]" class="complaint-tech-select fi"><option value="">— Select Technician —</option></select>
                 <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
+                
               </td>
               <td>
                 <select name="complaint_status[]" class="fi">
@@ -832,9 +359,7 @@
                   <option value="Resolved">Resolved</option>
                 </select>
               </td>
-              <td style="text-align:center">
-                <button type="button" class="btn-rm" onclick="removeRow(this)">✕</button>
-              </td>
+              <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this)">✕</button></td>
             </tr>
           {% endif %}
         </tbody>
@@ -842,30 +367,21 @@
     </div>
   </div>
 
-  <!-- ════════════════════════════════
-       4. SPARE PARTS MANAGEMENT
-  ════════════════════════════════ -->
+  <!-- 4. SPARE PARTS -->
   <div class="jc-card">
     <div class="jc-card-hdr">
-      <h2 class="jc-card-title">
-        <i class="bi bi-boxes text-primary"></i> {% trans "Spare Parts Management" %}
-      </h2>
+      <h2 class="jc-card-title"><i class="bi bi-boxes text-primary"></i> {% trans "Spare Parts Management" %}</h2>
     </div>
 
-    <!-- Quick Item Adder Panel -->
     <div class="parts-adder-panel">
       <div class="parts-adder-grid">
         <div>
           <label class="fl">{% trans "Vehicle" %}</label>
-          <select id="addPartVehicle" class="fi">
-            <option value="">— Vehicle —</option>
-          </select>
+          <select id="addPartVehicle" class="fi"><option value="">— Vehicle —</option></select>
         </div>
         <div>
           <label class="fl">{% trans "Item" %}</label>
-          <select id="addPartItem" class="fi" onchange="onAddPartItemChange(this)">
-            <option value="">— Select Item —</option>
-          </select>
+          <select id="addPartItem" class="fi" onchange="onAddPartItemChange(this)"><option value="">— Select Item —</option></select>
         </div>
         <div>
           <label class="fl">{% trans "Part Number" %}</label>
@@ -907,9 +423,9 @@
         <tbody id="partsBody">
           {% if edit_mode %}
             {% for p in job.parts.all %}
-            <tr data-item-id="{{ p.part_number|default:'' }}">
+            <tr>
               <td>
-                <select name="part_vehicle_id[]" class="row-veh-select fi">
+                <select name="part_vehicle_id[]" class="row-veh-select fi" data-saved="{{ p.vehicle_id|default:'' }}">
                   <option value="">— Vehicle —</option>
                   {% for jv in job.vehicles.all %}
                   <option value="{{ jv.vehicle_id }}" {% if p.vehicle_id == jv.vehicle_id %}selected{% endif %}>{{ jv.vehicle.vehicle_number }}</option>
@@ -918,33 +434,23 @@
               </td>
               <td style="font-weight:500; color:#0f172a">
                 {{ p.description }}
-                <input type="hidden" name="part_item[]"   value="{{ p.description }}">
+                <input type="hidden" name="part_item[]" value="{{ p.description }}">
                 <input type="hidden" name="part_item_id[]" value="">
               </td>
-              <td>
-                <input type="text" name="part_number[]" value="{{ p.part_number|default:'' }}" class="fi">
-              </td>
-              <td>
-                <input type="number" name="part_qty[]" value="{{ p.quantity }}" min="0" step="0.01" class="fi pq" style="text-align:right" oninput="calcPartRow(this)">
-              </td>
-              <td>
-                <input type="number" name="part_rate[]" value="{{ p.unit_price }}" min="0" step="0.001" class="fi pr" style="text-align:right" oninput="calcPartRow(this)">
-              </td>
+              <td><input type="text" name="part_number[]" value="{{ p.part_number|default:'' }}" class="fi"></td>
+              <td><input type="number" name="part_qty[]" value="{{ p.quantity }}" min="0" step="0.01" class="fi pq" style="text-align:right" oninput="calcPartRow(this)"></td>
+              <td><input type="number" name="part_rate[]" value="{{ p.unit_price }}" min="0" step="0.001" class="fi pr" style="text-align:right" oninput="calcPartRow(this)"></td>
               <td style="text-align:right; font-weight:700; font-family:monospace">
                 <span class="pa">{{ p.total_price|floatformat:3 }}</span>
                 <input type="hidden" name="part_amount[]" class="pa-inp" value="{{ p.total_price }}">
               </td>
-              <td style="text-align:center">
-                <button type="button" class="btn-rm" onclick="removePartRow(this)">✕</button>
-              </td>
+              <td style="text-align:center"><button type="button" class="btn-rm" onclick="removePartRow(this)">✕</button></td>
             </tr>
             {% endfor %}
           {% endif %}
         </tbody>
       </table>
-
-      <div id="partsEmpty"
-          style="{% if edit_mode and job.parts.exists %}display:none{% else %}display:block{% endif %}; text-align:center; padding:20px; color:#94a3b8; font-size:12.5px">
+      <div id="partsEmpty" style="{% if edit_mode and job.parts.exists %}display:none{% else %}display:block{% endif %}; text-align:center; padding:20px; color:#94a3b8; font-size:12.5px">
         <i class="bi bi-info-circle text-muted mr-1"></i> {% trans "No spare parts added yet. Select an item above and click Add Part." %}
       </div>
     </div>
@@ -955,17 +461,11 @@
     </div>
   </div>
 
-  <!-- ════════════════════════════════
-       5. LABOUR MANAGEMENT
-  ════════════════════════════════ -->
+  <!-- 5. LABOUR -->
   <div class="jc-card">
     <div class="jc-card-hdr">
-      <h2 class="jc-card-title">
-        <i class="bi bi-wrench-adjustable text-primary"></i> {% trans "Labour & Service Charges" %}
-      </h2>
-      <button type="button" class="btn-add" onclick="addLabour()">
-        <i class="bi bi-plus"></i> {% trans "Add Labour" %}
-      </button>
+      <h2 class="jc-card-title"><i class="bi bi-wrench-adjustable text-primary"></i> {% trans "Labour & Service Charges" %}</h2>
+      <button type="button" class="btn-add" onclick="addLabour()"><i class="bi bi-plus"></i> {% trans "Add Labour" %}</button>
     </div>
     <div class="stbl-container">
       <table class="stbl" id="labourTbl">
@@ -981,11 +481,11 @@
           </tr>
         </thead>
         <tbody id="labourBody">
-          {% if edit_mode %}
+          {% if edit_mode and job.labours.exists %}
             {% for l in job.labours.all %}
             <tr>
               <td>
-                <select name="labour_vehicle_id[]" class="row-veh-select fi">
+                <select name="labour_vehicle_id[]" class="row-veh-select fi" data-saved="{{ l.vehicle_id|default:'' }}">
                   <option value="">— Vehicle —</option>
                   {% for jv in job.vehicles.all %}
                   <option value="{{ jv.vehicle_id }}" {% if l.vehicle_id == jv.vehicle_id %}selected{% endif %}>{{ jv.vehicle.vehicle_number }}</option>
@@ -1001,8 +501,8 @@
                 </select>
               </td>
               <td><input type="text" name="labour_description[]" value="{{ l.description }}" class="fi"></td>
-              <td><input type="number" name="labour_hours[]" value="{{ l.hours|default:1 }}" min="0" step="0.5" class="fi lab-hrs" oninput="calcLabourRow(this)"></td>
-              <td><input type="number" name="labour_rate[]" value="{{ l.rate|default:0 }}" min="0" step="0.01" class="fi lab-rate" oninput="calcLabourRow(this)"></td>
+              <td><input type="number" name="labour_hours[]" value="{{ l.hours|default:1 }}" min="0" step="any" class="fi lab-hrs" oninput="calcLabourRow(this)"></td>
+              <td><input type="number" name="labour_rate[]" value="{{ l.rate|default:0 }}" min="0" step="0.001" class="fi lab-rate" oninput="calcLabourRow(this)"></td>
               <td style="text-align:right"><input type="number" name="labour_amount[]" value="{{ l.amount }}" readonly class="fi lab-amount" style="text-align:right; font-weight:700; font-family:monospace; background:#f8fafc"></td>
               <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>
             </tr>
@@ -1010,9 +510,7 @@
           {% else %}
             <tr>
               <td>
-                <select name="labour_vehicle_id[]" class="row-veh-select fi">
-                  <option value="">— Vehicle —</option>
-                </select>
+                <select name="labour_vehicle_id[]" class="row-veh-select fi"><option value="">— Vehicle —</option></select>
               </td>
               <td>
                 <select name="labour_technician[]" class="fi">
@@ -1021,8 +519,8 @@
                 </select>
               </td>
               <td><input type="text" name="labour_description[]" placeholder="Labour description..." class="fi"></td>
-              <td><input type="number" name="labour_hours[]" value="1" min="0" step="0.5" class="fi lab-hrs" oninput="calcLabourRow(this)"></td>
-              <td><input type="number" name="labour_rate[]" value="0" min="0" step="0.01" class="fi lab-rate" oninput="calcLabourRow(this)"></td>
+              <td><input type="number" name="labour_hours[]" value="1" min="0" step="any" class="fi lab-hrs" oninput="calcLabourRow(this)"></td>
+              <td><input type="number" name="labour_rate[]" value="0" min="0" step="0.001" class="fi lab-rate" oninput="calcLabourRow(this)"></td>
               <td style="text-align:right"><input type="number" name="labour_amount[]" value="0" readonly class="fi lab-amount" style="text-align:right; font-weight:700; font-family:monospace; background:#f8fafc"></td>
               <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>
             </tr>
@@ -1036,49 +534,33 @@
     </div>
   </div>
 
-  <!-- ════════════════════════════════
-       6. GRAND TOTALS SUMMARY
-  ════════════════════════════════ -->
+  <!-- 6. GRAND TOTALS -->
   <div class="grand-totals-card">
     <div class="gt-grid">
-      <div class="gt-item">
-        <div class="gt-lbl">{% trans "Parts Total" %}</div>
-        <div class="gt-val" id="gtParts">0.000</div>
-      </div>
-      <div class="gt-item">
-        <div class="gt-lbl">{% trans "Labour Total" %}</div>
-        <div class="gt-val" id="gtLabour">0.000</div>
-      </div>
-      <div class="gt-item highlight">
-        <div class="gt-lbl">{% trans "Grand Total" %}</div>
-        <div class="gt-val grand" id="gtGrand">0.000</div>
-      </div>
+      <div class="gt-item"><div class="gt-lbl">{% trans "Parts Total" %}</div><div class="gt-val" id="gtParts">0.000</div></div>
+      <div class="gt-item"><div class="gt-lbl">{% trans "Labour Total" %}</div><div class="gt-val" id="gtLabour">0.000</div></div>
+      <div class="gt-item highlight"><div class="gt-lbl">{% trans "Grand Total" %}</div><div class="gt-val grand" id="gtGrand">0.000</div></div>
     </div>
   </div>
 
-  <!-- Sticky Save Bar -->
   <div class="save-bar">
     <a href="{% url 'jobcard_app:jobcard_list' %}" class="btn-cancel">{% trans "Cancel" %}</a>
-    <button type="submit" class="btn-save">
-      <i class="bi bi-check2-circle"></i> {% trans "Save Job Card" %}
-    </button>
+    <button type="submit" class="btn-save"><i class="bi bi-check2-circle"></i> {% trans "Save Job Card" %}</button>
   </div>
 
   </form>
 </div>
 
-<!-- Modal Overlay for Selecting Complaints & Technician Findings -->
+<!-- Inspection picker modal -->
 <div id="inspModalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(3px);">
   <div style="background:#fff; border-radius:12px; width:92%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 40px rgba(0,0,0,0.3); overflow:hidden; border:1px solid #cbd5e1;">
-    <!-- Modal Header -->
     <div style="background:#1e293b; color:#fff; padding:14px 18px; display:flex; justify-content:space-between; align-items:center;">
       <div style="display:flex; align-items:center; gap:8px;">
         <i class="bi bi-search text-primary"></i>
         <span style="font-size:13.5px; font-weight:700; letter-spacing:0.3px;">{% trans "Select Customer Complaints & Technician Findings" %}</span>
       </div>
-      <button type="button" onclick="closeInspPicker()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height:1; padding:0 4px;" title="Close Modal">✕</button>
+      <button type="button" onclick="closeInspPicker()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height:1; padding:0 4px;" title="Close">✕</button>
     </div>
-    <!-- Modal Body -->
     <div style="padding:18px; flex:1; overflow-y:auto; background:#f8fafc;">
       <div id="inspNoCustomer" style="padding:24px 18px; font-size:12.5px; color:#64748b; text-align:center; background:#fff; border-radius:8px; border:1px dashed #cbd5e1;">
         <i class="bi bi-exclamation-triangle text-warning d-block mb-2" style="font-size:18px;"></i>
@@ -1089,8 +571,8 @@
         {% trans "No inspection records found for the selected customer & vehicle(s)." %}
       </div>
     </div>
-    <!-- Modal Footer -->
     <div id="inspPickerFooter" style="display:none; padding:12px 18px; border-top:1px solid #e2e8f0; background:#fff; text-align:right;">
+      <span id="inspSelCountText" style="font-size:12px; margin-right:12px; color:#94a3b8;">0 items selected</span>
       <button type="button" onclick="closeInspPicker()" class="btn-cancel" style="padding:6px 14px; font-size:12px; margin-right:6px;">{% trans "Cancel" %}</button>
       <button type="button" onclick="loadSelectedInspectionItems()" class="btn-add" style="padding:6px 16px; font-size:12px;">{% trans "Load Selected into Job Card" %}</button>
     </div>
@@ -1098,16 +580,19 @@
 </div>
 
 <script>
-const VEH_URL = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
-const INSP_URL = "{% url 'jobcard_app:ajax_get_inspections' %}";
+const VEH_URL       = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
+const INSP_URL      = "{% url 'jobcard_app:ajax_get_inspections' %}";
+const ALL_ITEMS_URL = "{% url 'jobcard_app:ajax_get_all_items' %}";
 const catOpts  = `<option value="">— Category —</option>{% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}`;
 const techOpts = `{% for s in technicians %}<option value="{{ s.id }}">{{ s.staff_id }} — {{ s.full_name }}</option>{% endfor %}`;
 
 let customerVehicleCache = [];
+let allJcItems = [];
+let relationalMappingData = { categories: [], service_types: [], technicians: [], skills: [] };
+try { relationalMappingData = {{ relational_mapping_json|safe }}; }
+catch (e) { console.error('Error parsing relational mapping JSON:', e); }
 
-/* ══════════════════════════════════════════
-   VEHICLES TABLE
-══════════════════════════════════════════ */
+/* ══════════ VEHICLES TABLE ══════════ */
 function loadVehicles(cid, callback) {
   if (!cid) {
     customerVehicleCache = [];
@@ -1124,39 +609,47 @@ function loadVehicles(cid, callback) {
       customerVehicleCache = d.vehicles || [];
       if (d.customer_phone) {
         const phoneInp = document.getElementById('customerPhone');
-        if (phoneInp) phoneInp.value = d.customer_phone;
+        if (phoneInp && !phoneInp.value) phoneInp.value = d.customer_phone;   // never overwrite a saved phone
       }
       document.querySelectorAll('.veh-select').forEach(sel => populateVehSelect(sel));
-
+      document.querySelectorAll('.veh-select').forEach(sel => {
+        const o  = sel.options[sel.selectedIndex];
+        const mm = sel.closest('tr').querySelector('.veh-mm-box');
+        if (mm && o && o.dataset.mm) mm.value = o.dataset.mm;
+      });
       const tbody = document.getElementById('vehBody');
-      if (tbody && tbody.querySelectorAll('tr').length === 0 && customerVehicleCache.length > 0) {
-        addVehicleRow();
-      }
+      if (tbody && tbody.querySelectorAll('tr').length === 0 && customerVehicleCache.length > 0) addVehicleRow();
       checkVehEmpty();
+      refreshAllVehicleDropdowns();
       if (typeof callback === 'function') callback();
     })
     .catch(err => console.error('Error loading customer vehicles:', err));
 }
 
 function populateVehSelect(sel) {
-  const currentVal = sel.value;
+  const currentVal  = sel.value;
+  const currentOpt  = sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+  const currentText = currentOpt ? currentOpt.text : '';
+
   sel.innerHTML = '<option value="">— Select Vehicle —</option>';
   customerVehicleCache.forEach(v => {
-    const o = new Option(v.label, v.id);
-    o.dataset.mfr       = v.manufacturer_id || '';
-    o.dataset.model     = v.vehicle_model_id || '';
+    const num = v.veh_number || v.reg || v.label || '';
+    const o = new Option(num, v.id);          // show the vehicle number only, same as saved rows
+    o.dataset.mm        = v.mm_label || '';
     o.dataset.odo       = v.odometer || '';
     o.dataset.fuel      = v.fuel_type || '';
-    o.dataset.mm        = v.mm_label || '';
-    o.dataset.vehNumber = v.veh_number || v.label || '';
+    o.dataset.vehNumber = num;
     sel.add(o);
   });
-  if (currentVal && [...sel.options].some(o => String(o.value) === String(currentVal))) {
-    sel.value = currentVal;
-  } else {
-    sel.value = '';
+
+  // keep an already-saved vehicle even if the AJAX list doesn't contain it
+  if (currentVal && ![...sel.options].some(o => String(o.value) === String(currentVal))) {
+    const o = new Option(currentText, currentVal);
+    o.dataset.vehNumber = currentOpt ? (currentOpt.dataset.vehNumber || currentText) : currentText;
+    sel.add(o);
   }
-  onVehRowChange(sel, false);
+  sel.value = currentVal || '';
+  // no onVehRowChange() here: callers refresh once after all rows are populated
 }
 
 function addVehicleRow(vehicleIdToSelect, mileageVal, fuelVal) {
@@ -1166,7 +659,6 @@ function addVehicleRow(vehicleIdToSelect, mileageVal, fuelVal) {
     if (custSel) custSel.focus();
     return null;
   }
-
   const emptyDiv = document.getElementById('vehEmpty');
   if (emptyDiv) emptyDiv.style.display = 'none';
 
@@ -1177,11 +669,8 @@ function addVehicleRow(vehicleIdToSelect, mileageVal, fuelVal) {
     <td><input type="number" name="jc_vehicle_mileage[]" min="0" class="fi" placeholder="Mileage"></td>
     <td>
       <select name="jc_vehicle_fuel[]" class="fi">
-        <option value="empty">Empty</option>
-        <option value="1/4">1/4</option>
-        <option value="1/2" selected>1/2</option>
-        <option value="3/4">3/4</option>
-        <option value="full">Full</option>
+        <option value="empty">Empty</option><option value="1/4">1/4</option>
+        <option value="1/2" selected>1/2</option><option value="3/4">3/4</option><option value="full">Full</option>
       </select>
       <input type="hidden" name="jc_vehicle_notes[]" value="">
     </td>
@@ -1190,23 +679,17 @@ function addVehicleRow(vehicleIdToSelect, mileageVal, fuelVal) {
 
   const sel = tr.querySelector('.veh-select');
   populateVehSelect(sel);
-
-  if (vehicleIdToSelect) {
-    sel.value = vehicleIdToSelect;
-  } else if (customerVehicleCache.length === 1) {
-    sel.value = customerVehicleCache[0].id;
-  }
+  if (vehicleIdToSelect) sel.value = vehicleIdToSelect;
+  else if (customerVehicleCache.length === 1) sel.value = customerVehicleCache[0].id;
 
   if (mileageVal !== null && mileageVal !== undefined && mileageVal !== '') {
     const mInp = tr.querySelector('input[name="jc_vehicle_mileage[]"]');
     if (mInp) mInp.value = mileageVal;
   }
-
   if (fuelVal) {
     const fSel = tr.querySelector('select[name="jc_vehicle_fuel[]"]');
     if (fSel) fSel.value = fuelVal;
   }
-
   onVehRowChange(sel, true);
   return tr;
 }
@@ -1218,10 +701,8 @@ function onVehRowChange(sel, autoFill = true) {
 
   if (selectedId) {
     let duplicate = false;
-    document.querySelectorAll('.veh-select').forEach(otherSel => {
-      if (otherSel !== sel && String(otherSel.value) === String(selectedId)) {
-        duplicate = true;
-      }
+    document.querySelectorAll('.veh-select').forEach(other => {
+      if (other !== sel && String(other.value) === String(selectedId)) duplicate = true;
     });
     if (duplicate) {
       alert('This vehicle is already added to this job card.');
@@ -1237,13 +718,9 @@ function onVehRowChange(sel, autoFill = true) {
     if (mmCell) mmCell.value = o.dataset.mm || '';
     if (autoFill) {
       const mileageInp = tr.querySelector('input[name="jc_vehicle_mileage[]"]');
-      if (mileageInp && (!mileageInp.value || mileageInp.value === '0') && o.dataset.odo) {
-        mileageInp.value = o.dataset.odo;
-      }
+      if (mileageInp && (!mileageInp.value || mileageInp.value === '0') && o.dataset.odo) mileageInp.value = o.dataset.odo;
       const fuelSel = tr.querySelector('select[name="jc_vehicle_fuel[]"]');
-      if (fuelSel && o.dataset.fuel) {
-        [...fuelSel.options].forEach(fo => fo.selected = (fo.value === o.dataset.fuel));
-      }
+      if (fuelSel && o.dataset.fuel) [...fuelSel.options].forEach(fo => fo.selected = (fo.value === o.dataset.fuel));
     }
   } else if (!o || !o.value) {
     if (mmCell) mmCell.value = '';
@@ -1260,21 +737,17 @@ function removeVehRow(btn) {
 function checkVehEmpty() {
   const tbody = document.getElementById('vehBody');
   const emptyDiv = document.getElementById('vehEmpty');
-  if (tbody && emptyDiv) {
-    emptyDiv.style.display = (tbody.querySelectorAll('tr').length === 0) ? 'block' : 'none';
-  }
+  if (tbody && emptyDiv) emptyDiv.style.display = (tbody.querySelectorAll('tr').length === 0) ? 'block' : 'none';
 }
 
-/* ══════════════════════════════════════════
-   VEHICLE DROPDOWN SYNC
-══════════════════════════════════════════ */
+/* ══════════ VEHICLE DROPDOWN SYNC ══════════ */
 function getJobVehicleOptions() {
   const opts = [];
   document.querySelectorAll('#vehBody tr').forEach(tr => {
     const sel = tr.querySelector('.veh-select');
     if (sel && sel.value) {
-      const selectedOpt = sel.options[sel.selectedIndex];
-      const label = selectedOpt ? selectedOpt.text.trim() : '';
+      const o = sel.options[sel.selectedIndex];
+      const label = o ? ((o.dataset.vehNumber || o.text || '').trim()) : '';
       if (label) opts.push({ id: sel.value, label: label });
     }
   });
@@ -1282,11 +755,9 @@ function getJobVehicleOptions() {
 }
 
 function buildVehSelectHtml(selectedId) {
-  const opts = getJobVehicleOptions();
   let html = '<option value="">— Vehicle —</option>';
-  opts.forEach(o => {
-    const isSelected = String(o.id) === String(selectedId);
-    html += `<option value="${o.id}" ${isSelected ? 'selected' : ''}>${o.label}</option>`;
+  getJobVehicleOptions().forEach(o => {
+    html += `<option value="${o.id}" ${String(o.id) === String(selectedId) ? 'selected' : ''}>${o.label}</option>`;
   });
   return html;
 }
@@ -1294,9 +765,12 @@ function buildVehSelectHtml(selectedId) {
 function refreshAllVehicleDropdowns() {
   const opts = getJobVehicleOptions();
   document.querySelectorAll('.row-veh-select').forEach(sel => {
-    let current = sel.value;
-    if (!current && opts.length === 1) current = opts[0].id;
+    const saved = sel.dataset.saved || '';
+    let current = sel.value || saved;
+    // auto-pick the only vehicle for NEW rows only; saved rows keep their own vehicle
+    if (!current && !saved && opts.length === 1) current = opts[0].id;
     sel.innerHTML = buildVehSelectHtml(current);
+    sel.dataset.saved = '';
   });
   const addPartVeh = document.getElementById('addPartVehicle');
   if (addPartVeh) {
@@ -1306,182 +780,120 @@ function refreshAllVehicleDropdowns() {
   }
 }
 
-/* ══════════════════════════════════════════
-   ROW REMOVE
-══════════════════════════════════════════ */
+/* ══════════ ROW REMOVE ══════════ */
 function removeRow(btn) {
   const tbody = btn.closest('tbody');
-  const tr    = btn.closest('tr');
+  const tr = btn.closest('tr');
   if (tbody.rows.length > 1) tr.remove();
   else {
     tr.querySelectorAll('input[type=text],input[type=number]').forEach(i => i.value = '');
     tr.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
   }
-  calcTotals && calcTotals();
+  calcTotals();
 }
 
-/* ══════════════════════════════════════════
-   INSPECTION SELECTION COUNTER & TOGGLES
-══════════════════════════════════════════ */
+/* ══════════ INSPECTION PICKER ══════════ */
 function updateInspSelectedCount() {
-  const cCount = document.querySelectorAll('#inspList .pick-complaint:checked').length;
-  const fCount = document.querySelectorAll('#inspList .pick-finding:checked').length;
+  const c = document.querySelectorAll('#inspList .pick-complaint:checked').length;
+  const f = document.querySelectorAll('#inspList .pick-finding:checked').length;
   const el = document.getElementById('inspSelCountText');
   if (el) {
-    if (cCount === 0 && fCount === 0) {
-      el.textContent = '0 items selected';
-      el.style.color = '#94a3b8';
-    } else {
-      el.textContent = `${cCount} Complaint(s), ${fCount} Finding(s) selected`;
-      el.style.color = '#2563eb';
-    }
+    el.textContent = (c === 0 && f === 0) ? '0 items selected' : `${c} Complaint(s), ${f} Finding(s) selected`;
+    el.style.color = (c === 0 && f === 0) ? '#94a3b8' : '#2563eb';
   }
 }
-
 function toggleInspItem(rowEl, event) {
   if (event.target && event.target.tagName.toLowerCase() === 'input') return;
   const cb = rowEl.querySelector('input[type="checkbox"]');
-  if (cb) {
-    cb.checked = !cb.checked;
-    onInspItemCheckChange(cb);
-  }
+  if (cb) { cb.checked = !cb.checked; onInspItemCheckChange(cb); }
 }
-
 function onInspItemCheckChange(cb) {
   const rowEl = cb.closest('.insp-item-row');
   if (rowEl) {
     if (cb.checked) {
       const isFinding = cb.classList.contains('pick-finding');
-      rowEl.style.background = isFinding ? '#fffbeb' : '#f0f9ff';
+      rowEl.style.background  = isFinding ? '#fffbeb' : '#f0f9ff';
       rowEl.style.borderColor = isFinding ? '#d97706' : '#2563eb';
-      rowEl.style.boxShadow = isFinding ? '0 0 0 1px #d97706' : '0 0 0 1px #2563eb';
+      rowEl.style.boxShadow   = isFinding ? '0 0 0 1px #d97706' : '0 0 0 1px #2563eb';
     } else {
-      rowEl.style.background = '#ffffff';
-      rowEl.style.borderColor = '#cbd5e1';
-      rowEl.style.boxShadow = 'none';
+      rowEl.style.background = '#ffffff'; rowEl.style.borderColor = '#cbd5e1'; rowEl.style.boxShadow = 'none';
     }
   }
   updateInspSelectedCount();
 }
-
 function toggleGroupCheckboxes(masterCb, groupSelector) {
-  const groupDiv = masterCb.closest('.insp-group-box');
-  if (groupDiv) {
-    groupDiv.querySelectorAll(groupSelector).forEach(cb => {
-      cb.checked = masterCb.checked;
-      onInspItemCheckChange(cb);
-    });
-  }
+  const g = masterCb.closest('.insp-group-box');
+  if (g) g.querySelectorAll(groupSelector).forEach(cb => { cb.checked = masterCb.checked; onInspItemCheckChange(cb); });
 }
 
-/* ══════════════════════════════════════════
-   INSPECTION PICKER MODAL
-══════════════════════════════════════════ */
 function openInspPicker() {
   const overlay = document.getElementById('inspModalOverlay');
   if (overlay) overlay.style.display = 'flex';
 
   const custId = document.getElementById('custSel')?.value;
   const vehIds = getJobVehicleOptions().map(o => o.id).join(',');
-
   const noCustomer = document.getElementById('inspNoCustomer');
-  const list       = document.getElementById('inspList');
-  const empty      = document.getElementById('inspEmpty');
-  const footer     = document.getElementById('inspPickerFooter');
-
+  const list   = document.getElementById('inspList');
+  const empty  = document.getElementById('inspEmpty');
+  const footer = document.getElementById('inspPickerFooter');
   footer.style.display = 'none';
 
   if (!custId || !vehIds) {
-    noCustomer.style.display = 'block';
-    list.style.display       = 'none';
-    empty.style.display      = 'none';
+    noCustomer.style.display = 'block'; list.style.display = 'none'; empty.style.display = 'none';
     return;
   }
-
-  noCustomer.style.display = 'none';
-  empty.style.display      = 'none';
-  list.style.display       = 'block';
+  noCustomer.style.display = 'none'; empty.style.display = 'none'; list.style.display = 'block';
   list.innerHTML = '<div style="padding:24px;text-align:center;font-size:12.5px;color:#64748b">Loading complaints & technician findings...</div>';
 
-  const url = INSP_URL + '?customer_id=' + custId + '&vehicle_ids=' + vehIds;
-
-  fetch(url)
+  fetch(INSP_URL + '?customer_id=' + custId + '&vehicle_ids=' + vehIds)
     .then(r => r.json())
     .then(data => {
-      if (!data.inspections || !data.inspections.length) {
-        list.style.display  = 'none';
-        empty.style.display = 'block';
-        return;
-      }
+      if (!data.inspections || !data.inspections.length) { list.style.display = 'none'; empty.style.display = 'block'; return; }
+
+      const itemRow = (cls, accent, x, insp) => `
+        <div class="insp-item-row" onclick="toggleInspItem(this, event)"
+             style="display:flex; align-items:center; gap:8px; padding:6px 10px; margin-bottom:5px; border-radius:5px; background:#fff; border:1px solid #cbd5e1; cursor:pointer; user-select:none;">
+          <input type="checkbox" class="${cls}" onchange="onInspItemCheckChange(this)"
+                 style="width:16px; height:16px; min-width:16px; margin:0; cursor:pointer; accent-color:${accent};"
+                 data-desc="${x.description.replace(/"/g,'&quot;')}" data-veh="${insp.vehicle_id}" data-veh-num="${insp.vehicle_number}">
+          <span style="font-size:12px; font-weight:600; color:#1e293b; flex:1; line-height:1.4;">${x.description}</span>
+        </div>`;
 
       list.innerHTML = data.inspections.map(insp => `
-        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:12px 14px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
-          <!-- Vehicle Identification Header -->
+        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:12px 14px; margin-bottom:12px;">
           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:8px; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
             <div>
               <span style="font-size:12.5px; font-weight:700; color:#1e293b;">📋 Inspection ${insp.inspection_number}</span>
               <span style="font-size:11px; color:#64748b; margin-left:6px;">(${insp.date})</span>
             </div>
-            <div style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; padding:3px 8px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
-              🚗 Vehicle: ${insp.vehicle_number || 'N/A'}
-            </div>
+            <div style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; padding:3px 8px; font-size:11px; font-weight:700;">🚗 Vehicle: ${insp.vehicle_number || 'N/A'}</div>
           </div>
           <div style="font-size:11px; color:#475569; margin-bottom:10px; background:#f8fafc; padding:5px 8px; border-radius:5px; border:1px solid #e2e8f0;">
-            <strong>Vehicle Details:</strong> ${insp.vehicle_label || '—'} ${insp.odometer ? ' &nbsp;•&nbsp; 📍 ' + insp.odometer + ' km' : ''}
+            <strong>Vehicle Details:</strong> ${insp.vehicle_label || '—'} ${insp.odometer ? ' &nbsp;•&nbsp; ' + insp.odometer + ' km' : ''}
           </div>
-
-          <!-- Customer Complaints Section -->
-          ${insp.complaints && insp.complaints.length > 0 ? `
+          ${insp.complaints && insp.complaints.length ? `
             <div class="insp-group-box" style="margin-bottom:10px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:8px 10px;">
-              <div style="font-size:10.5px; font-weight:700; color:#0369a1; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <span>🗣️ CUSTOMER COMPLAINTS</span>
-                  <label style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#0369a1; cursor:pointer; background:#e0f2fe; padding:2px 6px; border-radius:4px; font-weight:600; border:1px solid #93c5fd;" onclick="event.stopPropagation();">
-                    <input type="checkbox" onchange="toggleGroupCheckboxes(this, '.pick-complaint')" style="cursor:pointer; width:13px; height:13px; accent-color:#2563eb;">
-                    <span>Select All</span>
-                  </label>
-                </div>
-                <span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:10px; font-weight:700;">Vehicle: ${insp.vehicle_number}</span>
+              <div style="font-size:10.5px; font-weight:700; color:#0369a1; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                <span>🗣️ CUSTOMER COMPLAINTS</span>
+                <label style="display:inline-flex; align-items:center; gap:4px; font-size:10px; cursor:pointer;" onclick="event.stopPropagation();">
+                  <input type="checkbox" onchange="toggleGroupCheckboxes(this, '.pick-complaint')"> <span>Select All</span>
+                </label>
               </div>
-              ${insp.complaints.map(c => `
-                <div class="insp-item-row" onclick="toggleInspItem(this, event)"
-                     style="display:flex; align-items:center; gap:8px; padding:6px 10px; margin-bottom:5px; border-radius:5px; background:#ffffff; border:1px solid #cbd5e1; cursor:pointer; user-select:none; transition:all 0.15s ease;">
-                  <input type="checkbox" class="pick-complaint" onchange="onInspItemCheckChange(this)"
-                         style="display:inline-block !important; visibility:visible !important; opacity:1 !important; width:16px !important; height:16px !important; min-width:16px !important; margin:0 !important; cursor:pointer !important; accent-color:#2563eb !important; position:relative !important; z-index:10 !important; -webkit-appearance:checkbox !important; appearance:checkbox !important;"
-                         data-desc="${c.description.replace(/"/g,'&quot;')}"
-                         data-veh="${insp.vehicle_id}"
-                         data-veh-num="${insp.vehicle_number}">
-                  <span style="font-size:12px; font-weight:600; color:#1e293b; flex:1; line-height:1.4;">${c.description}</span>
-                </div>`).join('')}
+              ${insp.complaints.map(c => itemRow('pick-complaint', '#2563eb', c, insp)).join('')}
             </div>` : ''}
-
-          <!-- Technician Findings Section -->
-          ${insp.findings && insp.findings.length > 0 ? `
+          ${insp.findings && insp.findings.length ? `
             <div class="insp-group-box" style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:8px 10px;">
-              <div style="font-size:10.5px; font-weight:700; color:#b45309; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <span>🔧 TECHNICIAN FINDINGS</span>
-                  <label style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#b45309; cursor:pointer; background:#fef3c7; padding:2px 6px; border-radius:4px; font-weight:600; border:1px solid #fcd34d;" onclick="event.stopPropagation();">
-                    <input type="checkbox" onchange="toggleGroupCheckboxes(this, '.pick-finding')" style="cursor:pointer; width:13px; height:13px; accent-color:#d97706;">
-                    <span>Select All</span>
-                  </label>
-                </div>
-                <span style="font-size:10px; background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:10px; font-weight:700;">Vehicle: ${insp.vehicle_number}</span>
+              <div style="font-size:10.5px; font-weight:700; color:#b45309; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                <span>🔧 TECHNICIAN FINDINGS</span>
+                <label style="display:inline-flex; align-items:center; gap:4px; font-size:10px; cursor:pointer;" onclick="event.stopPropagation();">
+                  <input type="checkbox" onchange="toggleGroupCheckboxes(this, '.pick-finding')"> <span>Select All</span>
+                </label>
               </div>
-              ${insp.findings.map(f => `
-                <div class="insp-item-row" onclick="toggleInspItem(this, event)"
-                     style="display:flex; align-items:center; gap:8px; padding:6px 10px; margin-bottom:5px; border-radius:5px; background:#ffffff; border:1px solid #cbd5e1; cursor:pointer; user-select:none; transition:all 0.15s ease;">
-                  <input type="checkbox" class="pick-finding" onchange="onInspItemCheckChange(this)"
-                         style="display:inline-block !important; visibility:visible !important; opacity:1 !important; width:16px !important; height:16px !important; min-width:16px !important; margin:0 !important; cursor:pointer !important; accent-color:#d97706 !important; position:relative !important; z-index:10 !important; -webkit-appearance:checkbox !important; appearance:checkbox !important;"
-                         data-desc="${f.description.replace(/"/g,'&quot;')}"
-                         data-veh="${insp.vehicle_id}"
-                         data-veh-num="${insp.vehicle_number}">
-                  <span style="font-size:12px; font-weight:600; color:#1e293b; flex:1; line-height:1.4;">${f.description}</span>
-                </div>`).join('')}
+              ${insp.findings.map(f => itemRow('pick-finding', '#d97706', f, insp)).join('')}
             </div>` : ''}
         </div>`).join('');
 
-      footer.style.display = 'flex';
+      footer.style.display = 'block';
       updateInspSelectedCount();
     })
     .catch(err => {
@@ -1496,100 +908,71 @@ function closeInspPicker() {
 }
 
 function loadSelectedInspectionItems() {
-  const checkedComplaints = document.querySelectorAll('#inspList .pick-complaint:checked');
-  const checkedFindings   = document.querySelectorAll('#inspList .pick-finding:checked');
-
-  if (!checkedComplaints.length && !checkedFindings.length) {
-    alert('Please select at least one complaint or technician finding to load by clicking its checkbox.');
-    return;
-  }
+  const cc = document.querySelectorAll('#inspList .pick-complaint:checked');
+  const ff = document.querySelectorAll('#inspList .pick-finding:checked');
+  if (!cc.length && !ff.length) { alert('Please select at least one complaint or technician finding.'); return; }
 
   const defaultRow = document.getElementById('cmpDefaultRow');
   const tbody = document.getElementById('complaintBody');
-
-  checkedComplaints.forEach(cb => {
-    addComplaint(cb.dataset.desc, '#f0f9ff', cb.dataset.veh);
-  });
-
-  checkedFindings.forEach(cb => {
-    addComplaint(cb.dataset.desc, '#fffbeb', cb.dataset.veh);
-  });
+  cc.forEach(cb => addComplaint(cb.dataset.desc, '#f0f9ff', cb.dataset.veh));
+  ff.forEach(cb => addComplaint(cb.dataset.desc, '#fffbeb', cb.dataset.veh));
 
   if (defaultRow && tbody) {
-    const descInp = defaultRow.querySelector('input[name="complaint_description[]"]');
-    if (descInp && !descInp.value.trim() && tbody.querySelectorAll('tr').length > 1) {
-      defaultRow.remove();
-    }
+    const d = defaultRow.querySelector('input[name="complaint_description[]"]');
+    if (d && !d.value.trim() && tbody.querySelectorAll('tr').length > 1) defaultRow.remove();
   }
-
   closeInspPicker();
 
   const banner = document.getElementById('inspBanner');
-  const text   = document.getElementById('inspBannerText');
+  const text = document.getElementById('inspBannerText');
   if (banner && text) {
-    text.innerHTML = `✅ Loaded ${checkedComplaints.length} Customer Complaint(s) and ${checkedFindings.length} Technician Finding(s) into Job Card.`;
+    text.innerHTML = `✅ Loaded ${cc.length} Customer Complaint(s) and ${ff.length} Technician Finding(s) into Job Card.`;
     banner.style.display = 'flex';
   }
 }
 
-/* ══════════════════════════════════════════
-   RELATIONAL MAPPING
-══════════════════════════════════════════ */
-let relationalMappingData = { categories: [], technicians: [], skills: [] };
-try {
-  relationalMappingData = {{ relational_mapping_json|safe }};
-} catch (e) {
-  console.error("Error parsing relational mapping JSON:", e);
-}
-
+/* ══════════ SERVICE TYPE / SKILL MAPPING ══════════ */
+// Option values: "st_<id>" = Service Type, "<id>" = Complaint Type (matches what the server expects)
 function populateTypeSelect(typeSelect, categoryData, initialTypeId = '') {
   if (!typeSelect) return;
-  typeSelect.innerHTML = '<option value="">— Service / Complaint Type —</option>';
+  typeSelect.innerHTML = '<option value="">— Service Type —</option>';
   if (!categoryData) return;
+  const want = String(initialTypeId || '');
 
-  if (categoryData.service_types && categoryData.service_types.length > 0) {
-    const groupSt = document.createElement('optgroup');
-    groupSt.label = 'Service Types';
+  if (categoryData.service_types && categoryData.service_types.length) {
+    const g = document.createElement('optgroup');
+    g.label = 'Service Types';
     categoryData.service_types.forEach(st => {
       const opt = document.createElement('option');
       opt.value = 'st_' + st.id;
       opt.textContent = st.code ? `${st.code} — ${st.name}` : st.name;
-      opt.dataset.skillId = st.skill_id || 0;
+      opt.dataset.skillId   = st.skill_id || 0;
       opt.dataset.skillName = st.skill_name || '';
-      opt.dataset.serviceTypeId = st.id;
-      if (initialTypeId && (String(st.id) === String(initialTypeId) || String('st_' + st.id) === String(initialTypeId))) {
-        opt.selected = true;
-      }
-      groupSt.appendChild(opt);
+      if (want && want === opt.value) opt.selected = true;     // exact match only
+      g.appendChild(opt);
     });
-    typeSelect.appendChild(groupSt);
+    typeSelect.appendChild(g);
   }
-
-  if (categoryData.complaints && categoryData.complaints.length > 0) {
-    const groupCt = document.createElement('optgroup');
-    groupCt.label = 'Complaint Types';
+  if (categoryData.complaints && categoryData.complaints.length) {
+    const g = document.createElement('optgroup');
+    g.label = 'Common Complaints';
     categoryData.complaints.forEach(ct => {
       const opt = document.createElement('option');
-      opt.value = ct.id;
+      opt.value = String(ct.id);
       opt.textContent = ct.name;
-      opt.dataset.skillId = ct.skill_id || 0;
+      opt.dataset.skillId   = ct.skill_id || 0;
       opt.dataset.skillName = ct.skill_name || '';
-      opt.dataset.complaintTypeId = ct.id;
-      if (initialTypeId && String(ct.id) === String(initialTypeId)) {
-        opt.selected = true;
-      }
-      groupCt.appendChild(opt);
+      if (want && want === opt.value) opt.selected = true;
+      g.appendChild(opt);
     });
-    typeSelect.appendChild(groupCt);
+    typeSelect.appendChild(g);
   }
 }
 
 function handleCategoryChange(catSelect) {
   const tr = catSelect.closest('tr');
   const catTextHidden = tr.querySelector('.cat-txt');
-  if (catTextHidden) {
-    catTextHidden.value = catSelect.options[catSelect.selectedIndex]?.text || '';
-  }
+  if (catTextHidden) catTextHidden.value = catSelect.value ? (catSelect.options[catSelect.selectedIndex]?.text || '') : '';
 
   const catId = parseInt(catSelect.value, 10);
   const typeSelect = tr.querySelector('.complaint-type-select');
@@ -1602,49 +985,34 @@ function handleCategoryChange(catSelect) {
     const categoryData = catId ? relationalMappingData.categories.find(c => c.id === catId) : null;
     populateTypeSelect(typeSelect, categoryData);
     typeSelect.value = '';
-    const typeHiddenText = tr.querySelector('.type-txt');
-    if (typeHiddenText) typeHiddenText.value = '';
+    const th = tr.querySelector('.type-txt');
+    if (th) th.value = '';
   }
-
   if (overrideCb) overrideCb.checked = false;
   if (overrideHidden) overrideHidden.value = '0';
   if (skillBadge) skillBadge.innerHTML = '';
-
-  if (techSelect) {
-    updateTechnicianOptions(tr, 0, false);
-    techSelect.value = '';
-  }
+  if (techSelect) { updateTechnicianOptions(tr, 0, false); techSelect.value = ''; }
 }
 
 function handleComplaintTypeChange(typeSelect) {
   const tr = typeSelect.closest('tr');
-  const selectedOpt = typeSelect.options[typeSelect.selectedIndex];
-  const skillId = selectedOpt ? parseInt(selectedOpt.dataset.skillId || '0', 10) : 0;
-  const skillName = selectedOpt ? (selectedOpt.dataset.skillName || '') : '';
-
-  const typeHiddenText = tr.querySelector('.type-txt');
-  if (typeHiddenText) {
-    typeHiddenText.value = selectedOpt && typeSelect.value ? selectedOpt.textContent : '';
-  }
-
-  const overrideCb = tr.querySelector('.override-cb');
-  const isOverride = overrideCb ? overrideCb.checked : false;
-
-  updateTechnicianOptions(tr, skillId, isOverride, skillName);
+  const o = typeSelect.options[typeSelect.selectedIndex];
+  const skillId = o ? parseInt(o.dataset.skillId || '0', 10) : 0;
+  const skillName = o ? (o.dataset.skillName || '') : '';
+  const th = tr.querySelector('.type-txt');
+  if (th) th.value = (o && typeSelect.value) ? o.textContent : '';
+  const cb = tr.querySelector('.override-cb');
+  updateTechnicianOptions(tr, skillId, cb ? cb.checked : false, skillName);
 }
 
 function handleOverrideToggle(checkbox) {
   const tr = checkbox.closest('tr');
-  const overrideHidden = tr.querySelector('.override-hidden');
-  if (overrideHidden) {
-    overrideHidden.value = checkbox.checked ? '1' : '0';
-  }
-
+  const hid = tr.querySelector('.override-hidden');
+  if (hid) hid.value = checkbox.checked ? '1' : '0';
   const typeSelect = tr.querySelector('.complaint-type-select');
-  const selectedOpt = typeSelect ? typeSelect.options[typeSelect.selectedIndex] : null;
-  const skillId = selectedOpt ? parseInt(selectedOpt.dataset.skillId || '0', 10) : 0;
-  const skillName = selectedOpt ? (selectedOpt.dataset.skillName || '') : '';
-
+  const o = typeSelect ? typeSelect.options[typeSelect.selectedIndex] : null;
+  const skillId = o ? parseInt(o.dataset.skillId || '0', 10) : 0;
+  const skillName = o ? (o.dataset.skillName || '') : '';
   updateTechnicianOptions(tr, skillId, checkbox.checked, skillName);
 }
 
@@ -1655,425 +1023,279 @@ function updateTechnicianOptions(tr, skillId, isOverride, skillName = '') {
 
   const currentTechVal = techSelect.value || techSelect.dataset.initialTechId || '';
   techSelect.innerHTML = '<option value="">— Select Technician —</option>';
-
   let qualifiedCount = 0;
 
   relationalMappingData.technicians.forEach(t => {
     const isQualified = skillId ? t.skill_ids.includes(skillId) : true;
     if (isQualified) qualifiedCount++;
-
     if (isOverride || !skillId || isQualified) {
       const opt = document.createElement('option');
       opt.value = t.id;
       opt.textContent = `${t.staff_id ? t.staff_id + ' — ' : ''}${t.full_name}${isQualified && skillId ? ' ★' : ''}`;
-      opt.dataset.isQualified = isQualified ? '1' : '0';
-      if (String(t.id) === String(currentTechVal)) {
-        opt.selected = true;
-      }
+      if (String(t.id) === String(currentTechVal)) opt.selected = true;
       techSelect.appendChild(opt);
     }
   });
-
-  if (currentTechVal && techSelect.querySelector(`option[value="${currentTechVal}"]`)) {
-    techSelect.value = currentTechVal;
-  }
+  if (currentTechVal && techSelect.querySelector(`option[value="${currentTechVal}"]`)) techSelect.value = currentTechVal;
 
   if (skillBadge) {
     if (skillId && skillName) {
-      if (isOverride) {
-        skillBadge.innerHTML = `<span style="font-size:10px;color:#d97706;background:#fef3c7;padding:2px 6px;border-radius:4px;display:inline-block">⚙️ Override (Req: ${skillName})</span>`;
-      } else {
-        skillBadge.innerHTML = `<span style="font-size:10px;color:#2563eb;background:#eff6ff;padding:2px 6px;border-radius:4px;display:inline-block">🎯 Skill: <strong>${skillName}</strong> (${qualifiedCount} spec.)</span>`;
-      }
-    } else {
-      skillBadge.innerHTML = '';
-    }
+      skillBadge.innerHTML = isOverride
+        ? `<span style="font-size:10px;color:#d97706;background:#fef3c7;padding:2px 6px;border-radius:4px">⚙️ Override (Req: ${skillName})</span>`
+        : `<span style="font-size:10px;color:#2563eb;background:#eff6ff;padding:2px 6px;border-radius:4px">🎯 ${skillName} (${qualifiedCount})</span>`;
+    } else skillBadge.innerHTML = '';
   }
 }
 
 function initComplaintRows() {
   document.querySelectorAll('#complaintBody tr').forEach(tr => {
-    const catSelect = tr.querySelector('.complaint-cat-select');
+    const catSelect  = tr.querySelector('.complaint-cat-select');
     const typeSelect = tr.querySelector('.complaint-type-select');
     const techSelect = tr.querySelector('.complaint-tech-select');
     const overrideCb = tr.querySelector('.override-cb');
+    const initialTypeId = typeSelect ? (typeSelect.dataset.initialTypeId || '') : '';
+    const initialTechId = techSelect ? (techSelect.dataset.initialTechId || '') : '';
 
-    const initialTypeId = typeSelect ? typeSelect.dataset.initialTypeId : '';
-    const initialTechId = techSelect ? techSelect.dataset.initialTechId : '';
-
-    if (catSelect && catSelect.value) {
-      const catId = parseInt(catSelect.value, 10);
-      const categoryData = relationalMappingData.categories.find(c => c.id === catId);
-      populateTypeSelect(typeSelect, categoryData, initialTypeId);
+    if (typeSelect) {
+      let categoryData = null;
+      if (catSelect && catSelect.value) {
+        categoryData = relationalMappingData.categories.find(c => c.id === parseInt(catSelect.value, 10)) || null;
+      }
+      // Saved type but no (or mismatched) category: fall back to every service type so the saved value still shows
+      if (initialTypeId && (!categoryData || !typeHasOption(categoryData, initialTypeId))) {
+        categoryData = {
+          service_types: (relationalMappingData.service_types || []).map(st => ({
+            id: st.id, name: st.type_name, code: st.code, skill_id: st.skill_id, skill_name: st.skill_name
+          })),
+          complaints: categoryData ? categoryData.complaints : []
+        };
+      }
+      if (categoryData) populateTypeSelect(typeSelect, categoryData, initialTypeId);
     }
 
-    if (typeSelect && typeSelect.value) {
-      const selectedOpt = typeSelect.options[typeSelect.selectedIndex];
-      const skillId = selectedOpt ? parseInt(selectedOpt.dataset.skillId || '0', 10) : 0;
-      const skillName = selectedOpt ? (selectedOpt.dataset.skillName || '') : '';
-      const isOverride = overrideCb ? overrideCb.checked : false;
-
-      updateTechnicianOptions(tr, skillId, isOverride, skillName);
-      if (initialTechId && techSelect) techSelect.value = initialTechId;
-    } else if (tr) {
-      const isOverride = overrideCb ? overrideCb.checked : false;
-      updateTechnicianOptions(tr, 0, isOverride, '');
-      if (initialTechId && techSelect) techSelect.value = initialTechId;
-    }
+    const o = typeSelect && typeSelect.value ? typeSelect.options[typeSelect.selectedIndex] : null;
+    const skillId = o ? parseInt(o.dataset.skillId || '0', 10) : 0;
+    const skillName = o ? (o.dataset.skillName || '') : '';
+    updateTechnicianOptions(tr, skillId, overrideCb ? overrideCb.checked : false, skillName);
+    if (initialTechId && techSelect) techSelect.value = initialTechId;
   });
 }
 
-/* ══════════════════════════════════════════
-   ADD COMPLAINT / FINDING ROW
-══════════════════════════════════════════ */
+function typeHasOption(categoryData, value) {
+  const v = String(value);
+  if (v.startsWith('st_')) return (categoryData.service_types || []).some(st => 'st_' + st.id === v);
+  return (categoryData.complaints || []).some(ct => String(ct.id) === v);
+}
+
+/* ══════════ ADD COMPLAINT ROW ══════════ */
 function addComplaint(desc = '', bg = '', vehId = '') {
   const tr = document.createElement('tr');
   if (bg) tr.style.background = bg;
   tr.innerHTML = `
+    <td><select name="complaint_vehicle_id[]" class="row-veh-select fi">${buildVehSelectHtml(vehId)}</select></td>
     <td>
-      <select name="complaint_vehicle_id[]" class="row-veh-select fi">
-        ${buildVehSelectHtml(vehId)}
-      </select>
-    </td>
-    <td>
-      <select name="complaint_category_id[]" class="complaint-cat-select fi" onchange="handleCategoryChange(this)">
-        ${catOpts}
-      </select>
+      <select name="complaint_category_id[]" class="complaint-cat-select fi" onchange="handleCategoryChange(this)">${catOpts}</select>
       <input type="hidden" name="complaint_category[]" class="cat-txt">
     </td>
     <td>
       <select name="complaint_type_id[]" class="complaint-type-select fi" onchange="handleComplaintTypeChange(this)">
-        <option value="">— Complaint Type —</option>
+        <option value="">— Service Type —</option>
       </select>
       <input type="hidden" name="complaint_type[]" class="type-txt">
     </td>
+    <td><input type="text" name="complaint_description[]" value="${desc.replace(/"/g,'&quot;')}" placeholder="Describe complaint..." class="fi"></td>
     <td>
-      <input type="text" name="complaint_description[]"
-             value="${desc.replace(/"/g,'&quot;')}"
-             placeholder="Describe complaint..."
-             class="fi">
-    </td>
-    <td>
-      <select name="complaint_technician[]" class="complaint-tech-select fi">
-        <option value="">— Select Technician —</option>
-      </select>
+      <select name="complaint_technician[]" class="complaint-tech-select fi"><option value="">— Select Technician —</option></select>
       <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
+      <div class="override-wrap">
+        <label><input type="checkbox" class="override-cb" onchange="handleOverrideToggle(this)"> Show all</label>
+        <span class="skill-badge-info"></span>
+      </div>
     </td>
     <td>
       <select name="complaint_status[]" class="fi">
-        <option value="Open">Open</option>
-        <option value="In Progress">In Progress</option>
-        <option value="Resolved">Resolved</option>
+        <option value="Open">Open</option><option value="In Progress">In Progress</option><option value="Resolved">Resolved</option>
       </select>
     </td>
-    <td style="text-align:center">
-      <button type="button" class="btn-rm" onclick="removeRow(this)">✕</button>
-    </td>`;
+    <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this)">✕</button></td>`;
   document.getElementById('complaintBody').appendChild(tr);
   updateTechnicianOptions(tr, 0, false);
   refreshAllVehicleDropdowns();
 }
 
-/* ══════════════════════════════════════════
-   SPARE PARTS
-══════════════════════════════════════════ */
-const ALL_ITEMS_URL = "{% url 'jobcard_app:ajax_get_all_items' %}";
-let allJcItems = [];
-
-document.addEventListener('DOMContentLoaded', function () {
-  {% if not edit_mode %}
-  const voucherTypeInput = document.getElementById('id_voucherType');
-  if (voucherTypeInput && voucherTypeInput.value) {
-    updateJobVoucherNumber(voucherTypeInput.value);
-  }
-  {% endif %}
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-  initComplaintRows();
-  refreshAllVehicleDropdowns();
-
-  const jcForm = document.querySelector('form');
-  if (jcForm) {
-    jcForm.addEventListener('submit', function(e) {
-      let isValid = true;
-      let errorMessage = '';
-
-      document.querySelectorAll('#complaintBody tr').forEach((tr, index) => {
-        const typeSelect = tr.querySelector('.complaint-type-select');
-        const techSelect = tr.querySelector('.complaint-tech-select');
-        const overrideCb = tr.querySelector('.override-cb');
-        const descInput = tr.querySelector('input[name="complaint_description[]"]');
-
-        if (!descInput || !descInput.value.trim()) return;
-
-        const techId = techSelect ? techSelect.value : '';
-        const isOverride = overrideCb ? overrideCb.checked : false;
-        const selectedTypeOpt = typeSelect ? typeSelect.options[typeSelect.selectedIndex] : null;
-        const skillId = selectedTypeOpt ? parseInt(selectedTypeOpt.dataset.skillId || '0', 10) : 0;
-        const skillName = selectedTypeOpt ? selectedTypeOpt.dataset.skillName || '' : '';
-
-        if (techId && skillId && !isOverride) {
-          const techObj = relationalMappingData.technicians.find(t => String(t.id) === String(techId));
-          if (techObj && !techObj.skill_ids.includes(skillId)) {
-            isValid = false;
-            errorMessage = `Row #${index + 1}: Technician '${techObj.full_name}' lacks required skill '${skillName}'. Enable 'Show All' (Manual Override) to assign this technician.`;
-          }
-        }
-      });
-
-      if (!isValid) {
-        e.preventDefault();
-        alert(errorMessage);
-      }
-    });
-  }
-
-  fetch(ALL_ITEMS_URL)
-    .then(r => r.json())
-    .then(data => {
-      allJcItems = data.items || [];
-      buildItemDropdown();
-      calcPartsTotal();
-    })
-    .catch(e => console.error('Items load error:', e));
-});
-
+/* ══════════ SPARE PARTS ══════════ */
 function buildItemDropdown() {
   const sel = document.getElementById('addPartItem');
   if (!sel) return;
   sel.innerHTML = '<option value="">— Select Item —</option>';
   allJcItems.forEach(item => {
     const o = document.createElement('option');
-    o.value            = item.id;
-    o.textContent      = item.name;
-    o.dataset.name     = item.name;
-    o.dataset.code     = item.code  || '';
-    o.dataset.unit     = item.unit  || 'No';
-    o.dataset.rate     = item.unit_price;
+    o.value = item.id;
+    o.textContent = item.name;
+    o.dataset.name = item.name;
+    o.dataset.code = item.code || '';
+    o.dataset.unit = item.unit || 'No';
+    o.dataset.rate = item.unit_price;
     sel.appendChild(o);
   });
 }
-
 function onAddPartItemChange(sel) {
   const opt = sel.options[sel.selectedIndex];
   if (!opt || !opt.value) return;
-
   const partNoInp = document.getElementById('addPartNo');
-  const rateInp   = document.getElementById('addPartRate');
-
+  const rateInp = document.getElementById('addPartRate');
   if (partNoInp) partNoInp.value = opt.dataset.code || '';
-  if (rateInp)   rateInp.value  = parseFloat(opt.dataset.rate || 0).toFixed(3);
-
+  if (rateInp) rateInp.value = parseFloat(opt.dataset.rate || 0).toFixed(3);
   calcAddPartAmount();
 }
-
 function calcAddPartAmount() {
-  const qty  = parseFloat(document.getElementById('addPartQty')?.value)  || 0;
+  const qty  = parseFloat(document.getElementById('addPartQty')?.value) || 0;
   const rate = parseFloat(document.getElementById('addPartRate')?.value) || 0;
   const amtEl = document.getElementById('addPartAmount');
   if (amtEl) amtEl.value = (qty * rate).toFixed(3);
 }
-
 function commitAddPart() {
   const vehSel = document.getElementById('addPartVehicle');
-  const sel    = document.getElementById('addPartItem');
+  const sel = document.getElementById('addPartItem');
   const partNo = document.getElementById('addPartNo');
-  const qty    = document.getElementById('addPartQty');
-  const rate   = document.getElementById('addPartRate');
-  const amt    = document.getElementById('addPartAmount');
-
+  const qty = document.getElementById('addPartQty');
+  const rate = document.getElementById('addPartRate');
+  const amt = document.getElementById('addPartAmount');
   const opt = sel?.options[sel.selectedIndex];
-  if (!opt || !opt.value) {
-    alert('Please select an item first.');
-    sel?.focus();
-    return;
-  }
+  if (!opt || !opt.value) { alert('Please select an item first.'); sel?.focus(); return; }
 
-  const itemId   = opt.value;
-  const itemName = opt.dataset.name || opt.textContent.trim();
-  const qtyVal   = parseFloat(qty?.value) || 1;
-  const rateVal  = parseFloat(rate?.value) || 0;
-  const amtVal   = (qtyVal * rateVal).toFixed(3);
-  const vehId    = vehSel?.value || '';
+  const qtyVal = parseFloat(qty?.value) || 1;
+  const rateVal = parseFloat(rate?.value) || 0;
+  addPartRowToTable(opt.value, opt.dataset.name || opt.textContent.trim(), partNo?.value || '', qtyVal, rateVal, (qtyVal * rateVal).toFixed(3), vehSel?.value || '');
 
-  addPartRowToTable(itemId, itemName, partNo?.value || '', qtyVal, rateVal, amtVal, vehId);
-
-  if (vehSel)  vehSel.value = '';
-  if (sel)     sel.value    = '';
-  if (partNo)  partNo.value = '';
-  if (qty)     qty.value    = 1;
-  if (rate)    rate.value   = '0.000';
-  if (amt)     amt.value    = '0.000';
-
+  if (vehSel) vehSel.value = '';
+  if (sel) sel.value = '';
+  if (partNo) partNo.value = '';
+  if (qty) qty.value = 1;
+  if (rate) rate.value = '0.000';
+  if (amt) amt.value = '0.000';
   const emptyEl = document.getElementById('partsEmpty');
   if (emptyEl) emptyEl.style.display = 'none';
-
   calcPartsTotal();
 }
-
 function addPartRowToTable(itemId, itemName, partNo, qty, rate, amtVal, vehId = '') {
-  const tbody = document.getElementById('partsBody');
-  const tr    = document.createElement('tr');
+  const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td>
-      <select name="part_vehicle_id[]" class="row-veh-select fi">
-        ${buildVehSelectHtml(vehId)}
-      </select>
-    </td>
+    <td><select name="part_vehicle_id[]" class="row-veh-select fi">${buildVehSelectHtml(vehId)}</select></td>
     <td style="font-weight:500; color:#0f172a">
       ${itemName}
-      <input type="hidden" name="part_item[]"    value="${itemName}">
+      <input type="hidden" name="part_item[]" value="${itemName}">
       <input type="hidden" name="part_item_id[]" value="${itemId}">
     </td>
-    <td>
-      <input type="text" name="part_number[]" value="${partNo}" placeholder="Part No." class="fi">
-    </td>
-    <td>
-      <input type="number" name="part_qty[]" value="${qty}" min="0" step="0.01" class="fi pq" style="text-align:right" oninput="calcPartRow(this)">
-    </td>
-    <td>
-      <input type="number" name="part_rate[]" value="${parseFloat(rate).toFixed(3)}" min="0" step="0.001" class="fi pr" style="text-align:right" oninput="calcPartRow(this)">
-    </td>
+    <td><input type="text" name="part_number[]" value="${partNo}" placeholder="Part No." class="fi"></td>
+    <td><input type="number" name="part_qty[]" value="${qty}" min="0" step="0.01" class="fi pq" style="text-align:right" oninput="calcPartRow(this)"></td>
+    <td><input type="number" name="part_rate[]" value="${parseFloat(rate).toFixed(3)}" min="0" step="0.001" class="fi pr" style="text-align:right" oninput="calcPartRow(this)"></td>
     <td style="text-align:right; font-weight:700; font-family:monospace">
       <span class="pa">${amtVal}</span>
       <input type="hidden" name="part_amount[]" class="pa-inp" value="${amtVal}">
     </td>
-    <td style="text-align:center">
-      <button type="button" class="btn-rm" onclick="removePartRow(this)">✕</button>
-    </td>`;
-  tbody.appendChild(tr);
+    <td style="text-align:center"><button type="button" class="btn-rm" onclick="removePartRow(this)">✕</button></td>`;
+  document.getElementById('partsBody').appendChild(tr);
   refreshAllVehicleDropdowns();
 }
-
 function calcPartRow(inp) {
-  const tr   = inp.closest('tr');
-  const qty  = parseFloat(tr.querySelector('.pq')?.value)  || 0;
-  const rate = parseFloat(tr.querySelector('.pr')?.value)  || 0;
-  const amt  = (qty * rate).toFixed(3);
-  const span = tr.querySelector('.pa');
-  const hid  = tr.querySelector('.pa-inp');
+  const tr = inp.closest('tr');
+  const qty = parseFloat(tr.querySelector('.pq')?.value) || 0;
+  const rate = parseFloat(tr.querySelector('.pr')?.value) || 0;
+  const amt = (qty * rate).toFixed(3);
+  const span = tr.querySelector('.pa'); const hid = tr.querySelector('.pa-inp');
   if (span) span.textContent = amt;
-  if (hid)  hid.value        = amt;
+  if (hid) hid.value = amt;
   calcPartsTotal();
 }
-
 function removePartRow(btn) {
   btn.closest('tr').remove();
-  const tbody   = document.getElementById('partsBody');
+  const tbody = document.getElementById('partsBody');
   const emptyEl = document.getElementById('partsEmpty');
   if (emptyEl) emptyEl.style.display = tbody.rows.length === 0 ? 'block' : 'none';
   calcPartsTotal();
 }
-
 function calcPartsTotal() {
   let total = 0;
-  document.querySelectorAll('#partsBody .pa-inp').forEach(i => {
-    total += parseFloat(i.value) || 0;
-  });
+  document.querySelectorAll('#partsBody .pa-inp').forEach(i => total += parseFloat(i.value) || 0);
   const el = document.getElementById('partsTotal');
   if (el) el.textContent = total.toFixed(3);
   calcTotals();
 }
 
-/* ══════════════════════════════════════════
-   LABOUR
-══════════════════════════════════════════ */
+/* ══════════ LABOUR ══════════ */
 function addLabour() {
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td>
-      <select name="labour_vehicle_id[]" class="row-veh-select fi">
-        ${buildVehSelectHtml('')}
-      </select>
-    </td>
+    <td><select name="labour_vehicle_id[]" class="row-veh-select fi">${buildVehSelectHtml('')}</select></td>
     <td><select name="labour_technician[]" class="fi"><option value="">----------</option>${techOpts}</select></td>
     <td><input type="text" name="labour_description[]" placeholder="Labour description..." class="fi"></td>
-    <td><input type="number" name="labour_hours[]" value="1" min="0" step="0.5" class="fi lab-hrs" oninput="calcLabourRow(this)"></td>
-    <td><input type="number" name="labour_rate[]" value="0" min="0" step="0.01" class="fi lab-rate" oninput="calcLabourRow(this)"></td>
+    <td><input type="number" name="labour_hours[]" value="1" min="0" step="any" class="fi lab-hrs" oninput="calcLabourRow(this)"></td>
+    <td><input type="number" name="labour_rate[]" value="0" min="0" step="0.001" class="fi lab-rate" oninput="calcLabourRow(this)"></td>
     <td style="text-align:right"><input type="number" name="labour_amount[]" value="0" readonly class="fi lab-amount" style="text-align:right; font-weight:700; font-family:monospace; background:#f8fafc"></td>
     <td style="text-align:center"><button type="button" class="btn-rm" onclick="removeRow(this);calcTotals()">✕</button></td>`;
   document.getElementById('labourBody').appendChild(tr);
   refreshAllVehicleDropdowns();
 }
-
 function calcLabourRow(inp) {
-  const tr   = inp.closest('tr');
-  const hrs  = parseFloat(tr.querySelector('.lab-hrs').value) || 0;
+  const tr = inp.closest('tr');
+  const hrs = parseFloat(tr.querySelector('.lab-hrs').value) || 0;
   const rate = parseFloat(tr.querySelector('.lab-rate').value) || 0;
-  const amt  = tr.querySelector('.lab-amount');
+  const amt = tr.querySelector('.lab-amount');
   if (amt) amt.value = (hrs * rate).toFixed(3);
   calcTotals();
 }
 
-/* ══════════════════════════════════════════
-   TOTALS
-══════════════════════════════════════════ */
+/* ══════════ TOTALS ══════════ */
 function calcTotals() {
   let parts = 0, labour = 0;
   document.querySelectorAll('.pa-inp').forEach(i => parts += parseFloat(i.value) || 0);
   document.querySelectorAll('.lab-amount').forEach(i => labour += parseFloat(i.value) || 0);
-  const grand = parts + labour;
   document.getElementById('partsTotal').textContent  = parts.toFixed(3);
   document.getElementById('labourTotal').textContent = labour.toFixed(3);
-  document.getElementById('gtParts').textContent      = parts.toFixed(3);
-  document.getElementById('gtLabour').textContent     = labour.toFixed(3);
-  document.getElementById('gtGrand').textContent      = grand.toFixed(3);
+  document.getElementById('gtParts').textContent     = parts.toFixed(3);
+  document.getElementById('gtLabour').textContent    = labour.toFixed(3);
+  document.getElementById('gtGrand').textContent     = (parts + labour).toFixed(3);
 }
 
-function updateJobVoucherNumber(voucherTypeId) {
-  if (!voucherTypeId) return;
-  fetch("{% url 'jobcard_app:get_next_jobcard_number' %}?voucher_type_id=" + voucherTypeId)
-    .then(response => response.json())
-    .then(data => {
-      const num = data.voucher_number || data.job_number;
-      if (data.success && num) {
-        const voucherNumInput = document.getElementById('id_voucher_number');
-        const jobNumInput     = document.getElementById('id_job_number');
-        if (voucherNumInput) voucherNumInput.value = num;
-        if (jobNumInput)     jobNumInput.value     = num;
-      }
-    })
-    .catch(err => console.error('Error fetching next jobcard voucher number:', err));
-}
-
-/* Keep hidden job_number in sync whenever user edits the voucher number field */
+/* ══════════ PAGE LOAD ══════════ */
 document.addEventListener('DOMContentLoaded', function () {
-  const voucherInput = document.getElementById('id_voucher_number');
-  const jobNumInput  = document.getElementById('id_job_number');
-  if (voucherInput && jobNumInput) {
-    voucherInput.addEventListener('input', function () {
-      jobNumInput.value = voucherInput.value;
+  initComplaintRows();
+  refreshAllVehicleDropdowns();
+  calcTotals();
+
+  const jcForm = document.getElementById('jcForm');
+  if (jcForm) {
+    jcForm.addEventListener('submit', function (e) {
+      let errorMessage = '';
+      document.querySelectorAll('#complaintBody tr').forEach((tr, index) => {
+        const descInput = tr.querySelector('input[name="complaint_description[]"]');
+        if (!descInput || !descInput.value.trim()) return;
+        const techSelect = tr.querySelector('.complaint-tech-select');
+        const typeSelect = tr.querySelector('.complaint-type-select');
+        const overrideCb = tr.querySelector('.override-cb');
+        const techId = techSelect ? techSelect.value : '';
+        const o = typeSelect ? typeSelect.options[typeSelect.selectedIndex] : null;
+        const skillId = o ? parseInt(o.dataset.skillId || '0', 10) : 0;
+        const skillName = o ? (o.dataset.skillName || '') : '';
+        if (techId && skillId && !(overrideCb && overrideCb.checked)) {
+          const t = relationalMappingData.technicians.find(x => String(x.id) === String(techId));
+          if (t && !t.skill_ids.includes(skillId)) {
+            errorMessage = `Row #${index + 1}: Technician '${t.full_name}' lacks required skill '${skillName}'. Tick "Show all" to assign this technician anyway.`;
+          }
+        }
+      });
+      if (errorMessage) { e.preventDefault(); alert(errorMessage); }
     });
   }
-});
 
-document.addEventListener('DOMContentLoaded', calcTotals);
-document.addEventListener('DOMContentLoaded', function () {
+  fetch(ALL_ITEMS_URL)
+    .then(r => r.json())
+    .then(data => { allJcItems = data.items || []; buildItemDropdown(); calcPartsTotal(); })
+    .catch(e => console.error('Items load error:', e));
+
   const customerSelect = document.getElementById('custSel');
-  if (customerSelect && customerSelect.value) {
-    loadVehicles(customerSelect.value, function () {
-      document.querySelectorAll('.veh-select').forEach(sel => onVehRowChange(sel, false));
-    });
-  }
+  if (customerSelect && customerSelect.value) loadVehicles(customerSelect.value);
 });
 </script>
-
-{# ── Item Master data for JS dropdowns ─────────────────────────────── #}
-<script id="itemMasterData" type="application/json">{{ items_json|safe }}</script>
-
-{# ── Prefill Findings (technician findings from inspection) ─────────── #}
-{% if prefill_findings %}
-<ul id="prefillFindingsList" style="display:none;">
-  {% for f in prefill_findings %}<li>{{ f }}</li>{% endfor %}
-</ul>
-{% endif %}
-
-{# Inspection Complaints prefill data for JS and test assertions #}
-{% if insp_complaints %}
-<ul id="inspComplaintsList" style="display:none;">
-  {% for c in insp_complaints %}<li>{{ c.description }}</li>{% endfor %}
-</ul>
-{% endif %}
-
 {% endblock %}

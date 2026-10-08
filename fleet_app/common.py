@@ -205,7 +205,7 @@ def get_ledgers_by_group_names(*group_names):
 def filter_voucher_types(form, allowed_ids):
     #   
     form.fields['voucherType'].queryset = Vouchers.objects.filter(id__in=allowed_ids)
-    
+                 
 def create_ledger_postings_for_invoice(invoice):
     """
     Creates double-entry LedgerPosting entries for a Fleet Invoice instance.
@@ -286,9 +286,7 @@ def create_ledger_postings_for_invoice(invoice):
         print(f"✅ Ledger postings created for Invoice #{invoice.id} (Dr: {debit_ledger.ledger_name}, Cr: {credit_ledger.ledger_name}, Amount: {total_amount})")
 
     except Exception as e:
-        print(f"❌ Ledger posting failed for Invoice #{invoice.id}: {e}")
-        
-        
+        print(f"❌ Ledger posting failed for Invoice #{invoice.id}: {e}")      
 def create_ledger_postings_for_hire(fleet_hire):
     
     try:

@@ -1,0 +1,33 @@
+id,VoucherType,VoucherName,Prefix,Suffix,MinLength,StartingNo
+1,Hire,Hire,None,None,5,1
+2,Invoice,Invoice,None,None,5,1
+3,Payment,Payment,None,None,5,1
+4,Receipt,Receipt,None,None,5,1
+5,Receipt Bill Clearance,Receipt Bill Clearance,None,None,5,1
+6,Payment Bill Clearance,Payment Bill Clearance,None,None,5,1
+7,Contract,Contract,None,None,5,1
+8,Timesheet,Timesheet,None,None,5,1
+9,Quotation,Quotation,None,None,5,1
+10,Repair,Repair,None,None,5,1
+11,Expense Voucher,Expense Voucher,None,None,5,1
+12,Delivery Contract,Delivery Contract,None,None,5,1
+13,Purchase,Purchase,None,None,5,1
+14,Sales,Sales,None,None,5,1
+15,Off hire,Off hire,None,None,5,1
+16,Opening,Opening,None,None,5,1
+17,Asset Purchase,Asset Purchase,None,None,5,1
+18,Purchase Return,Purchase Return,None,None,5,1
+19,Sales Return,Sales Return,None,None,5,1
+20,Journal,Journal,None,None,5,1
+21,Contra,Contra,None,None,5,1
+22,Item Grv,Item Grv,None,None,5,1
+23,Asset Grv,Asset Grv,None,None,5,1
+24,Debit Note,Debit Note,None,None,5,1
+25,Credit Note,Credit Note,None,None,5,1
+26,Asset Opening,Asset Opening,None,None,5,1
+27,Replacement Note,Replacement Note,None,None,5,1
+28,PO,PO,None,None,5,1
+29,Opening Stock,Opening Stock,None,None,5,1
+30,Job Card,Job Card,None,None,5,1
+31,Estimate,Estimate,None,None,5,1
+32,Delivery Note,Delivery Note,None,None,5,1

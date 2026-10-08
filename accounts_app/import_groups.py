@@ -2,19 +2,14 @@ import psycopg2
 import csv
 import datetime
 # Database connection details
-DB_NAME = "SilverL"
+DB_NAME = "erp_db"
 DB_USER = "postgres"
-DB_PASS = "shnd6775"
+DB_PASS = "Admin"
 DB_HOST = "localhost"
 DB_PORT = "5432"
-# DB_HOST = 'Rbizgroup-4102.postgres.pythonanywhere-services.com'
-# DB_NAME = 'SilverL'
-# DB_USER = 'super'
-# DB_PASS = 'pass@12345678'
-# DB_PORT = '14102'
 
 # CSV file path
-CSV_FILE = "Accounts.csv"
+CSV_FILE = "accounts_app/Accounts.csv"
 
 # Connect to PostgreSQL
 conn = psycopg2.connect(
@@ -42,11 +37,19 @@ with open(CSV_FILE, "r", encoding="utf-8") as f:
         now = datetime.datetime.now()
 
         cur.execute("""
-            INSERT INTO accounts_app_groups 
+            INSERT INTO accounts_app_groups
             (id, "groupName", "groupId_id", "isDefault", "natureOfGroup", created_on, updated_on)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (id) DO NOTHING;
-        """, (
+
+            ON CONFLICT (id) DO UPDATE SET
+                "groupName" = EXCLUDED."groupName",
+                "groupId_id" = EXCLUDED."groupId_id",
+                "isDefault" = EXCLUDED."isDefault",
+                "natureOfGroup" = EXCLUDED."natureOfGroup",
+                updated_on = EXCLUDED.updated_on;
+               """,
+         
+          (
             row["id"],
             row["groupName"],
             group_id,

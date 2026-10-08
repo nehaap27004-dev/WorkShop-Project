@@ -12,21 +12,12 @@ body,input,select,textarea,button{font-family:'Segoe UI',system-ui,-apple-system
 /* ── Page title & metadata ── */
 .pg-hdr-box{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px}
 .pg-title{font-size:20px;font-weight:700;color:#0f172a;letter-spacing:-0.3px;margin-bottom:3px}
-.pg-meta{font-size:12px;color:#64748b;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.pg-meta span{display:flex;align-items:center;gap:5px}
-.currency-badge{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700}
 
 /* ── Cards ── */
 .card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden;transition:box-shadow .15s}
 .card:hover{box-shadow:0 4px 12px rgba(0,0,0,.05)}
 .card-hdr{padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9;background:#fafbfc}
 .card-hdr-left{display:flex;align-items:center;gap:10px}
-.card-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-.ci-blue  {background:#eff6ff;color:#2563eb}
-.ci-purple{background:#faf5ff;color:#9333ea}
-.ci-teal  {background:#f0fdfa;color:#0d9488}
-.ci-orange{background:#fff7ed;color:#ea580c}
-.ci-green {background:#f0fdf4;color:#16a34a}
 .card-title{font-size:14px;font-weight:700;color:#0f172a}
 .card-badge{background:#e2e8f0;color:#475569;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
 .card-body{padding:18px}
@@ -38,26 +29,23 @@ body,input,select,textarea,button{font-family:'Segoe UI',system-ui,-apple-system
 .fc{width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:8px 12px;font-size:13px;color:#0f172a;background:#fff;outline:none;font-family:inherit;transition:all .15s}
 .fc:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
 .fc::placeholder{color:#94a3b8}
-.fc:disabled{background:#f8fafc;color:#2563eb;font-family:monospace;font-weight:700;cursor:not-allowed}
+.fc[readonly]{background:#f8fafc;color:#2563eb;font-family:monospace;font-weight:700}
 select.fc{cursor:pointer;appearance:auto}
 textarea.fc{resize:vertical;min-height:72px}
 .fc-wrap{position:relative;display:flex;align-items:center}
-.fc-icon{position:absolute;left:10px;color:#94a3b8;font-size:13px;pointer-events:none}
 .fc.with-icon{padding-left:30px}
 
 /* ── Information layout grid ── */
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 @media(max-width:840px){.info-grid{grid-template-columns:1fr}}
-
 .fields-block{padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid #f1f5f9}
 .fields-block:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
 .fields-row{display:grid;gap:12px}
 .fr2{grid-template-columns:1fr 1fr}
-.fr3{grid-template-columns:1fr 1fr 1fr}
-@media(max-width:540px){.fr2,.fr3{grid-template-columns:1fr}}
+@media(max-width:540px){.fr2{grid-template-columns:1fr}}
 
 /* ── Document Loader Banner ── */
-.doc-loader-card{background:linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);border:1px solid #bfdbfe;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.doc-loader-card{background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);border:1px solid #bfdbfe;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
 .doc-loader-info{display:flex;align-items:center;gap:12px}
 .doc-loader-icon{width:38px;height:38px;background:#2563eb;color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .doc-loader-title{font-size:14px;font-weight:700;color:#1e40af;margin-bottom:2px}
@@ -149,8 +137,6 @@ table.inv-tbl tbody tr:hover input,table.inv-tbl tbody tr:hover select{backgroun
 .row-num{color:#94a3b8;font-size:11px;text-align:center;width:26px}
 .btn-rm{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:all .15s}
 .btn-rm:hover{color:#ef4444;background:#fef2f2}
-
-/* Item select in table */
 table.inv-tbl select.inv-item-sel{width:100%;border:1px solid transparent;border-radius:6px;padding:6px 9px;font-size:12.5px;color:#0f172a;background:transparent;outline:none;cursor:pointer}
 table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 
@@ -172,7 +158,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 .pay-divider{height:1px;background:#f1f5f9;margin:8px 0}
 .pay-total-box{background:#1e40af;border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-top:12px;box-shadow:0 4px 12px rgba(30,64,175,.2)}
 .ptb-label{font-size:12px;font-weight:700;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.5px}
-.ptb-sub  {font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
+.ptb-sub{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
 .ptb-value{font-size:22px;font-weight:700;color:#fff;font-family:monospace}
 .pay-balance-box{background:#fef9c3;border:1px solid #fde047;border-radius:9px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
 .pbb-label{font-size:12.5px;font-weight:700;color:#854d0e}
@@ -202,8 +188,6 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 .iopt:hover{background:#eff6ff;color:#2563eb}
 .iopt:last-child{border-bottom:none}
 .iopt-code{font-size:10px;color:#94a3b8;font-family:monospace;flex-shrink:0}
-
-
 </style>
 
 <div class="iw">
@@ -211,7 +195,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 <!-- Page Header -->
 <div class="pg-hdr-box">
   <div>
-    <div class="pg-title">{% if invoice %}Edit Invoice — {{ invoice.invoice_number }}{% else %}Create Invoice{% endif %}</div>
+    <div class="pg-title">{% if invoice %}Edit Invoice — {{ invoice.display_number }}{% else %}Create Invoice{% endif %}</div>
   </div>
 </div>
 
@@ -245,7 +229,6 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
       <button type="button" class="doc-modal-close" onclick="closeDocModal()" title="Close">✕</button>
     </div>
 
-    <!-- Search & Filters -->
     <div class="doc-modal-filter-bar">
       <div class="doc-modal-search-box">
         <span class="doc-modal-search-icon">🔍</span>
@@ -273,7 +256,6 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
       </div>
     </div>
 
-    <!-- Body / List -->
     <div class="doc-modal-body" id="docModalBody">
       <div id="docModalLoading" style="display:none;padding:40px 20px;text-align:center;color:#64748b;">
         <div class="doc-spinner"></div>
@@ -288,7 +270,6 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
       </div>
     </div>
 
-    <!-- Footer -->
     <div class="doc-modal-footer">
       <div class="doc-modal-selection-info" id="docModalSelectionInfo">
         <span style="color:#64748b;">Click a document to select, then click Load Selected Details</span>
@@ -319,8 +300,8 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
     </div>
   </div>
   <div class="card-body">
-    <input type="hidden" name="voucherType" id="id_voucherType"
-          value="{% if invoice and invoice.voucherType %}{{ invoice.voucherType.id }}{% else %}5{% endif %}">
+    <!-- Voucher type is fixed to Vouchers ID 2 (Invoice) -->
+    <input type="hidden" name="voucherType" id="id_voucherType" value="2">
 
     <div class="info-grid">
 
@@ -330,22 +311,21 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
           <div class="fields-row fr2">
             <div>
               <label class="fl">Voucher Number</label>
-              <input type="text" name="voucher_number" id="id_voucher_number" class="fc"
-                    placeholder="e.g. VCH-00001"
-                    value="{% if invoice %}{{ invoice.voucher_number|default:'' }}{% endif %}">
+              <input type="text" name="voucher_number" id="id_voucher_number" class="fc" readonly
+                     value="{% if invoice %}{{ invoice.voucher_number|default:'' }}{% else %}{{ next_voucher_number|default:'' }}{% endif %}">
             </div>
             <div>
-              <label class="fl">Invoice Number <span class="req">*</span></label>
-              <input type="text" name="invoice_number" class="fc" required
-                    placeholder="Enter invoice number"
-                    value="{% if invoice %}{{ invoice.invoice_number }}{% endif %}">
+              <label class="fl">Invoice Number</label>
+              <input type="text" name="invoice_number" class="fc" maxlength="20"
+                     placeholder="Optional (letters / numbers)"
+                     value="{% if invoice and invoice.invoice_number %}{{ invoice.invoice_number }}{% endif %}">
             </div>
           </div>
           <div class="fields-row fr2" style="margin-top:12px">
             <div>
               <label class="fl">Invoice Date <span class="req">*</span></label>
               <input type="date" name="invoice_date" class="fc" required
-                    value="{% if invoice %}{{ invoice.invoice_date|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}">
+                     value="{% if invoice %}{{ invoice.invoice_date|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}">
             </div>
           </div>
         </div>
@@ -385,12 +365,12 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
             <div>
               <label class="fl">Invoice Status</label>
               <select name="status" class="fc">
-                <option value="draft"    {% if not invoice or invoice.status == 'draft'    %}selected{% endif %}>Draft</option>
-                <option value="sent"     {% if invoice and invoice.status == 'sent'        %}selected{% endif %}>Sent</option>
-                <option value="paid"     {% if invoice and invoice.status == 'paid'        %}selected{% endif %}>Paid</option>
-                <option value="partial"  {% if invoice and invoice.status == 'partial'     %}selected{% endif %}>Partially Paid</option>
-                <option value="overdue"  {% if invoice and invoice.status == 'overdue'     %}selected{% endif %}>Overdue</option>
-                <option value="cancelled"{% if invoice and invoice.status == 'cancelled'   %}selected{% endif %}>Cancelled</option>
+                <option value="draft"     {% if not invoice or invoice.status == 'draft'     %}selected{% endif %}>Draft</option>
+                <option value="sent"      {% if invoice and invoice.status == 'sent'         %}selected{% endif %}>Sent</option>
+                <option value="paid"      {% if invoice and invoice.status == 'paid'         %}selected{% endif %}>Paid</option>
+                <option value="partial"   {% if invoice and invoice.status == 'partial'      %}selected{% endif %}>Partially Paid</option>
+                <option value="overdue"   {% if invoice and invoice.status == 'overdue'      %}selected{% endif %}>Overdue</option>
+                <option value="cancelled" {% if invoice and invoice.status == 'cancelled'    %}selected{% endif %}>Cancelled</option>
               </select>
             </div>
           </div>
@@ -443,8 +423,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
   <div class="card-hdr" style="justify-content:space-between">
     <span class="card-title">Vehicle</span>
     <button type="button" onclick="addInvVehicleRow()"
-            style="background:#2563eb;color:#fff;border:none;border-radius:5px;
-                   padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">
+            style="background:#2563eb;color:#fff;border:none;border-radius:5px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">
       + Add Vehicle
     </button>
   </div>
@@ -474,7 +453,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
               </td>
               <td>
                 <input type="text" class="fc" readonly
-                      value="{{ iv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ iv.vehicle.vehicle_model.model_name|default:'' }}">
+                       value="{{ iv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ iv.vehicle.vehicle_model.model_name|default:'' }}">
               </td>
               <td><input type="number" name="inv_vehicle_mileage[]" value="{{ iv.mileage|default:'' }}" min="0" class="fc"></td>
               <td>
@@ -498,7 +477,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
               </td>
               <td>
                 <input type="text" class="fc" readonly
-                      value="{{ dv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ dv.vehicle.vehicle_model.model_name|default:'' }}">
+                       value="{{ dv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ dv.vehicle.vehicle_model.model_name|default:'' }}">
               </td>
               <td><input type="number" name="inv_vehicle_mileage[]" value="{{ dv.mileage|default:'' }}" min="0" class="fc"></td>
               <td>
@@ -541,11 +520,11 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
           <th style="width:110px">Part Code</th>
           <th style="width:65px">Qty</th>
           <th style="width:85px">Unit</th>
-          <th style="width:105px">Rate </th>
+          <th style="width:105px">Rate</th>
           <th style="width:55px">Disc %</th>
           <th style="width:55px">Tax %</th>
           <th style="width:75px">Tax Amt</th>
-          <th class="num" style="width:100px">Total </th>
+          <th class="num" style="width:100px">Total</th>
           <th style="width:30px"></th>
         </tr>
       </thead>
@@ -584,7 +563,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
   </div>
   <div class="tbl-subtotal">
     <span>Spare Parts Total:</span>
-    <span>Tax  <strong id="partsTaxTotal">0.000</strong></span>
+    <span>Tax <strong id="partsTaxTotal">0.000</strong></span>
     <span style="font-size:14px;font-weight:700;color:#0f172a"><strong id="partsTotal">0.000</strong></span>
   </div>
 </div>
@@ -611,10 +590,10 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
           <th style="width:30%">Description / Work Done</th>
           <th style="width:18%">Technician</th>
           <th style="width:70px">Hours</th>
-          <th style="width:100px">Rate / Hr </th>
+          <th style="width:100px">Rate / Hr</th>
           <th style="width:55px">Tax %</th>
           <th style="width:75px">Tax Amt</th>
-          <th class="num" style="width:100px">Total </th>
+          <th class="num" style="width:100px">Total</th>
           <th style="width:30px"></th>
         </tr>
       </thead>
@@ -729,7 +708,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
           <th style="width:120px">Amount</th>
           <th style="width:55px">Tax %</th>
           <th style="width:85px">Tax Amt</th>
-          <th class="num" style="width:110px">Total </th>
+          <th class="num" style="width:110px">Total</th>
           <th style="width:30px"></th>
         </tr>
       </thead>
@@ -775,8 +754,8 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
   </div>
   <div class="tbl-subtotal">
     <span>Other Charges Total:</span>
-    <span>Tax  <strong id="otherTaxTotal">0.000</strong></span>
-    <span style="font-size:14px;font-weight:700;color:#0f172a"> <strong id="otherTotal">0.000</strong></span>
+    <span>Tax <strong id="otherTaxTotal">0.000</strong></span>
+    <span style="font-size:14px;font-weight:700;color:#0f172a"><strong id="otherTotal">0.000</strong></span>
   </div>
 </div>
 
@@ -784,40 +763,38 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 <!-- 5. PAYMENT SUMMARY + NOTES                    -->
 <!-- ══════════════════════════════════════════════ -->
 <div class="pay-layout">
-  <!-- Notes -->
   <div class="notes-area">
     <label>Notes / Remarks</label>
     <textarea name="notes" placeholder="Additional notes or payment instructions for the customer...">{% if invoice %}{{ invoice.notes }}{% endif %}</textarea>
   </div>
 
-  <!-- Payment summary card -->
   <div class="pay-summary">
     <div class="pay-summary-hdr">
-      <span>Payment Summary </span>
+      <span>Payment Summary</span>
     </div>
     <div class="pay-summary-body">
       <div class="pay-row">
         <span class="pl">Spare Parts</span>
-        <span class="pv" id="sumParts"> 0.000</span>
+        <span class="pv" id="sumParts">0.000</span>
       </div>
       <div class="pay-row">
-        <span class="pl pv small" style="padding-left:12px">Tax  <span id="sumPartsTax">0.000</span></span>
+        <span class="pl pv small" style="padding-left:12px">Tax <span id="sumPartsTax">0.000</span></span>
         <span></span>
       </div>
       <div class="pay-row">
         <span class="pl">Labour Charges</span>
-        <span class="pv" id="sumLabour"> 0.000</span>
+        <span class="pv" id="sumLabour">0.000</span>
       </div>
       <div class="pay-row">
-        <span class="pl pv small" style="padding-left:12px">Tax  <span id="sumLabourTax">0.000</span></span>
+        <span class="pl pv small" style="padding-left:12px">Tax <span id="sumLabourTax">0.000</span></span>
         <span></span>
       </div>
       <div class="pay-row">
         <span class="pl">Other Charges</span>
-        <span class="pv" id="sumOther"> 0.000</span>
+        <span class="pv" id="sumOther">0.000</span>
       </div>
       <div class="pay-row">
-        <span class="pl pv small" style="padding-left:12px">Tax  <span id="sumOtherTax">0.000</span></span>
+        <span class="pl pv small" style="padding-left:12px">Tax <span id="sumOtherTax">0.000</span></span>
         <span></span>
       </div>
       <div class="pay-divider"></div>
@@ -827,7 +804,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
       </div>
       <div class="pay-row">
         <span class="pl">Total Tax</span>
-        <span class="pv" id="sumTotalTax"> 0.000</span>
+        <span class="pv" id="sumTotalTax">0.000</span>
       </div>
       <div class="pay-row" style="align-items:flex-start;margin-top:4px">
         <span class="pl">Discount (%)</span>
@@ -842,7 +819,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
           <div class="ptb-label">Grand Total</div>
           <div class="ptb-sub">Incl. all taxes &amp; charges</div>
         </div>
-        <span class="ptb-value" id="grandTotal"> 0.000</span>
+        <span class="ptb-value" id="grandTotal">0.000</span>
       </div>
       <div class="amtpaid-row">
         <label>Amount Paid</label>
@@ -901,7 +878,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
   <div class="bb-unsaved" id="bbUnsaved" style="display:none">⚠ Unsaved changes in form</div>
   <div class="bb-actions">
     <a href="{% url 'jobcard_app:invoice_list' %}" class="btn-discard">Discard</a>
-    <button type="button" class="btn-save-inv" onclick="document.getElementById('invForm').submit()">
+    <button type="button" class="btn-save-inv" onclick="submitInvoiceForm()">
       💾 Save Invoice
     </button>
   </div>
@@ -910,14 +887,25 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 </div><!-- /iw -->
 
 <script>
-const VEHICLES_URL        = "{% url 'jobcard_app:jc_get_vehicles' %}";
-const INV_ALL_ITEMS_URL   = "{% url 'jobcard_app:ajax_get_all_items' %}";
-const JC_SEARCH           = "{% url 'jobcard_app:jc_search_jobcards' %}";
-const GET_DOCS_INVOICE_URL= "{% url 'jobcard_app:ajax_get_docs_for_invoice' %}";
+const VEHICLES_URL         = "{% url 'jobcard_app:jc_get_vehicles' %}";
+const INV_ALL_ITEMS_URL    = "{% url 'jobcard_app:ajax_get_all_items' %}";
+const JC_SEARCH            = "{% url 'jobcard_app:jc_search_jobcards' %}";
+const GET_DOCS_INVOICE_URL = "{% url 'jobcard_app:ajax_get_docs_for_invoice' %}";
 
 let invAllItems = [];
 let cachedDocs = { delivery_notes: [], jobcards: [] };
 let invCustomerVehicleCache = [];
+
+/* ── Save (checks the customer first, then submits) ── */
+function submitInvoiceForm() {
+  const cust = document.getElementById('custSel');
+  if (!cust.value) {
+    alert('Please select a customer.');
+    cust.focus();
+    return;
+  }
+  document.getElementById('invForm').submit();
+}
 
 /* ── Build item dropdown options ── */
 function buildInvItemOptions(selectedId = '') {
@@ -932,36 +920,41 @@ function buildInvItemOptions(selectedId = '') {
   return opts;
 }
 
-/* ── Build unit dropdown options ── */
 function buildUnitOptions(selected = 'Pcs') {
   return ['No','Ltr','Kg','Pkt','Set','Pcs','Box','Mtr'].map(u =>
     `<option value="${u}" ${u.toLowerCase() === String(selected).toLowerCase() ? 'selected' : ''}>${u}</option>`
   ).join('');
 }
 
-/* ── Dynamic Row Vehicle Dropdowns ── */
-function syncRowVehicleDropdowns() {
-  const vehOpts = [];
+/* ══════════════════════════════════════════
+   VEHICLE DROPDOWN SYNC (parts/labour/other rows)
+══════════════════════════════════════════ */
+function getInvVehicleOptions() {
+  const opts = [];
   document.querySelectorAll('#invVehBody .inv-veh-select').forEach(sel => {
     if (sel.value && sel.selectedIndex >= 0) {
       const o = sel.options[sel.selectedIndex];
-      vehOpts.push({ id: sel.value, name: o.text || o.textContent });
+      opts.push({ id: sel.value, label: (o.dataset.vehNumber || o.text || o.textContent || '').trim() });
     }
   });
+  return opts;
+}
 
+function buildVehSelectHtml(selectedId) {
+  let html = '<option value="">— Vehicle —</option>';
+  getInvVehicleOptions().forEach(o => {
+    html += `<option value="${o.id}" ${String(o.id) === String(selectedId) ? 'selected' : ''}>${o.label}</option>`;
+  });
+  return html;
+}
+
+// never blank a saved row's vehicle just because the dropdown list refreshed
+function syncRowVehicleDropdowns() {
   document.querySelectorAll('.row-veh-select').forEach(sel => {
-    const curVal = sel.value;
-    sel.innerHTML = '<option value="">— Vehicle —</option>';
-    vehOpts.forEach(v => {
-      const opt = document.createElement('option');
-      opt.value = v.id;
-      opt.textContent = v.name;
-      if (String(v.id) === String(curVal)) opt.selected = true;
-      sel.appendChild(opt);
-    });
-    if (curVal && [...sel.options].some(o => String(o.value) === String(curVal))) {
-      sel.value = curVal;
-    }
+    const saved = sel.dataset.saved || '';
+    let current = sel.value || saved;
+    sel.innerHTML = buildVehSelectHtml(current);
+    sel.dataset.saved = '';
   });
 }
 
@@ -976,7 +969,7 @@ function addInvPartRow(itemId='', partCode='', qty=1, unit='Pcs', rate='0.000', 
   tr.innerHTML = `
     <td class="row-num">${sl}</td>
     <td>
-      <select name="part_vehicle_id[]" class="row-veh-select fc" style="${inpBase};cursor:pointer"></select>
+      <select name="part_vehicle_id[]" class="row-veh-select fc" style="${inpBase};cursor:pointer">${buildVehSelectHtml(vehicleId)}</select>
     </td>
     <td>
       <select name="part_item_id[]" class="inv-item-sel" style="${inpBase};cursor:pointer" onchange="onInvItemSelect(this)">
@@ -1000,12 +993,6 @@ function addInvPartRow(itemId='', partCode='', qty=1, unit='Pcs', rate='0.000', 
 
   tbody.appendChild(tr);
 
-  syncRowVehicleDropdowns();
-  if (vehicleId) {
-    const vSel = tr.querySelector('.row-veh-select');
-    if (vSel) vSel.value = vehicleId;
-  }
-
   if (itemId) {
     const found = invAllItems.find(i => String(i.id) === String(itemId));
     if (found) {
@@ -1023,7 +1010,6 @@ function addInvPartRow(itemId='', partCode='', qty=1, unit='Pcs', rate='0.000', 
   calcAll();
 }
 
-/* ── Item select handler ── */
 function onInvItemSelect(sel) {
   const tr  = sel.closest('tr');
   const opt = sel.options[sel.selectedIndex];
@@ -1041,9 +1027,7 @@ function onInvItemSelect(sel) {
   if (codeInp) codeInp.value = code;
 
   const unitSel = tr.querySelector('.inv-unit-sel');
-  if (unitSel) {
-    [...unitSel.options].forEach(o => o.selected = o.value.toLowerCase() === unit.toLowerCase());
-  }
+  if (unitSel) [...unitSel.options].forEach(o => o.selected = o.value.toLowerCase() === unit.toLowerCase());
 
   const rateInp = tr.querySelector('.prate');
   if (rateInp) rateInp.value = rate;
@@ -1057,10 +1041,12 @@ const fOMR = n => 'OMR ' + omr(n);
 /* ══════════════════════════════════════════
    VEHICLE TABLE (multi-vehicle, customer-driven)
 ══════════════════════════════════════════ */
-function loadInvVehicles(cid) {
-  invCustomerVehicleCache = [];
+function loadInvVehicles(cid, callback) {
   if (!cid) {
+    invCustomerVehicleCache = [];
     document.querySelectorAll('.inv-veh-select').forEach(sel => populateInvVehSelect(sel));
+    syncRowVehicleDropdowns();
+    if (typeof callback === 'function') callback();
     return;
   }
   fetch(VEHICLES_URL + '?customer_id=' + cid)
@@ -1068,24 +1054,37 @@ function loadInvVehicles(cid) {
     .then(d => {
       invCustomerVehicleCache = d.vehicles || [];
       document.querySelectorAll('.inv-veh-select').forEach(sel => populateInvVehSelect(sel));
+      syncRowVehicleDropdowns();
+      if (typeof callback === 'function') callback();
     })
     .catch(err => console.error('Error loading customer vehicles:', err));
 }
 
 function populateInvVehSelect(sel) {
-  const currentVal = sel.value;
+  const currentVal  = sel.value;
+  const currentOpt  = sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+  const currentText = currentOpt ? currentOpt.text : '';
+  const currentMm   = currentOpt ? (currentOpt.dataset.mm || '') : '';
+  const currentOdo  = currentOpt ? (currentOpt.dataset.odo || '') : '';
+
   sel.innerHTML = '<option value="">— Select Vehicle —</option>';
   invCustomerVehicleCache.forEach(v => {
-    const o = new Option(v.label, v.id);
+    const o = new Option(v.veh_number || v.label, v.id);
     o.dataset.mm  = v.mm_label || v.vehicle_model || '';
     o.dataset.odo = v.odometer || '';
+    o.dataset.vehNumber = v.veh_number || v.label || '';
     sel.add(o);
   });
-  if (currentVal && [...sel.options].some(o => String(o.value) === String(currentVal))) {
-    sel.value = currentVal;
-  } else {
-    sel.value = '';
+
+  // keep a saved vehicle even if the customer's current vehicle list doesn't include it
+  if (currentVal && ![...sel.options].some(o => String(o.value) === String(currentVal))) {
+    const keep = new Option(currentText, currentVal);
+    keep.dataset.mm  = currentMm;
+    keep.dataset.odo = currentOdo;
+    keep.dataset.vehNumber = currentText;
+    sel.add(keep);
   }
+  sel.value = currentVal || '';
   onInvVehRowChange(sel, false);
 }
 
@@ -1120,6 +1119,21 @@ function addInvVehicleRow(vehicleIdToSelect) {
 function onInvVehRowChange(sel, autoFill = true) {
   const tr = sel.closest('tr');
   if (!tr) return;
+
+  const selectedId = sel.value;
+  if (selectedId) {
+    let duplicate = false;
+    document.querySelectorAll('.inv-veh-select').forEach(other => {
+      if (other !== sel && String(other.value) === String(selectedId)) duplicate = true;
+    });
+    if (duplicate) {
+      alert('This vehicle is already added to this invoice.');
+      sel.value = '';
+      onInvVehRowChange(sel, true);
+      return;
+    }
+  }
+
   const o = sel.options[sel.selectedIndex];
   const mmCell = tr.querySelector('input[type=text].fc');
   if (o && o.value) {
@@ -1128,11 +1142,10 @@ function onInvVehRowChange(sel, autoFill = true) {
       const mInp = tr.querySelector('input[name="inv_vehicle_mileage[]"]');
       if (mInp && !mInp.value && o.dataset.odo) mInp.value = o.dataset.odo;
     }
-  } else {
-    if (mmCell) mmCell.value = '';
+  } else if (mmCell) {
+    mmCell.value = '';
   }
   syncRowVehicleDropdowns();
-  fetchDocsForInvoice();
 }
 
 function removeInvVehRow(btn) {
@@ -1140,26 +1153,22 @@ function removeInvVehRow(btn) {
   const tbody = document.getElementById('invVehBody');
   document.getElementById('invVehEmpty').style.display = tbody.rows.length === 0 ? 'block' : 'none';
   syncRowVehicleDropdowns();
-  fetchDocsForInvoice();
 }
 
 /* ══════════════════════════════════════════
-   Customer change → load vehicles & documents
+   Customer change → load vehicles
 ══════════════════════════════════════════ */
 document.getElementById('custSel').addEventListener('change', function () {
   const opt = this.options[this.selectedIndex];
   if (opt) {
     document.getElementById('custMobile').value = opt.dataset.mobile || '';
     const addrField = document.querySelector('[name="customer_address"]');
-    if (addrField && opt.dataset.address && !addrField.value) {
-      addrField.value = opt.dataset.address;
-    }
+    if (addrField && opt.dataset.address && !addrField.value) addrField.value = opt.dataset.address;
   }
-
   loadInvVehicles(this.value);
 });
 
-// ── Job card search ───────────────────────────────────────────────────────────
+// ── Job card search ──────────────────────────────────────
 let jcTimer;
 document.getElementById('jcSearch').addEventListener('input', function () {
   clearTimeout(jcTimer);
@@ -1192,7 +1201,7 @@ document.getElementById('jcSearch').addEventListener('input', function () {
 });
 
 /* ══════════════════════════════════════════════════════════
-   DOCUMENT LOADER MODAL (Delivery Notes & Job Cards)
+   DOCUMENT LOADER MODAL
 ══════════════════════════════════════════════════════════ */
 let selectedDoc = null;
 let docModalSearchTimer = null;
@@ -1201,17 +1210,10 @@ let activeCustFilterId = null;
 
 function escapeHtml(str) {
   if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
-function handleLoadDetailsClick() {
-  openDocModal();
-}
+function handleLoadDetailsClick() { openDocModal(); }
 
 function openDocModal() {
   const modal = document.getElementById('docLoaderModal');
@@ -1242,7 +1244,6 @@ function openDocModal() {
 
   selectedDoc = null;
   updateModalSelectionUI();
-
   fetchDocsForModal('');
   if (searchInput) setTimeout(() => searchInput.focus(), 150);
 }
@@ -1255,9 +1256,7 @@ function closeDocModal() {
 }
 
 function handleDocModalBackdropClick(e) {
-  if (e.target && e.target.id === 'docLoaderModal') {
-    closeDocModal();
-  }
+  if (e.target && e.target.id === 'docLoaderModal') closeDocModal();
 }
 
 function clearModalCustFilter() {
@@ -1272,10 +1271,7 @@ function onDocModalSearch(val) {
   clearTimeout(docModalSearchTimer);
   const clearBtn = document.getElementById('docModalClearSearch');
   if (clearBtn) clearBtn.style.display = val.trim() ? 'block' : 'none';
-
-  docModalSearchTimer = setTimeout(() => {
-    fetchDocsForModal(val.trim());
-  }, 250);
+  docModalSearchTimer = setTimeout(() => fetchDocsForModal(val.trim()), 250);
 }
 
 function clearDocModalSearch() {
@@ -1294,13 +1290,11 @@ function switchDocModalTab(tab) {
   const listJC = document.getElementById('docModalListJC');
 
   if (tab === 'DN') {
-    if (tabDN) tabDN.classList.add('active');
-    if (tabJC) tabJC.classList.remove('active');
+    tabDN && tabDN.classList.add('active'); tabJC && tabJC.classList.remove('active');
     if (listDN) listDN.style.display = 'flex';
     if (listJC) listJC.style.display = 'none';
   } else {
-    if (tabJC) tabJC.classList.add('active');
-    if (tabDN) tabDN.classList.remove('active');
+    tabJC && tabJC.classList.add('active'); tabDN && tabDN.classList.remove('active');
     if (listJC) listJC.style.display = 'flex';
     if (listDN) listDN.style.display = 'none';
   }
@@ -1308,9 +1302,7 @@ function switchDocModalTab(tab) {
   const dns = cachedDocs.delivery_notes || [];
   const jcs = cachedDocs.jobcards || [];
   const emptyEl = document.getElementById('docModalEmpty');
-  if (emptyEl) {
-    emptyEl.style.display = (tab === 'DN' && dns.length === 0) || (tab === 'JC' && jcs.length === 0) ? 'block' : 'none';
-  }
+  if (emptyEl) emptyEl.style.display = (tab === 'DN' && dns.length === 0) || (tab === 'JC' && jcs.length === 0) ? 'block' : 'none';
 }
 
 function fetchDocsForModal(searchQuery = '') {
@@ -1327,9 +1319,8 @@ function fetchDocsForModal(searchQuery = '') {
   const params = [];
   if (activeCustFilterId) params.push(`customer_id=${encodeURIComponent(activeCustFilterId)}`);
   if (searchQuery) params.push(`q=${encodeURIComponent(searchQuery)}`);
-
   let url = GET_DOCS_INVOICE_URL;
-  if (params.length > 0) url += '?' + params.join('&');
+  if (params.length) url += '?' + params.join('&');
 
   fetch(url)
     .then(r => r.json())
@@ -1357,7 +1348,6 @@ function renderModalDocLists() {
   const listDN = document.getElementById('docModalListDN');
   const listJC = document.getElementById('docModalListJC');
 
-  // If current tab is empty but other has records, auto-switch
   if (currentModalTab === 'DN' && dns.length === 0 && jcs.length > 0) {
     currentModalTab = 'JC';
     document.getElementById('modalTabJC')?.classList.add('active');
@@ -1368,127 +1358,74 @@ function renderModalDocLists() {
     document.getElementById('modalTabJC')?.classList.remove('active');
   }
 
-  // Render Delivery Notes
-  if (listDN) {
-    listDN.innerHTML = dns.map(dn => `
-      <div class="doc-card ${selectedDoc && selectedDoc.type === 'DN' && selectedDoc.id === dn.id ? 'selected' : ''}"
-           id="docCard_DN_${dn.id}"
-           onclick="selectModalDoc('DN', ${dn.id})"
-           ondblclick="confirmSelectedDocLoad()">
+  const cardHtml = (type, icon, d) => `
+      <div class="doc-card" id="docCard_${type}_${d.id}" onclick="selectModalDoc('${type}', ${d.id})" ondblclick="confirmSelectedDocLoad()">
         <div class="doc-card-radio"></div>
         <div class="doc-card-details">
           <div class="doc-card-top">
-            <span class="doc-card-num">🚚 ${escapeHtml(dn.number)}</span>
-            <span class="doc-card-badge">${escapeHtml(dn.status || 'Active')}</span>
-            <span class="doc-card-date">📅 ${escapeHtml(dn.date)}</span>
-            ${dn.job_number ? `<span class="doc-card-badge" style="background:#e0f2fe;color:#0369a1;">Job: ${escapeHtml(dn.job_number)}</span>` : ''}
+            <span class="doc-card-num">${icon} ${escapeHtml(d.number)}</span>
+            <span class="doc-card-badge">${escapeHtml(d.status || 'Active')}</span>
+            <span class="doc-card-date">📅 ${escapeHtml(d.date)}</span>
           </div>
           <div class="doc-card-cust">
-            <span>👤 <strong>${escapeHtml(dn.customer_name || 'Customer N/A')}</strong></span>
-            ${dn.customer_mobile ? `<span class="doc-card-mobile">📞 ${escapeHtml(dn.customer_mobile)}</span>` : ''}
+            <span>👤 <strong>${escapeHtml(d.customer_name || 'Customer N/A')}</strong></span>
+            ${d.customer_mobile ? `<span class="doc-card-mobile">📞 ${escapeHtml(d.customer_mobile)}</span>` : ''}
           </div>
           <div class="doc-card-meta">
-            <span>🚗 <strong>${escapeHtml(dn.vehicle_name || 'No vehicle')}</strong></span>
-            <span>📦 ${dn.parts_count || 0} Parts</span>
-            <span>🛠️ ${dn.labours_count || 0} Labour</span>
+            <span>🚗 <strong>${escapeHtml(d.vehicle_name || 'No vehicle')}</strong></span>
+            <span>📦 ${d.parts_count || 0} Parts</span>
+            <span>🛠️ ${d.labours_count || 0} Labour</span>
           </div>
         </div>
-      </div>
-    `).join('');
-  }
+      </div>`;
 
-  // Render Job Cards
-  if (listJC) {
-    listJC.innerHTML = jcs.map(jc => `
-      <div class="doc-card ${selectedDoc && selectedDoc.type === 'JC' && selectedDoc.id === jc.id ? 'selected' : ''}"
-           id="docCard_JC_${jc.id}"
-           onclick="selectModalDoc('JC', ${jc.id})"
-           ondblclick="confirmSelectedDocLoad()">
-        <div class="doc-card-radio"></div>
-        <div class="doc-card-details">
-          <div class="doc-card-top">
-            <span class="doc-card-num">🔧 ${escapeHtml(jc.number)}</span>
-            <span class="doc-card-badge">${escapeHtml(jc.status || 'Active')}</span>
-            <span class="doc-card-date">📅 ${escapeHtml(jc.date)}</span>
-          </div>
-          <div class="doc-card-cust">
-            <span>👤 <strong>${escapeHtml(jc.customer_name || 'Customer N/A')}</strong></span>
-            ${jc.customer_mobile ? `<span class="doc-card-mobile">📞 ${escapeHtml(jc.customer_mobile)}</span>` : ''}
-          </div>
-          <div class="doc-card-meta">
-            <span>🚗 <strong>${escapeHtml(jc.vehicle_name || 'No vehicle')}</strong></span>
-            <span>📦 ${jc.parts_count || 0} Parts</span>
-            <span>🛠️ ${jc.labours_count || 0} Labour</span>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
+  if (listDN) listDN.innerHTML = dns.map(d => cardHtml('DN', '🚚', d)).join('');
+  if (listJC) listJC.innerHTML = jcs.map(d => cardHtml('JC', '🔧', d)).join('');
 
   const isDN = currentModalTab === 'DN';
   if (listDN) listDN.style.display = isDN ? 'flex' : 'none';
   if (listJC) listJC.style.display = isDN ? 'none' : 'flex';
 
   const emptyEl = document.getElementById('docModalEmpty');
-  if (emptyEl) {
-    emptyEl.style.display = (isDN && dns.length === 0) || (!isDN && jcs.length === 0) ? 'block' : 'none';
-  }
+  if (emptyEl) emptyEl.style.display = (isDN && dns.length === 0) || (!isDN && jcs.length === 0) ? 'block' : 'none';
 
   updateModalSelectionUI();
 }
 
 function selectModalDoc(type, id) {
-  let doc = null;
-  if (type === 'DN') {
-    doc = (cachedDocs.delivery_notes || []).find(d => d.id === id);
-  } else {
-    doc = (cachedDocs.jobcards || []).find(d => d.id === id);
-  }
+  const doc = type === 'DN'
+    ? (cachedDocs.delivery_notes || []).find(d => d.id === id)
+    : (cachedDocs.jobcards || []).find(d => d.id === id);
   if (!doc) return;
-
   selectedDoc = { type, id, doc };
-
-  document.querySelectorAll('.doc-card').forEach(card => card.classList.remove('selected'));
-  const activeCard = document.getElementById(`docCard_${type}_${id}`);
-  if (activeCard) activeCard.classList.add('selected');
-
+  document.querySelectorAll('.doc-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`docCard_${type}_${id}`)?.classList.add('selected');
   updateModalSelectionUI();
 }
 
 function updateModalSelectionUI() {
   const confirmBtn = document.getElementById('btnConfirmDocLoad');
   const infoEl = document.getElementById('docModalSelectionInfo');
-
   if (!selectedDoc || !selectedDoc.doc) {
     if (confirmBtn) confirmBtn.disabled = true;
     if (infoEl) infoEl.innerHTML = '<span style="color:#64748b;">Click a document to select, then click Load Selected Details</span>';
     return;
   }
-
   const doc = selectedDoc.doc;
   const typeLabel = selectedDoc.type === 'DN' ? 'Delivery Note' : 'Job Card';
   if (confirmBtn) confirmBtn.disabled = false;
-  if (infoEl) {
-    infoEl.innerHTML = `Selected ${typeLabel}: <strong>${escapeHtml(doc.number)}</strong> &bull; ${escapeHtml(doc.customer_name || '')} ${doc.customer_mobile ? `(${escapeHtml(doc.customer_mobile)})` : ''}`;
-  }
+  if (infoEl) infoEl.innerHTML = `Selected ${typeLabel}: <strong>${escapeHtml(doc.number)}</strong> &bull; ${escapeHtml(doc.customer_name || '')} ${doc.customer_mobile ? `(${escapeHtml(doc.customer_mobile)})` : ''}`;
 }
 
 function confirmSelectedDocLoad() {
   if (!selectedDoc || !selectedDoc.doc) return;
-  const doc = selectedDoc.doc;
-
-  if (selectedDoc.type === 'DN') {
-    populateFromDeliveryNote(doc);
-  } else {
-    populateFromJobCard(doc);
-  }
-
-  // Automatically close modal without any persistent message
+  if (selectedDoc.type === 'DN') populateFromDeliveryNote(selectedDoc.doc);
+  else populateFromJobCard(selectedDoc.doc);
   closeDocModal();
 }
 
 /* ══════════════════════════════════════════════════════════
-   POPULATE FORM FIELDS
+   POPULATE FORM FIELDS FROM LOADED DOCUMENT
 ══════════════════════════════════════════════════════════ */
 function addInvVehicleWithData(v) {
   const vId = typeof v === 'object' ? v.id : v;
@@ -1501,7 +1438,7 @@ function addInvVehicleWithData(v) {
   tr.innerHTML = `
     <td>
       <select name="inv_vehicle_id[]" class="inv-veh-select" onchange="onInvVehRowChange(this)">
-        <option value="${vId}" selected data-mm="${vModel}" data-odo="${vMileage}">${escapeHtml(vName)}</option>
+        <option value="${vId}" selected data-mm="${escapeHtml(vModel)}" data-odo="${vMileage}" data-veh-number="${escapeHtml(vName)}">${escapeHtml(vName)}</option>
       </select>
     </td>
     <td><input type="text" class="fc" readonly value="${escapeHtml(vModel)}" placeholder="Model"></td>
@@ -1515,109 +1452,12 @@ function addInvVehicleWithData(v) {
   return tr;
 }
 
-function populateFromDeliveryNote(dn) {
-  // 1. Customer
-  if (dn.customer_id) {
-    const custSel = document.getElementById('custSel');
-    if (custSel) {
-      let optExists = [...custSel.options].some(o => String(o.value) === String(dn.customer_id));
-      if (!optExists && dn.customer_name) {
-        const newOpt = new Option(dn.customer_name, dn.customer_id);
-        newOpt.dataset.mobile = dn.customer_mobile || '';
-        newOpt.dataset.address = dn.customer_address || '';
-        custSel.add(newOpt);
-      }
-      custSel.value = dn.customer_id;
-    }
-    loadInvVehicles(dn.customer_id);
-  }
-
-  // 2. Customer Mobile & Address
-  if (dn.customer_mobile !== undefined) {
-    const m = document.getElementById('custMobile');
-    if (m) m.value = dn.customer_mobile || '';
-  }
-  if (dn.customer_address) {
-    const addr = document.querySelector('[name="customer_address"]');
-    if (addr) addr.value = dn.customer_address;
-  }
-
-  // 3. Payment Mode
-  if (dn.payment_mode) {
-    const pm = document.querySelector('[name="payment_mode"]');
-    if (pm) pm.value = dn.payment_mode;
-  }
-
-  // 4. Job Card Ref & Trackers
-  document.getElementById('loadedDN').value = dn.id;
-  document.getElementById('loadedJC').value = '';
-  if (dn.job_number) {
-    document.getElementById('jcSearch').value = dn.job_number;
-    document.getElementById('jcId').value     = dn.job_card_id || '';
-  }
-
-  // 5. Vehicles
-  const vehBody = document.getElementById('invVehBody');
-  vehBody.innerHTML = '';
-  const docVehicles = (dn.vehicles && dn.vehicles.length > 0)
-    ? dn.vehicles
-    : (dn.vehicle_id ? [{ id: dn.vehicle_id, name: dn.vehicle_name, model: '', mileage: '' }] : []);
-
-  if (docVehicles.length > 0) {
-    docVehicles.forEach(v => addInvVehicleWithData(v));
-  } else {
-    document.getElementById('invVehEmpty').style.display = 'block';
-  }
-
-  // 6. Spare Parts
-  const partsTbody = document.getElementById('partsTbody');
-  partsTbody.innerHTML = '';
-  if (dn.parts && dn.parts.length > 0) {
-    dn.parts.forEach(p => {
-      addInvPartRow(
-        p.item_id || '',
-        p.part_code || '',
-        p.quantity || 1,
-        p.unit || 'Pcs',
-        p.rate || 0,
-        p.discount_pct || 0,
-        p.tax_percent !== undefined ? p.tax_percent : 8,
-        p.vehicle_id || dn.vehicle_id || ''
-      );
-      const lastRow = partsTbody.lastElementChild;
-      if (lastRow && p.description) {
-        const nameInp = lastRow.querySelector('.inv-pname');
-        if (nameInp) nameInp.value = p.description;
-      }
-    });
-  }
-
-  // 7. Labour Charges
-  const labourTbody = document.getElementById('labourTbody');
-  labourTbody.innerHTML = '';
-  if (dn.labours && dn.labours.length > 0) {
-    dn.labours.forEach(l => {
-      addLabourDataRow(
-        l.description || '',
-        l.technician_id || '',
-        l.hours || 1,
-        l.rate || 0,
-        l.tax_percent !== undefined ? l.tax_percent : 8
-      );
-    });
-  }
-
-  syncRowVehicleDropdowns();
-  calcAll();
-}
-
 function populateFromJobCard(jc) {
-  // 1. Customer
   if (jc.customer_id) {
     const custSel = document.getElementById('custSel');
     if (custSel) {
-      let optExists = [...custSel.options].some(o => String(o.value) === String(jc.customer_id));
-      if (!optExists && jc.customer_name) {
+      const exists = [...custSel.options].some(o => String(o.value) === String(jc.customer_id));
+      if (!exists && jc.customer_name) {
         const newOpt = new Option(jc.customer_name, jc.customer_id);
         newOpt.dataset.mobile = jc.customer_mobile || '';
         newOpt.dataset.address = jc.customer_address || '';
@@ -1628,7 +1468,6 @@ function populateFromJobCard(jc) {
     loadInvVehicles(jc.customer_id);
   }
 
-  // 2. Customer Mobile & Address
   if (jc.customer_mobile !== undefined) {
     const m = document.getElementById('custMobile');
     if (m) m.value = jc.customer_mobile || '';
@@ -1638,40 +1477,27 @@ function populateFromJobCard(jc) {
     if (addr) addr.value = jc.customer_address;
   }
 
-  // 3. Job Card Ref & Trackers
   document.getElementById('loadedJC').value = jc.id;
   document.getElementById('loadedDN').value = '';
   document.getElementById('jcSearch').value = jc.number;
-  document.getElementById('jcId').value     = jc.id;
+  document.getElementById('jcId').value = jc.id;
 
-  // 4. Vehicles
   const vehBody = document.getElementById('invVehBody');
   vehBody.innerHTML = '';
   const docVehicles = (jc.vehicles && jc.vehicles.length > 0)
     ? jc.vehicles
     : (jc.vehicle_id ? [{ id: jc.vehicle_id, name: jc.vehicle_name, model: '', mileage: '' }] : []);
 
-  if (docVehicles.length > 0) {
-    docVehicles.forEach(v => addInvVehicleWithData(v));
-  } else {
-    document.getElementById('invVehEmpty').style.display = 'block';
-  }
+  if (docVehicles.length > 0) docVehicles.forEach(v => addInvVehicleWithData(v));
+  else document.getElementById('invVehEmpty').style.display = 'block';
 
-  // 5. Spare Parts
   const partsTbody = document.getElementById('partsTbody');
   partsTbody.innerHTML = '';
   if (jc.parts && jc.parts.length > 0) {
     jc.parts.forEach(p => {
-      addInvPartRow(
-        p.item_id || '',
-        p.part_code || '',
-        p.quantity || 1,
-        p.unit || 'Pcs',
-        p.rate || 0,
-        p.discount_pct || 0,
-        p.tax_percent !== undefined ? p.tax_percent : 8,
-        p.vehicle_id || jc.vehicle_id || ''
-      );
+      addInvPartRow(p.item_id || '', p.part_code || '', p.quantity || 1, p.unit || 'Pcs',
+        p.rate || 0, p.discount_pct || 0, p.tax_percent !== undefined ? p.tax_percent : 8,
+        p.vehicle_id || jc.vehicle_id || '');
       const lastRow = partsTbody.lastElementChild;
       if (lastRow && p.description) {
         const nameInp = lastRow.querySelector('.inv-pname');
@@ -1680,33 +1506,38 @@ function populateFromJobCard(jc) {
     });
   }
 
-  // 6. Labour Charges
   const labourTbody = document.getElementById('labourTbody');
   labourTbody.innerHTML = '';
   if (jc.labours && jc.labours.length > 0) {
-    jc.labours.forEach(l => {
-      addLabourDataRow(
-        l.description || '',
-        l.technician_id || '',
-        l.hours || 1,
-        l.rate || 0,
-        l.tax_percent !== undefined ? l.tax_percent : 8
-      );
-    });
+    jc.labours.forEach(l => addLabourDataRow(l.description || '', l.technician_id || '',
+      l.hours || 1, l.rate || 0, l.tax_percent !== undefined ? l.tax_percent : 8, l.vehicle_id || ''));
   }
 
   syncRowVehicleDropdowns();
   calcAll();
 }
+
+// Delivery Note loading uses the same payload shape as Job Card
+function populateFromDeliveryNote(dn) {
+  populateFromJobCard(dn);
+  document.getElementById('loadedDN').value = dn.id;
+  document.getElementById('loadedJC').value = dn.job_card_id || '';
+  document.getElementById('jcSearch').value = dn.job_number || '';
+  document.getElementById('jcId').value = dn.job_card_id || '';
+  if (dn.payment_mode) {
+    const pm = document.querySelector('[name="payment_mode"]');
+    if (pm) pm.value = dn.payment_mode;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   RESTORE POSTED DATA (after a failed save)
+══════════════════════════════════════════════════════════ */
 function restorePostedInvoiceData() {
   const tag = document.getElementById('posted-invoice-data');
   if (!tag) return null;
-  try {
-    return JSON.parse(tag.textContent);
-  } catch (e) {
-    console.error('Failed to parse posted invoice data:', e);
-    return null;
-  }
+  try { return JSON.parse(tag.textContent); }
+  catch (e) { console.error('Failed to parse posted invoice data:', e); return null; }
 }
 
 function applyPostedHeaderFields(d) {
@@ -1714,8 +1545,6 @@ function applyPostedHeaderFields(d) {
     const el = document.querySelector(`[name="${name}"]`);
     if (el && val !== undefined && val !== null) el.value = val;
   };
-  setVal('voucherType', d.voucherType);
-  setVal('voucher_number', d.voucher_number);
   setVal('invoice_number', d.invoice_number);
   setVal('invoice_date', d.invoice_date);
   setVal('due_date', d.due_date);
@@ -1727,6 +1556,7 @@ function applyPostedHeaderFields(d) {
   setVal('notes', d.notes);
   setVal('discount_pct', d.discount_pct);
   setVal('amount_paid', d.amount_paid);
+  // voucher_number is intentionally NOT restored: it is read-only / server-assigned
 }
 
 function applyPostedVehicles(d) {
@@ -1745,21 +1575,12 @@ function applyPostedVehicles(d) {
 function applyPostedParts(d) {
   const itemIds = d.part_item_id || [];
   if (!itemIds.length) return;
-  const names = d.part_name || [];
-  const codes = d.part_code || [];
-  const qtys  = d.part_qty || [];
-  const units = d.part_unit || [];
-  const rates = d.part_rate || [];
-  const discs = d.part_disc || [];
-  const taxes = d.part_tax || [];
-
+  const names = d.part_name || [], codes = d.part_code || [], qtys = d.part_qty || [];
+  const units = d.part_unit || [], rates = d.part_rate || [], discs = d.part_disc || [], taxes = d.part_tax || [];
   document.getElementById('partsTbody').innerHTML = '';
-
   itemIds.forEach((itemId, i) => {
-    addInvPartRow(itemId, codes[i] || '', qtys[i] || 1, units[i] || 'Pcs',
-                  rates[i] || '0.000', discs[i] || 0, taxes[i] || 8);
-    const tbody = document.getElementById('partsTbody');
-    const tr = tbody.lastElementChild;
+    addInvPartRow(itemId, codes[i] || '', qtys[i] || 1, units[i] || 'Pcs', rates[i] || '0.000', discs[i] || 0, taxes[i] || 8);
+    const tr = document.getElementById('partsTbody').lastElementChild;
     if (tr) {
       const nameInp = tr.querySelector('.inv-pname');
       if (nameInp) nameInp.value = names[i] || '';
@@ -1771,97 +1592,60 @@ function applyPostedParts(d) {
 function applyPostedLabour(d) {
   const descs = d.lab_desc || [];
   if (!descs.length) return;
-  const techs = d.lab_tech || [];
-  const hrs   = d.lab_hrs || [];
-  const rates = d.lab_rate || [];
-  const taxes = d.lab_tax || [];
-
+  const techs = d.lab_tech || [], hrs = d.lab_hrs || [], rates = d.lab_rate || [], taxes = d.lab_tax || [];
   document.getElementById('labourTbody').innerHTML = '';
-  descs.forEach((desc, i) => {
-    addLabourDataRow(desc, techs[i] || '', hrs[i] || 1, rates[i] || 0, taxes[i] || 8);
-  });
+  descs.forEach((desc, i) => addLabourDataRow(desc, techs[i] || '', hrs[i] || 1, rates[i] || 0, taxes[i] || 8));
   calcAll();
 }
 
 function applyPostedOtherCharges(d) {
   const descs = d.oth_desc || [];
   if (!descs.length) return;
-  const amts  = d.oth_amt || [];
-  const taxes = d.oth_tax || [];
-
+  const amts = d.oth_amt || [], taxes = d.oth_tax || [];
   document.getElementById('otherTbody').innerHTML = '';
   descs.forEach((desc, i) => {
     addOtherRow();
-    const tbody = document.getElementById('otherTbody');
-    const tr = tbody.lastElementChild;
+    const tr = document.getElementById('otherTbody').lastElementChild;
     if (tr) {
-      const descInp = tr.querySelector('input[name="oth_desc[]"]');
-      const amtInp  = tr.querySelector('input[name="oth_amt[]"]');
-      const taxInp  = tr.querySelector('input[name="oth_tax[]"]');
-      if (descInp) descInp.value = desc;
-      if (amtInp)  amtInp.value  = amts[i] || 0;
-      if (taxInp)  taxInp.value  = taxes[i] || 0;
+      tr.querySelector('input[name="oth_desc[]"]').value = desc;
+      tr.querySelector('input[name="oth_amt[]"]').value = amts[i] || 0;
+      tr.querySelector('input[name="oth_tax[]"]').value = taxes[i] || 0;
     }
   });
   calcAll();
 }
 
-
-function clearEmptyPartsRows() {
-  const tbody = document.getElementById('partsTbody');
-  const rows = [...tbody.querySelectorAll('tr')];
-  rows.forEach(r => {
-    const itemSel = r.querySelector('select[name="part_item_id[]"]');
-    const pname = r.querySelector('.inv-pname')?.value || '';
-    const prate = parseFloat(r.querySelector('.prate')?.value || 0);
-    if ((!itemSel || !itemSel.value) && !pname && prate === 0) {
-      r.remove();
-    }
-  });
-}
-
-function clearEmptyLabourRows() {
+function addLabourDataRow(desc='', techId='', hrs=1, rate=0, tax=8, vehId='') {
   const tbody = document.getElementById('labourTbody');
-  const rows = [...tbody.querySelectorAll('tr')];
-  rows.forEach(r => {
-    const ldesc = r.querySelector('input[name="lab_desc[]"]')?.value || '';
-    const lrate = parseFloat(r.querySelector('.lrate')?.value || 0);
-    if (!ldesc.trim() && lrate === 0) {
-      r.remove();
-    }
-  });
-}
-
-function addLabourDataRow(desc='', techId='', hrs=1, rate=0, tax=8) {
-  const tbody = document.getElementById('labourTbody');
-  const tr    = document.getElementById('labourRowTpl').content.cloneNode(true).querySelector('tr');
+  const tr = document.getElementById('labourRowTpl').content.cloneNode(true).querySelector('tr');
   tr.querySelector('input[name="lab_desc[]"]').value = desc;
   if (techId) {
     const techSel = tr.querySelector('select[name="lab_tech[]"]');
     if (techSel) techSel.value = techId;
   }
-  tr.querySelector('.lhrs').value  = hrs;
+  tr.querySelector('.lhrs').value = hrs;
   tr.querySelector('.lrate').value = parseFloat(rate).toFixed(3);
-  tr.querySelector('.ltax').value  = tax;
-
+  tr.querySelector('.ltax').value = tax;
   tbody.appendChild(tr);
   bindLabourRow(tr);
+  if (vehId) {
+    const vSel = tr.querySelector('.row-veh-select');
+    if (vSel) vSel.dataset.saved = vehId;
+  }
+  syncRowVehicleDropdowns();
   renumber('labourTbody');
 }
 
-
-
-// ── Row calculations ──────────────────────────────────────────────────────────
+/* ── Row calculations ── */
 function calcPartRow(tr) {
-  const qty   = parseFloat(tr.querySelector('.pqty')?.value)  || 0;
-  const rate  = parseFloat(tr.querySelector('.prate')?.value) || 0;
-  const disc  = parseFloat(tr.querySelector('.pdisc')?.value) || 0;
-  const taxPct= parseFloat(tr.querySelector('.ptax')?.value)  || 0;
-  const base  = qty * rate * (1 - disc / 100);
-  const tax   = base * taxPct / 100;
+  const qty = parseFloat(tr.querySelector('.pqty')?.value) || 0;
+  const rate = parseFloat(tr.querySelector('.prate')?.value) || 0;
+  const disc = parseFloat(tr.querySelector('.pdisc')?.value) || 0;
+  const taxPct = parseFloat(tr.querySelector('.ptax')?.value) || 0;
+  const base = qty * rate * (1 - disc / 100);
+  const tax = base * taxPct / 100;
   const total = base + tax;
-  const taxEl = tr.querySelector('.ptax-amt');
-  const totEl = tr.querySelector('.ptotal');
+  const taxEl = tr.querySelector('.ptax-amt'), totEl = tr.querySelector('.ptotal');
   if (taxEl) taxEl.textContent = omr(tax);
   if (totEl) totEl.textContent = omr(total);
   markUnsaved();
@@ -1869,14 +1653,13 @@ function calcPartRow(tr) {
 }
 
 function calcLabourRow(tr) {
-  const hrs   = parseFloat(tr.querySelector('.lhrs')?.value)  || 0;
-  const rate  = parseFloat(tr.querySelector('.lrate')?.value) || 0;
-  const taxPct= parseFloat(tr.querySelector('.ltax')?.value)  || 0;
-  const base  = hrs * rate;
-  const tax   = base * taxPct / 100;
+  const hrs = parseFloat(tr.querySelector('.lhrs')?.value) || 0;
+  const rate = parseFloat(tr.querySelector('.lrate')?.value) || 0;
+  const taxPct = parseFloat(tr.querySelector('.ltax')?.value) || 0;
+  const base = hrs * rate;
+  const tax = base * taxPct / 100;
   const total = base + tax;
-  const taxEl = tr.querySelector('.ltax-amt');
-  const totEl = tr.querySelector('.ltotal');
+  const taxEl = tr.querySelector('.ltax-amt'), totEl = tr.querySelector('.ltotal');
   if (taxEl) taxEl.textContent = omr(tax);
   if (totEl) totEl.textContent = omr(total);
   markUnsaved();
@@ -1884,12 +1667,11 @@ function calcLabourRow(tr) {
 }
 
 function calcOtherRow(tr) {
-  const amt   = parseFloat(tr.querySelector('.oamt')?.value) || 0;
-  const taxPct= parseFloat(tr.querySelector('.otax')?.value) || 0;
-  const tax   = amt * taxPct / 100;
+  const amt = parseFloat(tr.querySelector('.oamt')?.value) || 0;
+  const taxPct = parseFloat(tr.querySelector('.otax')?.value) || 0;
+  const tax = amt * taxPct / 100;
   const total = amt + tax;
-  const taxEl = tr.querySelector('.otax-amt');
-  const totEl = tr.querySelector('.ototl');
+  const taxEl = tr.querySelector('.otax-amt'), totEl = tr.querySelector('.ototl');
   if (taxEl) taxEl.textContent = omr(tax);
   if (totEl) totEl.textContent = omr(total);
   markUnsaved();
@@ -1898,59 +1680,49 @@ function calcOtherRow(tr) {
 
 function calcAll() {
   let pBase=0,pTax=0,pTotal=0,lBase=0,lTax=0,lTotal=0,oBase=0,oTax=0,oTotal=0;
-  document.querySelectorAll('#partsTbody tr').forEach(tr => {
-    const r = calcPartRow(tr);
-    pBase+=r.base; pTax+=r.tax; pTotal+=r.total;
-  });
-  document.querySelectorAll('#labourTbody tr').forEach(tr => {
-    const r = calcLabourRow(tr);
-    lBase+=r.base; lTax+=r.tax; lTotal+=r.total;
-  });
-  document.querySelectorAll('#otherTbody tr').forEach(tr => {
-    const r = calcOtherRow(tr);
-    oBase+=r.base; oTax+=r.tax; oTotal+=r.total;
-  });
+  document.querySelectorAll('#partsTbody tr').forEach(tr => { const r = calcPartRow(tr); pBase+=r.base; pTax+=r.tax; pTotal+=r.total; });
+  document.querySelectorAll('#labourTbody tr').forEach(tr => { const r = calcLabourRow(tr); lBase+=r.base; lTax+=r.tax; lTotal+=r.total; });
+  document.querySelectorAll('#otherTbody tr').forEach(tr => { const r = calcOtherRow(tr); oBase+=r.base; oTax+=r.tax; oTotal+=r.total; });
 
-  document.getElementById('partsTotal').textContent    = omr(pTotal);
+  document.getElementById('partsTotal').textContent = omr(pTotal);
   document.getElementById('partsTaxTotal').textContent = omr(pTax);
-  document.getElementById('labourTotal').textContent   = omr(lTotal);
-  document.getElementById('labourTaxTotal').textContent= omr(lTax);
-  document.getElementById('otherTotal').textContent    = omr(oTotal);
+  document.getElementById('labourTotal').textContent = omr(lTotal);
+  document.getElementById('labourTaxTotal').textContent = omr(lTax);
+  document.getElementById('otherTotal').textContent = omr(oTotal);
   document.getElementById('otherTaxTotal').textContent = omr(oTax);
 
-  const subtotal  = pBase + lBase + oBase;
-  const totalTax  = pTax + lTax + oTax;
-  const discPct   = parseFloat(document.getElementById('discPct').value) || 0;
-  const discAmt   = (subtotal + totalTax) * discPct / 100;
-  const grand     = subtotal + totalTax - discAmt;
-  const amtPaid   = parseFloat(document.getElementById('amtPaid').value) || 0;
-  const balance   = grand - amtPaid;
+  const subtotal = pBase + lBase + oBase;
+  const totalTax = pTax + lTax + oTax;
+  const discPct = parseFloat(document.getElementById('discPct').value) || 0;
+  const discAmt = (subtotal + totalTax) * discPct / 100;
+  const grand = subtotal + totalTax - discAmt;
+  const amtPaid = parseFloat(document.getElementById('amtPaid').value) || 0;
+  const balance = grand - amtPaid;
 
-  document.getElementById('sumParts').textContent    = fOMR(pTotal);
+  document.getElementById('sumParts').textContent = fOMR(pTotal);
   document.getElementById('sumPartsTax').textContent = omr(pTax);
-  document.getElementById('sumLabour').textContent   = fOMR(lTotal);
-  document.getElementById('sumLabourTax').textContent= omr(lTax);
-  document.getElementById('sumOther').textContent    = fOMR(oTotal);
+  document.getElementById('sumLabour').textContent = fOMR(lTotal);
+  document.getElementById('sumLabourTax').textContent = omr(lTax);
+  document.getElementById('sumOther').textContent = fOMR(oTotal);
   document.getElementById('sumOtherTax').textContent = omr(oTax);
   document.getElementById('sumSubtotal').textContent = fOMR(subtotal);
   document.getElementById('sumTotalTax').textContent = fOMR(totalTax);
-  document.getElementById('grandTotal').textContent  = fOMR(grand);
-  document.getElementById('balanceDue').textContent  = fOMR(balance);
+  document.getElementById('grandTotal').textContent = fOMR(grand);
+  document.getElementById('balanceDue').textContent = fOMR(balance);
 
   updateBadges();
 }
 
 function updateBadges() {
-  document.getElementById('partsBadge').textContent  = document.querySelectorAll('#partsTbody tr').length + ' items';
+  document.getElementById('partsBadge').textContent = document.querySelectorAll('#partsTbody tr').length + ' items';
   document.getElementById('labourBadge').textContent = document.querySelectorAll('#labourTbody tr').length + ' items';
-  document.getElementById('otherBadge').textContent  = document.querySelectorAll('#otherTbody tr').length + ' items';
+  document.getElementById('otherBadge').textContent = document.querySelectorAll('#otherTbody tr').length + ' items';
 }
 
 function renumber(tbodyId) {
   document.querySelectorAll('#' + tbodyId + ' .row-num').forEach((el, i) => el.textContent = i + 1);
 }
 
-// ── Bind part row ─────────────────────────────────────────────────────────────
 function bindInvPartRow(tr) {
   ['pqty','prate','pdisc','ptax'].forEach(cls => {
     tr.querySelector('.' + cls)?.addEventListener('input', () => { calcPartRow(tr); calcAll(); });
@@ -1986,87 +1758,19 @@ function bindOtherRow(tr) {
   });
 }
 
-// ── Add rows ──────────────────────────────────────────────────────────────────
-function addPartRow() {
-  addInvPartRow();
-}
+function addPartRow() { addInvPartRow(); }
 function addLabourRow() {
   const tbody = document.getElementById('labourTbody');
-  const tr    = document.getElementById('labourRowTpl').content.cloneNode(true).querySelector('tr');
+  const tr = document.getElementById('labourRowTpl').content.cloneNode(true).querySelector('tr');
   tbody.appendChild(tr); bindLabourRow(tr); syncRowVehicleDropdowns(); renumber('labourTbody'); calcAll();
 }
 function addOtherRow() {
   const tbody = document.getElementById('otherTbody');
-  const tr    = document.getElementById('otherRowTpl').content.cloneNode(true).querySelector('tr');
+  const tr = document.getElementById('otherRowTpl').content.cloneNode(true).querySelector('tr');
   tbody.appendChild(tr); bindOtherRow(tr); syncRowVehicleDropdowns(); renumber('otherTbody'); calcAll();
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
-  const posted = restorePostedInvoiceData();
-
-  fetch(INV_ALL_ITEMS_URL)
-    .then(r => r.json())
-    .then(data => {
-      invAllItems = data.items || [];
-      if (posted) {
-        applyPostedHeaderFields(posted);
-        applyPostedParts(posted);
-      } else {
-        renderInvExistingParts();
-      }
-      syncRowVehicleDropdowns();
-      calcAll();
-    })
-    .catch(() => {
-      if (posted) {
-        applyPostedHeaderFields(posted);
-        applyPostedParts(posted);
-      } else {
-        renderInvExistingParts();
-      }
-      syncRowVehicleDropdowns();
-      calcAll();
-    });
-
-  if (posted) {
-    applyPostedVehicles(posted);
-    applyPostedLabour(posted);
-    applyPostedOtherCharges(posted);
-  }
-
-  document.querySelectorAll('#labourTbody tr').forEach(tr => bindLabourRow(tr));
-  document.querySelectorAll('#otherTbody tr').forEach(tr  => bindOtherRow(tr));
-
-  document.getElementById('discPct').addEventListener('input', calcAll);
-  document.getElementById('amtPaid').addEventListener('input', calcAll);
-
-  // If editing and customer already selected, load vehicles & fetch available docs
-  const custVal = document.getElementById('custSel').value;
-  if (custVal) {
-    loadInvVehicles(custVal);
-    fetchDocsForInvoice();
-  }
-
-  syncRowVehicleDropdowns();
-
-  {% if not invoice %}
-  const voucherTypeInput = document.getElementById('id_voucherType');
-  if (voucherTypeInput && voucherTypeInput.value) {
-    fetch("{% url 'jobcard_app:get_next_invoice_number' %}?voucher_type_id=" + voucherTypeInput.value)
-      .then(r => r.json())
-      .then(data => {
-        if (data.success && data.job_number) {
-          const voucherNumInput = document.getElementById('id_voucher_number');
-          if (voucherNumInput) voucherNumInput.value = data.job_number;
-        }
-      })
-      .catch(err => console.error('Error fetching next invoice voucher number:', err));
-  }
-  {% endif %}
-});
-
-/* ── Render existing parts ── */
+/* ── Render existing parts (edit mode, non-posted) ── */
 function renderInvExistingParts() {
   const tbody = document.getElementById('partsTbody');
   const placeholders = [...tbody.querySelectorAll('tr[data-item-id], tr[data-item-name]')];
@@ -2074,24 +1778,22 @@ function renderInvExistingParts() {
   if (placeholders.length > 0) {
     placeholders.forEach(ph => ph.remove());
     placeholders.forEach(ph => {
-      const vehicleId= ph.dataset.vehicleId|| '';
-      const itemId   = ph.dataset.itemId   || '';
+      const vehicleId = ph.dataset.vehicleId || '';
+      const itemId = ph.dataset.itemId || '';
       const itemName = ph.dataset.itemName || '';
       const itemCode = ph.dataset.itemCode || '';
       const itemUnit = ph.dataset.itemUnit || 'Pcs';
       const itemRate = ph.dataset.itemRate || '0.000';
-      const itemQty  = ph.dataset.itemQty  || 1;
+      const itemQty = ph.dataset.itemQty || 1;
       const itemDisc = ph.dataset.itemDisc || 0;
-      const itemTax  = ph.dataset.itemTax  || 8;
+      const itemTax = ph.dataset.itemTax || 8;
 
       let resolvedId = itemId;
       if (!resolvedId && itemName) {
         const found = invAllItems.find(i => (i.name || '').toLowerCase().trim() === itemName.toLowerCase().trim());
         if (found) resolvedId = String(found.id);
       }
-
       addInvPartRow(resolvedId, itemCode, itemQty, itemUnit, itemRate, itemDisc, itemTax, vehicleId);
-
       if (!resolvedId && itemName) {
         const lastRow = tbody.querySelector('tr:last-child');
         if (lastRow) lastRow.querySelector('.inv-pname').value = itemName;
@@ -2102,11 +1804,61 @@ function renderInvExistingParts() {
   }
 }
 
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function () {
+  // mark saved vehicle rows (parts/labour/other) with data-saved BEFORE any rebuild
+  document.querySelectorAll('.row-veh-select').forEach(sel => {
+    if (sel.value) sel.dataset.saved = sel.value;
+  });
+
+  const posted = restorePostedInvoiceData();
+
+  // 1) header fields (including customer) first, synchronously
+  if (posted) applyPostedHeaderFields(posted);
+
+  // 2) item master, then parts
+  const afterItems = () => {
+    if (posted) applyPostedParts(posted); else renderInvExistingParts();
+    syncRowVehicleDropdowns();
+    calcAll();
+  };
+  fetch(INV_ALL_ITEMS_URL)
+    .then(r => r.json())
+    .then(data => { invAllItems = data.items || []; afterItems(); })
+    .catch(afterItems);
+
+  // 3) vehicles (after the customer's vehicle list loads), labour, other charges
+  const custVal = document.getElementById('custSel').value;
+  if (posted) {
+    if (custVal) loadInvVehicles(custVal, () => applyPostedVehicles(posted));
+    applyPostedLabour(posted);
+    applyPostedOtherCharges(posted);
+  } else if (custVal) {
+    loadInvVehicles(custVal);
+  }
+
+  document.querySelectorAll('#labourTbody tr').forEach(tr => bindLabourRow(tr));
+  document.querySelectorAll('#otherTbody tr').forEach(tr => bindOtherRow(tr));
+
+  document.getElementById('discPct').addEventListener('input', calcAll);
+  document.getElementById('amtPaid').addEventListener('input', calcAll);
+
+  syncRowVehicleDropdowns();
+
+  {% if not invoice %}
+  // fallback only: the server already pre-fills the voucher number
+  const vEl = document.getElementById('id_voucher_number');
+  if (vEl && !vEl.value) {
+    fetch("{% url 'jobcard_app:get_next_invoice_number' %}?voucher_type_id=" + document.getElementById('id_voucherType').value)
+      .then(r => r.json())
+      .then(data => { if (data.success && data.voucher_number) vEl.value = data.voucher_number; })
+      .catch(err => console.error('Error fetching next voucher number:', err));
+  }
+  {% endif %}
+});
+
 document.addEventListener('click', e => {
-  if (!e.target.closest('#jcSearch'))
-    document.querySelectorAll('#jcDd').forEach(d => d.style.display = 'none');
-  if (!e.target.closest('.doc-loader-card'))
-    closeDocPicker();
+  if (!e.target.closest('#jcSearch')) document.querySelectorAll('#jcDd').forEach(d => d.style.display = 'none');
 });
 
 function markUnsaved() {

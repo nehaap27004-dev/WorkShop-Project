@@ -96,3 +96,25 @@ def generate_voucher_number(voucher_type_name, model_cls, number_field_name, def
         if not model_cls.objects.filter(**{number_field_name: candidate}).exists():
             return candidate
         next_num += 1
+from fleet_app.models import Vouchers
+
+
+def get_next_document_number(voucher_type_id, model_cls, number_field):
+    """
+    Generate the next document number using the Voucher Master.
+    """
+
+    if not voucher_type_id:
+        raise ValueError("Voucher type is required.")
+
+    try:
+        voucher = Vouchers.objects.get(pk=voucher_type_id)
+    except Vouchers.DoesNotExist:
+        raise ValueError(
+            f"Voucher type {voucher_type_id} does not exist."
+        )
+
+    return voucher.get_next_voucher_number(
+        model_cls,
+        number_field
+    )
