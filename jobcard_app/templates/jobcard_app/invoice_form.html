@@ -192,6 +192,16 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#2563eb;background:#fff}
 
 <div class="iw">
 
+{% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
 <!-- Page Header -->
 <div class="pg-hdr-box">
   <div>

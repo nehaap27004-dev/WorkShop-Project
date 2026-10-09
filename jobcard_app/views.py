@@ -3867,6 +3867,13 @@ def _snapshot(invoice):
  
  
 def _save_items(invoice, post):
+    print("INVOICE ITEM DEBUG:", {
+        "lab_desc": post.getlist("lab_desc[]"),
+        "lab_hrs": post.getlist("lab_hrs[]"),
+        "lab_rate": post.getlist("lab_rate[]"),
+        "oth_desc": post.getlist("oth_desc[]"),
+        "oth_amt": post.getlist("oth_amt[]"),
+    })
     """Rebuild every InvoiceItem (parts, labour, other) from the POSTed arrays."""
     invoice.items.all().delete()
     order = 0
@@ -3919,7 +3926,7 @@ def _save_items(invoice, post):
     l_rate = post.getlist('lab_rate[]')
     l_tax  = post.getlist('lab_tax[]')
  
-    for i, desc in enumerate(l_desc):
+    for i, desc in enumerate(o_desc):
         if not desc.strip():
             continue
         tech_id = _at(l_tech, i)
@@ -4228,7 +4235,7 @@ def invoice_create(request):
         inv = _save_invoice(request)
         if inv:
             messages.success(request, f'Invoice {inv.display_number} created!')
-            return redirect('jobcard_app:invoice_detail', pk=inv.pk)
+            return redirect('jobcard_app:invoice_list')
         posted_data = _posted_data(request)
 
     sel_vt = _invoice_voucher_type()
