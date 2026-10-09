@@ -3926,7 +3926,7 @@ def _save_items(invoice, post):
     l_rate = post.getlist('lab_rate[]')
     l_tax  = post.getlist('lab_tax[]')
  
-    for i, desc in enumerate(o_desc):
+    for i, desc in enumerate(l_desc):
         if not desc.strip():
             continue
         tech_id = _at(l_tech, i)
