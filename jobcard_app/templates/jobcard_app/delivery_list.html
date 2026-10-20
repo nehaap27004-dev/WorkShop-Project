@@ -3,6 +3,14 @@
 {% load i18n %}
 
 {% block content %}
+<style>
+    .el-modal{position:fixed;inset:0;background:rgba(17,24,39,.5);display:flex;align-items:center;justify-content:center;z-index:2000;padding:16px}
+    .el-modal[hidden]{display:none}
+    .el-modal-box{background:#fff;border-radius:12px;max-width:420px;width:100%;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+    .el-modal-box h3{margin:0 0 8px;font-size:18px;color:#111827}
+    .el-modal-box p{margin:0 0 20px;font-size:14px;color:#4b5563;line-height:1.5}
+    .el-modal-actions{display:flex;justify-content:flex-end;gap:10px}
+</style>
 <div class="container-fluid p-0 mb-5">
 
     <!-- Top Bar: Title + New Delivery Note Button -->
@@ -32,16 +40,16 @@
 
     <!-- Stats Filter Row -->
     <div class="d-flex gap-2 mb-4 flex-wrap">
-        <a href="{% url 'jobcard_app:delivery_list' %}" class="stat-card-custom {% if not status %}active{% endif %}">
+        <a href="{% url 'jobcard_app:delivery_list' %}{% if q %}?q={{ q|urlencode }}{% endif %}" class="stat-card-custom {% if not status %}active{% endif %}">
             <span class="font-weight-bold h5 mb-0">{{ counts.total }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "ALL" %}</span>
         </a>
-        <a href="?status=draft" class="stat-card-custom {% if status == 'draft' %}active{% endif %}">
+        <a href="?status=draft{% if q %}&q={{ q|urlencode }}{% endif %}" class="stat-card-custom {% if status == 'draft' %}active{% endif %}">
             <span class="font-weight-bold h5 mb-0 text-secondary">{{ counts.draft }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "DRAFT" %}</span>
         </a>
-        <a href="?status=delivered" class="stat-card-custom {% if status == 'delivered' %}active{% endif %}">
+        <a href="?status=delivered{% if q %}&q={{ q|urlencode }}{% endif %}" class="stat-card-custom {% if status == 'delivered' %}active{% endif %}">
             <span class="font-weight-bold h5 mb-0 text-success">{{ counts.delivered }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "DELIVERED" %}</span>
         </a>
-        <a href="?status=cancelled" class="stat-card-custom {% if status == 'cancelled' %}active{% endif %}">
+        <a href="?status=cancelled{% if q %}&q={{ q|urlencode }}{% endif %}" class="stat-card-custom {% if status == 'cancelled' %}active{% endif %}">
             <span class="font-weight-bold h5 mb-0 text-danger">{{ counts.cancelled }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "CANCELLED" %}</span>
         </a>
     </div>
@@ -70,7 +78,7 @@
     <div class="card shadow-sm border-0">
         <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span class="card-banner-title"><i class="bi bi-list-task mr-1 text-primary"></i> {% trans "Delivery Notes Register" %}</span>
-            <span class="badge badge-secondary px-3 py-1 font-weight-bold">Total: {{ counts.total }}</span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold">Total: {{ deliveries|length }}</span>
         </div>
         <div class="card-body p-0">
             {% if deliveries %}
@@ -85,6 +93,7 @@
                             <th>{% trans "Driver" %}</th>
                             <th>{% trans "Odometer Out" %}</th>
                             <th>{% trans "Status" %}</th>
+                            <th class="text-right">{% trans "Grand Total" %}</th>
                             <th style="width: 140px;" class="text-center">{% trans "Actions" %}</th>
                         </tr>
                     </thead>
@@ -92,8 +101,8 @@
                         {% for dn in deliveries %}
                         <tr>
                             <td class="align-middle font-weight-bold">
-                                <a href="{% url 'jobcard_app:delivery_detail' dn.pk %}" class="text-primary" style="font-size:14px;">
-                                    {{ dn.voucher_number }}
+                                <a href="{% url 'jobcard_app:delivery_edit' dn.pk %}" class="text-primary d-block" style="font-size:14px;">
+                                    <i class="bi bi-card-text mr-1"></i> {{ dn.voucher_number }}
                                 </a>
                                 <div class="text-muted small">{{ dn.date|date:"d M Y" }}</div>
                             </td>
@@ -101,19 +110,23 @@
                                 {{ dn.customer.ledger_name|default:"—" }}
                             </td>
                             <td class="align-middle">
-                                {% if dn.workshop_vehicle %}
-                                    <span class="badge badge-light border text-dark"><i class="bi bi-truck mr-1 text-secondary"></i> {{ dn.workshop_vehicle }}</span>
-                                {% else %}<span class="text-muted">—</span>{% endif %}
+                                {% for dv in dn.vehicles.all %}
+                                    <span class="badge badge-light border text-dark mr-1"><i class="bi bi-truck mr-1 text-secondary"></i> {{ dv.vehicle.registration_number|default:dv.vehicle.vehicle_number }}</span>
+                                {% empty %}
+                                    {% if dn.vehicle %}
+                                        <span class="badge badge-light border text-dark"><i class="bi bi-truck mr-1 text-secondary"></i> {{ dn.vehicle.registration_number|default:dn.vehicle.vehicle_number }}</span>
+                                    {% else %}<span class="text-muted">—</span>{% endif %}
+                                {% endfor %}
                             </td>
                             <td class="align-middle">
-                                {% if dn.job_card %}
-                                    <a href="{% url 'jobcard_app:jobcard_edit' dn.job_card.pk %}" class="font-weight-bold text-primary">
-                                        {{ dn.job_card.job_number }}
+                                {% if dn.jobcard %}
+                                    <a href="{% url 'jobcard_app:jobcard_edit' dn.jobcard.pk %}" class="font-weight-bold text-primary">
+                                        {{ dn.jobcard.job_number }}
                                     </a>
                                 {% else %}<span class="text-muted">—</span>{% endif %}
                             </td>
                             <td class="align-middle text-muted">{{ dn.driver_name|default:"—" }}</td>
-                            <td class="align-middle font-weight-600 text-dark">{{ dn.odometer_reading_out|default:"—" }} km</td>
+                            <td class="align-middle font-weight-600 text-dark">{% if dn.odometer_out %}{{ dn.odometer_out }} km{% else %}—{% endif %}</td>
                             <td class="align-middle">
                                 {% if dn.status == 'delivered' %}
                                     <span class="badge badge-success"><i class="bi bi-check-circle mr-1"></i> {% trans "Delivered" %}</span>
@@ -123,13 +136,22 @@
                                     <span class="badge badge-secondary">{% trans "Draft" %}</span>
                                 {% endif %}
                             </td>
-                            <td class="align-middle text-center">
-                                <a href="{% url 'jobcard_app:delivery_detail' dn.pk %}" class="btn btn-sm btn-outline-primary mr-1" title="{% trans 'View Details' %}">
-                                    <i class="bi bi-eye"></i>
-                                </a>
+                            <td class="align-middle text-right font-weight-bold text-dark" style="white-space:nowrap;">
+                                {{ dn.get_grand_total|floatformat:3 }}
+                            </td>
+                            <td class="align-middle text-center" style="white-space:nowrap;">
                                 <a href="{% url 'jobcard_app:delivery_edit' dn.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans 'Edit' %}">
                                     <i class="bi bi-pencil"></i>
                                 </a>
+                                {% if dn.status != 'delivered' %}
+                                <button type="button" class="btn btn-sm btn-outline-danger ml-1"
+                                        title="{% trans 'Delete' %}"
+                                        data-url="{% url 'jobcard_app:delivery_delete' dn.pk %}"
+                                        data-ref="{{ dn.voucher_number }}"
+                                        onclick="openDelete(this)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -145,4 +167,35 @@
         </div>
     </div>
 </div>
+
+<!-- Delete confirmation -->
+<div class="el-modal" id="elDelModal" hidden>
+    <div class="el-modal-box">
+        <h3>{% trans "Delete delivery note?" %}</h3>
+        <p>{% trans "Delivery note" %} <b id="elDelRef"></b> {% trans "will be removed from the list." %}</p>
+        <form method="post" id="elDelForm">{% csrf_token %}
+            <div class="el-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDelete()">{% trans "Cancel" %}</button>
+                <button type="submit" class="btn btn-danger">{% trans "Delete" %}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openDelete(btn) {
+    document.getElementById('elDelForm').action = btn.dataset.url;
+    document.getElementById('elDelRef').textContent = btn.dataset.ref || '';
+    document.getElementById('elDelModal').hidden = false;
+}
+function closeDelete() {
+    document.getElementById('elDelModal').hidden = true;
+}
+document.getElementById('elDelModal').addEventListener('click', function (e) {
+    if (e.target === this) closeDelete();
+});
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeDelete();
+});
+</script>
 {% endblock %}

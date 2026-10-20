@@ -154,17 +154,12 @@
 
             <!-- WORKSHOP & FLEET OPERATIONS -->
             <li class="erp-nav-section-title">{% trans "Workshop & Fleet" %}</li>
-            
+
             <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-people nav-icon"></i>
-                    <span>{% trans "Customers & Clients" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
+                <a class="erp-nav-link" href="{% url 'accounts_app:manage_customers' %}">
+                    <i class="bi bi-person-lines-fill nav-icon"></i>
+                    <span>{% trans "Customers" %}</span>
                 </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:manage_customers' %}">{% trans "Customer Directory" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:manage_customers' %}">+ {% trans "Add Customer" %}</a></li>
-                </ul>
             </li>
 
             <li class="erp-nav-item">
@@ -180,17 +175,17 @@
                     <li><a class="erp-submenu-link" href="{% url 'fleet_app:manufacturer_list' %}">{% trans "Manufacturers" %}</a></li>
                 </ul>
             </li>
-
             <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
+                <a class="erp-nav-link" href="{% url 'jobcard_app:jobcard_create' %}">
                     <i class="bi bi-card-checklist nav-icon"></i>
-                    <span>{% trans "Job Cards & Orders" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
+                    <span>{% trans "Create Job Card" %}</span>
                 </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:jobcard_list' %}">{% trans "Job Cards List" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:inspection_list' %}">{% trans "Inspections" %}</a></li>
-                </ul>
+            </li>
+            <li class="erp-nav-item">
+                <a class="erp-nav-link" href="{% url 'jobcard_app:inspection_list' %}">
+                    <i class="bi bi-card-checklist nav-icon"></i>
+                    <span>{% trans "Inspections" %}</span>
+                </a>
             </li>
 
             <li class="erp-nav-item">
@@ -215,7 +210,7 @@
             <li class="erp-nav-item">
                 <a class="erp-nav-link" href="{% url 'jobcard_app:invoice_list' %}">
                     <i class="bi bi-receipt nav-icon"></i>
-                    <span>{% trans "Invoices & Billing" %}</span>
+                    <span>{% trans "Invoices" %}</span>
                 </a>
             </li>
 

@@ -1,13 +1,16 @@
 from datetime import datetime
 
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse
 from accounts_app.models import LedgerCreation
 from item_master.models import Item
 from django.contrib.auth.models import User
 from django.conf import settings
 from decimal import Decimal
-
+from .constants import ESTIMATE_VOUCHER_ID
+from .constants import QUOTATION_VOUCHER_ID
+from .constants import JOBCARD_VOUCHER_ID
+from .constants import DELIVERY_NOTE_VOUCHER_ID
 
 class ServiceCategory(models.Model):
     name        = models.CharField(max_length=150, unique=True)
@@ -115,84 +118,22 @@ class WorkshopVehicle(models.Model):
     ]
 
     # ── Customer (required) ───────────────────────────────────
-    customer = models.ForeignKey(
-        'accounts_app.LedgerCreation',
-        on_delete=models.PROTECT,
-        related_name='workshop_vehicles',
-        verbose_name='Customer / Owner'
-    )
+    customer = models.ForeignKey('accounts_app.LedgerCreation',on_delete=models.PROTECT)
 
     # ── Vehicle Information ───────────────────────────────────
-    vehicle_number = models.CharField(
-        max_length=20,
-        unique=True,
-        verbose_name='Vehicle Number',
-        help_text='Auto-generated: VH-00001'
-    )
-    vehicle_type = models.ForeignKey(
-        'fleet_app.VehicleCategory',
-        on_delete=models.PROTECT,
-        null=True,      
-        blank=True,
-        related_name='workshop_vehicles',
-        verbose_name='Vehicle Type'
-    )
-    registration_number = models.CharField(
-        max_length=30,
-        unique=True,
-        verbose_name='Registration / Plate No'
-    )
-    chassis_number = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name='Chassis Number'
-    )
-    engine_number = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name='Engine Number'
-    )
-    manufacturer = models.ForeignKey(
-        'fleet_app.Manufacturer',
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='workshop_vehicles',
-        verbose_name='Manufacturer'
-    )
-    vehicle_model = models.ForeignKey(
-        'fleet_app.VehicleModel',
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='workshop_vehicles',
-        verbose_name='Model'
-    )
-    year = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        verbose_name='Model Year'
-    )
-    color = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name='Color'
-    )
-    fuel_type = models.CharField(
-        max_length=20,
-        choices=FUEL_CHOICES,
-        blank=True,
-        null=True,
-        verbose_name='Fuel Type'
-    )
-    odometer = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        verbose_name='Current Odometer (km)'
-    )
+    vehicle_number = models.CharField( max_length=20)
+    vehicle_type = models.ForeignKey('fleet_app.VehicleCategory',on_delete=models.PROTECT,null=True, blank=True)
+    registration_number = models.CharField( max_length=30,  unique=True)
+    chassis_number = models.CharField( max_length=50, blank=True, null=True)
+    engine_number = models.CharField(max_length=50,blank=True,null=True)
+    manufacturer = models.ForeignKey('fleet_app.Manufacturer',on_delete=models.PROTECT,null=True,blank=True )
+    vehicle_model = models.ForeignKey('fleet_app.VehicleModel',on_delete=models.PROTECT,null=True, blank=True )
+    year = models.PositiveIntegerField(blank=True,null=True )
+    color = models.CharField( max_length=50, blank=True,null=True )
+    fuel_type = models.CharField(max_length=20,choices=FUEL_CHOICES,blank=True,null=True )
+    odometer = models.PositiveIntegerField( blank=True,null=True)
+    mileage = models.DecimalField( max_digits=6, decimal_places=2, blank=True, null=True)
+
     vehicle_image = models.ImageField(
         upload_to='workshop_vehicles/images/',
         blank=True,
@@ -309,11 +250,9 @@ class WorkshopVehicle(models.Model):
 
     class Meta:
         ordering            = ['-created_on']
-        verbose_name        = 'Workshop Vehicle'
-        verbose_name_plural = 'Workshop Vehicles'
+        
 
 
-from django.db import transaction
 
 
 class JobCard(models.Model):
@@ -340,8 +279,10 @@ class JobCard(models.Model):
         ('3/4',   '3/4'),
         ('full',  'Full'),
     ]
-    voucherType = models.ForeignKey('fleet_app.Vouchers', null=True, blank=True, default=30, on_delete=models.SET_NULL, related_name='job_cards')
 
+
+    voucherType = models.ForeignKey('fleet_app.Vouchers', null=True, blank=True,
+        default=JOBCARD_VOUCHER_ID,on_delete=models.SET_NULL, related_name='job_cards')
     voucher_number  = models.CharField(max_length=50, blank=True, null=True)
     date            = models.DateField()
 
@@ -368,20 +309,25 @@ class JobCard(models.Model):
         if not self.voucher_number:
             from fleet_app.models import Vouchers
             with transaction.atomic():
-                # the lock makes a second simultaneous save wait, then see the first row
-                vt = Vouchers.objects.select_for_update().get(pk=self.voucherType_id or 30)
+                vt = Vouchers.objects.select_for_update().get(
+                    pk=self.voucherType_id or JOBCARD_VOUCHER_ID
+                )
                 self.voucherType = vt
-                self.voucher_number = vt.get_next_voucher_number()
-                self.job_number = self.voucher_number
+                self.voucher_number = vt.get_next_voucher_number(type(self), 'voucher_number')
                 super().save(*args, **kwargs)
             return
-        self.job_number = self.voucher_number
         super().save(*args, **kwargs)
+    @property
+    def job_number(self):
+        return self.voucher_number
+
+    @job_number.setter
+    def job_number(self, value):
+        self.voucher_number = value
 
     @property
     def display_voucher_number(self):
-        return self.voucher_number or self.job_number
-
+        return self.voucher_number
 
 
     def get_parts_total(self):
@@ -602,8 +548,10 @@ class Estimate(models.Model):
         ('rejected', 'Rejected'),
     ]
     # jobcard_app/models.py, in Estimate
+
     voucherType = models.ForeignKey(
         'fleet_app.Vouchers', null=True, blank=True,
+        default=ESTIMATE_VOUCHER_ID,
         on_delete=models.SET_NULL, related_name='estimates'
     )
     voucher_number = models.CharField(max_length=50, blank=True, null=True)
@@ -690,11 +638,31 @@ class Estimate(models.Model):
 
     def __str__(self):
         return f"{self.estimate_number} — {self.customer}"
+    from .constants import ESTIMATE_VOUCHER_ID
+
+
+
+    def save(self, *args, **kwargs):
+        if not self.voucher_number:
+            from fleet_app.models import Vouchers
+            with transaction.atomic():
+                vt = Vouchers.objects.select_for_update().get(
+                    pk=self.voucherType_id or ESTIMATE_VOUCHER_ID
+                )
+                self.voucherType = vt
+                self.voucher_number = vt.get_next_voucher_number(type(self), 'voucher_number')
+                if not self.estimate_number:
+                    self.estimate_number = self.voucher_number
+                super().save(*args, **kwargs)
+            return
+        if not self.estimate_number:
+            self.estimate_number = self.voucher_number
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['-created_on']
-        verbose_name = 'Estimate'
-        verbose_name_plural = 'Estimates'
+
+         
 class EstimateVehicle(models.Model):
     """One row per vehicle attached to an Estimate"""
 
@@ -796,23 +764,7 @@ class EstimateComplaint(models.Model):
 
     class Meta:
         ordering = ['order']
-def get_next_estimate_number(request):
-    """AJAX view to get next estimate voucher number"""
-    from fleet_app.models import Vouchers
-    from jobcard_app.utils import generate_voucher_number
-    from .models import Estimate
 
-    voucher_type_id = request.GET.get('voucher_type_id')
-    if voucher_type_id:
-        try:
-            vt = Vouchers.objects.get(pk=voucher_type_id)
-            num = vt.get_next_voucher_number(Estimate, 'voucher_number')
-            return JsonResponse({'job_number': num, 'success': True})
-        except Vouchers.DoesNotExist:
-            pass
-
-    next_num = generate_voucher_number('Estimate', Estimate, 'voucher_number', default_prefix='VCH-')
-    return JsonResponse({'job_number': next_num, 'success': True})
 # ─────────────────────────────────────────────────────────────
 # QUOTATION
 # ─────────────────────────────────────────────────────────────
@@ -825,9 +777,10 @@ class Quotation(models.Model):
         ('expired',  'Expired'),
     ]
     voucherType = models.ForeignKey(
-        'fleet_app.Vouchers', null=True, blank=True,
-        on_delete=models.SET_NULL, related_name='quotations_vt'
-    )
+            'fleet_app.Vouchers', null=True, blank=True,
+            default=QUOTATION_VOUCHER_ID,
+            on_delete=models.SET_NULL, related_name='Quotations'
+        )
     voucher_number = models.CharField(max_length=50, blank=True, null=True)
     quotation_number = models.CharField(max_length=50, unique=True, blank=True)
     estimate         = models.ForeignKey(
@@ -857,7 +810,7 @@ class Quotation(models.Model):
     status           = models.CharField(max_length=20,
                            choices=STATUS_CHOICES, default='draft')
     mileage          = models.PositiveIntegerField(null=True, blank=True)
-    vin              = models.CharField(max_length=50, blank=True, null=True, verbose_name='VIN / Chassis No')
+    vin              = models.CharField(max_length=50, blank=True, null=True)
     advisor = models.ForeignKey(
                 'fleet_app.Staff', on_delete=models.SET_NULL,
                 null=True, blank=True,
@@ -874,7 +827,22 @@ class Quotation(models.Model):
     created_by       = models.IntegerField(null=True, blank=True)
     updated_by       = models.IntegerField(null=True, blank=True)
 
- 
+    def save(self, *args, **kwargs):
+        if not self.voucher_number:
+            from fleet_app.models import Vouchers
+            with transaction.atomic():
+                vt = Vouchers.objects.select_for_update().get(
+                    pk=self.voucherType_id or QUOTATION_VOUCHER_ID
+                )
+                self.voucherType = vt
+                self.voucher_number = vt.get_next_voucher_number(type(self), 'voucher_number')
+                if not self.quotation_number:
+                    self.quotation_number = self.voucher_number
+                super().save(*args, **kwargs)
+            return
+        if not self.quotation_number:
+            self.quotation_number = self.voucher_number
+        super().save(*args, **kwargs)
 
     def get_subtotal(self):
         return sum(item.total_price() for item in self.items.all())
@@ -906,8 +874,7 @@ class Quotation(models.Model):
 
     class Meta:
         ordering = ['-created_on']
-        verbose_name = "Quotation"
-        verbose_name_plural = "Quotations"
+       
 
 
 class QuotationVehicle(models.Model):
@@ -915,7 +882,7 @@ class QuotationVehicle(models.Model):
 
     quotation  = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name='vehicles')
     vehicle    = models.ForeignKey('WorkshopVehicle', on_delete=models.PROTECT, related_name='quotation_entries')
-    mileage    = models.PositiveIntegerField(null=True, blank=True, verbose_name='Mileage (km)')
+    mileage    = models.PositiveIntegerField(null=True, blank=True)
     notes      = models.CharField(max_length=255, blank=True)
     created_on = models.DateTimeField(auto_now_add=True)
 
@@ -1054,6 +1021,8 @@ class QuotationComplaint(models.Model):
         ordering = ['complaint_type', 'order']
 
 
+from .constants import INSPECTION_VOUCHER_ID
+from django.db import transaction
 
 
 
@@ -1069,8 +1038,12 @@ class VehicleInspection(models.Model):
     ]
 
     # Auto number
-    inspection_number = models.CharField(
-        max_length=50, unique=True, blank=True)
+    voucherType = models.ForeignKey(
+            'fleet_app.Vouchers', null=True, blank=True,
+            default=INSPECTION_VOUCHER_ID,
+            on_delete=models.SET_NULL, related_name='inspection'
+        )    
+    voucher_number  = models.CharField(max_length=50, blank=True, null=True)
 
     # Links
     vehicle   = models.ForeignKey(
@@ -1123,8 +1096,25 @@ class VehicleInspection(models.Model):
     def save(self, *args, **kwargs):
         if isinstance(self.inspection_date, str):
             self.inspection_date = datetime.strptime(self.inspection_date, "%Y-%m-%d").date()
-        super().save(*args, **kwargs)
 
+        if not self.voucher_number:
+            from fleet_app.models import Vouchers
+            with transaction.atomic():
+                vt = Vouchers.objects.select_for_update().get(
+                    pk=self.voucherType_id or INSPECTION_VOUCHER_ID
+                )
+                self.voucherType = vt
+                self.voucher_number = vt.get_next_voucher_number(type(self), 'voucher_number')
+                super().save(*args, **kwargs)
+            return
+        super().save(*args, **kwargs)
+    @property
+    def inspection_number(self):
+        return self.voucher_number
+    
+    @inspection_number.setter
+    def inspection_number(self, value):
+        self.voucher_number = value
     @property
     def job_card(self):
         return self.jobcard
@@ -1385,9 +1375,8 @@ class DeliveryNote(models.Model):
         ('Full',  'Full'),
     ]
 
-    voucherType    = models.ForeignKey('fleet_app.Vouchers', null=True, blank=True, on_delete=models.SET_NULL, related_name='delivery_notes')
+    voucherType    = models.ForeignKey('fleet_app.Vouchers', null=True, blank=True,default=DELIVERY_NOTE_VOUCHER_ID,on_delete=models.SET_NULL, related_name='delivery_notes')
     voucher_number = models.CharField(max_length=50, blank=True, null=True)
-
     # ── Links ─────────────────────────────────────────────────
     jobcard  = models.ForeignKey(
         'JobCard', on_delete=models.SET_NULL,
@@ -1467,7 +1456,20 @@ class DeliveryNote(models.Model):
     created_by = models.IntegerField(null=True, blank=True) 
     updated_by = models.IntegerField(null=True, blank=True)
 
-    
+    def save(self, *args, **kwargs):
+        # The voucher number is always generated here (never typed on the page),
+        # exactly like Estimate.save() and Quotation.save().
+        if not self.voucher_number:
+            from fleet_app.models import Vouchers
+            with transaction.atomic():
+                vt = Vouchers.objects.select_for_update().get(
+                    pk=self.voucherType_id or DELIVERY_NOTE_VOUCHER_ID
+                )
+                self.voucherType = vt
+                self.voucher_number = vt.get_next_voucher_number(type(self), 'voucher_number')
+                super().save(*args, **kwargs)
+            return
+        super().save(*args, **kwargs)
 
     def get_parts_total(self):
         return sum(

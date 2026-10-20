@@ -30,7 +30,7 @@ body{background:#f5f6fa;font-family:'Segoe UI',sans-serif}
 /* ── Field labels ── */
 .fl{display:block;font-size:10px;font-weight:700;color:#9ca3af;
     text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-.re   {color:#ef4444}
+.req{color:#ef4444}
 
 /* ── Inputs ── */
 .fi{width:100%;border:1px solid #e5e7eb;border-radius:6px;
@@ -174,6 +174,22 @@ textarea.fi{resize:vertical}
 
 /* divider */
 .divider{height:1px;background:#f3f4f6;margin:0 20px}
+
+/* import buttons */
+.imp-btn{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
+         border-radius:6px;padding:7px 14px;font-size:12px;
+         font-weight:700;cursor:pointer;display:inline-flex;
+         align-items:center;gap:6px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.imp-btn:hover{background:#dbeafe}
+.imp-panel{display:none;position:absolute;right:0;top:110%;
+           background:#fff;border:1.5px solid #2563eb;border-radius:8px;
+           min-width:380px;max-width:92vw;z-index:400;
+           box-shadow:0 8px 24px rgba(0,0,0,.13);overflow:hidden}
+.imp-panel-hdr{background:#eff6ff;padding:10px 14px;border-bottom:1px solid #bfdbfe;
+               display:flex;justify-content:space-between;align-items:center}
+.imp-panel-title{font-size:12px;font-weight:700;color:#1d4ed8}
+.imp-x{background:none;border:none;color:#9ca3af;font-size:16px;cursor:pointer;line-height:1}
+.imp-msg{padding:14px;font-size:12px;color:#9ca3af;text-align:center}
 </style>
 
 <div class="wrap">
@@ -181,13 +197,11 @@ textarea.fi{resize:vertical}
   <!-- ── Page Header ── -->
   <div class="page-hdr">
     <div class="page-hdr-left">
-      
       <div>
         <h1 class="page-title">
           {% if edit_mode %}Edit Quotation — {{ quotation.quotation_number }}
           {% else %}Create Quotation{% endif %}
         </h1>
-        
       </div>
     </div>
     <a href="{% url 'jobcard_app:quotation_list' %}" class="btn-back">← Back</a>
@@ -199,9 +213,6 @@ textarea.fi{resize:vertical}
 
   <form method="post" id="quaForm">{% csrf_token %}
 
-  <!-- ════════════════════════════════════════
-       TABLE 1 — QUOTATION INFORMATION
-  ════════════════════════════════════════ -->
   <input type="hidden" name="loaded_estimate" id="loadedEstId" value="{% if edit_mode and quotation.estimate %}{{ quotation.estimate.id }}{% elif prefill_est %}{{ prefill_est.id }}{% endif %}">
   <input type="hidden" name="loaded_jobcard" id="loadedJcId" value="{% if edit_mode and quotation.jobcard %}{{ quotation.jobcard.id }}{% elif prefill_job %}{{ prefill_job.id }}{% endif %}">
 
@@ -216,76 +227,67 @@ textarea.fi{resize:vertical}
         </div>
       </div>
 
-      <!-- Load from Estimate Button & Dropdown -->
-      <div style="position:relative" id="estPickerWrap">
-        <button type="button" onclick="toggleEstPicker()"
-                style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
-                       border-radius:6px;padding:7px 14px;font-size:12px;
-                       font-weight:700;cursor:pointer;display:inline-flex;
-                       align-items:center;gap:6px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.05)">
-           Load from Estimate ▾
-        </button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
 
-        <!-- Dropdown Panel -->
-        <div id="estPickerPanel"
-             style="display:none;position:absolute;right:0;top:110%;
-                    background:#fff;border:1.5px solid #2563eb;border-radius:8px;
-                    min-width:380px;z-index:400;
-                    box-shadow:0 8px 24px rgba(0,0,0,.13);overflow:hidden">
-          <div style="background:#eff6ff;padding:10px 14px;
-                      border-bottom:1px solid #bfdbfe;
-                      display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:12px;font-weight:700;color:#1d4ed8">
-               Select Estimate to Import
-            </span>
-            <button type="button" onclick="closeEstPicker()"
-                    style="background:none;border:none;color:#9ca3af;
-                           font-size:16px;cursor:pointer;line-height:1">✕</button>
-          </div>
-
-          <div id="estNoCustomer"
-               style="padding:14px;font-size:12px;color:#9ca3af;text-align:center">
-            Please select a customer first to view estimates
-          </div>
-          <div id="estList" style="max-height:300px;overflow-y:auto;display:none"></div>
-          <div id="estEmpty"
-               style="display:none;padding:14px;font-size:12px;
-                      color:#9ca3af;text-align:center">
-            No estimates found for this customer
+        <!-- Load from Job Card -->
+        <div style="position:relative" id="jcPickerWrap">
+          <button type="button" class="imp-btn" onclick="toggleJcPicker()">Load from Job Card ▾</button>
+          <div id="jcPickerPanel" class="imp-panel">
+            <div class="imp-panel-hdr">
+              <span class="imp-panel-title">Select Job Card to Import</span>
+              <button type="button" class="imp-x" onclick="closeJcPicker()">✕</button>
+            </div>
+            <div id="jcNoCustomer" class="imp-msg">Please select a customer first to view job cards</div>
+            <div id="jcList" style="max-height:300px;overflow-y:auto;display:none"></div>
+            <div id="jcEmpty" class="imp-msg" style="display:none">No job cards found for this customer</div>
           </div>
         </div>
+
+        <!-- Load from Estimate -->
+        <div style="position:relative" id="estPickerWrap">
+          <button type="button" class="imp-btn" onclick="toggleEstPicker()">Load from Estimate ▾</button>
+          <div id="estPickerPanel" class="imp-panel">
+            <div class="imp-panel-hdr">
+              <span class="imp-panel-title">Select Estimate to Import</span>
+              <button type="button" class="imp-x" onclick="closeEstPicker()">✕</button>
+            </div>
+            <div id="estNoCustomer" class="imp-msg">Please select a customer first to view estimates</div>
+            <div id="estList" style="max-height:300px;overflow-y:auto;display:none"></div>
+            <div id="estEmpty" class="imp-msg" style="display:none">No estimates found for this customer</div>
+          </div>
+        </div>
+
       </div>
     </div>
 
     <div class="card-body">
 
-      <!-- Loaded Estimate Banner -->
+      <!-- Loaded (imported) banner -->
       <div id="estBanner"
-           style="display:{% if prefill_est or edit_mode and quotation.estimate %}flex{% else %}none{% endif %};background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:9px 14px;font-size:12px;color:#1e40af;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px">
-                <span id="estBannerText">
-                  {% if prefill_est %}Imported data from Estimate: <strong>{{ prefill_est.estimate_number }}</strong>
-                  {% elif edit_mode and quotation.estimate %}Linked Estimate: <strong>{{ quotation.estimate.estimate_number }}</strong>{% endif %}
-                </span>
-                <button type="button" onclick="this.parentElement.style.display='none'"
-                        style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:14px">✕</button>
-              </div>
+           style="display:{% if prefill_est or prefill_job or edit_mode and quotation.estimate %}flex{% else %}none{% endif %};background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:9px 14px;font-size:12px;color:#1e40af;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px">
+        <span id="estBannerText">
+          {% if prefill_est %}Imported data from Estimate: <strong>{{ prefill_est.estimate_number }}</strong>
+          {% elif prefill_job %}Imported data from Job Card: <strong>{{ prefill_job.voucher_number }}</strong>
+          {% elif edit_mode and quotation.estimate %}Linked Estimate: <strong>{{ quotation.estimate.estimate_number }}</strong>{% endif %}
+        </span>
+        <button type="button" onclick="this.parentElement.style.display='none'"
+                style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:14px">✕</button>
+      </div>
 
-              <!-- Row 1: Voucher No | Quotation No | Date | Status -->
-              <div class="g4 mb">
-                <input type="hidden" name="voucherType" id="id_voucherType"
-          value="{% if edit_mode and quotation.voucherType %}{{ quotation.voucherType.id }}{% else %}3{% endif %}">
-
+      <!-- Row 1: Voucher No | PO No | Date | Status -->
+      <div class="g4 mb">
+        <!-- Voucher number is generated by the server when the quotation is saved
+             (Quotation voucher type). This box only shows it; nothing is posted. -->
         <div>
           <label class="fl">Voucher Number</label>
-          <input type="text" name="voucher_number" id="id_voucher_number" class="fi"
-            placeholder="e.g. QUA-00001"
-            value="{% if edit_mode %}{{ quotation.voucher_number|default:'' }}{% endif %}">
+          <input type="text" class="fi" id="id_voucher_number" readonly
+            value="{% if edit_mode %}{{ quotation.voucher_number|default:quotation.quotation_number }}{% else %}{{ next_voucher_no }}{% endif %}">
         </div>
         <div>
           <label class="fl">PO Number</label>
-          <input type="text" name="Quotation_number" class="fi" required
+          <input type="text" name="po_number" class="fi"
             placeholder="e.g. PO-2026-001"
-            value="{% if edit_mode %}{{ quotation.quotation_number }}{% endif %}">
+            value="{% if edit_mode %}{{ quotation.po_number|default:'' }}{% endif %}">
         </div>
         <div>
           <label class="fl">Date <span class="req">*</span></label>
@@ -312,8 +314,8 @@ textarea.fi{resize:vertical}
             <option value="">— Select Customer —</option>
             {% for c in customers %}
             <option value="{{ c.id }}"
-              data-phone="{{ c.mobile_number|default:'' }}"
-              {% if edit_mode and quotation.customer_id == c.id %}selected{% elif prefill_est and prefill_est.customer_id == c.id %}selected{% endif %}>
+              data-phone="{{ c.mobile|default:'' }}"
+              {% if edit_mode and quotation.customer_id == c.id %}selected{% elif prefill_est and prefill_est.customer_id == c.id %}selected{% elif prefill_job and prefill_job.customer_id == c.id %}selected{% endif %}>
               {{ c.ledger_name }}
             </option>
             {% endfor %}
@@ -453,7 +455,7 @@ textarea.fi{resize:vertical}
   </div>
 
   <!-- ════════════════════════════════════════
-       TABLE 2 — ESTIMATE DETAILS
+       TABLE 2 — QUOTATION DETAILS
   ════════════════════════════════════════ -->
   <div class="card">
     <div class="card-hdr">
@@ -461,7 +463,6 @@ textarea.fi{resize:vertical}
         <div class="card-hdr-title">Quotation Details</div>
       </div>
     </div>
-
 
     <!-- Complaint section card -->
     <div style="margin:12px 20px 0">
@@ -633,10 +634,7 @@ textarea.fi{resize:vertical}
         </table>
     </div>
 
-    <button
-        type="button"
-        class="btn-add-row"
-        onclick="addPartRow()">
+    <button type="button" class="btn-add-row" onclick="addPartRow()">
         + Add Part
     </button>
 
@@ -647,7 +645,7 @@ textarea.fi{resize:vertical}
     </div>
     <div class="divider"></div>
 
-    <!-- ── Labour Estimate ── -->
+    <!-- ── Labour ── -->
     <div class="sub-hdr" style="margin-top:16px">
       <div>
         <div class="sub-hdr-title">Labour Charges</div>
@@ -753,7 +751,6 @@ textarea.fi{resize:vertical}
                  font-size:13px;width:110px;text-align:right;outline:none;
                  font-family:monospace;font-weight:700"
           oninput="calcAll()">
-        
       </span>
     </div>
     <div class="gt-row">
@@ -785,23 +782,14 @@ textarea.fi{resize:vertical}
 
   </form>
 
-  
-
   <!-- Save bar -->
   <div class="save-bar">
     <a href="{% url 'jobcard_app:quotation_list' %}" class="btn-cancel">Cancel</a>
-    <button
-        type="button"
-        class="btn-save"
-        onclick="document.getElementById('quaForm').submit()">
-
+    <!-- requestSubmit() runs the browser's required-field checks; submit() skips them -->
+    <button type="button" class="btn-save"
+            onclick="document.getElementById('quaForm').requestSubmit()">
         💾
-        {% if edit_mode %}
-            Update Quotation
-        {% else %}
-            Save Quotation
-        {% endif %}
-
+        {% if edit_mode %}Update Quotation{% else %}Save Quotation{% endif %}
     </button>
   </div>
 
@@ -811,17 +799,99 @@ textarea.fi{resize:vertical}
 const VEH_URL          = "{% url 'jobcard_app:jc_get_vehicles' %}";
 const ITEMS_URL        = "{% url 'jobcard_app:jc_get_items' %}";
 const ITEM_MASTER_URL  = "{% url 'jobcard_app:ajax_get_all_items' %}";
-const GET_EST_URL      = "{% url 'jobcard_app:jc_get_estimate_data' %}";
 const GET_CUST_EST_URL = "{% url 'jobcard_app:ajax_get_customer_estimates' %}";
+const GET_EST_URL      = "{% url 'jobcard_app:ajax_estimate_quotation_data' %}";   // estimate -> quotation payload
+const JC_LIST_URL      = "{% url 'jobcard_app:ajax_customer_jobcards' %}";         // job cards of a customer
+const JC_DATA_URL      = "{% url 'jobcard_app:ajax_jobcard_estimate_data' %}";     // job card -> payload
+const HAS_PREFILL      = {% if prefill_est or prefill_job %}true{% else %}false{% endif %};
 
 const fmt = n => parseFloat(n||0).toFixed(3);
+const escAttr = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 let quotationItems = [];
+let itemsReady = Promise.resolve();
+
+/* ══════════════════════════════════════════
+   IMPORT PICKERS (Job Card / Estimate)
+══════════════════════════════════════════ */
+function toggleJcPicker() {
+  const panel = document.getElementById('jcPickerPanel');
+  if (!panel) return;
+  closeEstPicker();
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'block';
+    fetchCustomerJobcards();
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function closeJcPicker() {
+  const panel = document.getElementById('jcPickerPanel');
+  if (panel) panel.style.display = 'none';
+}
+
+function fetchCustomerJobcards() {
+  const custSel = document.getElementById('custSel');
+  const cid     = custSel ? custSel.value : '';
+  const noCust  = document.getElementById('jcNoCustomer');
+  const list    = document.getElementById('jcList');
+  const empty   = document.getElementById('jcEmpty');
+
+  if (empty) empty.style.display = 'none';
+  if (!cid) {
+    if (list)   list.style.display = 'none';
+    if (noCust) noCust.style.display = 'block';
+    return;
+  }
+  if (noCust) noCust.style.display = 'none';
+  if (list) {
+    list.innerHTML = '<div class="imp-msg" style="color:#6b7280">Loading job cards...</div>';
+    list.style.display = 'block';
+  }
+
+  fetch(JC_LIST_URL + '?customer_id=' + cid, { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(d => {
+      if (!d.jobcards || !d.jobcards.length) {
+        if (list)  list.style.display  = 'none';
+        if (empty) empty.style.display = 'block';
+        return;
+      }
+      let html = '';
+      d.jobcards.forEach(j => {
+        html += `
+          <div onclick="selectAndLoadJobcard(${j.id})"
+               style="padding:10px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .12s"
+               onmouseover="this.style.background='#eff6ff'"
+               onmouseout="this.style.background='#fff'">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-weight:700;font-size:13px;color:#1e40af">${escAttr(j.number)}</span>
+              <span style="font-size:11px;font-weight:700;color:#6b7280">${escAttr(j.status)}</span>
+            </div>
+            <div style="font-size:11px;color:#4b5563;margin-top:3px">📅 ${escAttr(j.date)}</div>
+            ${j.vehicles ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px">🚗 ${escAttr(j.vehicles)}</div>` : ''}
+          </div>`;
+      });
+      if (list) list.innerHTML = html;
+    })
+    .catch(err => {
+      console.error('Error fetching job cards:', err);
+      if (list) list.innerHTML = '<div class="imp-msg" style="color:#ef4444">Failed to load job cards</div>';
+    });
+}
+
+function selectAndLoadJobcard(jobId) {
+  closeJcPicker();
+  if (!confirmReplace()) return;
+  loadJobCardData(jobId);
+}
 
 /* ── Estimate Picker Dropdown ── */
 function toggleEstPicker() {
   const panel = document.getElementById('estPickerPanel');
   if (!panel) return;
+  closeJcPicker();
   if (panel.style.display === 'none' || !panel.style.display) {
     panel.style.display = 'block';
     fetchCustomerEstimates();
@@ -888,117 +958,193 @@ function fetchCustomerEstimates() {
 
 function selectAndLoadEstimate(estId) {
   closeEstPicker();
+  if (!confirmReplace()) return;
   loadEstimateData(estId);
 }
 
-function loadEstimateData(estId) {
+/* ══════════════════════════════════════════
+   LOAD A JOB CARD / ESTIMATE INTO THIS QUOTATION
+══════════════════════════════════════════ */
+function quotFormHasData() {
+  const any = q => [...document.querySelectorAll(q)].some(el => (el.value || '').trim() !== '');
+  return any('input[name="complaint_description[]"]') ||
+         any('select[name="part_item_id[]"]') ||
+         any('input[name="labour_desc[]"]');
+}
+
+function confirmReplace() {
+  return !quotFormHasData() ||
+    confirm('Replace the vehicles, complaints, parts and labour on this quotation with the imported details?');
+}
+
+async function loadEstimateData(estId) {
   if (!estId) return;
+  await itemsReady;                       // so parts can be matched to the item list
+  let d;
+  try {
+    const r = await fetch(GET_EST_URL + '?estimate_id=' + estId, { credentials: 'same-origin' });
+    d = await r.json();
+  } catch (e) {
+    console.error('Error loading estimate:', e);
+    alert('Failed to load estimate data.');
+    return;
+  }
+  if (!d.found) { alert('Estimate details not found.'); return; }
+  await applyImportedData(d, 'Imported entire data from Estimate: <strong>' + escAttr(d.number) + '</strong>');
+}
 
-  fetch(GET_EST_URL + '?estimate_id=' + estId)
-    .then(r => r.json())
-    .then(d => {
-      if (!d.found) {
-        alert('Estimate details not found.');
-        return;
-      }
+async function loadJobCardData(jobId) {
+  if (!jobId) return;
+  await itemsReady;
+  let d;
+  try {
+    const r = await fetch(JC_DATA_URL + '?jobcard_id=' + jobId, { credentials: 'same-origin' });
+    d = await r.json();
+  } catch (e) {
+    console.error('Error loading job card:', e);
+    alert('Failed to load job card data.');
+    return;
+  }
+  if (!d.found) { alert('Job card not found.'); return; }
+  await applyImportedData(d, 'Imported entire data from Job Card: <strong>' + escAttr(d.number) + '</strong>');
+}
 
-      // Hidden inputs
-      const estHidden = document.getElementById('loadedEstId');
-      if (estHidden) estHidden.value = d.estimate_id;
+function addQuotVehicle(v) {
+  // make sure the vehicle can be selected even if it is not in the customer's list
+  if (!customerVehicleCache.some(x => String(x.id) === String(v.id))) {
+    customerVehicleCache.push({ id: v.id, label: v.label, vehicle_number: v.label, vehicle_model: v.mm_label || '' });
+  }
+  addVehicleRow(v.id, v.mileage);
+  const tr = document.querySelector('#vehBody tr:last-child');
+  const n  = tr && tr.querySelector('input[name="qt_vehicle_notes[]"]');
+  if (n && v.notes) n.value = v.notes;
+}
 
-      if (d.jobcard_id) {
-        const jcHidden = document.getElementById('loadedJcId');
-        if (jcHidden) jcHidden.value = d.jobcard_id;
-      }
+function addQuotComplaintFull(c) {
+  addQuotComplaint(c.description || '', '', '', c.status || 'Open', '', c.vehicle_id || '');
+  const tr = document.querySelector('#quotComplaintBody tr:last-child');
+  if (!tr) return;
 
-      // Advisor
-      if (d.advisor_id) {
-        const advSel = document.querySelector('select[name="advisor"]');
-        if (advSel) advSel.value = d.advisor_id;
-      }
+  const catSel = tr.querySelector('.complaint-cat-select');
+  if (catSel && c.category_id) {
+    catSel.value = String(c.category_id);
+    handleCategoryChange(catSel);
+  } else if (c.category) {
+    const ct = tr.querySelector('.cat-txt');
+    if (ct) ct.value = c.category;
+  }
 
-      // Customer & Vehicle
-      if (d.customer_id) {
-        const custSel = document.getElementById('custSel');
-        if (custSel) {
-          custSel.value = d.customer_id;
-          loadPhone(custSel);
-        }
-        loadVehiclesAndSelect(d.customer_id, d.vehicle_id);
-      }
+  const typeSel = tr.querySelector('.complaint-type-select');
+  let skillId = 0, skillName = '';
+  if (typeSel && c.type_id) {
+    typeSel.value = String(c.type_id);
+    const opt = typeSel.options[typeSel.selectedIndex];
+    if (typeSel.value && opt) {
+      skillId   = parseInt(opt.dataset.skillId || '0', 10);
+      skillName = opt.dataset.skillName || '';
+    }
+  }
+  const typeTxt = tr.querySelector('.type-txt');
+  if (typeTxt) {
+    typeTxt.value = (typeSel && typeSel.value)
+      ? typeSel.options[typeSel.selectedIndex].textContent
+      : (c.type || '');
+  }
 
-      // Mileage & VIN
-      if (d.mileage) {
-        const mInput = document.querySelector('input[name="mileage"]');
-        if (mInput) mInput.value = d.mileage;
-      }
-      if (d.vin) {
-        const vInput = document.querySelector('input[name="vin"]');
-        if (vInput) vInput.value = d.vin;
-      }
+  // show every technician so the imported technician is never lost
+  const techSel = tr.querySelector('.complaint-tech-select');
+  if (techSel) {
+    techSel.dataset.initialTechId = c.technician_id || '';
+    updateTechnicianOptions(tr, skillId, true, skillName);
+    if (c.technician_id) techSel.value = String(c.technician_id);
+  }
+  const ov = tr.querySelector('.override-hidden');
+  if (ov) ov.value = c.is_manual_override ? '1' : '0';
+}
 
-      // Clear & populate Complaints (table style)
-      const quotBody = document.getElementById('quotComplaintBody');
-      if (quotBody) quotBody.innerHTML = '';
-      if (d.complaints && d.complaints.length) {
-        d.complaints.forEach(c => {
-          addQuotComplaint(c, '', 'Mechanical', 'Open', '#f0fdf4');
-        });
-      } else {
-        addQuotComplaint();
-      }
+function addQuotPart(p) {
+  const code = String(p.part_number || '').trim().toLowerCase();
+  const name = String(p.description || '').trim().toLowerCase();
+  const match =
+       (p.item_ref && quotationItems.find(i => String(i.id) === String(p.item_ref)))
+    || (code && quotationItems.find(i => String(i.code || '').trim().toLowerCase() === code))
+    || (name && quotationItems.find(i => String(i.name || '').trim().toLowerCase() === name));
+  const qty  = Number(p.quantity || 1);
+  const rate = Number(p.unit_price || 0);
+  addPartRow(match ? match.id : '', p.unit || '', qty, rate.toFixed(3),
+             p.warranty || 'None', p.description || '', p.vehicle_id || '');
+  if (!match) {
+    // part is not in the item master: show its name in the box
+    const tr  = document.querySelector('#partsTbody tr:last-child');
+    const sel = tr && tr.querySelector('select.part-item');
+    if (sel) {
+      const opt = new Option((p.description || 'Part') + ' (imported)', '');
+      sel.add(opt);
+      opt.selected = true;
+    }
+  }
+}
 
-      // Populate Parts Table
-      const partsTbody = document.getElementById('partsTbody');
-      if (partsTbody) partsTbody.innerHTML = '';
-      if (d.parts && d.parts.length) {
-        d.parts.forEach(p => {
-          addPartRow(
-            p.item_ref || '',
-            p.unit || '',
-            p.quantity || 1,
-            (p.unit_price || 0).toFixed(3),
-            p.warranty || 'None',
-            p.description || ''
-          );
-        });
-      } else {
-        addPartRow();
-      }
+async function applyImportedData(d, bannerHtml) {
+  // customer, phone, advisor, VIN
+  const custSel = document.getElementById('custSel');
+  if (d.customer_id && custSel) {
+    if (![...custSel.options].some(o => String(o.value) === String(d.customer_id))) {
+      custSel.add(new Option(d.customer_name || ('Customer ' + d.customer_id), d.customer_id));
+    }
+    custSel.value = String(d.customer_id);
+    loadPhone(custSel);
+  }
+  const ph = document.getElementById('custPhone');
+  if (ph && d.customer_phone) ph.value = d.customer_phone;
+  const adv = document.querySelector('select[name="advisor"]');
+  if (adv) adv.value = d.advisor_id ? String(d.advisor_id) : '';
+  const vin = document.querySelector('input[name="vin"]');
+  if (vin && d.vin !== undefined) vin.value = d.vin || '';
 
-      // Populate Labour Table
-      const labourTbody = document.getElementById('labourTbody');
-      if (labourTbody) labourTbody.innerHTML = '';
-      if (d.labour && d.labour.length) {
-        d.labour.forEach(l => {
-          addLabourRowWithData(l.description, l.technician_id, l.hours, l.unit_price);
-        });
-      } else {
-        addLabour();
-      }
+  // vehicles: load the customer's vehicle list first, then add the imported rows
+  await new Promise(resolve => loadVehicles(custSel ? custSel.value : '', resolve));
+  document.getElementById('vehBody').innerHTML = '';
+  (d.vehicles || []).forEach(addQuotVehicle);
+  const vEmpty = document.getElementById('vehEmpty');
+  if (vEmpty) vEmpty.style.display = (d.vehicles || []).length ? 'none' : 'block';
+  syncVehicleDropdowns();
 
-      // Tax %, Discount, Notes
-      if (document.getElementById('discInp')) document.getElementById('discInp').value = d.discount || 0;
-      if (document.getElementById('taxInp')) document.getElementById('taxInp').value = d.tax_percent || 0;
-      if (d.notes) {
-        const notesArea = document.querySelector('textarea[name="notes"]');
-        if (notesArea) notesArea.value = d.notes;
-      }
+  // complaints
+  document.getElementById('quotComplaintBody').innerHTML = '';
+  (d.complaints || []).forEach(addQuotComplaintFull);
+  if (!(d.complaints || []).length) addQuotComplaint();
 
-      calcAll();
+  // parts
+  document.getElementById('partsTbody').innerHTML = '';
+  (d.parts || []).forEach(addQuotPart);
+  if (!(d.parts || []).length) addPartRow();
 
-      // Show banner
-      const banner = document.getElementById('estBanner');
-      const bannerText = document.getElementById('estBannerText');
-      if (banner && bannerText) {
-        bannerText.innerHTML = 'Imported entire data from Estimate: <strong>' + d.est_number + '</strong>';
-        banner.style.display = 'flex';
-      }
-    })
-    .catch(err => {
-      console.error('Error loading estimate:', err);
-      alert('Failed to load estimate data.');
-    });
+  // labour
+  document.getElementById('labourTbody').innerHTML = '';
+  (d.labours || []).forEach(l => addLabourRowWithData(l.description, l.technician_id, l.hours, l.rate, l.vehicle_id));
+  if (!(d.labours || []).length) addLabour();
+
+  // discount, tax, notes (estimates only)
+  if (d.discount !== undefined && document.getElementById('discInp')) document.getElementById('discInp').value = d.discount || 0;
+  if (d.tax_percent !== undefined && document.getElementById('taxInp')) document.getElementById('taxInp').value = d.tax_percent || 0;
+  if (d.notes !== undefined) {
+    const notesArea = document.querySelector('textarea[name="notes"]');
+    if (notesArea) notesArea.value = d.notes || '';
+  }
+
+  // remember where it came from
+  document.getElementById('loadedEstId').value = d.estimate_id || '';
+  document.getElementById('loadedJcId').value  = d.jobcard_id || '';
+
+  calcAll();
+
+  const banner = document.getElementById('estBanner');
+  const bannerText = document.getElementById('estBannerText');
+  if (banner && bannerText) {
+    bannerText.innerHTML = bannerHtml;
+    banner.style.display = 'flex';
+  }
 }
 
 let customerVehicleCache = [];
@@ -1030,7 +1176,10 @@ function loadVehicles(cid, callback) {
       syncVehicleDropdowns();
       if (callback) callback();
     })
-    .catch(err => console.error('Error loading customer vehicles:', err));
+    .catch(err => {
+      console.error('Error loading customer vehicles:', err);
+      if (callback) callback();
+    });
 }
 
 function syncVehicleDropdowns() {
@@ -1041,7 +1190,9 @@ function syncVehicleDropdowns() {
   const selectedVehicles = customerVehicleCache.filter(v => selectedVehicleIds.includes(String(v.id)));
 
   document.querySelectorAll('.row-veh-select').forEach(sel => {
-    const curVal = sel.value;
+    // data-want = vehicle requested when the row was created (imported rows)
+    const curVal = sel.value || sel.dataset.want || '';
+    delete sel.dataset.want;
     sel.innerHTML = '<option value="">— Vehicle —</option>';
     selectedVehicles.forEach(v => {
       const labelText = v.vehicle_number || v.label;
@@ -1163,7 +1314,7 @@ function renderQuotationParts() {
                 '{{ p.quantity|default:1 }}',
                 '{{ p.unit_price|floatformat:3 }}',
                 '{{ p.warranty|default:"None" }}',
-                '{{ p.description|default:"" }}',
+                '{{ p.description|default:""|escapejs }}',
                 '{{ p.vehicle_id|default:"" }}'
             );
         {% endfor %}
@@ -1219,7 +1370,7 @@ function addLabourRowWithData(desc = '', techId = '', hrs = 1, rate = 0, vehId =
   const tr = document.createElement('tr');
   let techOpts = '<option value="">— Assign —</option>';
   {% for t in technicians %}
-    techOpts += `<option value="{{ t.id }}" ${String(techId) === '{{ t.id }}' ? 'selected' : ''}>{{ t.full_name }}</option>`;
+    techOpts += `<option value="{{ t.id }}" ${String(techId) === '{{ t.id }}' ? 'selected' : ''}>{{ t.full_name|escapejs }}</option>`;
   {% endfor %}
 
   tr.innerHTML = `
@@ -1228,7 +1379,7 @@ function addLabourRowWithData(desc = '', techId = '', hrs = 1, rate = 0, vehId =
         <option value="">— Vehicle —</option>
       </select>
     </td>
-    <td><input type="text" name="labour_desc[]" value="${desc}" placeholder="e.g. Engine repair..."></td>
+    <td><input type="text" name="labour_desc[]" value="${escAttr(desc)}" placeholder="e.g. Engine repair..."></td>
     <td><select name="labour_tech[]">${techOpts}</select></td>
     <td><input type="number" name="labour_hrs[]" class="lab-hrs" value="${hrs}" min="0" step="0.5" oninput="calcLabour(this)"></td>
     <td><input type="number" name="labour_rate[]" class="lab-rate" value="${parseFloat(rate).toFixed(3)}" min="0" step="0.001" oninput="calcLabour(this)"></td>
@@ -1238,7 +1389,7 @@ function addLabourRowWithData(desc = '', techId = '', hrs = 1, rate = 0, vehId =
   tbody.appendChild(tr);
   if (vehId) {
     const vSel = tr.querySelector('.row-veh-select');
-    if (vSel) vSel.value = vehId;
+    if (vSel) vSel.dataset.want = String(vehId);
   }
   syncVehicleDropdowns();
   calcAll();
@@ -1256,14 +1407,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const custSel = document.getElementById('custSel');
     const cid = custSel ? custSel.value : '';
 
-    fetch(ITEM_MASTER_URL)
+    itemsReady = fetch(ITEM_MASTER_URL)
         .then(response => response.json())
         .then(data => {
             quotationItems = data.items || [];
             renderQuotationParts();
             calcAll();
 
-            if (cid) {
+            // when opened from a job card / estimate the loader builds the vehicle rows itself
+            if (cid && !HAS_PREFILL) {
               loadVehicles(cid, function() {
                 {% if edit_mode and quotation.vehicles.exists %}
                   const vehTbody = document.getElementById('vehBody');
@@ -1274,14 +1426,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 {% endif %}
               });
             }
-
-            {% if prefill_est %}
-              loadEstimateData({{ prefill_est.id }});
-            {% endif %}
         })
         .catch(error => {
             console.error('Failed to load Item Master:', error);
         });
+
+    {% if prefill_est %}
+    itemsReady.then(() => loadEstimateData({{ prefill_est.id }}));
+    {% elif prefill_job %}
+    itemsReady.then(() => loadJobCardData({{ prefill_job.id }}));
+    {% endif %}
 });
 
 function buildQuotationItemOptions(selectedId = '') {
@@ -1291,8 +1445,8 @@ function buildQuotationItemOptions(selectedId = '') {
         html += `
             <option
                 value="${item.id}"
-                data-name="${item.name}"
-                data-unit="${item.unit}"
+                data-name="${escAttr(item.name)}"
+                data-unit="${escAttr(item.unit)}"
                 data-price="${item.unit_price}"
                 ${selected}>
                 ${item.name}
@@ -1326,7 +1480,7 @@ function addPartRow(
     const matchedId = existingItem ? existingItem.id : itemId;
     const description = existingItem ? existingItem.name : (customDesc || '');
     const existingUnit = unit || (existingItem ? existingItem.unit : '');
-    const safeDesc = String(description).replace(/"/g, '&quot;');
+    const safeDesc = escAttr(description);
 
     tr.innerHTML = `
         <td>
@@ -1341,7 +1495,7 @@ function addPartRow(
             <input type="hidden" name="description[]" class="part-desc" value="${safeDesc}">
         </td>
         <td>
-            <input type="text" name="item_unit[]" class="part-unit" value="${existingUnit}" ${matchedId ? 'readonly' : ''} style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:5px 8px;font-size:12px">
+            <input type="text" name="item_unit[]" class="part-unit" value="${escAttr(existingUnit)}" ${matchedId ? 'readonly' : ''} style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:5px 8px;font-size:12px">
         </td>
         <td>
             <input type="number" name="quantity[]" class="qty" value="${qty}" min="0" step="0.01" oninput="calcPart(this)">
@@ -1364,7 +1518,7 @@ function addPartRow(
     tbody.appendChild(tr);
     if (vehId) {
       const vSel = tr.querySelector('.row-veh-select');
-      if (vSel) vSel.value = vehId;
+      if (vSel) vSel.dataset.want = String(vehId);
     }
     syncVehicleDropdowns();
     calcPart(tr.querySelector('.qty'));
@@ -1553,20 +1707,7 @@ function updateTechnicianOptions(tr, skillId, isOverride, skillName = '') {
     }
   }
 }
-{% if not edit_mode %}
-const voucherTypeInput = document.getElementById('id_voucherType');
-if (voucherTypeInput && voucherTypeInput.value) {
-  fetch("{% url 'jobcard_app:get_next_quotation_number' %}?voucher_type_id=" + voucherTypeInput.value)
-    .then(r => r.json())
-    .then(data => {
-      if (data.success && data.job_number) {
-        const voucherNumInput = document.getElementById('id_voucher_number');
-        if (voucherNumInput) voucherNumInput.value = data.job_number;
-      }
-    })
-    .catch(err => console.error('Error fetching next quotation voucher number:', err));
-}
-{% endif %}
+
 function initComplaintRows() {
   document.querySelectorAll('#quotComplaintBody tr').forEach(tr => {
     const catSelect = tr.querySelector('.complaint-cat-select');
@@ -1614,7 +1755,7 @@ function addQuotComplaint(desc='', catName='', type='Mechanical', status='Open',
       <select name="complaint_category_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
               style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
         <option value="">— Category —</option>
-        {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
+        {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name|escapejs }}</option>{% endfor %}
       </select>
       <input type="hidden" name="complaint_category[]" class="cat-txt">
     </td>
@@ -1626,7 +1767,7 @@ function addQuotComplaint(desc='', catName='', type='Mechanical', status='Open',
       <input type="hidden" name="complaint_type[]" class="type-txt">
     </td>
     <td style="padding:6px 6px">
-      <input type="text" name="complaint_description[]" value="${String(desc).replace(/"/g,'&quot;')}"
+      <input type="text" name="complaint_description[]" value="${escAttr(desc)}"
             placeholder="Describe complaint..."
             style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
     </td>
@@ -1651,7 +1792,7 @@ function addQuotComplaint(desc='', catName='', type='Mechanical', status='Open',
   document.getElementById('quotComplaintBody').appendChild(tr);
   if (vehId) {
     const vSel = tr.querySelector('.row-veh-select');
-    if (vSel) vSel.value = vehId;
+    if (vSel) vSel.dataset.want = String(vehId);
   }
   updateTechnicianOptions(tr, 0, false, '');
   syncVehicleDropdowns();
@@ -1669,11 +1810,10 @@ function rmQuotComplaint(btn) {
   }
 }
 
-/* Close estimate picker on outside click */
+/* Close the import pickers on outside click */
 document.addEventListener('click', e => {
-  if (!e.target.closest('#estPickerWrap')) {
-    closeEstPicker();
-  }
+  if (!e.target.closest('#estPickerWrap')) closeEstPicker();
+  if (!e.target.closest('#jcPickerWrap'))  closeJcPicker();
 });
 
 document.addEventListener('DOMContentLoaded', function() {

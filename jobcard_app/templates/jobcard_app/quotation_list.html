@@ -1,156 +1,278 @@
 {% extends 'fleet_base1.html' %}
-{% load static %}
-{% load i18n %}
-
 {% block content %}
-<div class="container-fluid p-0 mb-5">
+<style>
+.el-wrap{padding:24px 32px 60px}
 
-    <!-- Top Bar: Title + New Quotation Button -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <div>
-            <h2 class="module-title mb-1">
-                <i class="bi bi-file-earmark-ruled text-primary mr-2"></i>{% trans "Quotations & Commercial Offers" %}
-            </h2>
-            <div class="text-muted small">{% trans "Commercial customer pricing proposals & formal estimate conversions" %}</div>
-        </div>
-        <a href="{% url 'jobcard_app:quotation_create' %}" class="btn btn-custom-primary shadow-sm">
-            <i class="bi bi-plus-lg mr-1"></i> {% trans "New Quotation" %}
-        </a>
+/* header */
+.el-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.el-title-row{display:flex;align-items:center;gap:10px}
+.el-title{font-size:26px;font-weight:700;color:#111827;margin:0}
+.el-sub{font-size:13px;color:#9ca3af;margin:4px 0 0}
+.el-btn-primary{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:12px 22px;
+  font-size:14px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.el-btn-primary:hover{background:#1d4ed8;color:#fff}
+
+/* flash */
+.el-flash{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:16px 22px;border-radius:10px;margin-bottom:18px;font-size:15px;font-weight:500}
+.el-flash-ok{background:#3ddc84;color:#fff}
+.el-flash-err{background:#ef4444;color:#fff}
+.el-flash-x{background:none;border:none;color:rgba(255,255,255,.75);font-size:22px;line-height:1;cursor:pointer}
+
+/* tabs */
+.el-tabs{display:flex;gap:0;flex-wrap:wrap;margin-bottom:18px}
+.el-tab{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;background:#fff;
+  border:1px solid #e5e7eb;margin-left:-1px;font-size:12px;font-weight:700;letter-spacing:.4px;
+  color:#6b7280;text-decoration:none;text-transform:uppercase}
+.el-tab:first-child{border-radius:8px 0 0 8px;margin-left:0}
+.el-tab:last-child{border-radius:0 8px 8px 0}
+.el-tab .n{font-size:20px;font-weight:700}
+.el-tab.n-all .n{color:#2563eb}
+.el-tab.n-draft .n{color:#6b7280}
+.el-tab.n-sent .n{color:#2563eb}
+.el-tab.n-approved .n{color:#16a34a}
+.el-tab.n-rejected .n{color:#ef4444}
+.el-tab.active{background:#eff6ff;border-color:#2563eb;color:#2563eb;position:relative;z-index:1}
+
+/* cards */
+.el-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:22px;overflow:hidden}
+.el-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;
+  border-bottom:1px solid #f3f4f6;font-size:16px;font-weight:700;color:#111827;gap:10px}
+.el-card-hdr .l{display:flex;align-items:center;gap:10px}
+.el-total{background:#f3f4f6;color:#374151;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600}
+
+/* filter */
+.el-filter{display:flex;gap:10px;padding:18px 24px;flex-wrap:wrap;align-items:center}
+.el-search{flex:1;min-width:240px;display:flex;align-items:center;border:1px solid #e5e7eb;border-radius:999px 10px 10px 999px;overflow:hidden;background:#fff}
+.el-search svg{margin:0 6px 0 14px;flex:none}
+.el-search input{flex:1;border:none;outline:none;padding:12px 14px 12px 6px;font-size:14px;color:#111827;background:transparent}
+.el-select{border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;font-size:14px;background:#fff;color:#111827;min-width:150px}
+.el-btn{border:1px solid #e5e7eb;background:#fff;color:#374151;border-radius:8px;padding:12px 18px;
+  font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.el-btn.blue{background:#2563eb;border-color:#2563eb;color:#fff}
+.el-btn.blue:hover{background:#1d4ed8}
+
+/* table */
+.el-tbl-wrap{overflow-x:auto}
+.el-tbl{width:100%;border-collapse:collapse;min-width:900px}
+.el-tbl thead th{padding:16px 20px;font-size:12px;font-weight:700;color:#4b5563;text-transform:uppercase;
+  letter-spacing:.6px;text-align:left;background:#f9fafb;border-bottom:1px solid #e5e7eb;white-space:nowrap}
+.el-tbl thead th.r{text-align:right}
+.el-tbl thead th.c{text-align:center}
+.el-tbl tbody td{padding:16px 20px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+.el-tbl tbody tr:last-child td{border-bottom:none}
+.el-tbl tbody tr:hover{background:#fafbfd}
+.el-tbl td.r{text-align:right}
+.el-tbl td.c{text-align:center}
+.el-no{font-weight:700;color:#2563eb;white-space:nowrap}
+.el-date{color:#6b7280;white-space:nowrap}
+.el-cust{font-weight:700;color:#111827}
+.el-muted{color:#9ca3af}
+.el-vehs{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.el-veh{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:999px;padding:6px 14px;
+  font-size:13px;font-weight:600;color:#374151;white-space:nowrap}
+.el-ref{font-size:13px;font-weight:600;color:#6b7280;white-space:nowrap}
+.el-st{display:inline-block;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
+.el-st-draft{background:#f3f4f6;color:#374151}
+.el-st-sent{background:#dbeafe;color:#1d4ed8}
+.el-st-approved{background:#dcfce7;color:#15803d}
+.el-st-rejected{background:#fee2e2;color:#b91c1c}
+.el-st-expired{background:#fef3c7;color:#b45309}
+.el-amt{font-weight:700;color:#111827;font-size:15px;white-space:nowrap}
+.el-acts{display:inline-flex;gap:8px}
+.el-ic{width:36px;height:34px;border:1px solid #e5e7eb;background:#fff;border-radius:7px;display:inline-flex;
+  align-items:center;justify-content:center;cursor:pointer;color:#374151;text-decoration:none;padding:0}
+.el-ic:hover{background:#f9fafb}
+.el-ic.del{color:#dc2626}
+.el-ic.del:hover{background:#fef2f2;border-color:#fecaca}
+.el-empty{text-align:center;padding:40px 20px;color:#9ca3af;font-size:14px}
+
+/* delete modal */
+.el-modal{position:fixed;inset:0;background:rgba(17,24,39,.5);display:flex;align-items:center;justify-content:center;z-index:2000;padding:16px}
+.el-modal[hidden]{display:none}
+.el-modal-box{background:#fff;border-radius:12px;max-width:420px;width:100%;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.el-modal-box h3{margin:0 0 8px;font-size:18px;color:#111827}
+.el-modal-box p{margin:0 0 20px;font-size:14px;color:#4b5563;line-height:1.5}
+.el-modal-actions{display:flex;justify-content:flex-end;gap:10px}
+.el-btn.danger{background:#dc2626;border-color:#dc2626;color:#fff}
+.el-btn.danger:hover{background:#b91c1c}
+</style>
+
+<div class="el-wrap">
+
+  <!-- Header -->
+  <div class="el-hdr">
+    <div>
+      <div class="el-title-row">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+        <h1 class="el-title">Quotations</h1>
+      </div>
+      <p class="el-sub">Manage customer quotations, pricing proposals &amp; their approval status</p>
+    </div>
+    <a href="{% url 'jobcard_app:quotation_create' %}" class="el-btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      New Quotation
+    </a>
+  </div>
+
+  <!-- Messages -->
+  {% if messages %}{% for m in messages %}
+  <div class="el-flash {% if 'error' in m.tags %}el-flash-err{% else %}el-flash-ok{% endif %}">
+    <span>{{ m }}</span>
+    <button type="button" class="el-flash-x" onclick="this.parentElement.remove()" aria-label="Dismiss">&times;</button>
+  </div>
+  {% endfor %}{% endif %}
+
+  <!-- Status tabs -->
+  <div class="el-tabs">
+    <a class="el-tab n-all {% if not status %}active{% endif %}"
+       href="{% url 'jobcard_app:quotation_list' %}{% if q %}?q={{ q|urlencode }}{% endif %}">
+      <span class="n">{{ counts.total }}</span> All</a>
+    <a class="el-tab n-draft {% if status == 'draft' %}active{% endif %}"
+       href="?status=draft{% if q %}&q={{ q|urlencode }}{% endif %}">
+      <span class="n">{{ counts.draft }}</span> Draft</a>
+    <a class="el-tab n-sent {% if status == 'sent' %}active{% endif %}"
+       href="?status=sent{% if q %}&q={{ q|urlencode }}{% endif %}">
+      <span class="n">{{ counts.sent }}</span> Sent</a>
+    <a class="el-tab n-approved {% if status == 'approved' %}active{% endif %}"
+       href="?status=approved{% if q %}&q={{ q|urlencode }}{% endif %}">
+      <span class="n">{{ counts.approved }}</span> Approved</a>
+    <a class="el-tab n-rejected {% if status == 'rejected' %}active{% endif %}"
+       href="?status=rejected{% if q %}&q={{ q|urlencode }}{% endif %}">
+      <span class="n">{{ counts.rejected }}</span> Rejected</a>
+  </div>
+
+  <!-- Filter -->
+  <div class="el-card">
+    <div class="el-card-hdr">
+      <div class="l">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"/></svg>
+        Filter Quotations
+      </div>
+    </div>
+    <form method="get" class="el-filter">
+      <div class="el-search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" name="q" value="{{ q }}" placeholder="Quotation no, customer name, estimate no...">
+      </div>
+      <select name="status" class="el-select">
+        <option value="">All Statuses</option>
+        <option value="draft"    {% if status == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="sent"     {% if status == 'sent' %}selected{% endif %}>Sent</option>
+        <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
+        <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
+        <option value="expired"  {% if status == 'expired' %}selected{% endif %}>Expired</option>
+      </select>
+      <button type="submit" class="el-btn blue">Filter</button>
+      <a href="{% url 'jobcard_app:quotation_list' %}" class="el-btn">&#10005; Reset</a>
+    </form>
+  </div>
+
+  <!-- Directory -->
+  <div class="el-card">
+    <div class="el-card-hdr">
+      <div class="l">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        Quotations Directory
+      </div>
+      <span class="el-total">Total: {{ quotations|length }}</span>
     </div>
 
-    <!-- Alert Messages -->
-    {% if messages %}
-        {% for m in messages %}
-            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm" style="border-radius:8px;" role="alert">
-                {{ m }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
+    <div class="el-tbl-wrap">
+      <table class="el-tbl">
+        <thead>
+          <tr>
+            <th>Quotation No.</th>
+            <th>Date</th>
+            <th>Customer Name</th>
+            <th>Vehicle</th>
+            <th>Estimate</th>
+            <th>Status</th>
+            <th class="r">Grand Total</th>
+            <th class="c">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for qt in quotations %}
+          <tr>
+            <td class="el-no">{{ qt.voucher_number|default:qt.quotation_number|default:"—" }}</td>
+            <td class="el-date">{{ qt.date|date:"d M Y" }}</td>
+            <td class="el-cust">{{ qt.customer.ledger_name }}</td>
+            <td>
+              <div class="el-vehs">
+                {% for qv in qt.vehicles.all %}
+                  <span class="el-veh">{{ qv.vehicle.registration_number|default:qv.vehicle.vehicle_number }}</span>
+                {% empty %}
+                  {% if qt.vehicle %}
+                    <span class="el-veh">{{ qt.vehicle.registration_number|default:qt.vehicle.vehicle_number }}</span>
+                  {% else %}
+                    <span class="el-muted">—</span>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </td>
+            <td>
+              {% if qt.estimate %}
+                <span class="el-ref">{{ qt.estimate.voucher_number|default:qt.estimate.estimate_number }}</span>
+              {% else %}
+                <span class="el-muted">—</span>
+              {% endif %}
+            </td>
+            <td><span class="el-st el-st-{{ qt.status }}">{{ qt.get_status_display }}</span></td>
+            <td class="r el-amt">{{ qt.grand_total|floatformat:2 }}</td>
+            <td class="c">
+              <div class="el-acts">
+                <a class="el-ic" title="Edit" href="{% url 'jobcard_app:quotation_edit' qt.pk %}">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+                </a>
+
+                <button type="button" class="el-ic del" title="Delete"
+                        data-url="{% url 'jobcard_app:quotation_delete' qt.pk %}"
+                        data-ref="{{ qt.voucher_number|default:qt.quotation_number }}"
+                        onclick="openDelete(this)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                 </button>
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <!-- Stats Filter Row -->
-    <div class="d-flex gap-2 mb-4 flex-wrap">
-        <a href="?" class="stat-card-custom {% if not status_filter %}active{% endif %}">
-            <span class="font-weight-bold h5 mb-0">{{ counts.all }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "ALL" %}</span>
-        </a>
-        <a href="?status=draft" class="stat-card-custom {% if status_filter == 'draft' %}active{% endif %}">
-            <span class="font-weight-bold h5 mb-0 text-secondary">{{ counts.draft }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "DRAFT" %}</span>
-        </a>
-        <a href="?status=sent" class="stat-card-custom {% if status_filter == 'sent' %}active{% endif %}">
-            <span class="font-weight-bold h5 mb-0 text-primary">{{ counts.sent }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "SENT" %}</span>
-        </a>
-        <a href="?status=approved" class="stat-card-custom {% if status_filter == 'approved' %}active{% endif %}">
-            <span class="font-weight-bold h5 mb-0 text-success">{{ counts.approved }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "APPROVED" %}</span>
-        </a>
-        <a href="?status=rejected" class="stat-card-custom {% if status_filter == 'rejected' %}active{% endif %}">
-            <span class="font-weight-bold h5 mb-0 text-danger">{{ counts.rejected }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "REJECTED" %}</span>
-        </a>
-        <a href="?status=expired" class="stat-card-custom {% if status_filter == 'expired' %}active{% endif %}">
-            <span class="font-weight-bold h5 mb-0 text-warning">{{ counts.expired }}</span> <span class="text-muted small uppercase font-weight-bold">{% trans "EXPIRED" %}</span>
-        </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="el-empty">No quotations found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
 
-    <!-- Filter Form Card -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header card-banner-header">
-            <span class="card-banner-title"><i class="bi bi-funnel text-primary mr-1"></i> {% trans "Filter Quotations" %}</span>
-        </div>
-        <div class="card-body p-3">
-            <form method="get" class="form-inline">
-                <div class="input-group mr-2 mb-2 mb-sm-0" style="flex: 1; min-width: 250px;">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
-                    </div>
-                    <input type="text" name="q" value="{{ q }}" placeholder="{% trans 'Search quotation no, customer...' %}" class="form-control border-left-0">
-                </div>
-                <select name="status" class="form-control mr-2 mb-2 mb-sm-0" style="min-width: 180px;">
-                    <option value="">{% trans "All Statuses" %}</option>
-                    {% for val,lbl in status_choices %}
-                        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ lbl }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="btn btn-custom-primary mr-2 mb-2 mb-sm-0">{% trans "Filter" %}</button>
-                <a href="?" class="btn btn-secondary mb-2 mb-sm-0">✕ {% trans "Reset" %}</a>
-            </form>
-        </div>
-    </div>
-
-    <!-- Quotation List Card -->
-    <div class="card shadow-sm border-0">
-        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <span class="card-banner-title"><i class="bi bi-list-task mr-1 text-primary"></i> {% trans "Quotations Master Register" %}</span>
-            <span class="badge badge-secondary px-3 py-1 font-weight-bold">Total Quotations: {{ quotations|length }}</span>
-        </div>
-        <div class="card-body p-0">
-            {% if quotations %}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>{% trans "Quotation No" %}</th>
-                            <th>{% trans "Date" %}</th>
-                            <th>{% trans "Customer Name" %}</th>
-                            <th>{% trans "Vehicle" %}</th>
-                            <th>{% trans "Valid Until" %}</th>
-                            <th>{% trans "Status" %}</th>
-                            <th class="text-right">{% trans "Grand Total" %}</th>
-                            <th style="width: 140px;" class="text-center">{% trans "Action" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for q in quotations %}
-                        <tr>
-                            <td class="align-middle font-weight-bold">
-                                <a href="{% url 'jobcard_app:quotation_detail' q.pk %}" class="text-primary" style="font-size:14px;">
-                                    {{ q.po_number|default:q.id }}
-                                </a>
-                            </td>
-                            <td class="align-middle text-muted">{{ q.date|date:'d M Y' }}</td>
-                            <td class="align-middle font-weight-600 text-dark">{{ q.customer.ledger_name|default:"—" }}</td>
-                            <td class="align-middle">
-                                {% if q.workshop_vehicle %}
-                                    <span class="badge badge-light border text-dark"><i class="bi bi-truck mr-1 text-secondary"></i> {{ q.workshop_vehicle }}</span>
-                                {% else %}<span class="text-muted">—</span>{% endif %}
-                            </td>
-                            <td class="align-middle text-muted small">{{ q.valid_until|date:'d M Y'|default:"—" }}</td>
-                            <td class="align-middle">
-                                {% if q.status == 'draft' %}
-                                    <span class="badge badge-draft">{% trans "Draft" %}</span>
-                                {% elif q.status == 'sent' %}
-                                    <span class="badge badge-sent">{% trans "Sent" %}</span>
-                                {% elif q.status == 'approved' %}
-                                    <span class="badge badge-approved">{% trans "Approved" %}</span>
-                                {% elif q.status == 'rejected' %}
-                                    <span class="badge badge-danger">{% trans "Rejected" %}</span>
-                                {% elif q.status == 'expired' %}
-                                    <span class="badge badge-warning">{% trans "Expired" %}</span>
-                                {% else %}
-                                    <span class="badge badge-secondary">{{ q.get_status_display }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="align-middle text-right font-weight-bold text-dark">{{ q.grand_total|floatformat:2|default:"0.00" }}</td>
-                            <td class="align-middle text-center">
-                                <a href="{% url 'jobcard_app:quotation_detail' q.pk %}" class="btn btn-sm btn-outline-primary mr-1" title="{% trans 'View' %}">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{% url 'jobcard_app:quotation_edit' q.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit' %}">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-file-earmark-ruled display-4 d-block mb-2 text-secondary"></i>
-                {% trans "No quotations found." %}
-            </div>
-            {% endif %}
-        </div>
-    </div>
 </div>
+
+<!-- Delete confirmation -->
+<div class="el-modal" id="elDelModal" hidden>
+  <div class="el-modal-box">
+    <h3>Delete quotation?</h3>
+    <p>Quotation <b id="elDelRef"></b> will be permanently deleted.</p>
+    <form method="post" id="elDelForm">{% csrf_token %}
+      <div class="el-modal-actions">
+        <button type="button" class="el-btn" onclick="closeDelete()">Cancel</button>
+        <button type="submit" class="el-btn danger">Delete</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openDelete(btn) {
+  document.getElementById('elDelForm').action = btn.dataset.url;
+  document.getElementById('elDelRef').textContent = btn.dataset.ref || '';
+  document.getElementById('elDelModal').hidden = false;
+}
+function closeDelete() {
+  document.getElementById('elDelModal').hidden = true;
+}
+document.getElementById('elDelModal').addEventListener('click', function (e) {
+  if (e.target === this) closeDelete();
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') closeDelete();
+});
+</script>
 {% endblock %}

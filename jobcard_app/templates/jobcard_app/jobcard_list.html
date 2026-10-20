@@ -11,8 +11,11 @@
             <h2 class="module-title mb-1">
                 <i class="bi bi-card-checklist text-primary mr-2"></i>{% trans "Job Cards & Work Orders" %}
             </h2>
-            <div class="text-muted small">{% trans "Manage active workshop repair orders, service priorities & technician assignments" %}</div>
+            <div class="text-muted small">
+                {% trans "Manage active workshop repair orders, service priorities & technician assignments" %}
+            </div>
         </div>
+
         <a href="{% url 'jobcard_app:jobcard_create' %}" class="btn btn-custom-primary shadow-sm">
             <i class="bi bi-plus-lg mr-1"></i> {% trans "New Job Card" %}
         </a>
@@ -21,7 +24,8 @@
     <!-- Alert Messages -->
     {% if messages %}
         {% for m in messages %}
-            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm" style="border-radius:8px;" role="alert">
+            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm"
+                 style="border-radius:8px;" role="alert">
                 {{ m }}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -30,166 +34,241 @@
         {% endfor %}
     {% endif %}
 
-    <!-- Filter Card (server-side: filters ALL job cards, not just the current page) -->
+    <!-- Filters -->
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header card-banner-header">
-            <span class="card-banner-title"><i class="bi bi-funnel text-primary mr-1"></i> {% trans "Filter Job Cards" %}</span>
+            <span class="card-banner-title">
+                <i class="bi bi-funnel text-primary mr-1"></i> {% trans "Filter Job Cards" %}
+            </span>
         </div>
+
         <div class="card-body p-3">
             <form method="get" id="jcFilterForm">
                 <div class="form-row align-items-end">
+
                     <div class="col-md-4 mb-2">
                         <label class="small text-muted mb-1">{% trans "Search" %}</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
-                                <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
+                                <span class="input-group-text bg-white border-right-0">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
                             </div>
-                            <input type="text" name="q" value="{{ q }}" class="form-control border-left-0"
+                            <input type="text"
+                                   name="q"
+                                   value="{{ q }}"
+                                   class="form-control border-left-0"
                                    placeholder="{% trans 'Job card no., customer, vehicle plate...' %}">
                         </div>
                     </div>
+
                     <div class="col-md-2 mb-2">
                         <label class="small text-muted mb-1">{% trans "Status" %}</label>
                         <select name="status" class="form-control" onchange="this.form.submit()">
                             <option value="">{% trans "All Statuses" %}</option>
-                            {% for t in tabs %}{% if t.key %}
-                            <option value="{{ t.key }}" {% if status == t.key %}selected{% endif %}>{{ t.label }} ({{ t.count }})</option>
-                            {% endif %}{% endfor %}
+                            {% for t in tabs %}
+                                {% if t.key %}
+                                    <option value="{{ t.key }}" {% if status == t.key %}selected{% endif %}>
+                                        {{ t.label }} ({{ t.count }})
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
                         </select>
                     </div>
+
                     <div class="col-md-2 mb-2">
                         <label class="small text-muted mb-1">{% trans "Priority" %}</label>
                         <select name="priority" class="form-control" onchange="this.form.submit()">
                             <option value="">{% trans "All Priorities" %}</option>
                             {% for key, label in priority_choices %}
-                            <option value="{{ key }}" {% if priority == key %}selected{% endif %}>{{ label }}</option>
+                                <option value="{{ key }}" {% if priority == key %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
+
                     <div class="col-md-2 mb-2">
                         <label class="small text-muted mb-1">{% trans "From" %}</label>
                         <input type="date" name="date_from" value="{{ date_from }}" class="form-control">
                     </div>
+
                     <div class="col-md-2 mb-2">
                         <label class="small text-muted mb-1">{% trans "To" %}</label>
                         <input type="date" name="date_to" value="{{ date_to }}" class="form-control">
                     </div>
                 </div>
+
                 <div class="d-flex justify-content-end">
-                    <a href="{% url 'jobcard_app:jobcard_list' %}" class="btn btn-sm btn-outline-secondary mr-2">{% trans "Clear" %}</a>
-                    <button type="submit" class="btn btn-sm btn-custom-primary">{% trans "Apply Filters" %}</button>
+                    <a href="{% url 'jobcard_app:jobcard_list' %}"
+                       class="btn btn-sm btn-outline-secondary mr-2">
+                        {% trans "Clear" %}
+                    </a>
+                    <button type="submit" class="btn btn-sm btn-custom-primary">
+                        {% trans "Apply Filters" %}
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Job Cards Table Card -->
+    <!-- Job Cards Directory -->
     <div class="card shadow-sm border-0">
         <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <span class="card-banner-title"><i class="bi bi-list-task mr-1 text-primary"></i> {% trans "Job Cards Directory" %}</span>
-            <span class="badge badge-secondary px-3 py-1 font-weight-bold">Total Job Orders: {{ page_obj.paginator.count }}</span>
+            <span class="card-banner-title">
+                <i class="bi bi-list-task mr-1 text-primary"></i> {% trans "Job Cards Directory" %}
+            </span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold">
+                {% trans "Total Job Orders" %}: {{ page_obj.paginator.count }}
+            </span>
         </div>
+
         <div class="card-body p-0">
             {% if page_obj.paginator.count %}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0" id="jcTable">
-                    <thead>
-                        <tr>
-                            <th>{% trans "Voucher No." %}</th>
-                            <th>{% trans "Date" %}</th>
-                            <th>{% trans "Customer Name" %}</th>
-                            <th>{% trans "Vehicles" %}</th>
-                            <th>{% trans "Priority" %}</th>
-                            <th>{% trans "Status" %}</th>
-                            <th class="text-right">{% trans "Grand Total" %}</th>
-                            <th style="width: 140px;" class="text-center">{% trans "Action" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for job in page_obj %}
-                        <tr>
-                            <td class="align-middle">
-                                <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="font-weight-bold text-primary" style="font-size:14px;">
-                                    <i class="bi bi-receipt text-secondary mr-1"></i>{{ job.voucher_number }}
-                                </a>
-                            </td>
-                            <td class="align-middle text-muted">{{ job.date|date:'d M Y' }}</td>
-                            <td class="align-middle font-weight-600 text-dark">{{ job.customer }}</td>
-                            <td class="align-middle">
-                                {% for jv in job.vehicles.all %}
-                                    <span class="badge badge-light text-dark border mb-1">
-                                        <i class="bi bi-truck mr-1 text-secondary"></i>{{ jv.vehicle.vehicle_number }}
-                                    </span>
-                                {% empty %}
-                                    <span class="text-muted">—</span>
-                                {% endfor %}
-                            </td>
-                            <td class="align-middle">
-                                {% if job.priority == 'express' %}
-                                    <span class="badge badge-danger">{% trans "Express" %}</span>
-                                {% elif job.priority == 'urgent' %}
-                                    <span class="badge badge-warning">{% trans "Urgent" %}</span>
-                                {% else %}
-                                    <span class="badge badge-secondary">{% trans "Normal" %}</span>
-                                {% endif %}
-                            </td>
-                            <td class="align-middle">
-                                {% if job.status == 'open' %}
-                                    <span class="badge badge-open">{% trans "Open" %}</span>
-                                {% elif job.status == 'in_progress' %}
-                                    <span class="badge badge-in-progress">{% trans "In Progress" %}</span>
-                                {% elif job.status == 'waiting' %}
-                                    <span class="badge badge-waiting">{% trans "Waiting for Parts" %}</span>
-                                {% elif job.status == 'completed' %}
-                                    <span class="badge badge-completed">{% trans "Completed" %}</span>
-                                {% elif job.status == 'closed' %}
-                                    <span class="badge badge-closed">{% trans "Closed" %}</span>
-                                {% elif job.status == 'cancelled' %}
-                                    <span class="badge badge-cancelled">{% trans "Cancelled" %}</span>
-                                {% else %}
-                                    <span class="badge badge-secondary">{{ job.get_status_display }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="align-middle text-right font-weight-bold text-dark">
-                                {{ job.total_amount|floatformat:3 }}
-                            </td>
-                            <td class="align-middle text-center">
-                                <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="btn btn-sm btn-outline-primary mr-1" title="{% trans 'View Job Card' %}">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans 'Edit Job Card' %}">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="jcTable">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Voucher No." %}</th>
+                                <th>{% trans "Date" %}</th>
+                                <th>{% trans "Customer Name" %}</th>
+                                <th>{% trans "Vehicles" %}</th>
+                                <th>{% trans "Priority" %}</th>
+                                <th>{% trans "Status" %}</th>
+                                <th class="text-right">{% trans "Grand Total" %}</th>
+                                <th style="width: 170px;" class="text-center">{% trans "Action" %}</th>
+                            </tr>
+                        </thead>
 
-            {% if page_obj.paginator.num_pages > 1 %}
-            <div class="d-flex justify-content-between align-items-center p-3 border-top">
-                <span class="text-muted small">
-                    {% trans "Page" %} {{ page_obj.number }} {% trans "of" %} {{ page_obj.paginator.num_pages }}
-                </span>
-                <div>
-                    {% if page_obj.has_previous %}
-                    <a class="btn btn-sm btn-outline-secondary"
-                       href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">&laquo; {% trans "Prev" %}</a>
-                    {% endif %}
-                    {% if page_obj.has_next %}
-                    <a class="btn btn-sm btn-outline-secondary"
-                       href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}">{% trans "Next" %} &raquo;</a>
-                    {% endif %}
+                        <tbody>
+                            {% for job in page_obj %}
+                                <tr>
+                                    <td class="align-middle">
+                                        <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}"
+                                           class="font-weight-bold text-primary"
+                                           style="font-size:14px;">
+                                            <i class="bi bi-receipt text-secondary mr-1"></i>
+                                            {{ job.voucher_number }}
+                                        </a>
+                                    </td>
+
+                                    <td class="align-middle text-muted">
+                                        {{ job.date|date:'d M Y' }}
+                                    </td>
+
+                                    <td class="align-middle font-weight-600 text-dark">
+                                        {{ job.customer }}
+                                    </td>
+
+                                    <td class="align-middle">
+                                        {% for jv in job.vehicles.all %}
+                                            <span class="badge badge-light text-dark border mb-1">
+                                                <i class="bi bi-truck mr-1 text-secondary"></i>
+                                                {{ jv.vehicle.vehicle_number }}
+                                            </span>
+                                        {% empty %}
+                                            <span class="text-muted">—</span>
+                                        {% endfor %}
+                                    </td>
+
+                                    <td class="align-middle">
+                                        {% if job.priority == 'express' %}
+                                            <span class="badge badge-danger">{% trans "Express" %}</span>
+                                        {% elif job.priority == 'urgent' %}
+                                            <span class="badge badge-warning">{% trans "Urgent" %}</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">{% trans "Normal" %}</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="align-middle">
+                                        {% if job.status == 'open' %}
+                                            <span class="badge badge-open">{% trans "Open" %}</span>
+                                        {% elif job.status == 'in_progress' %}
+                                            <span class="badge badge-in-progress">{% trans "In Progress" %}</span>
+                                        {% elif job.status == 'waiting' %}
+                                            <span class="badge badge-waiting">{% trans "Waiting for Parts" %}</span>
+                                        {% elif job.status == 'completed' %}
+                                            <span class="badge badge-completed">{% trans "Completed" %}</span>
+                                        {% elif job.status == 'closed' %}
+                                            <span class="badge badge-closed">{% trans "Closed" %}</span>
+                                        {% elif job.status == 'cancelled' %}
+                                            <span class="badge badge-cancelled">{% trans "Cancelled" %}</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">{{ job.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="align-middle text-right font-weight-bold text-dark">
+                                        {{ job.total_amount|floatformat:2 }}
+                                    </td>
+
+                                    <!-- All action buttons belong inside this table cell -->
+                                    <td class="align-middle text-center text-nowrap">
+                                        <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}"
+                                           class="btn btn-sm btn-outline-primary mr-1"
+                                           title="{% trans 'View Job Card' %}"
+                                           aria-label="{% trans 'View Job Card' %}">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}"
+                                           class="btn btn-sm btn-outline-secondary mr-1"
+                                           title="{% trans 'Edit Job Card' %}"
+                                           aria-label="{% trans 'Edit Job Card' %}">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <form method="post"
+                                              action="{% url 'jobcard_app:jobcard_delete' job.pk %}"
+                                              style="display:inline-block;"
+                                              onsubmit="return confirm('{% trans "Are you sure you want to delete this job card?" %}');">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="{% trans 'Delete Job Card' %}"
+                                                    aria-label="{% trans 'Delete Job Card' %}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-            {% endif %}
+
+                <!-- Pagination -->
+                {% if page_obj.paginator.num_pages > 1 %}
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                        <span class="text-muted small">
+                            {% trans "Page" %} {{ page_obj.number }}
+                            {% trans "of" %} {{ page_obj.paginator.num_pages }}
+                        </span>
+
+                        <div>
+                            {% if page_obj.has_previous %}
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">
+                                    &laquo; {% trans "Prev" %}
+                                </a>
+                            {% endif %}
+
+                            {% if page_obj.has_next %}
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page_obj.next_page_number }}">
+                                    {% trans "Next" %} &raquo;
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
 
             {% else %}
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-card-checklist display-4 d-block mb-2 text-secondary"></i>
-                {% trans "No job cards found." %}
-            </div>
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-card-checklist display-4 d-block mb-2 text-secondary"></i>
+                    {% trans "No job cards found." %}
+                </div>
             {% endif %}
         </div>
     </div>

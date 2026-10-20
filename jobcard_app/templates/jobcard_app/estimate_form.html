@@ -9,10 +9,7 @@ body{background:#f5f6fa;font-family:'Segoe UI',sans-serif}
 .page-hdr{display:flex;align-items:center;justify-content:space-between;
           margin-bottom:20px;flex-wrap:wrap;gap:10px}
 .page-hdr-left{display:flex;align-items:center;gap:10px}
-.page-icon{width:38px;height:38px;background:#eff6ff;border-radius:9px;
-           display:flex;align-items:center;justify-content:center;font-size:20px}
 .page-title{font-size:20px;font-weight:700;color:#111827;margin:0}
-.page-sub{font-size:12px;color:#6b7280;margin-top:2px}
 .btn-back{background:#f9fafb;color:#374151;border:1px solid #e5e7eb;
           border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;
           text-decoration:none;display:inline-flex;align-items:center;gap:5px}
@@ -22,9 +19,7 @@ body{background:#f5f6fa;font-family:'Segoe UI',sans-serif}
       margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 .card-hdr{padding:14px 20px;border-bottom:1px solid #f3f4f6;
           display:flex;align-items:center;gap:8px}
-.card-hdr-icon{font-size:16px}
 .card-hdr-title{font-size:14px;font-weight:700;color:#111827}
-.card-hdr-sub{font-size:11px;color:#6b7280;margin-top:1px}
 .card-body{padding:20px}
 
 /* ── Field labels ── */
@@ -42,20 +37,17 @@ body{background:#f5f6fa;font-family:'Segoe UI',sans-serif}
 select.fi{cursor:pointer}
 textarea.fi{resize:vertical}
 
-/* ── Grids ── */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+/* ── Estimate header grid (4 columns, own class so nothing overrides it) ── */
+.est-hdr-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.est-hdr-grid > div{min-width:0}
 .mb{margin-bottom:14px}
-@media(max-width:680px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
-@media(max-width:460px){.g2,.g3,.g4{grid-template-columns:1fr}}
+@media(max-width:900px){.est-hdr-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.est-hdr-grid{grid-template-columns:1fr}}
 
 /* ── Sub heading ── */
 .sub-hdr{display:flex;align-items:center;gap:8px;padding:14px 20px 0;
          border-top:2px solid #f3f4f6;margin-top:4px}
-.sub-hdr-icon{font-size:15px}
 .sub-hdr-title{font-size:13px;font-weight:700;color:#111827}
-.sub-hdr-sub{font-size:11px;color:#6b7280;margin-top:1px}
 
 /* ── Parts / Labour table ── */
 .tbl-wrap{overflow-x:auto;padding:0 20px}
@@ -136,8 +128,7 @@ textarea.fi{resize:vertical}
     <div class="page-hdr-left">
       <div>
         <h1 class="page-title">
-          {% if edit_mode %}Edit Estimate — {{ estimate.estimate_number }}
-          {% else %}Create Estimate{% endif %}
+          {% if edit_mode %}Edit Estimate — {{ estimate.voucher_number }}{% else %}Create Estimate{% endif %}
         </h1>
       </div>
     </div>
@@ -151,56 +142,35 @@ textarea.fi{resize:vertical}
   <form method="post" id="estForm">{% csrf_token %}
 
   <!-- ════════════════════════════════════════
-       TABLE 1 — ESTIMATE INFORMATION
+       ESTIMATE HEADER DETAILS
   ════════════════════════════════════════ -->
   <div class="card">
     <div class="card-hdr">
-      <div>
-        <div class="card-hdr-title">Estimate Info</div>
-      </div>
+      <div class="card-hdr-title">Estimate Header Details</div>
     </div>
     <div class="card-body">
 
-      <!-- Row 1: Voucher No | Estimate No | Date | Status -->
-      <div class="g4 mb">
       <input type="hidden" name="voucherType" id="id_voucherType"
-        value="{% if edit_mode and estimate.voucherType %}{{ estimate.voucherType.id }}{% else %}1{% endif %}">
+        value="{% if edit_mode and estimate.voucherType %}{{ estimate.voucherType.id }}{% else %}{{ estimate_voucher_id }}{% endif %}">
 
-      <div>
-        <label class="fl">Voucher Number</label>
-        <input type="text" name="voucher_number" id="id_voucher_number" class="fi"
-          placeholder="e.g. VCH-00001"
-          value="{% if edit_mode %}{{ estimate.voucher_number|default:'' }}{% endif %}">
-      </div>
-      <div>
-        <label class="fl">Estimate Number<span class="req">*</span></label>
-        <input type="text" name="estimate_number" class="fi" required
-          placeholder="Enter estimate number"
-          value="{% if edit_mode %}{{ estimate.estimate_number }}{% endif %}">
-      </div>
+      <!-- Row 1: Voucher No | Estimate No | Date | Customer -->
+      <div class="est-hdr-grid mb">
+        <div>
+          <label class="fl">Voucher Number</label>
+          <input type="text" name="voucher_number" id="id_voucher_number" class="fi" readonly
+                 placeholder="Auto-generated"
+                 value="{% if edit_mode %}{{ estimate.voucher_number|default:'' }}{% endif %}">
+        </div>
         <div>
           <label class="fl">Date <span class="req">*</span></label>
           <input type="date" name="date" class="fi" required
-            value="{% if edit_mode %}{{ estimate.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
+                 value="{% if edit_mode %}{{ estimate.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
         </div>
         <div>
-          <label class="fl">Status</label>
-          <select name="status" class="fi">
-            <option value="draft"    {% if not edit_mode or estimate.status == 'draft'    %}selected{% endif %}>Draft</option>
-            <option value="sent"     {% if edit_mode and estimate.status == 'sent'        %}selected{% endif %}>Sent</option>
-            <option value="approved" {% if edit_mode and estimate.status == 'approved'    %}selected{% endif %}>Approved</option>
-            <option value="rejected" {% if edit_mode and estimate.status == 'rejected'    %}selected{% endif %}>Rejected</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Row 2: Customer | Customer Phone -->
-      <div class="g2 mb">
-        <div>
-          <label class="fl">Customer Name <span class="req">*</span></label>
+          <label class="fl">Customer <span class="req">*</span></label>
           <select name="customer" class="fi" required id="custSel"
-            {% if edit_mode %}disabled{% endif %}
-            onchange="loadVehicles(this.value);loadPhone(this)">
+                  {% if edit_mode %}disabled{% endif %}
+                  onchange="loadVehicles(this.value);loadPhone(this);loadCustomerJobcards(this.value)">
             <option value="">— Select Customer —</option>
             {% for c in customers %}
             <option value="{{ c.id }}"
@@ -216,20 +186,38 @@ textarea.fi{resize:vertical}
         <div>
           <label class="fl">Customer Phone</label>
           <input type="text" name="customer_phone" class="fi" id="custPhone"
-            placeholder="e.g. +968 9123 4567"
-            value="{% if edit_mode %}{{ estimate.customer_phone|default:'' }}{% endif %}">
+                 placeholder="e.g. +968 9123 4567"
+                 value="{% if edit_mode %}{{ estimate.customer_phone|default:'' }}{% endif %}">
         </div>
       </div>
 
-      <!-- Row 3: Service Advisor | Remarks -->
-      <div class="g2">
+      <!-- Row 2: Job Card | Status | Advisor | Remarks -->
+      <div class="est-hdr-grid">
+        <div>
+          <label class="fl">Job Card</label>
+          <select name="loaded_jobcard" id="jcSel" class="fi" onchange="onJobcardSelect(this)"
+                  data-current="{% if edit_mode and estimate.jobcard_id %}{{ estimate.jobcard_id }}{% endif %}">
+            <option value="">— None —</option>
+            {% if edit_mode and estimate.jobcard %}
+            <option value="{{ estimate.jobcard_id }}" selected>{{ estimate.jobcard.voucher_number }}</option>
+            {% endif %}
+          </select>
+        </div>
+        <div>
+          <label class="fl">Status</label>
+          <select name="status" class="fi">
+            <option value="draft"    {% if not edit_mode or estimate.status == 'draft' %}selected{% endif %}>Draft</option>
+            <option value="sent"     {% if edit_mode and estimate.status == 'sent' %}selected{% endif %}>Sent</option>
+            <option value="approved" {% if edit_mode and estimate.status == 'approved' %}selected{% endif %}>Approved</option>
+            <option value="rejected" {% if edit_mode and estimate.status == 'rejected' %}selected{% endif %}>Rejected</option>
+          </select>
+        </div>
         <div>
           <label class="fl">Service Advisor</label>
           <select name="advisor" class="fi">
             <option value="">— Select —</option>
             {% for s in advisors %}
-            <option value="{{ s.id }}"
-              {% if edit_mode and estimate.advisor_id == s.id %}selected{% endif %}>
+            <option value="{{ s.id }}" {% if edit_mode and estimate.advisor_id == s.id %}selected{% endif %}>
               {{ s.full_name }}
             </option>
             {% endfor %}
@@ -238,13 +226,13 @@ textarea.fi{resize:vertical}
         <div>
           <label class="fl">Remarks</label>
           <input type="text" name="remarks" class="fi"
-            placeholder="Any additional remarks..."
-            value="{% if edit_mode %}{{ estimate.remarks|default:'' }}{% endif %}">
+                 placeholder="Any additional remarks..."
+                 value="{% if edit_mode %}{{ estimate.remarks|default:'' }}{% endif %}">
         </div>
       </div>
 
-    </div>
-  </div>
+    </div><!-- /card-body -->
+  </div><!-- /card -->
 
   <!-- ════════════════════════════════════════
        VEHICLES
@@ -281,8 +269,8 @@ textarea.fi{resize:vertical}
                 </td>
                 <td>
                   <input type="text" class="fi veh-mm-box" readonly
-                        value="{{ ev.vehicle.manufacturer.manufacturer_name|default:'' }} {{ ev.vehicle.vehicle_model.model_name|default:'' }}"
-                        placeholder="Make & Model">
+                         value="{{ ev.vehicle.manufacturer.manufacturer_name|default:'' }} {{ ev.vehicle.vehicle_model.model_name|default:'' }}"
+                         placeholder="Make & Model">
                 </td>
                 <td><input type="number" name="est_vehicle_mileage[]" value="{{ ev.mileage|default:'' }}" min="0" class="fi"></td>
                 <td>
@@ -300,8 +288,8 @@ textarea.fi{resize:vertical}
                 </td>
                 <td>
                   <input type="text" class="fi veh-mm-box" readonly
-                        value="{{ prefill_job.workshop_vehicle.manufacturer.manufacturer_name|default:'' }} {{ prefill_job.workshop_vehicle.vehicle_model.model_name|default:'' }}"
-                        placeholder="Make & Model">
+                         value="{{ prefill_job.workshop_vehicle.manufacturer.manufacturer_name|default:'' }} {{ prefill_job.workshop_vehicle.vehicle_model.model_name|default:'' }}"
+                         placeholder="Make & Model">
                 </td>
                 <td><input type="number" name="est_vehicle_mileage[]" value="{{ prefill_job.mileage|default:'' }}" min="0" class="fi"></td>
                 <td>
@@ -320,20 +308,16 @@ textarea.fi{resize:vertical}
   </div>
 
   <!-- ════════════════════════════════════════
-       TABLE 2 — ESTIMATE DETAILS
+       ESTIMATE DETAILS
   ════════════════════════════════════════ -->
   <div class="card">
     <div class="card-hdr">
-      <div>
-        <div class="card-hdr-title">Estimate Details</div>
-      </div>
+      <div class="card-hdr-title">Estimate Details</div>
     </div>
 
     <!-- ── Customer Complaints ── -->
     <div class="sub-hdr" style="margin-top:4px">
-      <div>
-        <div class="sub-hdr-title">Customer Complaints</div>
-      </div>
+      <div class="sub-hdr-title">Customer Complaints</div>
     </div>
 
     <div style="margin:12px 20px 0">
@@ -341,7 +325,6 @@ textarea.fi{resize:vertical}
       <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px 8px 0 0;
                   padding:11px 14px;display:flex;align-items:center;
                   justify-content:space-between;gap:10px;flex-wrap:wrap">
-        
         <div style="display:flex;gap:8px;align-items:center">
           <button type="button" onclick="addEstComplaint()"
                   style="background:#2563eb;color:#fff;border:none;border-radius:5px;
@@ -409,8 +392,8 @@ textarea.fi{resize:vertical}
                 </td>
                 <td style="padding:6px 6px">
                   <input type="text" name="customer_complaint[]" value="{{ c.description }}"
-                        placeholder="Describe complaint..."
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
+                         placeholder="Describe complaint..."
+                         style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
                 </td>
                 <td style="padding:6px 6px">
                   <div style="display:flex;flex-direction:column;gap:4px">
@@ -461,8 +444,8 @@ textarea.fi{resize:vertical}
                 </td>
                 <td style="padding:6px 6px">
                   <input type="text" name="customer_complaint[]"
-                        placeholder="Describe complaint..."
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
+                         placeholder="Describe complaint..."
+                         style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
                 </td>
                 <td style="padding:6px 6px">
                   <div style="display:flex;flex-direction:column;gap:4px">
@@ -495,9 +478,7 @@ textarea.fi{resize:vertical}
 
     <!-- ── Parts Estimate ── -->
     <div class="sub-hdr" style="margin-top:16px">
-      <div>
-        <div class="sub-hdr-title">Parts Estimate</div>
-      </div>
+      <div class="sub-hdr-title">Parts Estimate</div>
     </div>
 
     <div class="tbl-wrap" style="margin-top:12px">
@@ -520,9 +501,7 @@ textarea.fi{resize:vertical}
       </table>
     </div>
 
-    <button type="button" class="btn-add-row" onclick="addPartRow()">
-      + Add Part
-    </button>
+    <button type="button" class="btn-add-row" onclick="addPartRow()">+ Add Part</button>
     <div class="sub-total-row">
       PARTS SUBTOTAL &nbsp;<span id="partsSub">0.000 </span>
     </div>
@@ -531,9 +510,7 @@ textarea.fi{resize:vertical}
 
     <!-- ── Labour Estimate ── -->
     <div class="sub-hdr" style="margin-top:16px">
-      <div>
-        <div class="sub-hdr-title">Labour Charges</div>
-      </div>
+      <div class="sub-hdr-title">Labour Charges</div>
     </div>
 
     <div class="tbl-wrap" style="margin-top:12px">
@@ -612,6 +589,7 @@ textarea.fi{resize:vertical}
     <div class="sub-total-row">LABOUR SUBTOTAL &nbsp;<span id="labourSub">0.000 </span></div>
 
   </div>
+
   <!-- ════════════════════════════════════════
        GRAND TOTAL
   ════════════════════════════════════════ -->
@@ -681,14 +659,19 @@ const VEH_URL = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
 const fmt = n => parseFloat(n||0).toFixed(3);
 
 let customerVehicleCache = [];
+
+/* ══════════════════════════════════════════
+   VOUCHER / ESTIMATE NUMBER PREVIEW
+   (final number is assigned in Estimate.save())
+══════════════════════════════════════════ */
 function updateEstimateVoucherNumber(voucherTypeId) {
   if (!voucherTypeId) return;
   fetch("{% url 'jobcard_app:get_next_estimate_number' %}?voucher_type_id=" + voucherTypeId)
     .then(response => response.json())
     .then(data => {
       if (data.success && data.job_number) {
-        const voucherNumInput = document.getElementById('id_voucher_number');
-        if (voucherNumInput) voucherNumInput.value = data.job_number;
+        const v = document.getElementById('id_voucher_number');
+        if (v) v.value = data.job_number;
       }
     })
     .catch(err => console.error('Error fetching next estimate voucher number:', err));
@@ -702,6 +685,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   {% endif %}
 });
+
 /* ══════════════════════════════════════════
    VEHICLES TABLE (same pattern as Job Card)
 ══════════════════════════════════════════ */
@@ -710,7 +694,6 @@ function loadVehicles(cid, callback, keepExisting) {
   const tbody = document.getElementById('vehBody');
   const emptyDiv = document.getElementById('vehEmpty');
   if (!cid) {
-    // Clear rows and show empty message
     if (!keepExisting && tbody) tbody.innerHTML = '';
     if (emptyDiv) emptyDiv.style.display = 'block';
     checkVehEmpty();
@@ -722,7 +705,6 @@ function loadVehicles(cid, callback, keepExisting) {
     .then(d => {
       customerVehicleCache = d.vehicles || [];
       if (!keepExisting) {
-        // Customer was changed — clear old rows and add a fresh one
         if (tbody) tbody.innerHTML = '';
         if (customerVehicleCache.length > 0) {
           if (emptyDiv) emptyDiv.style.display = 'none';
@@ -732,7 +714,6 @@ function loadVehicles(cid, callback, keepExisting) {
         }
         refreshAllVehicleDropdowns();
       } else {
-        // Page init — just repopulate existing veh-select dropdowns
         document.querySelectorAll('.veh-select').forEach(sel => populateVehSelect(sel));
         checkVehEmpty();
       }
@@ -901,12 +882,13 @@ const ALL_ITEMS_URL = "{% url 'jobcard_app:ajax_get_all_items' %}";
 
 let allItems = [];
 
+let itemsReady = Promise.resolve();
 document.addEventListener('DOMContentLoaded', function () {
-  loadAllItems();
+  itemsReady = loadAllItems();
 });
 
 function loadAllItems() {
-  fetch(ALL_ITEMS_URL)
+  return fetch(ALL_ITEMS_URL)
     .then(r => r.json())
     .then(data => {
       allItems = data.items || [];
@@ -916,8 +898,13 @@ function loadAllItems() {
     .catch(e => console.error('Failed to load items:', e));
 }
 
-function buildItemOptions(selectedId = '') {
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function buildItemOptions(selectedId = '', manualLabel = '') {
   let opts = '<option value="">— Select Item —</option>';
+  if (!selectedId && manualLabel) {
+    opts += `<option value="" selected>${esc(manualLabel)} (manual)</option>`;
+  }
   allItems.forEach(item => {
     const sel = selectedId && selectedId == item.id ? 'selected' : '';
     opts += `<option value="${item.id}"
@@ -973,7 +960,7 @@ function addPartRow(
       <select name="part_item_id[]"
               style="${IS};cursor:pointer"
               onchange="onItemSelect(this)">
-        ${buildItemOptions(itemId)}
+        ${buildItemOptions(itemId, initialDesc)}
       </select>
       <input type="hidden" name="description[]" class="part-desc"
              value="${initialDesc.replace(/"/g, '&quot;')}">
@@ -1126,12 +1113,12 @@ function calcAll() {
   const grand  = sub - disc + tax;
 
   const el = id => document.getElementById(id);
-  if (el('partsSub'))   el('partsSub').textContent   = fmt(parts)  ;
-  if (el('labourSub'))  el('labourSub').textContent  = fmt(labour) ;
-  if (el('gtParts'))    el('gtParts').textContent    = fmt(parts)  ;
-  if (el('gtLabour'))   el('gtLabour').textContent   = fmt(labour) ;
-  if (el('taxAmt'))     el('taxAmt').textContent     = fmt(tax)    ;
-  if (el('grandTotal')) el('grandTotal').textContent = fmt(grand)  ;
+  if (el('partsSub'))   el('partsSub').textContent   = fmt(parts);
+  if (el('labourSub'))  el('labourSub').textContent  = fmt(labour);
+  if (el('gtParts'))    el('gtParts').textContent    = fmt(parts);
+  if (el('gtLabour'))   el('gtLabour').textContent   = fmt(labour);
+  if (el('taxAmt'))     el('taxAmt').textContent     = fmt(tax);
+  if (el('grandTotal')) el('grandTotal').textContent = fmt(grand);
 }
 
 function calcLabour(inp) {
@@ -1139,20 +1126,20 @@ function calcLabour(inp) {
   const hrs = parseFloat(tr.querySelector('.lab-hrs')?.value)  || 0;
   const rt  = parseFloat(tr.querySelector('.lab-rate')?.value) || 0;
   const td  = tr.querySelector('.lab-tot');
-  if (td) td.textContent = fmt(hrs * rt) ;
+  if (td) td.textContent = fmt(hrs * rt);
   calcAll();
 }
 
-function addLabour() {
+function addLabour(desc = '', techId = '', hrs = 1, rate = '0.000', vehId = '') {
   const tbody = document.getElementById('labourTbody');
   const tr    = document.createElement('tr');
   tr.innerHTML = `
     <td>
       <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
-        ${buildVehSelectHtml('')}
+        ${buildVehSelectHtml(vehId)}
       </select>
     </td>
-    <td><input type="text" name="labour_desc[]" placeholder="e.g. Engine repair..."></td>
+    <td><input type="text" name="labour_desc[]" placeholder="e.g. Engine repair..." value="${esc(desc)}"></td>
     <td>
       <select name="labour_tech[]">
         <option value="">— Assign —</option>
@@ -1162,15 +1149,17 @@ function addLabour() {
       </select>
     </td>
     <td><input type="number" name="labour_hrs[]" class="lab-hrs"
-          value="1" min="0" step="0.5" oninput="calcLabour(this)"></td>
+          value="${hrs}" min="0" step="0.5" oninput="calcLabour(this)"></td>
     <td><input type="number" name="labour_rate[]" class="lab-rate"
-          value="0.000" min="0" step="0.001" oninput="calcLabour(this)"></td>
+          value="${rate}" min="0" step="0.001" oninput="calcLabour(this)"></td>
     <td><div class="cell-r lab-tot">0.000</div></td>
     <td><button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">×</button></td>
   `;
   tbody.appendChild(tr);
+  if (techId) tr.querySelector('select[name="labour_tech[]"]').value = String(techId);
   calcAll();
   refreshAllVehicleDropdowns();
+  return tr;
 }
 
 function rmRow(btn) {
@@ -1434,6 +1423,7 @@ function addEstComplaint(desc='', catId='', initialTypeId='', techId='', status=
     updateTechnicianOptions(tr, 0, isOverride, '');
   }
   refreshAllVehicleDropdowns();
+  return tr;
 }
 
 function rmEstComplaint(btn) {
@@ -1447,27 +1437,189 @@ function rmEstComplaint(btn) {
   }
 }
 
-document.getElementById('custSel')?.addEventListener('change', () => {
-  document.getElementById('jcList').style.display       = 'none';
-  document.getElementById('jcEmpty').style.display      = 'none';
-  document.getElementById('jcNoCustomer').style.display = 'block';
-});
+/* ══════════════════════════════════════════
+   LOAD DETAILS FROM A JOB CARD
+══════════════════════════════════════════ */
+const JC_LIST_URL = "{% url 'jobcard_app:ajax_customer_jobcards' %}";
+const JC_DATA_URL = "{% url 'jobcard_app:ajax_jobcard_estimate_data' %}";
+let jcLoadedId = '';
 
-document.addEventListener('click', e => {
-  if (!e.target.closest('.item-wrap'))
-    document.querySelectorAll('.item-dd').forEach(d => d.style.display='none');
-});
+// Fill the Job Card dropdown with this customer's job cards
+async function loadCustomerJobcards(cid, selectId) {
+  const sel = document.getElementById('jcSel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— None —</option>';
+  jcLoadedId = '';
+  if (!cid) return;
+  try {
+    const r = await fetch(JC_LIST_URL + '?customer_id=' + cid + (selectId ? '&include=' + selectId : ''),
+                          { credentials: 'same-origin' });
+    const d = await r.json();
+    (d.jobcards || []).forEach(j => {
+      const label = [j.number, j.date, j.vehicles, j.status].filter(Boolean).join(' · ');
+      sel.add(new Option(label, j.id));
+    });
+    if (selectId) { sel.value = String(selectId); jcLoadedId = sel.value; }
+  } catch (e) { console.error('Job card list failed:', e); }
+}
+
+function hasEstimateEntries() {
+  const comp = [...document.querySelectorAll('input[name="customer_complaint[]"]')].some(i => i.value.trim());
+  const part = [...document.querySelectorAll('.part-desc')].some(i => i.value.trim());
+  const lab  = [...document.querySelectorAll('input[name="labour_desc[]"]')].some(i => i.value.trim());
+  return comp || part || lab;
+}
+
+async function onJobcardSelect(sel) {
+  const id = sel.value;
+  if (!id) {                       // "None": just unlink, keep what is on the form
+    jcLoadedId = '';
+    const b = document.getElementById('jcBanner');
+    if (b) b.style.display = 'none';
+    return;
+  }
+  if (hasEstimateEntries() &&
+      !confirm('Replace the vehicles, complaints, parts and labour on this estimate with the details from this job card?')) {
+    sel.value = jcLoadedId;
+    return;
+  }
+  await loadFromJobcard(id);
+}
+
+function addJcVehicle(v) {
+  // make sure the vehicle can be selected even if it is not in the customer's list
+  if (!customerVehicleCache.some(x => String(x.id) === String(v.id))) {
+    customerVehicleCache.push({ id: v.id, label: v.label, mm_label: v.mm_label, odometer: v.mileage || '' });
+  }
+  const tr = addVehicleRow(v.id, v.mileage);
+  if (tr && v.notes) {
+    const n = tr.querySelector('input[name="est_vehicle_notes[]"]');
+    if (n) n.value = v.notes;
+  }
+}
+
+function addJcComplaint(c) {
+  const tr = addEstComplaint(c.description || '', c.category_id || '', '', c.technician_id || '',
+                             c.status || 'Open', '', c.vehicle_id || '', !!c.is_manual_override);
+  const typeSel = tr.querySelector('.complaint-type-select');
+  const techSel = tr.querySelector('.complaint-tech-select');
+
+  if (c.category && !c.category_id) tr.querySelector('.cat-txt').value = c.category;
+
+  let skillId = 0, skillName = '';
+  if (c.type_id) {
+    typeSel.value = String(c.type_id);
+    const opt = typeSel.options[typeSel.selectedIndex];
+    if (typeSel.value && opt) {
+      skillId   = parseInt(opt.dataset.skillId || '0', 10);
+      skillName = opt.dataset.skillName || '';
+    }
+  }
+  const typeTxt = tr.querySelector('.type-txt');
+  if (typeTxt) {
+    typeTxt.value = typeSel.value
+      ? typeSel.options[typeSel.selectedIndex].textContent
+      : (c.type || '');
+  }
+
+  // show all technicians so the job card's technician is never lost
+  techSel.dataset.initialTechId = c.technician_id || '';
+  updateTechnicianOptions(tr, skillId, true, skillName);
+  if (c.technician_id) techSel.value = String(c.technician_id);
+}
+
+function addJcPart(p) {
+  const code = String(p.part_number || '').trim().toLowerCase();
+  const name = String(p.description  || '').trim().toLowerCase();
+  const match = allItems.find(i => code && String(i.code || '').toLowerCase() === code)
+             || allItems.find(i => name && String(i.name || '').toLowerCase() === name);
+  const qty  = Number(p.quantity || 1);
+  const rate = Number(p.unit_price || 0);
+  addPartRow(match ? match.id : '', p.part_number || '', qty, rate.toFixed(3), 'None',
+             (qty * rate).toFixed(3), p.description || '', p.vehicle_id || '');
+}
+
+function addJcLabour(l) {
+  addLabour(l.description || '', l.technician_id || '', Number(l.hours || 1),
+            Number(l.rate || 0).toFixed(3), l.vehicle_id || '');
+}
+
+async function loadFromJobcard(id) {
+  await itemsReady;                // so parts can be matched to the item list
+
+  let d;
+  try {
+    const r = await fetch(JC_DATA_URL + '?jobcard_id=' + id, { credentials: 'same-origin' });
+    d = await r.json();
+  } catch (e) {
+    console.error('Job card load failed:', e);
+    alert('Could not load the job card. Please try again.');
+    return;
+  }
+  if (!d.found) { alert('Job card not found.'); return; }
+
+  // header
+  const adv = document.querySelector('select[name="advisor"]');
+  if (adv && d.advisor_id) adv.value = String(d.advisor_id);
+  const ph = document.getElementById('custPhone');
+  if (ph && !ph.value && d.customer_phone) ph.value = d.customer_phone;
+
+  // vehicles
+  document.getElementById('vehBody').innerHTML = '';
+  (d.vehicles || []).forEach(v => addJcVehicle(v));
+  checkVehEmpty();
+  refreshAllVehicleDropdowns();
+
+  // complaints
+  const cBody = document.getElementById('estComplaintBody');
+  cBody.innerHTML = '';
+  (d.complaints || []).forEach(c => addJcComplaint(c));
+  if (!cBody.rows.length) addEstComplaint();
+
+  // parts
+  const pBody = document.getElementById('partsTbody');
+  pBody.innerHTML = '';
+  (d.parts || []).forEach(p => addJcPart(p));
+  if (!pBody.rows.length) addPartRow();
+
+  // labour
+  const lBody = document.getElementById('labourTbody');
+  lBody.innerHTML = '';
+  (d.labours || []).forEach(l => addJcLabour(l));
+  if (!lBody.rows.length) addLabour();
+
+  refreshAllVehicleDropdowns();
+  calcAll();
+
+  jcLoadedId = String(id);
+  const sel = document.getElementById('jcSel');
+  if (sel) sel.value = jcLoadedId;
+  const b  = document.getElementById('jcBanner');
+  const bt = document.getElementById('jcBannerText');
+  if (b && bt) {
+    bt.textContent = 'Loaded from Job Card ' + (d.number || '') + ': ' +
+      (d.vehicles || []).length + ' vehicle(s), ' + (d.complaints || []).length + ' complaint(s), ' +
+      (d.parts || []).length + ' part(s), ' + (d.labours || []).length + ' labour line(s).';
+    b.style.display = 'flex';
+  }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
   calcAll();
   initEstComplaintRows();
   const customerSelect = document.getElementById('custSel');
   if (customerSelect && customerSelect.value) {
+    const cid       = customerSelect.value;
+    const savedJc   = (document.getElementById('jcSel') || {dataset: {}}).dataset.current || '';
+    const prefillJc = "{{ prefill_job.id|default:'' }}";
     // keepExisting=true so edit-mode rows are not cleared on page load
-    loadVehicles(customerSelect.value, function () {
+    loadVehicles(cid, async function () {
       document.querySelectorAll('.veh-select').forEach(sel => onVehRowChange(sel, false));
+      await loadCustomerJobcards(cid, savedJc || prefillJc);
+      // opened with ?from_jobcard=ID  → load that job card straight away
+      if (prefillJc && !savedJc) await loadFromJobcard(prefillJc);
     }, true);
   }
 });
 </script>
-{% endblock %}
+{% endblock %}                                   

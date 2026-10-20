@@ -5,35 +5,31 @@
 /* ══════════════════════════════════════════════
    RESET & BASE
 ══════════════════════════════════════════════ */
-*{box-sizing:border-box;margin:0;padding:0}
-body,input,select,textarea,button{font-family:'Segoe UI',sans-serif}
+:where(.ins-page),:where(.ins-page) *{box-sizing:border-box}
+:where(.ins-page) *{margin:0;padding:0}
+.ins-page input,.ins-page select,.ins-page textarea,.ins-page button{font-family:'Segoe UI',sans-serif}
 body{background:#f0f2f5;font-family:'Segoe UI',sans-serif;font-size:13px}
 
 /* ══════════════════════════════════════════════
    TOP DARK HEADER
 ══════════════════════════════════════════════ */
 .top-header{
-  background:#ffffff;
+  background:#fff;border-radius:10px;
+  box-shadow:0 1px 4px rgba(0,0,0,.07);
   display:flex;align-items:center;justify-content:space-between;
-  align-items:center;
-  width:55%;          /* reduce horizontal length */
-  margin:5px auto; 
-  justify-content:space-between;
-  padding: 12px 24px;
-  position:sticky;top: 10px;z-index:200;
-  border-bottom:1px solid rgb(255, 252, 252);
+  padding:14px 20px;margin-bottom:16px;
 }
 .th-left .th-brand{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.1px}
 .th-left .th-title{font-size:16px;font-weight:700;color:#000000}
 .th-right{display:flex;gap:8px;align-items:center}
 .th-btn{
-  background:rgba(255,255,255,.1);color:#e5e7eb;
-  border:1px solid rgba(255,255,255,.15);border-radius:5px;
-  padding:5px 14px;font-size:12px;font-weight:600;
+  background:#f9fafb;color:#374151;
+  border:1px solid #e5e7eb;border-radius:6px;
+  padding:7px 14px;font-size:12px;font-weight:600;
   cursor:pointer;display:inline-flex;align-items:center;gap:5px;
   text-decoration:none;transition:all .15s;
 }
-.th-btn:hover{background:rgba(255,255,255,.18);color:#fff}
+.th-btn:hover{background:#f3f4f6;color:#111827}
 
 /* ══════════════════════════════════════════════
    DARK TAB STRIP
@@ -59,7 +55,7 @@ body{background:#f0f2f5;font-family:'Segoe UI',sans-serif;font-size:13px}
 /* ══════════════════════════════════════════════
    PAGE WRAPPER
 ══════════════════════════════════════════════ */
-.pw{max-width:840px;margin:0 auto;padding:50px 16px 100px}
+.pw{max-width:840px;margin:0 auto;padding:24px 16px 40px}
 
 /* ══════════════════════════════════════════════
    WHITE SECTION CARDS
@@ -119,7 +115,9 @@ textarea.fi{resize:vertical}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .mb{margin-bottom:14px}
-@media(max-width:640px){.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+.g3>div,.g2>div{min-width:0}
+.span2{grid-column:span 2}
+@media(max-width:640px){.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.span2{grid-column:1/-1}}
 
 /* ══════════════════════════════════════════════
    OVERALL STATUS RADIO PILLS
@@ -144,12 +142,8 @@ textarea.fi{resize:vertical}
   padding:8px 12px;background:#f9fafb;
   
 }
-.fuel-bar-wrap{display:flex;align-items:center;gap:4px;margin-bottom:4px}
-.fuel-seg{
-  flex:1;height:10px;border-radius:3px;
-  background:#e5e7eb;transition:background .3s;
-}
-.fuel-seg.filled{background:#f97316}
+.fuel-track{height:10px;border-radius:5px;background:#e5e7eb;overflow:hidden;margin-bottom:6px}
+.fuel-fill{height:100%;width:50%;border-radius:5px;background:#f97316;transition:width .3s,background .3s}
 .fuel-labels{display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;font-weight:600;padding:0 1px}
 
 /* ══════════════════════════════════════════════
@@ -370,11 +364,11 @@ textarea.fi{resize:vertical}
    BOTTOM SAVE BAR
 ══════════════════════════════════════════════ */
 .save-bar{
-  position:fixed;bottom:0;left:0;right:0;
-  background:#fff;border-top:1px solid #e5e7eb;
-  padding:10px 24px;
+  position:sticky;bottom:0;margin-top:16px;
+  background:#fff;border:1px solid #e5e7eb;border-radius:10px;
+  padding:12px 20px;
   display:flex;justify-content:space-between;align-items:center;
-  z-index:300;box-shadow:0 -2px 16px rgba(0,0,0,.06);
+  z-index:50;box-shadow:0 -2px 16px rgba(0,0,0,.06);
 }
 .sb-note{font-size:12px;color:#9ca3af}
 .sb-note span{font-family:monospace;color:#6366f1;font-weight:700}
@@ -392,7 +386,9 @@ textarea.fi{resize:vertical}
 .flash-err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
 </style>
 
-<!-- ══════════ DARK HEADER ══════════ -->
+<div class="ins-page">
+<div class="pw">
+
 <div class="top-header">
   <div class="th-left">
     <div class="th-title">Vehicle Inspection</div>
@@ -403,7 +399,6 @@ textarea.fi{resize:vertical}
 </div>        
 
 <!-- ══════════ PAGE BODY ══════════ -->
-<div class="pw">
 
   {% if messages %}{% for m in messages %}
   <div class="flash {% if 'error' in m.tags %}flash-err{% else %}flash-ok{% endif %}">{{ m }}</div>
@@ -449,9 +444,9 @@ textarea.fi{resize:vertical}
         </div>
       </div>
       <!-- Row 2: Customer Name | Vehicle -->
-      <!-- Row 2: Customer | Vehicle -->
-      <div class="g2 mb">
-        <div>
+      <!-- Row 2: Customer (2 cols) | Vehicle (1 col) -->
+      <div class="g3 mb">
+        <div class="span2">
           <label class="lbl">Customer Name <span class="req">*</span></label>
           <select name="customer" class="fi" required id="custSel"
             {% if edit_mode %}disabled{% endif %}
@@ -539,8 +534,8 @@ textarea.fi{resize:vertical}
         </div>
       </div>
 
-      <!-- Row 5: Fuel Level | Fuel Gauge -->
-      <div class="g2 mb">
+      <!-- Row 5: Fuel Level | Fuel Gauge (2 cols) -->
+      <div class="g3 mb">
         <div>
           <label class="lbl">Fuel Level</label>
           <select name="fuel_level" id="fuelSel" class="fi"
@@ -552,16 +547,10 @@ textarea.fi{resize:vertical}
             <option value="full"  {% if edit_mode and insp.fuel_level == 'full' %}selected{% endif %}>F (Full)</option>
           </select>
         </div>
-        <div>
+        <div class="span2">
           <label class="lbl">Fuel Gauge</label>
           <div class="fuel-gauge">
-            <div class="fuel-bar-wrap" id="fuelBar">
-              <div class="fuel-seg" id="fs1"></div>
-              <div class="fuel-seg" id="fs2"></div>
-              <div class="fuel-seg" id="fs3"></div>
-              <div class="fuel-seg" id="fs4"></div>
-              <div class="fuel-seg" id="fs5"></div>
-            </div>
+            <div class="fuel-track"><div class="fuel-fill" id="fuelFill"></div></div>
             <div class="fuel-labels">
               <span>E</span><span>¼</span><span>½</span><span>¾</span><span>F</span>
             </div>
@@ -569,8 +558,8 @@ textarea.fi{resize:vertical}
         </div>
       </div>
 
-      <!-- Row 4: Driver / User Name | Overall Inspection Status -->
-      <div class="g2 mb">
+      <!-- Row 6: Overall Inspection Status -->
+      <div class="mb">
         
         <div>
           <label class="lbl">Overall Inspection Status <span class="req">*</span></label>
@@ -809,7 +798,6 @@ textarea.fi{resize:vertical}
   ═══════════════════════════════════════ -->
   <div class="sc" id="s-mech">
     <div class="sc-hdr">
-      <div class="sc-icon sci-pink">🔧</div>
       <div class="sc-title">Mechanical, Tyres & Under-Hood Fluid Inspection</div>
     </div>
     <div class="sc-body">
@@ -992,7 +980,8 @@ textarea.fi{resize:vertical}
   </div>
 
   </form>
-</div>
+</div><!-- /pw -->
+</div><!-- /ins-page -->
 
 <script>
 const VEH_URL = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
@@ -1013,11 +1002,11 @@ function updateStatusPills(radio) {
 
 /* ── Fuel gauge (5 segments matching screenshot) ── */
 function updateFuelGauge(val) {
-  const levels = { empty: 0, '1/4': 1, '1/2': 2, '3/4': 3, full: 5 };
-  const fill   = levels[val] ?? 2;
-  for (let i = 1; i <= 5; i++) {
-    const seg = document.getElementById('fs' + i);
-    if (seg) seg.classList.toggle('filled', i <= fill);
+  const pct = { empty: 0, '1/4': 25, '1/2': 50, '3/4': 75, full: 100 }[val] ?? 50;
+  const bar = document.getElementById('fuelFill');
+  if (bar) {
+    bar.style.width = pct + '%';
+    bar.style.background = pct <= 25 ? '#ef4444' : '#f97316';
   }
 }
 document.addEventListener('DOMContentLoaded', () => {
@@ -1026,32 +1015,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAccCounts();
 
   {% if edit_mode %}
-  // Populate Vehicle Type / Manufacturer / Model (disabled select still has a readable .value)
-  fetch(VEH_URL + '?customer_id=' + document.getElementById('custSel').value)
-    .then(r => r.json())
-    .then(d => {
-      const v = d.vehicles.find(x => String(x.id) === String("{{ insp.vehicle_id }}"));
-      if (!v) return;
-
-      // Vehicle Type
-      const typeSel = document.getElementById('vehTypeSel');
-      [...typeSel.options].forEach(to => to.selected = String(to.value) === String(v.vehicle_type_id));
-
-      // Fuel type (only if not already saved on the inspection)
-      const fuelSel = document.getElementById('vehFuelSel');
-      if (fuelSel && !fuelSel.value) {
-        [...fuelSel.options].forEach(fo => fo.selected = fo.value === v.fuel_type);
-      }
-
-      // Color (only fill if empty, so it doesn't clobber a saved value)
-      const colorInp = document.getElementById('vehColorInp');
-      if (colorInp && !colorInp.value) colorInp.value = v.color || '';
-
-      // Chain: Manufacturer -> Model
-      loadVehTypeManufacturers(v.manufacturer_id, () => {
-        loadVehTypeModels(v.vehicle_model_id);
-      });
-    });
+  // Populate Vehicle Type / Manufacturer / Model for the saved vehicle
+  applyVehicle("{{ insp.vehicle_id }}", false);
 
   // Load saved interior ratings
   const savedInterior = {
@@ -1183,69 +1148,117 @@ function loadVehicles(cid) {
       });
     });
 }
-const MFR_URL   = "{% url 'fleet_app:get_manufacturers_by_vehicle_type' %}";
-const MODEL_URL = "{% url 'fleet_app:get_models_by_manufacturer' %}";
+
+/* ════════════════════════════════════════════════
+   VEHICLE → TYPE / MANUFACTURER / MODEL AUTO-FILL
+════════════════════════════════════════════════ */
+const MFR_URL        = "{% url 'fleet_app:get_manufacturers_by_vehicle_type' %}";
+const MODEL_URL      = "{% url 'fleet_app:get_models_by_manufacturer' %}";
+const VEH_DETAIL_URL = "{% url 'jobcard_app:ajax_wv_detail' %}";
+
+async function getJSON(url) {
+  const r = await fetch(url, { credentials: 'same-origin' });
+  if (!r.ok) throw new Error(url + ' -> HTTP ' + r.status);
+  return r.json();
+}
+
+// Dropdown endpoints may return a plain array or {key: [...]}
+function asList(data, key) {
+  if (Array.isArray(data)) return data;
+  return (data && (data[key] || data.results || data.items)) || [];
+}
+
+// Fill a <select> and select `selectedId`. If that id is not in the list,
+// add it (using fallbackName) so the vehicle's own value is never lost.
+function fillSelect(sel, list, idKey, nameKey, selectedId, fallbackName, emptyLabel) {
+  sel.innerHTML = '<option value="">' + emptyLabel + '</option>';
+  list.forEach(m => sel.add(new Option(m[nameKey], m[idKey])));
+  if (selectedId) {
+    const has = [...sel.options].some(o => String(o.value) === String(selectedId));
+    if (!has && fallbackName) sel.add(new Option(fallbackName, selectedId));
+    sel.value = String(selectedId);
+  }
+}
+
+/* Fill Vehicle Type, Manufacturer, Model (+ odometer, colour, fuel)
+   for a vehicle.  overwrite=true  → replace what is in the form
+                   overwrite=false → only fill empty fields (edit page)  */
+async function applyVehicle(vehicleId, overwrite) {
+  const cid = document.getElementById('custSel').value;
+
+  const [a, b] = await Promise.allSettled([
+    getJSON(VEH_URL + '?customer_id=' + cid),
+    getJSON(VEH_DETAIL_URL + '?vehicle_id=' + vehicleId),
+  ]);
+  const v = (a.status === 'fulfilled'
+              ? (a.value.vehicles || []).find(x => String(x.id) === String(vehicleId))
+              : null) || {};
+  const d = (b.status === 'fulfilled' && b.value) ? b.value : {};
+  if (a.status === 'rejected') console.error('Vehicle list failed:', a.reason);
+  if (b.status === 'rejected') console.error('Vehicle detail failed:', b.reason);
+
+  const pick = (...vals) => vals.find(x => x !== undefined && x !== null && x !== '') ?? '';
+  const typeId  = pick(d.vehicle_type_id,  v.vehicle_type_id);
+  const mfrId   = pick(d.manufacturer_id,  v.manufacturer_id);
+  const modelId = pick(d.vehicle_model_id, v.vehicle_model_id);
+  console.debug('[inspection] vehicle autofill', { typeId, mfrId, modelId, detail: d, listRow: v });
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (overwrite || !el.value) el.value = val;
+  };
+  setVal('odoInp',      pick(d.odometer,  v.odometer));
+  setVal('vehColorInp', pick(d.color,     v.color));
+  setVal('vehFuelSel',  pick(d.fuel_type, v.fuel_type));
+
+  // Vehicle Type
+  const typeSel = document.getElementById('vehTypeSel');
+  typeSel.value = String(typeId);
+
+  // Manufacturer (list for this type, plus the vehicle's own if missing)
+  const mfrSel = document.getElementById('vehMfrSel');
+  let mfrs = [];
+  if (typeSel.value) {
+    try { mfrs = asList(await getJSON(`${MFR_URL}?vehicle_category_id=${typeSel.value}`), 'manufacturers'); }
+    catch (e) { console.error('Manufacturer list failed:', e); }
+  }
+  fillSelect(mfrSel, mfrs, 'id', 'manufacturer_name', mfrId, d.manufacturer_name, '---------');
+
+  // Model (list for this manufacturer, plus the vehicle's own if missing)
+  const modelSel = document.getElementById('vehModelSel');
+  let models = [];
+  if (mfrSel.value) {
+    try { models = asList(await getJSON(`${MODEL_URL}?manufacturer_id=${mfrSel.value}`), 'models'); }
+    catch (e) { console.error('Model list failed:', e); }
+  }
+  fillSelect(modelSel, models, 'id', 'model_name', modelId, d.vehicle_model_name, '---------');
+}
 
 function onVehicleChange(sel) {
-  const o = sel.options[sel.selectedIndex];
-  if (!o) return;
-  const cid = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
-
-  fetch(VEH_URL + '?customer_id=' + document.getElementById('custSel').value)
-    .then(r => r.json())
-    .then(d => {
-      const v = d.vehicles.find(x => String(x.id) === String(sel.value));
-      if (!v) return;
-
-      if (v.odometer) document.getElementById('odoInp').value = v.odometer;
-      document.getElementById('vehColorInp').value = v.color || '';
-
-      const fuelSel = document.getElementById('vehFuelSel');
-      [...fuelSel.options].forEach(fo => fo.selected = fo.value === v.fuel_type);
-
-      const typeSel = document.getElementById('vehTypeSel');
-      [...typeSel.options].forEach(to => to.selected = String(to.value) === String(v.vehicle_type_id));
-
-      loadVehTypeManufacturers(v.manufacturer_id, () => {
-        loadVehTypeModels(v.vehicle_model_id);
-      });
-    });
+  if (sel.value) applyVehicle(sel.value, true);
 }
 
-function loadVehTypeManufacturers(preselectId, callback) {
+/* Manual changes: Vehicle Type → Manufacturer → Model */
+async function loadVehTypeManufacturers() {
   const typeId = document.getElementById('vehTypeSel').value;
-  const mfrSel = document.getElementById('vehMfrSel');
-  mfrSel.innerHTML = '<option value="">---------</option>';
   document.getElementById('vehModelSel').innerHTML = '<option value="">---------</option>';
-  if (!typeId) return;
-
-  fetch(`${MFR_URL}?vehicle_category_id=${typeId}`)
-    .then(r => r.json())
-    .then(data => {
-      data.forEach(m => {
-        const opt = new Option(m.manufacturer_name, m.id);
-        if (preselectId && String(m.id) === String(preselectId)) opt.selected = true;
-        mfrSel.add(opt);
-      });
-      if (callback) callback();
-    });
+  let list = [];
+  if (typeId) {
+    try { list = asList(await getJSON(`${MFR_URL}?vehicle_category_id=${typeId}`), 'manufacturers'); }
+    catch (e) { console.error('Manufacturer list failed:', e); }
+  }
+  fillSelect(document.getElementById('vehMfrSel'), list, 'id', 'manufacturer_name', '', '', '---------');
 }
 
-function loadVehTypeModels(preselectId) {
+async function loadVehTypeModels() {
   const mfrId = document.getElementById('vehMfrSel').value;
-  const modelSel = document.getElementById('vehModelSel');
-  modelSel.innerHTML = '<option value="">---------</option>';
-  if (!mfrId) return;
-
-  fetch(`${MODEL_URL}?manufacturer_id=${mfrId}`)
-    .then(r => r.json())
-    .then(data => {
-      data.forEach(m => {
-        const opt = new Option(m.model_name, m.id);
-        if (preselectId && String(m.id) === String(preselectId)) opt.selected = true;
-        modelSel.add(opt);
-      });
-    });
+  let list = [];
+  if (mfrId) {
+    try { list = asList(await getJSON(`${MODEL_URL}?manufacturer_id=${mfrId}`), 'models'); }
+    catch (e) { console.error('Model list failed:', e); }
+  }
+  fillSelect(document.getElementById('vehModelSel'), list, 'id', 'model_name', '', '', '---------');
 }
 
 /* ── Damage type selection ───────────────────────── */

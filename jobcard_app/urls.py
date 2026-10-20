@@ -62,6 +62,7 @@ urlpatterns = [
     path('ajax/jc-search-jobcards/', views.jc_search_jobcards, name='jc_search_jobcards'),
     path('ajax/get-inspections/',views.ajax_get_inspections,name='ajax_get_inspections'),
     path('ajax/get-next-jobcard-number/', views.get_next_jobcard_number, name='get_next_jobcard_number'),
+    path('ajax/wv-detail/', views.ajax_wv_detail, name='ajax_wv_detail'),
 
 
      # ── Quotations ────────────────────────────────────────────
@@ -73,10 +74,7 @@ urlpatterns = [
          views.quotation_create,
          name='quotation_create'),
 
-    path('quotation/<int:pk>/',
-         views.quotation_detail,
-         name='quotation_detail'),
-
+   
     path('quotation/<int:pk>/edit/',
          views.quotation_edit,
          name='quotation_edit'),
@@ -84,16 +82,15 @@ urlpatterns = [
     path('quotation/<int:pk>/delete/',
          views.quotation_delete,
          name='quotation_delete'),
-    path('quotation/<int:pk>/delete/',
-          views.quotation_delete,
-          name='quotation_delete'),
-
+    
     path('quotation/<int:pk>/status-update/',
           views.quotation_status_update,
           name='quotation_status_update'),
     path('ajax/get-next-quotation-number/', views.get_next_quotation_number, name='get_next_quotation_number'),
     
-   
+    path('ajax/estimate-quotation-data/', views.ajax_estimate_quotation_data, name='ajax_estimate_quotation_data'),
+    path('ajax/customer-jobcards/',       views.ajax_customer_jobcards,       name='ajax_customer_jobcards'),
+    path('ajax/jobcard-estimate-data/',   views.ajax_jobcard_estimate_data,   name='ajax_jobcard_estimate_data'),
 
   
 
@@ -105,20 +102,10 @@ urlpatterns = [
          name='wv_create'),
  
     # Pre-fill customer from customer list "Add Vehicle" button
-    path('vehicles/create/customer/<int:customer_id>/',
-         views.wv_create,
-         name='wv_create_for_customer'),
- 
-    
- 
-    path('vehicles/<int:pk>/edit/',
-         views.wv_edit,
-         name='wv_edit'),
- 
-    path('vehicles/<int:pk>/delete/',
-         views.wv_delete,
-         name='wv_delete'),
- 
+    path('vehicles/create/customer/<int:customer_id>/',views.wv_create,name='wv_create_for_customer'),
+    path('vehicles/<int:pk>/edit/',views.wv_edit, name='wv_edit'),
+    path('vehicles/<int:pk>/delete/',views.wv_delete,name='wv_delete'),
+    path('vehicles/model-search/', views.wv_model_search, name='wv_model_search'),
     # AJAX endpoints
  
     path('ajax/vehicle-search/',views.ajax_wv_search,name='ajax_wv_search'),
@@ -157,6 +144,8 @@ urlpatterns = [
          views.estimate_delete,
          name='estimate_delete'),
     path('ajax/get-next-estimate-number/', views.get_next_estimate_number, name='get_next_estimate_number'),
+    path('ajax/customer-jobcards/',        views.ajax_customer_jobcards,      name='ajax_customer_jobcards'),
+    path('ajax/jobcard-estimate-data/',    views.ajax_jobcard_estimate_data,  name='ajax_jobcard_estimate_data'),
     # ── Estimate AJAX ─────────────────────────────────────────
     path('ajax/search-jobcards/',
          views.jc_search_jobcards,
@@ -193,10 +182,7 @@ urlpatterns = [
          views.delivery_create,
          name='delivery_create'),
 
-    path('delivery/<int:pk>/',
-         views.delivery_detail,
-         name='delivery_detail'),
-
+    
     path('delivery/<int:pk>/edit/',
          views.delivery_edit,
          name='delivery_edit'),

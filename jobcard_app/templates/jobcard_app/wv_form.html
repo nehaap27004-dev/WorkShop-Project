@@ -3,6 +3,90 @@
 {% load i18n %}
 
 {% block content %}
+
+<!-- Select2 CSS must load BEFORE our <style> so our overrides win -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
+<style>
+    /* ── Uniform field sizing (change --field-h to resize everything) ── */
+    :root {
+        --field-h: 48px;
+        --field-radius: 6px;
+        --field-border: #ced4da;
+    }
+    .errorlist { list-style: none; padding: 0; margin: .25rem 0 0; color: #dc3545; font-size: .8rem; }
+
+    /* inputs, selects, dates, numbers (class is added by JS below) */
+    .card-body .form-control:not(textarea) {
+        height: var(--field-h) !important;
+        width: 100%;
+        padding: 0 .75rem;
+        border: 1px solid var(--field-border);
+        border-radius: var(--field-radius);
+        font-size: 1rem;
+        background-color: #fff;
+        box-sizing: border-box;
+    }
+    .card-body select.form-control { padding-right: 2rem; }
+    .card-body textarea.form-control {
+        width: 100%;
+        border: 1px solid var(--field-border);
+        border-radius: var(--field-radius);
+        padding: .6rem .75rem;
+        box-sizing: border-box;
+    }
+    .card-body input[readonly] { background-color: #e9ecef !important; }
+
+    /* fields that failed validation get a red border */
+    .card-body .form-control.is-invalid:not(textarea),
+    .card-body textarea.form-control.is-invalid {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 .15rem rgba(220, 53, 69, .15);
+    }
+
+    /* file input */
+    .card-body input[type=file].form-control {
+        display: flex; align-items: center;
+        padding: 0 .5rem; line-height: normal;
+    }
+    .card-body input[type=file]::file-selector-button {
+        height: calc(var(--field-h) - 14px);
+        margin-right: .75rem; padding: 0 .9rem;
+        border: 1px solid var(--field-border); border-radius: 4px;
+        background: #f1f3f5; cursor: pointer;
+    }
+
+    /* locked category select (auto-filled from model) */
+    .locked-select { pointer-events: none; background-color: #e9ecef !important; }
+
+    /* Select2 (Model) — same box as the other fields */
+    .select2-container { width: 100% !important; }
+    .select2-container--default .select2-selection--single {
+        height: var(--field-h) !important;
+        border: 1px solid var(--field-border) !important;
+        border-radius: var(--field-radius) !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: calc(var(--field-h) - 2px) !important;
+        padding-left: .75rem; padding-right: 2rem; color: #495057;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__placeholder { color: #6c757d; }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: calc(var(--field-h) - 2px) !important; right: 6px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__clear {
+        line-height: calc(var(--field-h) - 2px); margin-right: 6px; font-size: 1.2rem;
+    }
+
+    /* the small "+" / "add customer" buttons beside fields match the field height */
+    .card-body .d-flex.align-items-center > a.btn-outline-primary {
+        height: var(--field-h); width: var(--field-h);
+        display: inline-flex; align-items: center; justify-content: center; padding: 0;
+        border-radius: var(--field-radius);
+    }
+    .card-body .d-flex.align-items-center > .flex-grow-1 { flex: 1 1 auto; min-width: 0; }
+</style>
+
 <div class="container-fluid p-0 mb-5">
 
     <!-- Breadcrumb & Header -->
@@ -35,7 +119,22 @@
         {% endfor %}
     {% endif %}
 
-    <form method="post" enctype="multipart/form-data">
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger shadow-sm">{{ form.non_field_errors }}</div>
+    {% endif %}
+    {% if form.errors %}
+    <div class="alert alert-danger shadow-sm">
+        <strong>{% trans "These fields have problems:" %}</strong>
+        <ul class="mb-0">
+        {% for field in form %}
+            {% for error in field.errors %}
+                <li>{{ field.label }}: {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
 
         <!-- 1. Customer Link -->
@@ -45,25 +144,16 @@
             </div>
             <div class="card-body p-4">
                 <div class="form-group mb-0" style="max-width: 650px;">
-                    <label>{% trans "Linked Customer Owner" %} <span class="req">*</span></label>
+                    <label for="{{ form.customer.id_for_label }}">{% trans "Linked Customer Owner" %} <span class="req">*</span></label>
                     <div class="d-flex align-items-center">
-                        <select name="customer" class="form-control" required {% if edit_mode %}disabled{% endif %}>
-                            <option value="">— {% trans "Select Customer" %} —</option>
-                            {% for c in customers %}
-                            <option value="{{ c.id }}"
-                                {% if edit_mode and v.customer_id == c.id %}selected{% endif %}
-                                {% if preselected and preselected.id == c.id %}selected{% endif %}>
-                                {{ c.ledger_name }}{% if c.mobile_number %} · {{ c.mobile_number }}{% endif %}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        {% if edit_mode %}<input type="hidden" name="customer" value="{{ v.customer_id }}">{% endif %}
+                        <div class="flex-grow-1" style="min-width:0;">{{ form.customer }}</div>
                         <a href="{% url 'accounts_app:manage_customers' %}" target="_blank"
                            class="btn btn-sm btn-outline-primary ml-2 flex-shrink-0"
                            title="{% trans 'Register a new customer' %}">
                             <i class="bi bi-person-plus"></i>
                         </a>
                     </div>
+                    {{ form.customer.errors }}
                 </div>
             </div>
         </div>
@@ -75,114 +165,128 @@
             </div>
             <div class="card-body p-4">
                 <div class="row">
+
+                    <!-- VEHICLE NUMBER (required, first field) -->
                     <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Vehicle Number" %} <span class="req">*</span></label>
-                        <input type="text" name="vehicle_number" class="form-control" required placeholder="e.g. VH-00001" value="{% if edit_mode %}{{ v.vehicle_number }}{% else %}{{ post.vehicle_number|default:'' }}{% endif %}">
+                        <label for="{{ form.registration_number.id_for_label }}">{% trans "Vehicle Number" %} <span class="text-danger">*</span></label>
+                        {{ form.registration_number }}
+                        {{ form.registration_number.errors }}
                     </div>
+
+                    <!-- REGISTRATION NUMBER -->
                     <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Vehicle Category / Type" %}</label>
-                        <div class="d-flex align-items-center">
-                            <select name="vehicle_type" id="id_vehicle_type" class="form-control">
-                                <option value="">— {% trans "Select Type" %} —</option>
-                                {% for vt in vehicle_types %}
-                                <option value="{{ vt.id }}" {% if edit_mode and v.vehicle_type_id == vt.id %}selected{% endif %}>
-                                    {{ vt.category_name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <a href="{% url 'fleet_app:create_vehicle_category' %}" target="_blank"
-                               class="btn btn-sm btn-outline-primary ml-2 flex-shrink-0"
-                               title="{% trans 'Add a new vehicle category' %}">
-                                <i class="bi bi-plus-circle"></i>
-                            </a>
-                        </div>
+                        <label for="{{ form.vehicle_number.id_for_label }}">{% trans "Registration Number" %} <span class="text-danger">*</span></label>
+                        {{ form.vehicle_number }}
+                        {{ form.vehicle_number.errors }}
                     </div>
+
+                    <!-- MODEL (searchable) -->
                     <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Manufacturer" %} <span class="req">*</span></label>
+                        <label for="id_vehicle_model">{% trans "Model" %} <span class="req">*</span></label>
                         <div class="d-flex align-items-center">
-                            <select name="manufacturer" id="id_manufacturer" class="form-control" required>
-                                <option value="">---------</option>
-                                {% if edit_mode and v.manufacturer_id %}
-                                <option value="{{ v.manufacturer_id }}" selected>{{ v.manufacturer }}</option>
-                                {% endif %}
-                            </select>
-                            <a href="{% url 'fleet_app:manufacturer_list' %}" target="_blank"
-                               class="btn btn-sm btn-outline-primary ml-2 flex-shrink-0"
-                               title="{% trans 'Add a new manufacturer' %}">
-                                <i class="bi bi-plus-circle"></i>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Model" %} <span class="req">*</span></label>
-                        <div class="d-flex align-items-center">
-                            <select name="vehicle_model" id="id_vehicle_model" class="form-control" required>
-                                <option value="">---------</option>
-                                {% if edit_mode and v.vehicle_model_id %}
-                                <option value="{{ v.vehicle_model_id }}" selected>{{ v.vehicle_model }}</option>
-                                {% endif %}
-                            </select>
+                            <div class="flex-grow-1" style="min-width:0;">
+                                {{ form.vehicle_model }}
+                            </div>
                             <a href="{% url 'fleet_app:vehicle_model_list' %}" target="_blank"
                                class="btn btn-sm btn-outline-primary ml-2 flex-shrink-0"
                                title="{% trans 'Add a new vehicle model' %}">
                                 <i class="bi bi-plus-circle"></i>
                             </a>
                         </div>
+                        {{ form.vehicle_model.errors }}
+                    </div>
+
+                    <!-- MANUFACTURER (auto-filled from model, read-only) -->
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <label for="manufacturer_display">{% trans "Manufacturer" %}</label>
+                        <input type="text" id="manufacturer_display" class="form-control" readonly
+                               placeholder="{% trans 'Auto-filled from model' %}"
+                               value="{{ form.selected_manufacturer_name }}">
+                    </div>
+
+                    <!-- CATEGORY (auto-filled from model; unlocks only if the model has no category) -->
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <label for="id_vehicle_type">{% trans "Vehicle Category / Type" %}</label>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1 {% if form.category_locked %}locked-wrap{% endif %}"
+                                 id="category_wrap"
+                                 style="min-width:0;"
+                                 data-locked="{% if form.category_locked %}1{% else %}0{% endif %}">
+                                {{ form.vehicle_type }}
+                            </div>
+                            <a href="{% url 'fleet_app:create_vehicle_category' %}" target="_blank"
+                               class="btn btn-sm btn-outline-primary ml-2 flex-shrink-0"
+                               title="{% trans 'Add a new vehicle category' %}">
+                                <i class="bi bi-plus-circle"></i>
+                            </a>
+                        </div>
+                        {{ form.vehicle_type.errors }}
                     </div>
 
                     <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Fuel Type" %} <span class="req">*</span></label>
-                        <select name="fuel_type" class="form-control" required>
-                            <option value="">— {% trans "Select Fuel Type" %} —</option>
-                            {% for val,lbl in fuel_choices %}
-                            <option value="{{ val }}" {% if edit_mode and v.fuel_type == val %}selected{% endif %}>{{ lbl }}</option>
-                            {% endfor %}
-                        </select>
+                        <label for="{{ form.fuel_type.id_for_label }}">{% trans "Fuel Type" %}</label>
+                        {{ form.fuel_type }}
+                        {{ form.fuel_type.errors }}
                     </div>
                     <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Current Odometer Reading (km)" %}</label>
-                        <input type="number" name="odometer" class="form-control" min="0" placeholder="e.g. 45200" value="{% if edit_mode %}{{ v.odometer|default:'' }}{% endif %}">
+                        <label for="{{ form.odometer.id_for_label }}">{% trans "Current Odometer Reading (km)" %}</label>
+                        {{ form.odometer }}
+                        {{ form.odometer.errors }}
                     </div>
                     <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Manufacturing Year" %} <span class="req">*</span></label>
-                        <input type="number" name="year" class="form-control" required min="1980" max="2100" placeholder="2026" value="{% if edit_mode %}{{ v.year|default:'' }}{% endif %}">
+                        <label for="{{ form.mileage.id_for_label }}">{% trans "Mileage (km/l)" %}</label>
+                        {{ form.mileage }}
+                        {{ form.mileage.errors }}
                     </div>
                     <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Body / Paint Color" %}</label>
-                        <input type="text" name="color" class="form-control" placeholder="e.g. Metallic Silver" value="{% if edit_mode %}{{ v.color|default:'' }}{% endif %}">
+                        <label for="{{ form.year.id_for_label }}">{% trans "Manufacturing Year" %}</label>
+                        {{ form.year }}
+                        {{ form.year.errors }}
                     </div>
 
-                    <div class="col-md-4 mb-3">
-                        <label>{% trans "Chassis Number (VIN)" %}</label>
-                        <input type="text" name="chassis_number" class="form-control" placeholder="MA3EWD..." value="{% if edit_mode %}{{ v.chassis_number|default:'' }}{% endif %}">
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <label for="{{ form.color.id_for_label }}">{% trans "Body / Paint Color" %}</label>
+                        {{ form.color }}
+                        {{ form.color.errors }}
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label>{% trans "Engine Number" %}</label>
-                        <input type="text" name="engine_number" class="form-control" placeholder="G13BB..." value="{% if edit_mode %}{{ v.engine_number|default:'' }}{% endif %}">
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <label for="{{ form.chassis_number.id_for_label }}">{% trans "Chassis Number (VIN)" %}</label>
+                        {{ form.chassis_number }}
+                        {{ form.chassis_number.errors }}
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label>{% trans "Registration Plate No." %} <span class="req">*</span></label>
-                        <input type="text" name="registration_number" class="form-control" required placeholder="MH-02-AB-1234" value="{% if edit_mode %}{{ v.registration_number }}{% endif %}" {% if edit_mode %}readonly{% endif %}>
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <label for="{{ form.engine_number.id_for_label }}">{% trans "Engine Number" %}</label>
+                        {{ form.engine_number }}
+                        {{ form.engine_number.errors }}
                     </div>
+
+                    {% if edit_mode %}
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <label for="{{ form.status.id_for_label }}">{% trans "Status" %}</label>
+                        {{ form.status }}
+                        {{ form.status.errors }}
+                    </div>
+                    {% endif %}
 
                     <div class="col-md-8 mb-3">
-                        <label>{% trans "Vehicle Notes & Remarks" %}</label>
-                        <textarea name="notes" class="form-control" rows="2" placeholder="{% trans 'Key vehicle conditions, previous scratch marks or special instructions...' %}">{% if edit_mode %}{{ v.notes|default:'' }}{% endif %}</textarea>
+                        <label for="{{ form.notes.id_for_label }}">{% trans "Vehicle Notes & Remarks" %}</label>
+                        {{ form.notes }}
+                        {{ form.notes.errors }}
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label>{% trans "Vehicle Image Upload" %}</label>
-                        <input type="file" name="vehicle_image" class="form-control" accept=".jpg,.jpeg,.png,.webp" id="imgInp">
+                        <label for="{{ form.vehicle_image.id_for_label }}">{% trans "Vehicle Image Upload" %}</label>
+                        {{ form.vehicle_image }}
+                        {{ form.vehicle_image.errors }}
                         {% if edit_mode and v.vehicle_image %}
-                        <img src="{{ v.vehicle_image.url }}" class="img-thumbnail mt-2" style="max-height:80px;">
+                            <img id="imgPrev" src="{{ v.vehicle_image.url }}" class="img-thumbnail mt-2" style="max-height:80px;">
                         {% else %}
-                        <img id="imgPrev" class="img-thumbnail mt-2" style="display:none; max-height:80px;">
+                            <img id="imgPrev" class="img-thumbnail mt-2" style="display:none; max-height:80px;">
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 3. Registration & Insurance -->
         <!-- 3. Registration & Insurance -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header card-banner-header">
@@ -191,24 +295,28 @@
             <div class="card-body p-4">
                 <div class="row">
                     <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Registration Date" %}</label>
-                        <input type="date" name="registration_date" class="form-control" value="{% if edit_mode %}{{ v.registration_date|date:'Y-m-d'|default:'' }}{% else %}{{ post.registration_date|default:'' }}{% endif %}">
+                        <label for="{{ form.registration_date.id_for_label }}">{% trans "Registration Date" %}</label>
+                        {{ form.registration_date }}
+                        {{ form.registration_date.errors }}
                     </div>
                     <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Registration Expiry Date" %}</label>
-                        <input type="date" name="registration_expiry_date" class="form-control" value="{% if edit_mode %}{{ v.registration_expiry_date|date:'Y-m-d'|default:'' }}{% else %}{{ post.registration_expiry_date|default:'' }}{% endif %}">
+                        <label for="{{ form.registration_expiry_date.id_for_label }}">{% trans "Registration Expiry Date" %}</label>
+                        {{ form.registration_expiry_date }}
+                        {{ form.registration_expiry_date.errors }}
                         {% if edit_mode %}{% with s=v.get_registration_status %}
                         {% if s == 'expired' %}<div class="alert alert-danger mt-2 py-1 px-2 small font-weight-bold">⚠️ {% trans "Registration EXPIRED" %}</div>
                         {% elif s == 'expiring' %}<div class="alert alert-warning mt-2 py-1 px-2 small font-weight-bold">🕐 {% trans "Expiring within 30 days" %}</div>
                         {% endif %}{% endwith %}{% endif %}
                     </div>
                     <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Insurance Policy Number" %}</label>
-                        <input type="text" name="insurance_policy_number" class="form-control" placeholder="INS-2026-MH-88712" value="{% if edit_mode %}{{ v.insurance_policy_number|default:'' }}{% else %}{{ post.insurance_policy_number|default:'' }}{% endif %}">
+                        <label for="{{ form.insurance_policy_number.id_for_label }}">{% trans "Insurance Policy Number" %}</label>
+                        {{ form.insurance_policy_number }}
+                        {{ form.insurance_policy_number.errors }}
                     </div>
                     <div class="col-md-6 col-lg-3 mb-3">
-                        <label>{% trans "Insurance Expiry Date" %}</label>
-                        <input type="date" name="insurance_expiry_date" class="form-control" value="{% if edit_mode %}{{ v.insurance_expiry_date|date:'Y-m-d'|default:'' }}{% else %}{{ post.insurance_expiry_date|default:'' }}{% endif %}">
+                        <label for="{{ form.insurance_expiry_date.id_for_label }}">{% trans "Insurance Expiry Date" %}</label>
+                        {{ form.insurance_expiry_date }}
+                        {{ form.insurance_expiry_date.errors }}
                         {% if edit_mode %}{% with s=v.get_insurance_status %}
                         {% if s == 'expired' %}<div class="alert alert-danger mt-2 py-1 px-2 small font-weight-bold">⚠️ {% trans "Insurance EXPIRED" %}</div>
                         {% elif s == 'expiring' %}<div class="alert alert-warning mt-2 py-1 px-2 small font-weight-bold">🕐 {% trans "Expiring within 30 days" %}</div>
@@ -226,20 +334,23 @@
             <div class="card-body p-4">
                 <div class="row">
                     <div class="col-md-4 mb-3">
-                        <label>{% trans "Last Service Date" %}</label>
-                        <input type="date" name="last_service_date" class="form-control" value="{% if edit_mode %}{{ v.last_service_date|date:'Y-m-d'|default:'' }}{% else %}{{ post.last_service_date|default:'' }}{% endif %}">
+                        <label for="{{ form.last_service_date.id_for_label }}">{% trans "Last Service Date" %}</label>
+                        {{ form.last_service_date }}
+                        {{ form.last_service_date.errors }}
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label>{% trans "Next Service Date" %}</label>
-                        <input type="date" name="next_service_date" class="form-control" value="{% if edit_mode %}{{ v.next_service_date|date:'Y-m-d'|default:'' }}{% else %}{{ post.next_service_date|default:'' }}{% endif %}">
+                        <label for="{{ form.next_service_date.id_for_label }}">{% trans "Next Service Date" %}</label>
+                        {{ form.next_service_date }}
+                        {{ form.next_service_date.errors }}
                         {% if edit_mode %}{% with s=v.get_service_status %}
                         {% if s == 'overdue' %}<div class="alert alert-danger mt-2 py-1 px-2 small font-weight-bold">⚠️ {% trans "Service OVERDUE" %}</div>
                         {% elif s == 'due_soon' %}<div class="alert alert-warning mt-2 py-1 px-2 small font-weight-bold">🕐 {% trans "Service due soon" %}</div>
                         {% endif %}{% endwith %}{% endif %}
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label>{% trans "Service Interval (KM)" %}</label>
-                        <input type="number" name="service_interval" class="form-control" min="0" placeholder="10000" value="{% if edit_mode %}{{ v.service_interval|default:'' }}{% else %}{{ post.service_interval|default:'10000' }}{% endif %}">
+                        <label for="{{ form.service_interval.id_for_label }}">{% trans "Service Interval (KM)" %}</label>
+                        {{ form.service_interval }}
+                        {{ form.service_interval.errors }}
                     </div>
                 </div>
             </div>
@@ -258,7 +369,34 @@
 </div>
 
 <script>
-document.getElementById('imgInp')?.addEventListener('change', function() {
+// ── Give every Django widget the class our CSS targets ────────
+// Runs immediately (elements above are already parsed) so there is no unstyled flash.
+// The Model select is skipped: Select2 replaces it with its own styled box.
+document.querySelectorAll(
+  '.card-body select:not(#id_vehicle_model), ' +
+  '.card-body input:not([type=checkbox]):not([type=radio]):not([type=hidden]), ' +
+  '.card-body textarea'
+).forEach(function (el) { el.classList.add('form-control'); });
+
+// ── Highlight every field that has a validation error ─────────
+// (the "Please correct the highlighted errors" banner now matches what you see)
+(function () {
+  var firstBad = null;
+  document.querySelectorAll('.card-body .errorlist').forEach(function (ul) {
+    var box = ul.parentElement;
+    var field = box && box.querySelector('input:not([type=hidden]), select, textarea');
+    if (field) {
+      field.classList.add('is-invalid');
+      if (!firstBad) firstBad = field;
+    }
+  });
+  if (firstBad) {
+    firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+})();
+
+// ── Image preview ─────────────────────────────────────────────
+document.getElementById('{{ form.vehicle_image.id_for_label }}')?.addEventListener('change', function () {
   if (this.files && this.files[0]) {
     const reader = new FileReader();
     reader.onload = e => {
@@ -269,63 +407,63 @@ document.getElementById('imgInp')?.addEventListener('change', function() {
   }
 });
 
+// ── Model-first reverse lookup ────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
-    const vehicleTypeSelect = document.getElementById('id_vehicle_type');
-    const manufacturerSelect = document.getElementById('id_manufacturer');
-    const modelSelect = document.getElementById('id_vehicle_model');
 
-    const currentManufacturerId = "{% if edit_mode %}{{ v.manufacturer_id|default:'' }}{% endif %}";
-    const currentModelId = "{% if edit_mode %}{{ v.vehicle_model_id|default:'' }}{% endif %}";
+  function initModelSearch() {
+    const $ = window.jQuery;
+    const $model   = $('#id_vehicle_model');
+    const $mfrDisp = $('#manufacturer_display');
+    const $cat     = $('#id_vehicle_type');
+    const $catWrap = $('#category_wrap');
 
-    function loadManufacturers(categoryId, selectedId, thenLoadModels) {
-        manufacturerSelect.innerHTML = '<option value="">---------</option>';
-        modelSelect.innerHTML = '<option value="">---------</option>';
-        if (!categoryId) return;
-
-        fetch(`{% url 'fleet_app:get_manufacturers_by_vehicle_type' %}?vehicle_category_id=${categoryId}`)
-            .then(res => res.json())
-            .then(data => {
-                data.forEach(m => {
-                    const opt = new Option(m.manufacturer_name, m.id);
-                    if (selectedId && String(m.id) === String(selectedId)) {
-                        opt.selected = true;
-                    }
-                    manufacturerSelect.add(opt);
-                });
-                if (thenLoadModels && manufacturerSelect.value) {
-                    loadModels(manufacturerSelect.value, currentModelId);
-                }
-            });
+    function lockCategory(locked) {
+      $cat.toggleClass('locked-select', locked);
+      $cat.attr('tabindex', locked ? '-1' : null);
     }
+    lockCategory($catWrap.data('locked') === 1 || $catWrap.data('locked') === '1');
 
-    function loadModels(manufacturerId, selectedId) {
-        modelSelect.innerHTML = '<option value="">---------</option>';
-        if (!manufacturerId) return;
-
-        fetch(`{% url 'fleet_app:get_models_by_manufacturer' %}?manufacturer_id=${manufacturerId}`)
-            .then(res => res.json())
-            .then(data => {
-                data.forEach(m => {
-                    const opt = new Option(m.model_name, m.id);
-                    if (selectedId && String(m.id) === String(selectedId)) {
-                        opt.selected = true;
-                    }
-                    modelSelect.add(opt);
-                });
-            });
-    }
-
-    if (vehicleTypeSelect.value) {
-        loadManufacturers(vehicleTypeSelect.value, currentManufacturerId, true);
-    }
-
-    vehicleTypeSelect.addEventListener('change', function () {
-        loadManufacturers(this.value, null, false);
+    $model.select2({
+      placeholder: '{% trans "Search model or manufacturer…" %}',
+      allowClear: true,
+      width: '100%',
+      ajax: {
+        url: "{% url 'jobcard_app:wv_model_search' %}",
+        dataType: 'json',
+        delay: 250,
+        data: p => ({ q: p.term || '', page: p.page || 1 }),
+        processResults: data => data
+      }
     });
 
-    manufacturerSelect.addEventListener('change', function () {
-        loadModels(this.value, null);
+    $model.on('select2:select', function (e) {
+      const d = e.params.data;
+      $mfrDisp.val(d.manufacturer_name || '');
+      if (d.category_id) {
+        $cat.val(String(d.category_id));
+        lockCategory(true);
+      } else {
+        $cat.val('');          // model has no category → let user choose
+        lockCategory(false);
+      }
     });
+
+    $model.on('select2:clear', function () {
+      $mfrDisp.val('');
+      $cat.val('');
+      lockCategory(false);
+    });
+  }
+
+  // Load Select2 on demand (works even if jQuery is loaded at the page bottom)
+  function boot() {
+    if (window.jQuery && window.jQuery.fn.select2) { initModelSearch(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js';
+    s.onload = initModelSearch;
+    document.head.appendChild(s);
+  }
+  boot();
 });
 </script>
 {% endblock %}

@@ -1,0 +1,51 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4;
+    margin: 30mm 15mm 25mm 15mm;
+    @top-center    { content: element(header); }
+    @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 9pt; }
+  }
+  body { font-family: Arial, sans-serif; font-size: 10pt; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #999; padding: 6px; }
+  th { background: #eee; }
+  .right { text-align: right; }
+  .totals { width: 40%; margin-left: auto; margin-top: 10px; }
+  thead { display: table-header-group; }   /* repeats header on new pages */
+  tr { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+  <h1>TAX INVOICE</h1>
+  <p>Invoice No: {{ invoice.invoice_number }}<br>
+     Date: {{ invoice.date }}</p>
+  <p><strong>{{ customer.name }}</strong><br>{{ customer.address }}</p>
+
+  <table>
+    <thead><tr><th>Description</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+    <tbody>
+    {% for line in lines %}
+      <tr>
+        <td>{{ line.description }}</td>
+        <td class="right">{{ line.quantity }}</td>
+        <td class="right">{{ line.price }}</td>
+        <td class="right">{{ line.total }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="totals">
+    <tr><td>Subtotal</td><td class="right">{{ subtotal }}</td></tr>
+    <tr><td>VAT ({{ vat_rate }}%)</td><td class="right">{{ vat_amount }}</td></tr>
+    <tr><th>Grand Total</th><th class="right">{{ grand_total }}</th></tr>
+  </table>
+
+  <p><strong>Amount in words:</strong> {{ amount_to_words }}</p>
+</body>
+</html>

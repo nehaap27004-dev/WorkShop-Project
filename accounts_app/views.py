@@ -826,7 +826,7 @@ def manage_customers(request, pk=None):
     """Add, Edit, and List Customers in one page"""
 
     if pk:
-        customer = get_object_or_404(LedgerCreation, pk=pk, groups_id=18, types='DR')
+        customer = get_object_or_404(LedgerCreation, pk=pk, groups_id=29, types='DR')
         form = CustomerForm(instance=customer)
         edit_mode = True
         title = "Edit Customer"
@@ -844,7 +844,7 @@ def manage_customers(request, pk=None):
             del_customer = get_object_or_404(
                 LedgerCreation,
                 pk=delete_id,
-                groups_id=18,
+                groups_id=29,
                 types='DR'
             )
 
@@ -884,7 +884,7 @@ def manage_customers(request, pk=None):
             return redirect('accounts_app:manage_customers')
 
     customers = LedgerCreation.objects.filter(
-        groups_id=18,
+        groups_id=29,
         types='DR'
     ).order_by('ledger_name')
 

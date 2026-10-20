@@ -215,6 +215,8 @@ class LedgerCreation(models.Model):
     zipcode = models.CharField(max_length=10, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     isDefault = models.BooleanField(default=False)
+    
+
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
     

@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'settings',
     'asset_app',
     'jobcard_app',
+    'documents.apps.DocumentsConfig',
+
 
 
     'django.contrib.admin',
@@ -51,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
 ]
 
 # Which apps/models should be auto-audited
@@ -223,6 +226,7 @@ INSTALLED_APPS = [
     'settings',
     'asset_app',
     'jobcard_app',
+    'documents.apps.DocumentsConfig',
 
 
     'django.contrib.admin',

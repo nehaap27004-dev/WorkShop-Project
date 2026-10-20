@@ -72,7 +72,7 @@
       <div class="jc-page-icon"><i class="bi bi-card-checklist"></i></div>
       <div>
         <h1 class="jc-page-title">
-          {% if edit_mode %}{% trans "Edit Job Card" %}: {{ job.voucher_number|default:job.job_number }}{% else %}{% trans "New Job Card" %}{% endif %}
+          {% if edit_mode %}{% trans "Edit Job Card" %}: {{ job.voucher_number }}{% else %}{% trans "New Job Card" %}{% endif %}
         </h1>
         <div class="jc-page-sub">{% trans "Manage vehicle repair orders, customer complaints, spare parts & labor entries" %}</div>
       </div>
@@ -121,7 +121,7 @@
         <div>
           <label class="fl">{% trans "Voucher Number" %}</label>
           <input type="text" id="id_voucher_number" class="fi" readonly
-            value="{% if edit_mode %}{{ job.voucher_number|default:job.job_number }}{% else %}{{ next_job_number }}{% endif %}">
+            value="{% if edit_mode %}{{ job.voucher_number }}{% else %}{{ next_job_number }}{% endif %}">
          
         </div>
         <div>
@@ -310,10 +310,7 @@
                   <option value="">— Select Technician —</option>
                 </select>
                 <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="{% if c.is_manual_override %}1{% else %}0{% endif %}">
-                <div class="override-wrap">
-                  <label><input type="checkbox" class="override-cb" onchange="handleOverrideToggle(this)" {% if c.is_manual_override %}checked{% endif %}> Show all</label>
-                  <span class="skill-badge-info"></span>
-                </div>
+                
               </td>
               <td>
                 <select name="complaint_status[]" class="fi">
@@ -472,11 +469,11 @@
         <thead>
           <tr>
             <th style="width:16%">{% trans "Vehicle" %}</th>
-            <th style="width:22%">{% trans "Technician" %}</th>
+            <th style="width:16%">{% trans "Technician" %}</th>
             <th style="width:32%">{% trans "Labour Description" %}</th>
-            <th style="width:12%">{% trans "Hours Worked" %}</th>
-            <th style="width:12%">{% trans "Rate" %}</th>
-            <th style="width:12%; text-align:right">{% trans "Amount" %}</th>
+            <th style="width:8%">{% trans "Hours" %}</th>
+            <th style="width:10%">{% trans "Rate" %}</th>
+            <th style="width:12%;">{% trans "Amount" %}</th>
             <th style="width:6%; text-align:center">{% trans "Action" %}</th>
           </tr>
         </thead>
@@ -1107,10 +1104,6 @@ function addComplaint(desc = '', bg = '', vehId = '') {
     <td>
       <select name="complaint_technician[]" class="complaint-tech-select fi"><option value="">— Select Technician —</option></select>
       <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
-      <div class="override-wrap">
-        <label><input type="checkbox" class="override-cb" onchange="handleOverrideToggle(this)"> Show all</label>
-        <span class="skill-badge-info"></span>
-      </div>
     </td>
     <td>
       <select name="complaint_status[]" class="fi">
