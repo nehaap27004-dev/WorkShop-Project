@@ -1,7 +1,7 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
 {% load i18n %}
-
+{% load privilege_tags %}
 {% block content %}
 <div class="container-fluid p-0 mb-5">
 
@@ -9,16 +9,16 @@
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h2 class="module-title mb-1">
-                <i class="bi bi-card-checklist text-primary mr-2"></i>{% trans "Job Cards & Work Orders" %}
+                <i class="bi bi-card-checklist text-burgundy mr-2"></i>{% trans "Job Cards & Work Orders" %}
             </h2>
-            <div class="text-muted small">
-                {% trans "Manage active workshop repair orders, service priorities & technician assignments" %}
-            </div>
+            
         </div>
-
+        {% has_priv request.user 23 "can_add" as can_add_jobcard %}
+        {% if can_add_jobcard %}
         <a href="{% url 'jobcard_app:jobcard_create' %}" class="btn btn-custom-primary shadow-sm">
             <i class="bi bi-plus-lg mr-1"></i> {% trans "New Job Card" %}
         </a>
+        {% endif %}  <!-- 👈 Add this line -->
     </div>
 
     <!-- Alert Messages -->
@@ -38,7 +38,7 @@
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header card-banner-header">
             <span class="card-banner-title">
-                <i class="bi bi-funnel text-primary mr-1"></i> {% trans "Filter Job Cards" %}
+                <i class="bi bi-funnel text-burgundy mr-1"></i> {% trans "Filter Job Cards" %}
             </span>
         </div>
 
@@ -116,7 +116,7 @@
     <div class="card shadow-sm border-0">
         <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span class="card-banner-title">
-                <i class="bi bi-list-task mr-1 text-primary"></i> {% trans "Job Cards Directory" %}
+                <i class="bi bi-list-task mr-1 text-burgundy"></i> {% trans "Job Cards Directory" %}
             </span>
             <span class="badge badge-secondary px-3 py-1 font-weight-bold">
                 {% trans "Total Job Orders" %}: {{ page_obj.paginator.count }}
@@ -145,7 +145,7 @@
                                 <tr>
                                     <td class="align-middle">
                                         <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}"
-                                           class="font-weight-bold text-primary"
+                                           class="font-weight-bold text-burgundy"
                                            style="font-size:14px;">
                                             <i class="bi bi-receipt text-secondary mr-1"></i>
                                             {{ job.voucher_number }}
@@ -205,33 +205,40 @@
 
                                     <!-- All action buttons belong inside this table cell -->
                                     <td class="align-middle text-center text-nowrap">
+                                        {# 🔐 Query permissions for this user and menu #}
+                                        {% has_priv request.user 23 "can_read" as can_read_jc %}
+                                        {% has_priv request.user 23 "can_edit" as can_edit_jc %}
+                                        {% has_priv request.user 23 "can_delete" as can_delete_jc %}
+
+                                        {# 👁️ View Button #}
+                                        {% if can_read_jc %}
                                         <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}"
-                                           class="btn btn-sm btn-outline-primary mr-1"
-                                           title="{% trans 'View Job Card' %}"
-                                           aria-label="{% trans 'View Job Card' %}">
+                                        class="btn btn-sm btn-outline-primary mr-1"
+                                        title="{% trans 'View Job Card' %}">
                                             <i class="bi bi-eye"></i>
                                         </a>
+                                        {% endif %}
 
+                                        {# ✏️ Edit Button #}
+                                        {% if can_edit_jc %}
                                         <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}"
-                                           class="btn btn-sm btn-outline-secondary mr-1"
-                                           title="{% trans 'Edit Job Card' %}"
-                                           aria-label="{% trans 'Edit Job Card' %}">
+                                        class="btn btn-sm btn-outline-secondary mr-1"
+                                        title="{% trans 'Edit Job Card' %}">
                                             <i class="bi bi-pencil"></i>
                                         </a>
+                                        {% endif %}
 
-                                        <form method="post"
-                                              action="{% url 'jobcard_app:jobcard_delete' job.pk %}"
-                                              style="display:inline-block;"
-                                              onsubmit="return confirm('{% trans "Are you sure you want to delete this job card?" %}');">
-                                            {% csrf_token %}
-                                            <button type="submit"
-                                                    class="btn btn-sm btn-outline-danger"
-                                                    title="{% trans 'Delete Job Card' %}"
-                                                    aria-label="{% trans 'Delete Job Card' %}">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
+                                        {# 🗑️ Delete Button #}
+                                        {% if can_delete_jc %}
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                title="{% trans 'Delete Job Card' %}"
+                                                onclick="confirmDeleteJobCard({{ job.pk }}, '{{ job.voucher_number }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        {% endif %}
                                     </td>
+
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -273,4 +280,84 @@
         </div>
     </div>
 </div>
+<script>
+    // Variable to store the pending delete action
+    window.pendingDeleteUrl = null;
+
+    function confirmDeleteJobCard(jobId, voucherNo) {
+        if (!confirm(`Are you sure you want to delete Job Card "${voucherNo}"?`)) {
+            return;
+        }
+
+        window.pendingDeleteUrl = `/jobcard/delete/${jobId}/`;
+
+        $.ajax({
+            url: window.pendingDeleteUrl,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                // 🔐 1. Backend rejected normal user, asked for admin credentials
+                if (response.admin_required) {
+                    $('#admin_override_error').text(response.message || '');
+                    $('#adminOverrideModal').modal('show');
+                    return;
+                }
+
+                if (response.success) {
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    alert(response.message || 'Error deleting Job Card');
+                }
+            },
+            error: function(xhr) {
+                // 🔐 2. Also handles HTTP 403 status with admin_required JSON
+                if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                    $('#admin_override_error').text(xhr.responseJSON.message || '');
+                    $('#adminOverrideModal').modal('show');
+                } else {
+                    alert(xhr.responseJSON?.message || 'Error deleting Job Card');
+                }
+            }
+        });
+    }
+    function executeAdminOverride() {
+        const adminUser = $('#admin_override_username').val().trim();
+        const adminPass = $('#admin_override_password').val().trim();
+
+        if (!adminUser || !adminPass) {
+            $('#admin_override_error').text('Both username and password are required.');
+            return;
+        }
+
+        $.ajax({
+            url: window.pendingDeleteUrl,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            data: {
+                admin_username: adminUser,
+                admin_password: adminPass
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#adminOverrideModal').modal('hide');
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    $('#admin_override_error').text(response.message || 'Authorization failed.');
+                }
+            },
+            error: function(xhr) {
+                const err = xhr.responseJSON?.message || 'Invalid admin credentials.';
+                $('#admin_override_error').text(err);
+            }
+        });
+ }
+</script>
 {% endblock %}

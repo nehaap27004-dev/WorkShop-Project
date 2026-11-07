@@ -11,7 +11,7 @@ from .constants import ESTIMATE_VOUCHER_ID
 from .constants import QUOTATION_VOUCHER_ID
 from .constants import JOBCARD_VOUCHER_ID
 from .constants import DELIVERY_NOTE_VOUCHER_ID
-
+import uuid
 class ServiceCategory(models.Model):
     name        = models.CharField(max_length=150, unique=True)
     description = models.TextField(blank=True)
@@ -280,7 +280,7 @@ class JobCard(models.Model):
         ('full',  'Full'),
     ]
 
-
+    request_id = models.UUIDField(default=uuid.uuid4,unique=True,editable=False)
     voucherType = models.ForeignKey('fleet_app.Vouchers', null=True, blank=True,
         default=JOBCARD_VOUCHER_ID,on_delete=models.SET_NULL, related_name='job_cards')
     voucher_number  = models.CharField(max_length=50, blank=True, null=True)
@@ -1036,7 +1036,6 @@ class VehicleInspection(models.Model):
         ('3/4',   '3/4'),
         ('full',  'Full'),
     ]
-
     # Auto number
     voucherType = models.ForeignKey(
             'fleet_app.Vouchers', null=True, blank=True,
@@ -1044,7 +1043,7 @@ class VehicleInspection(models.Model):
             on_delete=models.SET_NULL, related_name='inspection'
         )    
     voucher_number  = models.CharField(max_length=50, blank=True, null=True)
-
+    request_id = models.UUIDField(null=True,blank=True,editable=False)
     # Links
     vehicle   = models.ForeignKey(
         'WorkshopVehicle', on_delete=models.PROTECT,
@@ -1104,7 +1103,7 @@ class VehicleInspection(models.Model):
                     pk=self.voucherType_id or INSPECTION_VOUCHER_ID
                 )
                 self.voucherType = vt
-                self.voucher_number = vt.get_next_voucher_number(type(self), 'voucher_number')
+                self.voucher_number = vt.get_next_voucher_number()
                 super().save(*args, **kwargs)
             return
         super().save(*args, **kwargs)
@@ -1683,7 +1682,8 @@ class DeliveryLabour(models.Model):
 # ─────────────────────────────────────────────────────────────
 
 from django.db import models
- 
+import uuid
+
  
 class Invoice(models.Model):
  
@@ -1701,8 +1701,8 @@ class Invoice(models.Model):
         ('bank',   'Bank'),
         ('credit', 'Credit'),
     ]
- 
-    voucherType = models.ForeignKey('fleet_app.Vouchers', null=True, blank=True, default=2, on_delete=models.SET_NULL, related_name='invoice')
+    request_id = models.UUIDField(default=uuid.uuid4,unique=True,editable=False)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', null=True, blank=True, default=2, on_delete=models.SET_NULL, related_name='jobcard_invoice')
     voucher_number = models.CharField(max_length=50, blank=True, null=True)
  
     invoice_number = models.CharField(max_length=20, unique=True, blank=True, null=True)

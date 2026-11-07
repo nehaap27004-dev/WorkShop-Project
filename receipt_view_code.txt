@@ -1,0 +1,341 @@
+def receipt_create(request, pk=None):
+
+    receipt_instance = get_object_or_404(ReceiptMaster, pk=pk) if pk else None
+    is_edit = bool(pk)
+
+    if request.method == "POST":
+
+        try:  # ✅ WRAP EVERYTHING IN TRY-CATCH
+            # 🔐 PRIVILEGE CHECK
+            action = "can_edit" if is_edit else "can_add"
+
+            if not check_privilege(request.user, RECEIPT_MENU_ID, action):
+                is_admin_ok, msg = check_admin_override(request)
+                if not is_admin_ok:
+                    return JsonResponse({
+                        "admin_required": True,
+                        "message": msg
+                    }, status=403)
+
+            form = ReceiptMasterForm(request.POST, instance=receipt_instance)
+            formset = ReceiptDetailsFormSet(request.POST)
+
+            print("=== FORM VALIDATION ===")  # Debug
+            print("Form valid?", form.is_valid())
+            print("Formset valid?", formset.is_valid())
+            
+            if not form.is_valid():
+                print("Form errors:", form.errors)
+            if not formset.is_valid():
+                print("Formset errors:", formset.errors)
+
+            if form.is_valid() and formset.is_valid():
+                try:
+                    with transaction.atomic():
+
+                        # 🧹 CLEAN OLD DATA (EDIT)
+                        if is_edit:
+                            LedgerPosting.objects.filter(
+                                VoucherType_id=4,
+                                VoucherNo=receipt_instance.id
+                            ).delete()
+                            receipt_instance.details.all().delete()
+
+                        # 🟢 SAVE MASTER
+                        master = form.save(commit=False)
+                        master.Cleared = "Not Cleared" if master.IsPDC else "Cleared"
+                        master.save()
+
+                        # 🟢 SAVE DETAILS
+                        details = []
+                        for f in formset:
+                            if f.cleaned_data and not f.cleaned_data.get("DELETE"):
+                                d = ReceiptDetails(
+                                    Receipt=master,  # ✅ FIX 1: Set Receipt directly in constructor
+                                    Ledger=f.cleaned_data["Ledger"],
+                                    Amount=f.cleaned_data["Amount"],
+                                    Desc=f.cleaned_data.get("Desc", "")
+                                )
+                                d.save()  # ✅ FIX 2: Now save will work
+                                details.append(d)
+
+                        if not details:
+                            raise ValueError("At least one receipt detail is required")
+
+                        # 🟢 UPDATE TOTAL
+                        master.TotalAmount = sum(d.Amount for d in details)
+                        master.save()
+
+                        # 🟢 LEDGER POSTING
+                        if master.Cleared == "Cleared":
+                            create_ledger_postings_for_receipt(master)
+                    
+                    # ✅ AUDIT LOG (ONLY AFTER SUCCESSFUL SAVE)
+                    log_activity(
+                        user=request.user,
+                        screen_name="Receipt Entry",
+                        action_type="UPDATE" if is_edit else "CREATE",
+                        remark=f"Receipt Voucher {master.voucher_no} {'updated' if is_edit else 'created'} "
+                            f"for amount {master.TotalAmount}"
+                    )        
+
+                    return JsonResponse({
+                        "success": True,
+                        "message": (
+                            "Receipt updated successfully!"
+                            if is_edit else
+                            "Receipt created successfully!"
+                        )
+                    })
+
+                except Exception as e:
+                    print("=== TRANSACTION ERROR ===")
+                    print(str(e))
+                    import traceback
+                    traceback.print_exc()
+                    
+                    return JsonResponse({
+                        "success": False,
+                        "message": f"Error saving receipt: {str(e)}"
+                    }, status=400)
+
+            # Form validation failed
+            return JsonResponse({
+                "success": False,
+                "message": "Please correct the errors",
+                "errors": {
+                    "form": form.errors,
+                    "formset": formset.errors
+                }
+            }, status=400)
+
+        except Exception as e:  # ✅ CATCH ANY UNEXPECTED ERRORS
+            print("=== UNEXPECTED ERROR ===")
+            print(str(e))
+            import traceback
+            traceback.print_exc()
+            
+            return JsonResponse({
+                "success": False,
+                "message": f"Unexpected error: {str(e)}"
+            }, status=500)
+
+    # GET
+    form = ReceiptMasterForm(instance=receipt_instance)
+    formset = ReceiptDetailsFormSet()
+
+    existing_details = []
+    if is_edit:
+        for d in receipt_instance.details.all():
+            existing_details.append({
+                "ledger_id": d.Ledger.id,
+                "ledger_name": str(d.Ledger),
+                "amount": str(d.Amount),
+                "desc": d.Desc or ""
+            })
+
+    return render(request, "receipt_create.html", {
+        "form": form,
+        "formset": formset,
+        "is_edit_mode": is_edit,
+        "existing_details_json": json.dumps(existing_details),
+    })
+
+def list_payment(request):
+    """List all payment master entries"""
+    
+    payments = PaymentMaster.objects.all().order_by('-Date')
+    return render(request, "payment_master_list.html", {"payments": payments})
+
+@require_http_methods(["POST"])
+def payment_master_delete(request, pk):
+    """Delete payment master with P&L cleanup"""
+    
+    # 🔐 CHECK DELETE PRIVILEGE
+    if not check_privilege(request.user, PAYMENT_MENU_ID, "can_delete"):
+        is_admin_ok, msg = check_admin_override(request)
+        if not is_admin_ok:
+            return JsonResponse({
+                "admin_required": True,
+                "message": msg
+            }, status=403)
+    
+    try:
+        with transaction.atomic():
+            payment = get_object_or_404(PaymentMaster, pk=pk)
+            voucher_no = payment.voucher_no
+            total = payment.TotalAmount
+
+            detail_ids = list(payment.details.values_list('id', flat=True))
+
+            # ✅ DELETE VEHICLE P&L
+            delete_vehicle_profit_loss_for_payment(payment)
+
+            # ✅ DELETE LEDGER POSTINGS
+            LedgerPosting.objects.filter(
+                VoucherType_id=3
+            ).filter(
+                Q(VoucherNo=payment.id) |
+                Q(VoucherNo__in=detail_ids)
+            ).delete()
+
+            # ✅ DELETE PAYMENT
+            payment.delete()
+
+            # ✅ LOG ONLY AFTER COMMIT
+            transaction.on_commit(lambda: log_activity(
+                user=request.user,
+                screen_name="Payment Entry",
+                action_type="DELETE",
+                remark=f"Payment Voucher {voucher_no} deleted with total {total}"
+            ))
+
+        return JsonResponse({
+            'success': True, 
+            'message': f'Payment Voucher {voucher_no} deleted successfully!'
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False, 
+            'message': f'Error deleting payment: {str(e)}'
+        }, status=500)
+        
+def ledger_posting_list(request):
+    try:
+        sync_all_transactions_to_ledger_postings()
+    except Exception as e:
+        print(f"Error during auto-sync of postings: {e}")
+
+    ledger_id = request.GET.get('ledger')
+    voucher_type_id = request.GET.get('voucher_type')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    search_q = request.GET.get('q', '').strip()
+
+    postings_qs = LedgerPosting.objects.filter(IsDeleted=False).select_related(
+        'ledger', 'VoucherType', 'RefVoucherType', 'CostCenter'
+    )
+
+    if ledger_id and ledger_id != "":
+        postings_qs = postings_qs.filter(ledger_id=ledger_id)
+
+    if voucher_type_id and voucher_type_id != "":
+        postings_qs = postings_qs.filter(VoucherType_id=voucher_type_id)
+
+    if date_from:
+        postings_qs = postings_qs.filter(date__gte=date_from)
+
+    if date_to:
+        postings_qs = postings_qs.filter(date__lte=date_to)
+
+    if search_q:
+        if search_q.isdigit():
+            postings_qs = postings_qs.filter(Q(VoucherNo=int(search_q)) | Q(RefVoucherNo=int(search_q)))
+        else:
+            postings_qs = postings_qs.filter(Q(ledger__ledger_name__icontains=search_q) | Q(VoucherType__VoucherName__icontains=search_q))
+
+    raw_postings = list(postings_qs.order_by('date', 'id'))
+
+    v_keys = set((p.VoucherType_id, p.VoucherNo) for p in raw_postings if p.VoucherType_id and p.VoucherNo)
+    sibling_map = {}
+    if v_keys:
+        q_filter = Q()
+        for vtype_id, vno in v_keys:
+            q_filter |= Q(VoucherType_id=vtype_id, VoucherNo=vno)
+        all_siblings = LedgerPosting.objects.filter(q_filter, IsDeleted=False).select_related('ledger')
+        for sib in all_siblings:
+            key = (sib.VoucherType_id, sib.VoucherNo)
+            if key not in sibling_map:
+                sibling_map[key] = []
+            sibling_map[key].append(sib)
+
+    narration_map = {}
+    try:
+        for j in Journal.objects.filter(narration__isnull=False):
+            narration_map[('Journal', j.id)] = j.narration
+        for c in Contra.objects.filter(remark__isnull=False):
+            narration_map[('Contra', c.id)] = c.remark
+        for pm in PaymentMaster.objects.all():
+            if getattr(pm, 'narration', None):
+                narration_map[('Payment', pm.id)] = pm.narration
+                narration_map[('Payment Voucher', pm.id)] = pm.narration
+        for rm in ReceiptMaster.objects.all():
+            if getattr(rm, 'narration', None):
+                narration_map[('Receipt', rm.id)] = rm.narration
+                narration_map[('Receipt Voucher', rm.id)] = rm.narration
+        for lp in LocalPayment.objects.all():
+            remark = getattr(lp, 'remark', '') or getattr(lp, 'description', '')
+            if remark:
+                narration_map[('Local Payment', lp.id)] = remark
+        from fleet_app.models import Invoice
+        for inv in Invoice.objects.all():
+            remark = inv.other_ref or inv.supplier_ref or f"Invoice #{inv.voucher_no}"
+            narration_map[('Invoice', inv.id)] = remark
+    except Exception as e:
+        print(f"Error fetching narrations: {e}")
+
+    running_balance = Decimal('0.000')
+    processed_postings = []
+
+    for post in raw_postings:
+        d = post.debit or Decimal('0.000')
+        c = post.credit or Decimal('0.000')
+        running_balance += (d - c)
+
+        key = (post.VoucherType_id, post.VoucherNo)
+        sibs = sibling_map.get(key, [])
+        particulars_list = []
+        for sib in sibs:
+            if sib.ledger_id != post.ledger_id:
+                prefix = "To " if (post.debit and post.debit > 0) else "By "
+                particulars_list.append(f"{prefix}{sib.ledger.ledger_name}")
+
+        particulars_str = ", ".join(particulars_list) if particulars_list else "As per Voucher"
+        vname = post.VoucherType.VoucherName if post.VoucherType else ''
+        narration_str = narration_map.get((vname, post.VoucherNo), '')
+
+        processed_postings.append({
+            'id': post.id,
+            'date': post.date,
+            'VoucherType': post.VoucherType,
+            'VoucherNo': post.VoucherNo,
+            'RefVoucherNo': post.RefVoucherNo,
+            'RefVoucherType': post.RefVoucherType,
+            'ledger': post.ledger,
+            'debit': post.debit,
+            'credit': post.credit,
+            'particulars': particulars_str,
+            'narration': narration_str,
+            'running_balance': running_balance,
+        })
+
+    processed_postings.reverse()
+
+    total_debit = sum((p['debit'] or Decimal('0.000')) for p in processed_postings)
+    total_credit = sum((p['credit'] or Decimal('0.000')) for p in processed_postings)
+    net_balance = total_debit - total_credit
+
+    voucher_types = Vouchers.objects.all().order_by('VoucherName')
+    ledgers = LedgerCreation.objects.all().order_by('ledger_name')
+
+    context = {
+        'postings': processed_postings,
+        'voucher_types': voucher_types,
+        'ledgers': ledgers,
+        'ledger_id': ledger_id,
+        'voucher_type_id': voucher_type_id,
+        'date_from': date_from,
+        'date_to': date_to,
+        'search_q': search_q,
+        'total_debit': total_debit,
+        'total_credit': total_credit,
+        'net_balance': net_balance,
+        'total_count': len(processed_postings),
+    }
+
+    return render(request, 'ledger_posting_list.html', context)
+
+

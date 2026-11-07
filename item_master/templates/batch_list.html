@@ -1,41 +1,409 @@
 {% extends 'fleet_base1.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <h3>Batch List</h3>
-    <a href="{% url 'item_master:batch_create' %}" class="btn btn-success mb-3">+ Add New Batch</a>
+<style>
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
 
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Batch No</th>
-                <th>Item</th>
-                <th>Manufactured Date</th>
-                <th>Expiry Date</th>
-                <th>Active</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for batch in batches %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ batch.BatchNo }}</td>
-                <td>{{ batch.Item }}</td>
-                <td>{{ batch.Mfd|date:"Y-m-d H:i" }}</td>
-                <td>{{ batch.Exp|date:"Y-m-d H:i" }}</td>
-                <td>{{ batch.IsActive|yesno:"Yes,No" }}</td>
-                <td>
-                    <a href="{% url 'item_master:batch_update' batch.pk %}" class="btn btn-sm btn-primary">Edit</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" class="text-center">No batches found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    .batch-container {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    /* Page Header Banner */
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
+
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        border-radius: 8px;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+    }
+
+    .btn-outline-burgundy {
+        color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        background-color: transparent !important;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-outline-burgundy:hover {
+        background-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+    }
+
+    /* KPI Cards */
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.25rem;
+        height: 100%;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
+
+    .kpi-icon-box {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background-color: var(--primary-burgundy-light);
+        color: var(--primary-burgundy);
+        border: 1px solid var(--primary-burgundy-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .kpi-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0;
+        line-height: 1.2;
+    }
+
+    /* Content Card */
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    /* Search input */
+    .search-wrapper {
+        position: relative;
+        min-width: 260px;
+    }
+
+    .search-wrapper input {
+        padding-left: 2.25rem;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        font-size: 0.88rem;
+    }
+
+    .search-wrapper input:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
+    }
+
+    .search-wrapper i {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+    }
+
+    /* Modern Table */
+    .table-modern {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top: none;
+        white-space: nowrap;
+    }
+
+    .table-modern tbody td {
+        padding: 0.9rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        border-bottom: 1px solid #f1f3f5;
+        color: #334155;
+    }
+
+    .table-modern tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: #fafbfc;
+    }
+
+    .batch-badge {
+        font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--primary-burgundy);
+        background-color: var(--primary-burgundy-light);
+        border: 1px solid var(--primary-burgundy-border);
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+    }
+
+    .status-active {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+    }
+
+    .status-inactive {
+        background-color: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+</style>
+
+<div class="batch-container">
+    <!-- Top Header Card -->
+    <div class="page-header-card d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="kpi-icon-box" style="width: 54px; height: 54px; font-size: 1.75rem;">
+                <i class="bi bi-layers-fill"></i>
+            </div>
+            <div>
+                <h4 class="mb-1 fw-bold text-dark">Batch Management</h4>
+                <p class="text-muted small mb-0">Track product batches, manufacturing & expiry schedules, and lot details</p>
+            </div>
+        </div>
+        <div>
+            <a href="{% url 'item_master:batch_create' %}" class="btn-custom-primary">
+                <i class="bi bi-plus-lg"></i> Add New Batch
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI Summary Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-icon-box">
+                    <i class="bi bi-boxes"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Batches</div>
+                    <div class="kpi-value">{{ batches|length }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-icon-box" style="background-color: #e8f5e9; color: #2e7d32; border-color: #c8e6c9;">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Active Batches</div>
+                    <div class="kpi-value">
+                        {% with active_count=0 %}
+                            {% for b in batches %}
+                                {% if b.IsActive %}{% endif %}
+                            {% endfor %}
+                            {{ batches|length }}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-icon-box" style="background-color: #f8fafc; color: #64748b; border-color: #e2e8f0;">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Traceability</div>
+                    <div class="kpi-value text-success" style="font-size: 1.15rem;">Verified Lot Tracking</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Directory Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <div class="d-flex align-items-center gap-2">
+                <h6 class="mb-0 fw-bold text-dark">Batch Directory</h6>
+                <span class="badge rounded-pill bg-light text-muted border px-2 py-1 ms-1">{{ batches|length }} Records</span>
+            </div>
+            <div class="search-wrapper">
+                <i class="bi bi-search"></i>
+                <input type="text" id="batchSearchInput" class="form-control" placeholder="Search batch, item, date...">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-modern" id="batchTable">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">#</th>
+                        <th>Batch No</th>
+                        <th>Item Details</th>
+                        <th>Manufactured Date</th>
+                        <th>Expiry Date</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end" style="width: 110px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for batch in batches %}
+                    <tr>
+                        <td class="text-muted small fw-medium">{{ forloop.counter }}</td>
+                        <td>
+                            <span class="batch-badge">{{ batch.BatchNo }}</span>
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">{{ batch.Item }}</div>
+                            {% if batch.barcode_code %}
+                            <small class="text-muted"><i class="bi bi-upc me-1"></i>{{ batch.barcode_code }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if batch.Mfd %}
+                            <div class="d-flex align-items-center gap-1 text-secondary">
+                                <i class="bi bi-calendar-check text-muted"></i>
+                                <span>{{ batch.Mfd|date:"Y-m-d H:i" }}</span>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if batch.Exp %}
+                            <div class="d-flex align-items-center gap-1 text-secondary">
+                                <i class="bi bi-calendar-x text-muted"></i>
+                                <span>{{ batch.Exp|date:"Y-m-d H:i" }}</span>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if batch.IsActive %}
+                            <span class="status-badge status-active">
+                                <i class="bi bi-check-circle-fill me-1"></i>Active
+                            </span>
+                            {% else %}
+                            <span class="status-badge status-inactive">
+                                <i class="bi bi-x-circle me-1"></i>Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'item_master:batch_update' batch.pk %}" class="btn btn-sm btn-outline-burgundy" title="Edit Batch">
+                                <i class="bi bi-pencil me-1"></i>Edit
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="py-4">
+                                <i class="bi bi-layers text-muted opacity-50" style="font-size: 3rem;"></i>
+                                <h6 class="mt-3 fw-semibold text-secondary">No Batches Found</h6>
+                                <p class="text-muted small mb-3">Get started by creating your first product batch tracking entry.</p>
+                                <a href="{% url 'item_master:batch_create' %}" class="btn-custom-primary">
+                                    <i class="bi bi-plus-lg"></i> Add New Batch
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('batchSearchInput');
+        const table = document.getElementById('batchTable');
+
+        if (searchInput && table) {
+            searchInput.addEventListener('keyup', function () {
+                const query = this.value.toLowerCase().trim();
+                const rows = table.querySelectorAll('tbody tr');
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (text.includes(query)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+</script>
 {% endblock %}

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from accounts_app.models import  Contra, Groups, Journal, LedgerCreation, LedgerPosting, LocalPayment, LocalPaymentCheque, LocalPaymentItems, PaymentBillDetails, PaymentBillMaster, PaymentDetails, PaymentMaster, Receipt, ReceiptBillDetails, ReceiptBillMaster, ReceiptCheque, ReceiptDetails, ReceiptItems, ReceiptMaster, Subgroup, UserRole, CustomUser, UserPrivilege, Menu
+from accounts_app.models import  *
 from django.contrib.auth.admin import UserAdmin
 
 
@@ -218,7 +218,7 @@ class LedgerPostingAdmin(admin.ModelAdmin):
     search_fields = (
         'VoucherNo',
         'ledger__ledger_name',
-        'VoucherType__name',
+        'VoucherType__VoucherName',
     )
     date_hierarchy = 'date'
     readonly_fields = ('created_on', 'updated_on', 'created_by', 'updated_by')
@@ -238,8 +238,8 @@ class ReceiptBillDetailsInline(admin.TabularInline):
 # Main admin for ReceiptBillMaster
 @admin.register(ReceiptBillMaster)
 class ReceiptBillMasterAdmin(admin.ModelAdmin):
-    list_display = ('id', 'Date', 'Customer', 'Ledger', 'TotalAmount', 'Remark')
-    list_filter = ('Date', 'Ledger')
+    list_display = ('id', 'voucher_no', 'voucherType', 'Date', 'Customer', 'Ledger', 'TotalAmount', 'Remark')
+    list_filter = ('voucher_no', 'voucherType', 'Date', 'Ledger')
     search_fields = ('Customer__ledger_name', 'Ledger__ledger_name', 'Remark')
     inlines = [ReceiptBillDetailsInline]
     date_hierarchy = 'Date'
@@ -248,7 +248,7 @@ class ReceiptBillMasterAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Basic Info", {
-            "fields": ("Date", "Customer", "Ledger", "TotalAmount", "Remark")
+            "fields": ("voucher_no", "voucherType", "Date", "Customer", "Ledger", "TotalAmount", "Remark")
         }),
         ("Cheque Info", {
             "fields": ("ChequeNo", "ChequeDate", "ChequeStatus"),
@@ -355,9 +355,85 @@ class ReceiptDetailsAdmin(admin.ModelAdmin):
     search_fields = ("Receipt__voucher_no", "Ledger__LedgerName", "Desc")
     list_filter = ("Receipt__Date",)    
 
-from .models import InvoicePostingConfig
+@admin.register(BillWiseOpening)
+class BillWiseOpeningAdmin(admin.ModelAdmin):
+    # Columns displayed in the admin list view
+    list_display = (
+        'InvNo',
+        'ledger',
+        'voucherType',
+        'InvDate',
+        'po_no',
+        'InvAmount',
+        'InvBalance',
+        'dr_cr',
+        'IsCleared',
+        'IsClosed',
+        'CreatedOn',
+    )
 
-@admin.register(InvoicePostingConfig)
-class InvoicePostingConfigAdmin(admin.ModelAdmin):
-    list_display = ('voucher_type', 'sales_ledger', 'tax_ledger', 'discount_ledger',
-                    'cash_ledger', 'bank_ledger')
+    # Filters available in the right sidebar
+    list_filter = (
+        'dr_cr',
+        'IsCleared',
+        'IsClosed',
+        'voucherType',
+        'InvDate',
+    )
+
+    # Search functionality across primary fields and ForeignKey fields
+    search_fields = (
+        'InvNo',
+        'po_no',
+        'ledger__ledger_name',  # Replace 'ledger_name' with your actual Ledger model field name if different
+    )
+
+    # Enables drill-down navigation by date at the top of the list page
+    date_hierarchy = 'InvDate'
+
+    # Auto-managed date fields should be read-only in the admin panel
+    readonly_fields = ('CreatedOn', 'UpdatedOn')
+
+    # Quick inline editing for boolean flags directly from list view (optional)
+    list_editable = ('IsCleared', 'IsClosed')
+
+    # Prevents huge drop-downs if you have thousands of Ledgers or Vouchers
+    raw_id_fields = ('ledger', 'voucherType')
+
+    # Logical grouping of fields on the detail edit form
+    fieldsets = (
+        ('Invoice Details', {
+            'fields': ('ledger', 'voucherType', 'InvNo', 'InvDate', 'po_no')
+        }),
+        ('Amount & Balance', {
+            'fields': ('InvAmount', 'InvBalance', 'dr_cr')
+        }),
+        ('Status Flags', {
+            'fields': ('IsCleared', 'IsClosed')
+        }),
+        ('Audit Metadata', {
+            'classes': ('collapse',),  # Collapsible group
+            'fields': ('CreatedOn', 'UpdatedOn'),
+        }),
+    )    
+
+class OpeningVoucherDetailsInline(admin.TabularInline):
+    model = OpeningVoucherDetails
+    extra = 1
+    fields = ('ledger', 'debit_amount', 'credit_amount')
+
+
+@admin.register(OpeningVoucherMaster)
+class OpeningVoucherMasterAdmin(admin.ModelAdmin):
+    list_display = ('voucher_no', 'date', 'voucherType', 'cost_conter', 'sales_person', 'remark')
+    list_filter = ('date', 'voucherType', 'cost_conter', 'sales_person')
+    search_fields = ('voucher_no', 'remark')
+    ordering = ('-date', '-id')
+    inlines = [OpeningVoucherDetailsInline]
+
+
+@admin.register(OpeningVoucherDetails)
+class OpeningVoucherDetailsAdmin(admin.ModelAdmin):
+    list_display = ('opening_voucher', 'ledger', 'debit_amount', 'credit_amount')
+    search_fields = ('opening_voucher__voucher_no', 'ledger__ledger_name')
+    list_filter = ('opening_voucher',)    

@@ -1,0 +1,113 @@
+{% extends 'fleet_base1.html' %}
+{% block title %}Item Sub Categories{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row g-3">
+
+    <!-- Create / Edit form -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          {% if edit_obj %}Edit Sub Category{% else %}Add Sub Category{% endif %}
+        </div>
+        <div class="card-body">
+          <form method="post"
+                action="{% if edit_obj %}{% url 'item_subcategory_edit' edit_obj.pk %}{% else %}{% url 'item_subcategory' %}{% endif %}">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
+              {{ form.category }}
+              {% for e in form.category.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.sub_category_name.id_for_label }}">{{ form.sub_category_name.label }}</label>
+              {{ form.sub_category_name }}
+              {% for e in form.sub_category_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="form-check mb-3">
+              {{ form.isDefault }}
+              <label class="form-check-label" for="{{ form.isDefault.id_for_label }}">{{ form.isDefault.label }}</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+              {% if edit_obj %}Update{% else %}Save{% endif %}
+            </button>
+            {% if edit_obj %}
+              <a href="{% url 'item_subcategory' %}" class="btn btn-secondary">Cancel</a>
+            {% endif %}
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">Sub Categories</span>
+          <form method="get" class="d-flex gap-2">
+            <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm" placeholder="Search...">
+            <button class="btn btn-sm btn-outline-primary">Search</button>
+            {% if search %}<a href="{% url 'item_subcategory' %}" class="btn btn-sm btn-outline-secondary">Clear</a>{% endif %}
+          </form>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Sub Category</th>
+                  <th>Category</th>
+                  <th class="text-center">Default</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for sub in subcategories %}
+                  <tr {% if edit_obj and edit_obj.pk == sub.pk %}class="table-warning"{% endif %}>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ sub.sub_category_name }}</td>
+                    <td>{{ sub.category.category_name }}</td>
+                    <td class="text-center">
+                      {% if sub.isDefault %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}
+                    </td>
+                    <td class="text-end">
+                      <a href="{% url 'item_subcategory_edit' sub.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                      {% if not sub.isDefault %}
+                        <form method="post" action="{% url 'item_subcategory_delete' sub.pk %}" class="d-inline"
+                              onsubmit="return confirm('Delete &quot;{{ sub.sub_category_name|escapejs }}&quot;?');">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="5" class="text-center text-muted py-4">No sub categories found.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

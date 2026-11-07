@@ -1,0 +1,160 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    .card-box{
+        background:#fff;
+        border-radius:10px;
+        box-shadow:0 3px 10px rgba(0,0,0,.08);
+        padding:25px;
+        margin-bottom:25px;
+    }
+
+    .page-title{
+        font-weight:600;
+        color:#343a40;
+        margin-bottom:20px;
+    }
+
+    .table th{
+        background:#343a40;
+        color:#fff;
+        vertical-align:middle;
+    }
+
+    .table td{
+        vertical-align:middle;
+    }
+
+    .btn-primary{
+        background:+#0d6efd;
+    }
+
+    .btn-secondary{
+        margin-left:5px;
+    }
+
+    .action-btns .btn{
+        margin-right:5px;
+    }
+
+    .form-control{
+        border-radius:6px;
+    }
+
+    label{
+        font-weight:600;
+        margin-bottom:6px;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+
+    <!-- Form Card -->
+    <div class="card-box">
+
+        <h3 class="page-title">
+            {% if edit %}
+                Edit Item Group
+            {% else %}
+                Create Item Group
+            {% endif %}
+        </h3>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div class="mb-3">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="text-danger small">
+                        {{ field.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-primary">
+                {% if edit %}
+                    <i class="fas fa-save"></i> Update
+                {% else %}
+                    <i class="fas fa-plus"></i> Create
+                {% endif %}
+            </button>
+
+            <a href="{% url 'item_master:manage_item_group' %}" class="btn btn-secondary">
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+
+    <!-- List Card -->
+    <div class="card-box">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Existing Item Groups</h4>
+            <span class="badge bg-primary">
+                {{ groups|length }} Groups
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+
+                <thead>
+                    <tr>
+                        <th width="70%">Group Name</th>
+                        <th width="30%" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for group in groups %}
+                    <tr>
+
+                        <td>{{ group.group_code }}</td>
+
+                        <td class="text-center action-btns">
+
+                            <a href="{% url 'item_master:manage_item_group' group.pk %}"
+                               class="btn btn-sm btn-warning">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+
+                            <a href="{% url 'item_master:delete_item_group' group.pk %}"
+                               class="btn btn-sm btn-danger"
+                               onclick="return confirm('Are you sure you want to delete this Item Group?')">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="2" class="text-center text-muted">
+                            No Item Groups Found
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

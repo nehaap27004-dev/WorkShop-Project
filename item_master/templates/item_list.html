@@ -1,177 +1,323 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
-
 <style>
-    h2 {
-        text-align: center;
+    /* ── Azur Burgundy Module Standards ── */
+    .text-burgundy { color: #9f1045 !important; }
+    .bg-burgundy { background-color: #9f1045 !important; color: #fff !important; }
+
+    .btn-custom-primary {
+        background-color: #9f1045 !important;
+        border-color: #9f1045 !important;
+        color: #fff !important;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-custom-primary:hover {
+        background-color: #830d38 !important;
+        border-color: #830d38 !important;
+        color: #fff !important;
     }
 
-    .add-item {
-        text-align: left;
-        margin-bottom: 20px;
+    .btn-outline-burgundy {
+        color: #9f1045 !important;
+        border-color: #9f1045 !important;
+        background-color: transparent !important;
+    }
+    .btn-outline-burgundy:hover {
+        background-color: #9f1045 !important;
+        color: #fff !important;
     }
 
-    .add-item a {
-        padding: 10px 15px;
-        background-color: darkred;
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
+    /* KPI Cards */
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+    }
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .kpi-content {
+        min-width: 0;
+    }
+    .kpi-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.2;
     }
 
-    .add-item a:hover {
-        background-color: #b01033;
+    /* Card Banner Header */
+    .card-banner-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.9rem 1.25rem;
+    }
+    .card-banner-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #2d3748;
+        display: inline-flex;
+        align-items: center;
     }
 
-    /* Table Styling */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
+    /* Form control focus ring */
+    .form-control:focus {
+        border-color: #9f1045 !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
     }
 
-    th, td {
-        padding: 10px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
+    /* Table styling */
+    .table thead th {
+        background-color: #fafbfc;
+        color: #4a5568;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
+    }
+    .table tbody td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+        vertical-align: middle;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #fdfafb;
     }
 
-    th {
-        background-color: #f4f4f4;
-        font-weight: bold;
-    }
-
-    tr:hover {
-        background-color: #f9f9f9;
-    }
-
-    .action-links a {
-        margin-right: 10px;
-        padding: 6px 10px;
-        background-color: grey;
-        color: white;
-        text-decoration: none;
-        border-radius: 3px;
-    }
-
-    .action-links a:hover {
-        background-color: #bbb;
-    }
-
-    .action-links {
-        text-align: right; /* Align the action buttons to the right */
-    }
-    .low-stock {
-        color: red;
+    .code-badge {
+        font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+        font-size: 0.78rem;
+        letter-spacing: 0.4px;
     }
 </style>
 
-<div class="add-item">
-    <a href="{% url 'item_master:item_create_update' %}">Add New Item</a>
-</div>
+<div class="container-fluid p-0 mb-5">
 
-<!-- Item List Section -->
-<div class="table-responsive">
-    <table id="item-list" class="table table-striped">
-        <thead>
-            <tr>
-                <th></th>
-                <th>Barcode</th>
-                <th>Item Code</th>
-                <th>Item Name</th>
-                <th>Cost center</th>
-                <th>Category</th>
-                <th>Manufacturer</th>
-                <th>Unit</th>
-                <th>Class</th>
-                <th>Min. Stock</th>
-                <th>Purchase Rate</th>
-                <th>Sales Rate</th>
-                <th>MRP</th>
-                <th colspan="3">Actions</th>
-            </tr>
-        </thead>
-        <tbody id="item-results">
-            {% for item in items %}
-            <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.barcode_code }}</td>
-                <td>{{ item.item_code }}</td>
-                <td>{{ item.item_name }}</td>
-                <td>{{ item.cost_center }}</td>
-                <td>{{ item.item_category }}</td>
-                <td>{{ item.item_manufacturer }}</td>
-                <td>{{ item.item_unit }}</td>
-                <td>{{ item.item_class }}</td>
-                <td>{{ item.min_stock }}</td>
-                <td>{{ item.purchase_rate }}</td>
-                <td>{{ item.sales_rate }}</td>
-                <td>{{ item.MRP }}</td>
-                <td class="action-links">
-                    <a href="{% url 'item_master:item_create_update' item.id %}" class="btn btn-sm btn-primary">Edit</a>
-                </td>
-                <td class="action-links">
-                    <a href="{% url 'item_master:item_alter_units_view' item.id %}" class="btn btn-sm btn-info">View</a>
-                </td>
-                <td class="action-links">
-                    <button type="button" class="btn btn-sm btn-danger" 
-                            onclick="openDeleteModal('{{ item.id }}', '{{ item.item_name|escapejs }}')">
-                        Delete
-                    </button>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="15">No items found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-</div>
+    <!-- Top Header Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-1">
+                <i class="bi bi-box-seam text-burgundy mr-2"></i>{% trans "Item Master & Products" %}
+            </h2>
+            <div class="text-muted small">{% trans "Manage parts, inventory items, pricing, barcodes, and stock levels" %}</div>
+        </div>
+        <a href="{% url 'item_master:item_create_update' %}" class="btn btn-custom-primary shadow-sm">
+            <i class="bi bi-plus-lg mr-1"></i>{% trans "Add New Item" %}
+        </a>
+    </div>
 
+    <!-- Alert Messages -->
+    {% if messages %}
+        {% for m in messages %}
+            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm" style="border-radius:8px;" role="alert">
+                {{ m }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 mb-4" style="border-radius:10px;">
+        <div class="card-header card-banner-header">
+            <span class="card-banner-title"><i class="bi bi-funnel text-burgundy mr-2"></i>{% trans "Filter Item Catalog" %}</span>
+        </div>
+        <div class="card-body p-3">
+            <div class="form-row align-items-center">
+                <div class="col-md-6 mb-2 mb-md-0">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white border-right-0"><i class="bi bi-search text-muted"></i></span>
+                        </div>
+                        <input type="text" id="itemTableSearch" placeholder="{% trans 'Search item name, code, barcode, or category...' %}" class="form-control border-left-0">
+                    </div>
+                </div>
+                <div class="col-md-6 text-right">
+                    <span class="text-muted small">{% trans "Real-time client filtering active" %}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item List Table Card -->
+    <div class="card shadow-sm border-0" style="border-radius:10px;">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="card-banner-title">
+                <i class="bi bi-list-task text-burgundy mr-2"></i>{% trans "Items Directory" %}
+            </span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold" style="border-radius:6px;">
+                {% trans "Total Items" %}: {{ items|length }}
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="item-list-table" class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Item Code & Barcode" %}</th>
+                            <th>{% trans "Item Name" %}</th>
+                            <th>{% trans "Category & Brand" %}</th>
+                            <th>{% trans "Cost Center" %}</th>
+                            <th>{% trans "Unit" %}</th>
+                            <th class="text-right">{% trans "Purchase Rate" %}</th>
+                            <th class="text-right">{% trans "Sales Rate" %}</th>
+                            <th class="text-right">{% trans "MRP" %}</th>
+                            <th style="width: 170px;" class="text-center">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="item-results">
+                        {% for item in items %}
+                        <tr>
+                            <td class="align-middle">
+                                <div class="font-weight-bold text-dark code-badge">{{ item.item_code|default:"—" }}</div>
+                                {% if item.barcode_code %}
+                                    <span class="badge badge-light border text-muted code-badge mt-1">{{ item.barcode_code }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle">
+                                <a href="{% url 'item_master:item_create_update' item.id %}" class="font-weight-bold text-burgundy" style="font-size:14px;">
+                                    {{ item.item_name }}
+                                </a>
+                                {% if item.regional_name %}
+                                    <div class="small text-muted">{{ item.regional_name }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle">
+                                <div class="font-weight-600 text-dark">{{ item.item_category|default:"—" }}</div>
+                                {% if item.item_manufacturer %}
+                                    <div class="small text-muted">{{ item.item_manufacturer }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle text-muted">
+                                {{ item.cost_center|default:"—" }}
+                            </td>
+                            <td class="align-middle">
+                                <span class="badge badge-light border px-2 py-1 text-dark">{{ item.item_unit|default:"PCS" }}</span>
+                            </td>
+                            <td class="align-middle text-right text-muted font-weight-600">
+                                {{ item.purchase_rate|default:"0.00" }}
+                            </td>
+                            <td class="align-middle text-right font-weight-bold text-dark">
+                                {{ item.sales_rate|default:"0.00" }}
+                            </td>
+                            <td class="align-middle text-right text-muted">
+                                {{ item.MRP|default:"0.00" }}
+                            </td>
+                            <td class="text-center align-middle text-nowrap">
+                                <a href="{% url 'item_master:item_create_update' item.id %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit Item' %}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'item_master:item_alter_units_view' item.id %}" class="btn btn-sm btn-outline-burgundy mr-1" title="{% trans 'Alter Units' %}">
+                                    <i class="bi bi-diagram-3"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="openDeleteModal('{{ item.id }}', '{{ item.item_name|escapejs }}')"
+                                        title="{% trans 'Delete Item' %}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-box-seam display-4 d-block mb-2 text-secondary"></i>
+                                {% trans "No items found in catalog. Click 'Add New Item' to create one." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteItemModal" tabindex="-1" aria-labelledby="deleteItemModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteItemModalLabel">Confirm Delete</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content" style="border-radius:10px;">
+            <div class="modal-header card-banner-header">
+                <h5 class="modal-title font-weight-bold text-danger" id="deleteItemModalLabel">
+                    <i class="bi bi-trash mr-2"></i>{% trans "Confirm Delete" %}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            <div class="modal-body">
-                Are you sure you want to delete the item "<span id="itemNameToDelete"></span>"?
-                <p class="text-danger mt-2">This action cannot be undone.</p>
+            <div class="modal-body p-4">
+                <p>{% trans 'Are you sure you want to permanently delete the item' %} "<strong><span id="itemNameToDelete"></span></strong>"?</p>
+                <div class="alert alert-warning border-0 small mt-2">
+                    <i class="bi bi-exclamation-triangle-fill mr-1"></i>{% trans "This action cannot be undone and will remove item stock tracking records." %}
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary px-3" data-dismiss="modal" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
                 <form id="deleteItemForm" method="post" action="">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Delete</button>
+                    <button type="submit" class="btn btn-danger px-3">{% trans "Delete Item" %}</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
-
-
-<!-- Delete Confirmation Modal -->
 <script>
     function openDeleteModal(itemId, itemName) {
-        // Set the item name in the modal
         document.getElementById('itemNameToDelete').textContent = itemName;
-        
-        // Set the form action URL for the delete
         document.getElementById('deleteItemForm').action = "{% url 'item_master:delete_item' 0 %}".replace('0', itemId);
         
-        // Show the modal
-        var deleteModal = new bootstrap.Modal(document.getElementById('deleteItemModal'));
-        deleteModal.show();
+        var modalEl = document.getElementById('deleteItemModal');
+        if (window.bootstrap && bootstrap.Modal) {
+            var myModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            myModal.show();
+        } else if (window.jQuery) {
+            $('#deleteItemModal').modal('show');
+        }
     }
+
+    // Client-side quick filter
+    document.getElementById('itemTableSearch')?.addEventListener('keyup', function() {
+        var value = this.value.toLowerCase().trim();
+        var rows = document.querySelectorAll('#item-results tr');
+        rows.forEach(function(row) {
+            var text = row.textContent.toLowerCase();
+            row.style.display = text.indexOf(value) > -1 ? '' : 'none';
+        });
+    });
 </script>
-
-
 {% endblock %}

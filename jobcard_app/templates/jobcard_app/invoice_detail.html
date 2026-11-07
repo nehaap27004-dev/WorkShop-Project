@@ -12,20 +12,20 @@ body,input,select,textarea,button{font-family:'Segoe UI',system-ui,-apple-system
 .pg-actions{display:flex;gap:8px}
 .btn-act{background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
 .btn-act:hover{background:#f8fafc;border-color:#94a3b8}
-.btn-primary{background:#2563eb;color:#fff;border:none}.btn-primary:hover{background:#1d4ed8;color:#fff}
+.btn-primary{background:#9f1045;color:#fff;border:none;border-radius:6px;transition:background .15s ease}.btn-primary:hover{background:#830d38;color:#fff}
 
 /* Invoice Sheet */
 .inv-sheet{background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.06);padding:36px;margin-bottom:24px}
 
 /* Company & Invoice Top Header */
 .inv-hdr-grid{display:grid;grid-template-columns:1fr auto;gap:24px;border-bottom:2px solid #f1f5f9;padding-bottom:24px;margin-bottom:24px}
-.company-title{font-size:22px;font-weight:800;color:#1e40af;letter-spacing:-0.4px;margin-bottom:4px}
+.company-title{font-size:22px;font-weight:800;color:#9f1045;letter-spacing:-0.4px;margin-bottom:4px}
 .company-sub{font-size:12px;color:#64748b;line-height:1.5}
 .inv-meta-box{text-align:right}
 .inv-num-big{font-size:24px;font-weight:800;color:#0f172a;margin-bottom:4px}
 .inv-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:8px}
 .badge-draft{background:#f1f5f9;color:#64748b}
-.badge-sent{background:#eff6ff;color:#2563eb}
+.badge-sent{background:#fdf2f5;color:#9f1045;border:1px solid #f9c9d5}
 .badge-paid{background:#f0fdf4;color:#16a34a}
 .badge-partial{background:#fefce8;color:#a16207}
 .badge-overdue{background:#fef2f2;color:#dc2626}
@@ -50,8 +50,8 @@ body,input,select,textarea,button{font-family:'Segoe UI',system-ui,-apple-system
 .summary-table{width:320px;border-collapse:collapse}
 .summary-table td{padding:7px 0;font-size:13px;color:#64748b}
 .summary-table td.val{text-align:right;font-weight:600;color:#0f172a;font-family:monospace}
-.summary-table tr.total-row td{border-top:2px solid #0f172a;border-bottom:2px solid #0f172a;padding:10px 0;font-size:16px;font-weight:800;color:#1e40af}
-.summary-table tr.total-row td.val{font-size:18px;color:#1e40af}
+.summary-table tr.total-row td{border-top:2px solid #0f172a;border-bottom:2px solid #0f172a;padding:10px 0;font-size:16px;font-weight:800;color:#9f1045}
+.summary-table tr.total-row td.val{font-size:18px;color:#9f1045}
 
 /* Print CSS */
 @media print{

@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'fleet_base1.html' %}
 
 {% block content %}
 <style>
@@ -81,6 +81,6 @@
     </tbody>
 </table>
 
-<p><a href="{% url 'accounts_app:create_payment' %}">Create new Payment</a></p>
+<p><a href="{% url 'accounts_app:payment_create' %}"class="btn btn-primary">+ New Payment</a></p>
 
 {% endblock %}

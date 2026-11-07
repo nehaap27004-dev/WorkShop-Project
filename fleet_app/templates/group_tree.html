@@ -1,0 +1,53 @@
+<tr class="group-row" 
+    data-id="grp-{{ section.side }}-{{ node.group.groupName|slugify }}" 
+    data-parent="{% if parent_id %}{{ parent_id }}{% else %}sec_{{ section_id }}{% endif %}"
+    style="{% if parent_id %}display: none;{% endif %}"
+    class="group-row">
+
+    <td style="padding-left:{{ indent }}px; font-weight:bold; cursor:pointer;" 
+        onclick="toggleGroupRow('grp-{{ section.side }}-{{ node.group.groupName|slugify }}', this)">
+        <span class="tree-icon-wrapper" style="display: inline-block; width: 16px; text-align: center; margin-right: 4px;">
+            <i class="fas fa-chevron-right grp-icon text-muted" style="font-size: 10px; transition: transform 0.15s;"></i>
+        </span>
+        <i class="fas fa-folder text-warning mr-1" style="font-size: 13px; opacity: 0.85;"></i>
+        {{ node.group.groupName }}
+    </td>
+
+    {% if section.side == "liability" %}
+        <td align="right" style="font-family:monospace; font-size:12.5px; font-weight:bold;">{{ node.total|floatformat:3 }}</td>
+        <td></td>
+    {% else %}
+        <td></td>
+        <td align="right" style="font-family:monospace; font-size:12.5px; font-weight:bold;">{{ node.total|floatformat:3 }}</td>
+    {% endif %}
+
+</tr>
+
+{% for item in node.ledgers %}
+<tr class="ledger-row" 
+    data-parent="grp-{{ section.side }}-{{ node.group.groupName|slugify }}" 
+    style="display: none;">
+
+    <td style="padding-left:{{ indent|add:25 }}px; font-size:12.5px;">
+        <span class="tree-icon-wrapper" style="display: inline-block; width: 16px; text-align: center; margin-right: 4px;">
+            <i class="fas fa-circle text-muted" style="font-size: 6px; vertical-align: middle; opacity: 0.5;"></i>
+        </span>
+        {{ item.ledger.ledger_name }}
+    </td>
+
+    {% if section.side == "liability" %}
+        <td align="right" style="font-family:monospace; font-size:12.5px; color:#555;">{{ item.balance|floatformat:3 }}</td>
+        <td></td>
+    {% else %}
+        <td></td>
+        <td align="right" style="font-family:monospace; font-size:12.5px; color:#555;">{{ item.balance|floatformat:3 }}</td>
+    {% endif %}
+
+</tr>
+{% endfor %}
+
+{% with current_node_id="grp-"|add:section.side|add:"-"|add:node.group.groupName|slugify %}
+    {% for child in node.children %}
+        {% include "group_tree.html" with node=child section=section indent=indent|add:20 parent_id=current_node_id %}
+    {% endfor %}
+{% endwith %}

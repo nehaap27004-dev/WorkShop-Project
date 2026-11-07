@@ -1,28 +1,30 @@
+from django.db.models import Q
 from django import forms
-from django.core.exceptions import ValidationError
 
-from fleet_app.common import filter_voucher_types, get_ledgers_by_group_ids, get_ledgers_by_group_names
+from fleet_app.common import filter_voucher_types, get_ledgers_by_group_ids
 from .models import *
 from django.forms import modelformset_factory
 from django.forms import inlineformset_factory
 from item_master.models import Customer
 from django.utils.translation import gettext_lazy as _
-
+from item_master.models import Item, ItemGroup
 
 class ManufacturerForm(forms.ModelForm):
     class Meta:
         model = Manufacturer
-        fields = ['manufacturer_name', 'manufacturer_logo', 'vehicle_type']
+        fields = ['manufacturer_name','vehicle_type', 'manufacturer_logo']
+
         labels = {
             'manufacturer_name': _("Manufacturer Name"),
-            'manufacturer_logo': _("Manufacturer Logo"),
             'vehicle_type': _("Vehicle Type"),
+            'manufacturer_logo': _("Manufacturer Logo"),
         }
         widgets = {
-            'vehicle_type': forms.Select(attrs={'class': 'form-select'}),
-            'vehicle_categories': forms.CheckboxSelectMultiple(),
+            'vehicle_type': forms.Select(attrs={
+                'class': 'form-control',
+            }),
         }
-        
+
 class VehicleCategoryForm(forms.ModelForm):
     class Meta:
         model = VehicleCategory
@@ -156,32 +158,69 @@ class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
         fields = [
-            'is_owned', 'supplier', 'customer',
-            'vehicle_category', 'manufacturer', 'model', 'variant', 'vehicle_name', 'vehicle_image',
-            'license_plate_code', 'license_plate_number', 'registration', 'status',
+            'vehicle_category',
+            'vehicle_name',
+            'model',
+            'vehicle_image',
+            'license_plate_code',
+            'license_plate_number',
             
-            'insurance_policy_number', 'insurance_expiry_date', 'insurance_certificate',
-            'registration_renewed_date', 'registration_expiry_date', 'registration_document',
-            'fitness_test_date', 'fitness_test_expiry_date', 'fitness_test_certificate',
-            'last_service_date', 'service_due_date', 'service_interval_km',
-             'vehicle_registration_date', 'vehicle_cancellation_date',
-            'RC_number', 'RC_file', 'RC_expiry_date', 'chassis_number',
-            'engine_number', 'last_odometer', 'fuel_type',
-            'replacement_value', 'model_year', 'capacity',
-            'purchase_value', 'description', 'vat',
+            'RAS_inspection_date',
+            'RAS_inspection_expiry_date',
+            'RAS_inspection_certificate',
+            'hook_inspection_date',
+            'hook_inspection_expiry_date',
+            'hook_inspection_certificate',
+            'wire_rope_inspection_date',
+            'wire_rope_inspection_expiry_date',
+            'wire_rope_inspection_certificate',
+            'winch_inspection_date',
+            'winch_inspection_expiry_date',
+            'winch_inspection_certificate',
+            'lifting_wire_rope_inspection_date',
+            'lifting_wire_rope_inspection_expiry_date',
+            'lifting_wire_rope_inspection_certificate',
+            'lifting_belt_inspection_date',
+            'lifting_belt_inspection_expiry_date',
+            'lifting_belt_inspection_certificate',
+            
+            'vehicle_driver',
+            'vehicle_second_driver',
+            'driver_assignment_date',
+            'vehicle_registration_date',
+            'vehicle_cancellation_date',
+            'RC_number',
+            'RC_file',
+            'RC_expiry_date',
+            'chassis_number',
+            'engine_number',
+            'last_odometer',
+            'rate_per_hr',
+            'rate_per_day',
+            'rate_per_week',
+            'rate_per_month',
+            'replacement_value',
+            'model_year',
+            'capacity',
+            'purchase_value',
+            'vat',
+            'description',
+            'is_owned',
+            'supplier',
+            'status',
+            'item'
             
         ]
         labels = {
-            'customer': _('Customer / Owner'),
-            'vehicle_category': _('Vehicle Category'),
-            'manufacturer': _('Manufacturer'),
-            'model': _('Vehicle Model'),
-            'variant': _('Vehicle Variant'),
-            'registration': _('Vehicle Registration'),
+            'vehicle_category': _('Equipment Type'),
             'vehicle_name': _('Fleet No'),
+            'model': _('Vehicle Model'),
             'vehicle_image': _('Fleet Image'),
             'license_plate_code': _('Reg-Plate Code'),
             'license_plate_number': _('Reg-Plate No'),
+            'vehicle_driver': _('Assigned Driver'),
+            'vehicle_second_driver': _('Second Driver'),
+            'driver_assignment_date': _('Assignment Date'),
             'vehicle_registration_date': _('Registration Date'),
             'vehicle_cancellation_date': _('Cancellation Date'),
             'RC_number': _('Mulki Number'),
@@ -190,6 +229,10 @@ class VehicleForm(forms.ModelForm):
             'chassis_number': _('Chassis Number'),
             'engine_number': _('Engine Number'),
             'last_odometer': _('Last Odometer'),
+            'rate_per_hr' : _('Rate Per Hour'),
+            'rate_per_day': _('Rate Per Day'),
+            'rate_per_week': _('Rate Per Week'),
+            'rate_per_month': _('Rate Per Month'),
             'replacement_value': _('Replacement Value'),
             'model_year': _('Model Year'),
             'capacity': _('Capacity'),
@@ -199,29 +242,39 @@ class VehicleForm(forms.ModelForm):
             'is_owned': _('Owned Vehicle'),
             'supplier': _('Supplier'),
             'status': _('Status'),
+            'item' : _('Item')
         }
         
         widgets = {
-            'insurance_expiry_date':      forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'registration_renewed_date':  forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'registration_expiry_date':   forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'fitness_test_date':          forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'fitness_test_expiry_date':   forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'last_service_date':          forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'service_due_date':           forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'fuel_type':                  forms.Select(attrs={'class': 'form-control'}),
-            'insurance_policy_number':    forms.TextInput(attrs={'class': 'form-control'}),
-            'service_interval_km':        forms.NumberInput(attrs={'class': 'form-control'}),
-            'customer': forms.Select(attrs={ 'class': 'form-control','placeholder': 'Select customer (optional)',}),
             'vehicle_category': forms.Select(attrs={'placeholder': 'Select vehicle category', 'class': 'form-control'}),
-            'manufacturer': forms.Select(attrs={'placeholder': 'Select manufacturer', 'class': 'form-control'}),
-            'model': forms.Select(attrs={'placeholder': 'Select vehicle model', 'class': 'form-control'}),
-            'variant': forms.Select(attrs={'placeholder': 'Select vehicle variant', 'class': 'form-control'}),
-            'registration': forms.Select(attrs={'placeholder': 'Select registration', 'class': 'form-control'}),
             'vehicle_name': forms.TextInput(attrs={'placeholder': 'Enter Vehicle Name', 'class': 'form-control'}),
+            'model': forms.Select(attrs={'placeholder': 'Select vehicle model', 'class': 'form-control'}),
             'vehicle_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'license_plate_code': forms.Select(attrs={'placeholder': 'License plate code', 'class': 'form-control'}),
             'license_plate_number': forms.TextInput(attrs={'placeholder': 'License plate number', 'class': 'form-control'}),
+
+            'RAS_inspection_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'RAS_inspection_expiry_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'RAS_inspection_certificate': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'hook_inspection_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'hook_inspection_expiry_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'hook_inspection_certificate': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'wire_rope_inspection_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'wire_rope_inspection_expiry_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'wire_rope_inspection_certificate': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'winch_inspection_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'winch_inspection_expiry_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'winch_inspection_certificate': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'lifting_wire_rope_inspection_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'lifting_wire_rope_inspection_expiry_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'lifting_wire_rope_inspection_certificate': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'lifting_belt_inspection_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'lifting_belt_inspection_expiry_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
+            'lifting_belt_inspection_certificate': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+
+            'vehicle_driver': forms.Select(attrs={'placeholder': 'Assign a driver (optional)', 'class': 'form-control'}),
+            'vehicle_second_driver': forms.Select(attrs={'placeholder': 'Assign a second driver (optional)', 'class': 'form-control'}),
+            'driver_assignment_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
             'vehicle_registration_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
             'vehicle_cancellation_date': forms.DateInput(attrs={'placeholder': 'YYYY-MM-DD', 'type': 'date', 'class': 'form-control'}),
             'RC_number': forms.TextInput(attrs={'placeholder': 'Enter Mulki number', 'class': 'form-control'}),
@@ -230,9 +283,13 @@ class VehicleForm(forms.ModelForm):
             'chassis_number': forms.TextInput(attrs={'placeholder': 'Enter chassis number', 'class': 'form-control'}),
             'engine_number': forms.TextInput(attrs={'placeholder': 'Enter engine number', 'class': 'form-control'}),
             'last_odometer': forms.NumberInput(attrs={'placeholder': 'Enter last odometer reading', 'class': 'form-control'}),
+            'rate_per_hr': forms.NumberInput(attrs={'placeholder': 'Enter rate per hour', 'class': 'form-control'}),
+            'rate_per_day': forms.NumberInput(attrs={'placeholder': 'Enter rate per day', 'class': 'form-control'}),
+            'rate_per_week': forms.NumberInput(attrs={'placeholder': 'Enter rate per week', 'class': 'form-control'}),
+            'rate_per_month': forms.NumberInput(attrs={'placeholder': 'Enter rate per month', 'class': 'form-control'}),
             'replacement_value': forms.NumberInput(attrs={'placeholder': 'Enter replacement value', 'class': 'form-control', 'step': '0.001'}),
             'model_year': forms.NumberInput(attrs={'placeholder': 'Enter model year', 'class': 'form-control'}),
-            'capacity': forms.NumberInput(attrs={'placeholder': 'Enter capacity', 'class': 'form-control', 'step': '0.001'}),
+            'capacity': forms.TextInput(attrs={'placeholder': 'Enter chassis number', 'class': 'form-control'}),
             'purchase_value': forms.NumberInput(attrs={'placeholder': 'Enter purchase value', 'class': 'form-control', 'step': '0.001'}),
             'vat': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
@@ -240,91 +297,13 @@ class VehicleForm(forms.ModelForm):
             'is_owned': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'supplier': forms.Select(attrs={'class': 'form-select'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
+            'item' : forms.Select(attrs={'class': 'form-control'}),
         }
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.fields['supplier'].queryset = get_ledgers_by_group_names('Sundry Creditors')
-        self.fields['customer'].queryset = LedgerCreation.objects.filter(
-            groups_id=2, types='DR'
-        ).order_by('ledger_name')
-        self.fields['customer'].label_from_instance = lambda obj: obj.ledger_name
-        self.fields['customer'].required = False
-        self.fields['customer'].empty_label = '— No Customer —'
-
-        self.fields['manufacturer'].queryset = Manufacturer.objects.all().order_by('manufacturer_name')
-        self.fields['model'].queryset = VehicleModel.objects.none()
-        self.fields['variant'].queryset = VehicleVariant.objects.none()
-        self.fields['registration'].queryset = VehicleRegistration.objects.none()
-
-
-        if self.data.get('manufacturer'):
-            try:
-                manufacturer_id = int(self.data.get('manufacturer'))
-            except (TypeError, ValueError):
-                manufacturer_id = None
-            if manufacturer_id:
-                self.fields['model'].queryset = VehicleModel.objects.filter(
-                    manufacturer_id=manufacturer_id
-                ).order_by('model_name')
-
-        elif self.instance.pk and self.instance.manufacturer:
-            self.fields['model'].queryset = VehicleModel.objects.filter(
-                manufacturer=self.instance.manufacturer
-            ).order_by('model_name')
-
-        if self.data.get('model'):
-            try:
-                model_id = int(self.data.get('model'))
-            except (TypeError, ValueError):
-                model_id = None
-            if model_id:
-                self.fields['variant'].queryset = VehicleVariant.objects.filter(
-                    vehicle_model_id=model_id
-                ).order_by('variant_name')
-
-        elif self.instance.pk and self.instance.model:
-            self.fields['variant'].queryset = VehicleVariant.objects.filter(
-                vehicle_model=self.instance.model
-            ).order_by('variant_name')
-
-        if self.data.get('variant'):
-            try:
-                variant_id = int(self.data.get('variant'))
-            except (TypeError, ValueError):
-                variant_id = None
-            if variant_id:
-                self.fields['registration'].queryset = VehicleRegistration.objects.filter(
-                    variant_id=variant_id
-                ).order_by('registration_number')
-
-        elif self.instance.pk and self.instance.variant:
-            self.fields['registration'].queryset = VehicleRegistration.objects.filter(
-                variant=self.instance.variant
-            ).order_by('registration_number')
-
-    def clean(self):
-        cleaned_data = super().clean()
-        vehicle_category = cleaned_data.get('vehicle_category')
-        manufacturer = cleaned_data.get('manufacturer')
-        model = cleaned_data.get('model')
-        variant = cleaned_data.get('variant')
-        registration = cleaned_data.get('registration')
-
-        if model and manufacturer and model.manufacturer != manufacturer:
-            raise ValidationError('Selected model does not belong to the selected manufacturer.')
-
-        if model and vehicle_category and model.vehicle_category != vehicle_category:
-            raise ValidationError('Selected model does not belong to the selected vehicle type.')
-
-        if variant and model and variant.vehicle_model != model:
-            raise ValidationError('Selected variant does not belong to the selected model.')
-
-        if registration and variant and registration.variant != variant:
-            raise ValidationError('Selected registration does not belong to the selected variant.')
-
-        return cleaned_data
+        self.fields['supplier'].queryset = get_ledgers_by_group_ids(28) 
         
 
 
@@ -667,7 +646,7 @@ class TimeSheetForm(forms.ModelForm):
         filter_voucher_types(self, [8]) 
     
         # client filter by Groups 
-        self.fields['client'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')      
+        self.fields['client'].queryset = get_ledgers_by_group_ids(29)      
         
         
 
@@ -754,7 +733,7 @@ class FleetQuotationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
     
     # customer filter by Groups 
-        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')      
+        self.fields['customer'].queryset = get_ledgers_by_group_ids(29)      
 
 
 class FleetQuotationItemForm(forms.ModelForm):
@@ -937,7 +916,7 @@ class FleetContractForm(forms.ModelForm):
         filter_voucher_types(self, [7]) 
     
         # customer filter by Groups 
-        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')     
+        self.fields['customer'].queryset = get_ledgers_by_group_ids(29)     
 
 
 
@@ -1044,22 +1023,8 @@ class StaffCategoryForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter category name'})
         }
-from jobcard_app.models import SkillTag
+        
 class StaffForm(forms.ModelForm):
-    skills = forms.ModelMultipleChoiceField(
-        queryset=SkillTag.objects.none(),
-        required=False,
-        widget=forms.CheckboxSelectMultiple(),
-        label=_('Technical Skills')
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        from jobcard_app.models import SkillTag
-        self.fields['skills'].queryset = SkillTag.objects.filter(is_active=True)
-        if self.instance and self.instance.pk:
-            self.fields['skills'].initial = self.instance.skills.all()
-
     class Meta:
         model = Staff
         fields = '__all__'
@@ -1110,7 +1075,35 @@ class StaffForm(forms.ModelForm):
             'address': forms.Textarea(attrs={'rows': 2}),
             'remarks': forms.Textarea(attrs={'rows': 2}),
             'staff_image': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
-        }  
+        }
+        
+        
+class DocumentForm(forms.ModelForm):
+    class Meta:
+        model = Document
+        fields = ['title', 'description', 'file_path', 'staff', 'vehicle', 'status', 'expiry_date', 'reminder_date']
+        labels = {
+            'title': _('Title'),
+            'description': _('Description'),
+            'file_path': _('File'),
+            'staff': _('Staff'),
+            'vehicle': _('Vehicle'),
+            'status': _('Status'),
+            'expiry_date': _('Expiry Date'),
+            'reminder_date': _('Reminder Date'),
+        }
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control'}),
+            'file_path': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'staff': forms.Select(attrs={'class': 'form-select'}),
+            'vehicle': forms.Select(attrs={'class': 'form-select'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'expiry_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'reminder_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+        }        
+        
+        
 class SimpleQuotationForm(forms.ModelForm):
     class Meta:
         model = SimpleQuotation
@@ -1162,7 +1155,7 @@ class SimpleQuotationForm(forms.ModelForm):
         filter_voucher_types(self, [9]) 
     
         # customer filter by Groups 
-        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')       
+        self.fields['customer'].queryset = get_ledgers_by_group_ids(29)       
 
 
 class SimpleQuotationDetailsForm(forms.ModelForm):
@@ -1187,6 +1180,10 @@ class SimpleQuotationDetailsForm(forms.ModelForm):
             'tax_amount': _('Tax Amount'),
             'total_amount': _('Total Amount'),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['period'].initial = "Month"    
 
 
 # Formset for multiple details
@@ -1287,7 +1284,7 @@ class DeliveryContractForm(forms.ModelForm):
         # Voucher type filter - only Delivery Contract (ID: 12)
         filter_voucher_types(self, [12])
         # customer filter by Groups
-        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')
+        self.fields['customer'].queryset = get_ledgers_by_group_ids(29)
         
 
 
@@ -1302,7 +1299,7 @@ class DeliveryContractDetailsForm(forms.ModelForm):
         ]
         labels = {
             'vehicle': _('Vehicle'),
-            'vehicle_model': _('Vehicle Model'),
+            'vehicle_model': _('Equipment Model'),
             'description': _('Description'),
             'location': _('Details'),
             'amount': _('Amount'),
@@ -1341,15 +1338,34 @@ DeliveryContractDetailsFormSet = inlineformset_factory(
     extra=1,
     can_delete=True
 )
-'''
+
+class DeliveryContractSparepartsForm(forms.ModelForm):
+    class Meta:
+        model = DeliveryContractSpareParts
+        fields = [
+            'sparepart', 'part_no', 'quantity', 'rate', 'amount', 'warranty', 'condition', 
+        ]
+        widgets = {
+            'sparepart': forms.TextInput(attrs={'class': 'form-control'}),
+            'part_no': forms.TextInput(attrs={'class': 'form-control'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
+            'rate': forms.NumberInput(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'readonly': True}),
+            'warranty': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'condition': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+
+        
+
 class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
         fields = [
-            'voucher_no', 'date', "voucherType" ,'customer', 'ledger',
+            'voucher_no', 'date', "voucherType" ,'customer', 'ledger', 'due_date',
             'payment_mode', 'supplier_ref', 'other_ref',
             'buyer_order_no', 'is_taxable', 'enable_header', 'enable_footer', 'enable_signature', 'invoice_no',
-            'hire_contract_no', 'invoice_type', 'location', 'lpo_date',
+            'hire_contract_no', 'invoice_type', 'location', 'staff', 'lpo_date',
         ]
         labels = {
             'invoice_no': _('Invoice No'),
@@ -1358,6 +1374,8 @@ class InvoiceForm(forms.ModelForm):
             'voucherType': _('Voucher Type'),
             'customer': _('Client'),
             'ledger': _('Ledger'),
+            'due_date': _('Due Date'),
+
             'payment_mode': _('Mode of Payment'),
             'supplier_ref': _('Supplier Reference'),
             'other_ref': _('Other Reference'),
@@ -1369,6 +1387,7 @@ class InvoiceForm(forms.ModelForm):
             'invoice_type': _('Invoice Type'),
             'location': _('Location'),
             'lpo_date': _('LPO Date'),
+            'staff': _('Staff'),
             'hire_contract_no': _('Hire Contract No'),
         }
         widgets = {
@@ -1377,6 +1396,7 @@ class InvoiceForm(forms.ModelForm):
             'voucherType': forms.Select(attrs={'class': 'form-control'}),
             'customer': forms.Select(attrs={'class': 'form-control'}),
             'ledger': forms.Select(attrs={'class': 'form-control'}),
+            'due_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'payment_mode': forms.Select(attrs={'class': 'form-control'}),
             'supplier_ref': forms.TextInput(attrs={'class': 'form-control'}),
             'other_ref': forms.TextInput(attrs={'class': 'form-control'}),
@@ -1387,6 +1407,7 @@ class InvoiceForm(forms.ModelForm):
             'enable_signature': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'invoice_type': forms.Select(attrs={'class': 'form-select'}),
             'location': forms.TextInput(attrs={'class': 'form-control'}),
+            'staff': forms.Select(attrs={'class': 'form-select'}),
             'lpo_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
         }
         
@@ -1402,12 +1423,12 @@ class InvoiceForm(forms.ModelForm):
             except:
                 pass
         
-        # Ledger filter by Groups cash account, Bank account, Customer & Sales/Income groups
-        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Customer', 'Sundry Debtors', 'Sales Accounts', 'Direct Incomes', 'Indirect Incomes')
+        # Ledger filter by Groups cash account & Bank account
+        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 5, 29)
         # Voucher type filter 
         filter_voucher_types(self, [2])
         # customer filter by Groups 
-        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors')
+        self.fields['customer'].queryset = get_ledgers_by_group_ids(29)
         
            
 
@@ -1422,8 +1443,8 @@ class InvoiceDetailsForm(forms.ModelForm):
             'from_date', 'to_date',
         ]
         labels = {
-            'vehicle': _('Vehicle'),
-            'vehicle_model': _('Vehicle Model'),
+            'vehicle': _('Equipment'),
+            'vehicle_model': _('Equipment Model'),
             'description': _('Description'),
             'location': _('Details'),
             'amount': _('Amount'),
@@ -1459,7 +1480,7 @@ InvoiceDetailsFormSet = inlineformset_factory(
     form=InvoiceDetailsForm,
     extra=1,
     can_delete=True
-)'''
+)
 
 class CompanyForm(forms.ModelForm):
     class Meta:
@@ -1549,13 +1570,14 @@ class FleetHireForm(forms.ModelForm):
                 pass
 
         # Ledger filter by Groups cash account & Bank account
-        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Sundry Creditors')
+        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 5, 28)
 
         # Voucher type filter 
         filter_voucher_types(self, [1])    
         
        # supplier filter by Groups 
-        self.fields['supplier'].queryset = get_ledgers_by_group_names('Sundry Creditors')   
+        self.fields['supplier'].queryset = get_ledgers_by_group_ids(28).filter(supplier_type='Rental')  
+        
 
 
 class FleetHireDetailsForm(forms.ModelForm):
@@ -1578,6 +1600,15 @@ class FleetHireDetailsForm(forms.ModelForm):
             "unit": forms.Select(attrs={"class": "form-select"}),
             "no_of_unit": forms.NumberInput(attrs={"class": "form-control"}),
             "rate_per_period": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+        }
+        labels = {
+            "vehicle": _('Equipment'),
+            "reg_no": _('Reg No'),
+            "start_date": _('Start Date'),
+            "end_date": _('End Date'),
+            "unit": _('Unit'),
+            "no_of_unit": _('Unit'),
+            "rate_per_period": _('Rate per Period'),
         }
         
     def __init__(self, *args, **kwargs):
@@ -1667,7 +1698,7 @@ class VehicleEMIForm(forms.ModelForm):
             
         }
         labels = {
-            'vehicle': 'Select Vehicle',
+            'vehicle': 'Select Equipment',
             'title': 'EMI Title',
             'start_date': 'Start Date',
             'end_date': 'End Date',
@@ -1755,13 +1786,15 @@ class OffHireForm(forms.ModelForm):
         # Voucher type filter 
         filter_voucher_types(self, [15])
         # customer filter by Groups
-        self.fields['customer'].queryset = get_ledgers_by_group_names('Customer', 'Sundry Debtors') 
+        self.fields['customer'].queryset = get_ledgers_by_group_ids(29) 
 
 
 class POMasterForm(forms.ModelForm):
     class Meta:
         model = POMaster
         fields = [
+            'voucher_no',
+            'voucherType',
             'PO_no',
             'PO_date',
             'quote_ref',
@@ -1774,6 +1807,8 @@ class POMasterForm(forms.ModelForm):
         ]
 
         widgets = {
+            'voucher_no': forms.TextInput(attrs={'class': 'form-control'}),
+            'voucherType': forms.Select(attrs={'class': 'form-control'}),
             'PO_no': forms.TextInput(attrs={'class': 'form-control'}),
             'PO_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'quote_ref': forms.TextInput(attrs={'class': 'form-control'}),
@@ -1788,7 +1823,11 @@ class POMasterForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # supplier filter by Groups 
-        self.fields['supplier'].queryset = get_ledgers_by_group_names('Sundry Creditors')   
+        self.fields['supplier'].queryset = get_ledgers_by_group_ids(28)  
+
+        # Voucher type filter 
+        filter_voucher_types(self, [27])
+         
 
 
 class PODetailsForm(forms.ModelForm):
@@ -1818,3 +1857,416 @@ PODetailsFormSet = inlineformset_factory(
     extra=1,
     can_delete=True
 )
+
+class RepairMasterForm(forms.ModelForm):
+
+    class Meta:
+        model  = RepairMaster
+        fields = [
+            'voucher_no', 'voucherType', 'date', 'vehicle', 'repair_type',
+            'spareparts_total', 'labourcharge_total', 'subtotal',
+            'discount', 'vat', 'grand_total',
+            'supplier', 'payment_mode', 'description', 'invoice_no', 'invoice_date',
+            'category', 'client', 'current_km', 'next_service_km', 'current_hr', 'next_service_hr', 
+            'cost_center' , 'staff' , 'ref_voucher_no' , 'remark', 'next_service_date',
+        ]
+        widgets = {
+            'voucher_no': forms.TextInput(attrs={
+                'class': 'form-control form-control-sm',
+                'placeholder': 'Auto-generated',
+            }),
+            'voucherType': forms.Select(attrs={
+                'class': 'form-control form-control-sm',
+            }),
+            'date': forms.DateInput(attrs={
+                'class': 'form-control form-control-sm',
+                'type': 'date',
+            }),
+            'vehicle': forms.Select(attrs={
+                'class': 'form-control form-control-sm',
+            }),
+            'repair_type': forms.Select(attrs={
+                'class': 'form-control form-control-sm',
+                'id': 'repairType',
+                'onchange': 'toggleRepairType()',
+            }),
+            'spareparts_total': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001', 'readonly': True,
+                'id': 'sparePartsTotalInput',
+            }),
+            'labourcharge_total': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001', 'readonly': True,
+                'id': 'labourTotalInput',
+            }),
+            'subtotal': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001', 'readonly': True,
+                'id': 'subtotalInput',
+            }),
+            'discount': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001', 'id': 'discountInput',
+                'oninput': 'calcGrandTotal()',
+                'placeholder': '0.000',
+            }),
+            'vat': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001',
+                'id': 'vatInput',
+            }),
+            'grand_total': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001',
+                'id': 'hiddenGrandTotal',
+            }),
+            'supplier': forms.Select(attrs={
+                'class': 'form-control form-control-sm',
+            }),
+            'payment_mode': forms.Select(attrs={
+                'class': 'form-control form-control-sm',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control form-control-sm',
+                'rows': 2,
+                'placeholder': 'Repair notes / description...',
+            }),
+            'invoice_no': forms.TextInput(attrs={
+                'class': 'form-control form-control-sm',
+                'placeholder': 'Invoice Number',
+            }),
+            'invoice_date': forms.DateInput(attrs={
+                'class': 'form-control form-control-sm',
+                'type': 'date',
+            }),
+
+            'category': forms.Select(attrs={
+                'class': 'form-control form-control-sm',
+            }),
+            'client': forms.Select(attrs={
+                'class': 'form-control form-control-sm',
+            }),
+            'current_km': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm',
+                'step': '0.001',
+            }),
+            'next_service_km': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm',
+                'step': '0.001',
+            }),
+            'current_hr': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm',
+                'step': '0.001',
+            }),
+            'next_service_hr': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm',
+                'step': '0.001',
+            }),
+            'cost_center': forms.Select(attrs={
+                'class': 'form-control form-control-sm',
+            }),
+            'staff': forms.Select(attrs={
+                'class': 'form-control form-control-sm',
+            }),
+            'ref_voucher_no': forms.TextInput(attrs={
+                'class': 'form-control form-control-sm',
+                'placeholder': 'Reference Voucher Number',
+            }),
+            'remark': forms.Textarea(attrs={
+                'class': 'form-control form-control-sm',
+                'rows': 1,
+                'placeholder': 'Notes / remark...',
+            }),
+            'next_service_date': forms.DateInput(attrs={
+                'class': 'form-control form-control-sm',
+                'type': 'date',
+            }),
+        }
+
+        
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Supplier — only Sundry Creditors (group ID 21), adjust if needed
+      
+        self.fields['supplier'].queryset = get_ledgers_by_group_ids(28)
+        self.fields['client'].queryset = get_ledgers_by_group_ids(29)
+        
+        self.fields['supplier'].empty_label = '-- Select Supplier --'
+        self.fields['supplier'].required = False
+
+        self.fields['vehicle'].empty_label    = '-- Select Equipment --'
+
+        # Voucher type filter 
+        filter_voucher_types(self, [10])   
+
+        # Not required on form level — view handles conditional validation
+        for field in ['spareparts_total', 'labourcharge_total', 'subtotal',
+                      'discount', 'vat', 'payment_mode', 'description']:
+            self.fields[field].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        repair_type = cleaned.get('repair_type')
+
+        if repair_type == 'Outsourced':
+            if not cleaned.get('supplier'):
+                self.add_error('supplier', 'Supplier is required for Outsourced repairs.')
+            if not cleaned.get('payment_mode'):
+                self.add_error('payment_mode', 'Payment mode is required for Outsourced repairs.')
+            if not cleaned.get('grand_total'):
+                self.add_error('grand_total', 'Grand Total is required for Outsourced repairs.')
+
+        return cleaned
+
+
+class SparePartsForm(forms.ModelForm):
+
+    class Meta:
+        model  = SpareParts
+        fields = ['item_group','sparepart', 'part_no', 'quantity', 'rate', 'amount', 'warranty']
+        widgets = {
+            'item_group': forms.Select(attrs={
+                'class': 'form-control form-control-sm',
+                'id': 'sp_item_group',
+            }),
+            'sparepart': forms.Select(attrs={
+                'class': 'form-control form-control-sm',
+                'id': 'sp_sparepart',
+            }),
+            'part_no': forms.TextInput(attrs={
+                'class': 'form-control form-control-sm',
+                'id': 'sp_part_no',
+                'placeholder': 'Optional',
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001', 'min': '0',
+                'id': 'sp_quantity',
+                'placeholder': '0.000',
+                'oninput': 'calcSpareAmount()',
+            }),
+            'rate': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001', 'min': '0',
+                'id': 'sp_rate',
+                'placeholder': '0.000',
+                'oninput': 'calcSpareAmount()',
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001',
+                'id': 'sp_amount',
+                'placeholder': '0.000',
+                'readonly': True,
+                'style': 'background:#f8f9fa;',
+            }),
+            'warranty': forms.CheckboxInput(attrs={
+                'id': 'sp_warranty',
+                'style': 'width:18px;height:18px;cursor:pointer;',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['sparepart'].queryset    = Item.objects.all()
+        self.fields['item_group'].queryset = ItemGroup.objects.all()
+        
+        self.fields['sparepart'].empty_label = '-- Select Item --'
+        self.fields['item_group'].empty_label = '-- Select Group --'
+        self.fields['part_no'].required  = False
+        self.fields['warranty'].required = False
+
+
+class LabourChargeForm(forms.ModelForm):
+
+    class Meta:
+        model  = LabourCharge
+        fields = ['description', 'hour', 'rate', 'amount']
+        widgets = {
+            'description': forms.TextInput(attrs={
+                'class': 'form-control form-control-sm',
+                'id': 'lc_description',
+                'placeholder': 'e.g. Engine overhaul',
+            }),
+            'hour': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001', 'min': '0',
+                'id': 'lc_hour',
+                'placeholder': '0.000',
+                'oninput': 'calcLabourAmount()',
+            }),
+            'rate': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001', 'min': '0',
+                'id': 'lc_rate',
+                'placeholder': '0.000',
+                'oninput': 'calcLabourAmount()',
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm text-right',
+                'step': '0.001',
+                'id': 'lc_amount',
+                'placeholder': '0.000',
+                'readonly': True,
+                'style': 'background:#f8f9fa;',
+            }),
+        }        
+
+class ReplacementMasterForm(forms.ModelForm):
+    class Meta:
+        model = ReplacementMaster
+        fields = [
+            'voucher_no',
+            'date',
+            'voucherType',
+            'delivery_contract',
+            'customer',
+            'replacement_date_time',
+            'remarks',
+            'delivery_person',
+        ]
+        widgets = {
+            'voucher_no': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Auto-generated',
+            }),
+            'date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+            }),
+            'voucherType': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'delivery_contract': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'customer': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'replacement_date_time': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            }),
+            'remarks': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Optional remarks...',
+            }),
+            'delivery_person': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter delivery person name',
+            }),
+        }        
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)      
+        self.fields['customer'].queryset = get_ledgers_by_group_ids(29)
+
+        # Voucher type filter 
+        filter_voucher_types(self, [28])       
+
+
+class ReturnSparePartsMasterForm(forms.ModelForm):
+    class Meta:
+        model = ReturnSparePartsMaster
+        fields = ['voucher_no', 'date', 'voucherType', 'ledger',]
+        widgets = {
+            'voucher_no': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'voucherType': forms.Select(attrs={'class': 'form-control', 'id': 'id_voucherType'}),
+            'ledger': forms.Select(attrs={'class': 'form-control', 'id': 'id_ledger'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)            
+        # Voucher type filter 
+        filter_voucher_types(self, [31])      
+
+
+class ReturnSparePartsDetailsForm(forms.ModelForm):
+    class Meta:
+        model = ReturnSparePartsDetails
+        fields = ['item_group', 'sparepart', 'part_no', 'quantity', 'rate', 'amount', 'condition']
+        widgets = {
+            'item_group': forms.Select(attrs={'class': 'form-control'}),
+            'sparepart': forms.Select(attrs={'class': 'form-control'}),
+            'part_no': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Part No'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001'}),
+            'rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001', 'readonly': 'readonly'}),
+            'condition': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+# rows against one ReturnSparePartsMaster the standard Django way.
+ReturnSparePartsDetailsFormSet = inlineformset_factory(
+    ReturnSparePartsMaster,
+    ReturnSparePartsDetails,
+    form=ReturnSparePartsDetailsForm,
+    fields=['item_group', 'sparepart', 'part_no', 'quantity', 'rate', 'amount', 'condition'],
+    extra=1,
+    can_delete=True,
+)
+
+class ServiceDepartmentForm(forms.ModelForm):
+
+    class Meta:
+        model = ServiceDepartment
+
+        fields = [
+            'vehicle',
+            'offhire_date',
+            'customer',
+            'status',
+            'staff',
+        ]
+
+        labels = {
+            'vehicle': 'Equipment',
+            'customer': 'Customer',
+            'staff': 'Staff',
+            'status': 'Status',
+        }
+
+        widgets = {
+            'vehicle': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+
+            'offhire': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+
+            'offhire_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+            }),
+
+            'customer': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+
+            'status': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+
+            'staff': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Only vehicles in 'Service' status ('3').
+        # On edit, also keep the job's own vehicle (it may be Free after Move To Yard).
+        vehicle_filter = Q(status='3')
+        if self.instance and self.instance.pk:
+            vehicle_filter |= Q(pk=self.instance.vehicle_id)
+        self.fields['vehicle'].queryset = Vehicle.objects.filter(vehicle_filter).order_by('vehicle_name')
+
+        self.fields['vehicle'].empty_label = 'Select Equipment'
+        self.fields['customer'].empty_label = 'Select Customer'
+        self.fields['staff'].empty_label = 'Select Staff'

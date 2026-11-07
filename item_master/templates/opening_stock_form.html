@@ -1,0 +1,931 @@
+{% extends 'fleet_base1.html' %}
+{% load i18n %}
+{% block content %}
+
+<style>
+    :root {
+        --primary-color: #b01033;
+        --secondary-color: #f5f5f5;
+        --border-color: #ddd;
+        --text-color: #333;
+        --error-color: #dc3545;
+        --success-color: #28a745;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .main-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+    h2 { color: var(--text-color); margin-bottom: 2rem; }
+
+    .panel {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .panel-header {
+        background: var(--secondary-color);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .panel-header h4 { margin: 0; color: var(--text-color); }
+
+    .panel-body { padding: 1.5rem; }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-group { margin-bottom: 1rem; }
+
+    label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+    }
+
+    .error-feedback { color: var(--error-color); font-size: 0.875rem; margin-top: 0.25rem; }
+
+    .table-container { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+
+    th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+
+    th { background-color: var(--secondary-color); font-weight: 600; }
+
+    .button {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .button-primary { background-color: var(--primary-color); color: white; }
+    .button-success { background-color: var(--success-color); color: white; }
+    .button-danger  { background-color: var(--error-color); color: white; }
+    .button:hover   { opacity: 0.9; }
+
+    .button-container { text-align: right; margin-top: 2rem; }
+
+    .form-grid-v {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 5px;
+    }
+
+    .form-group-v       { display: flex; flex-direction: column; }
+    .small-field-v  input,
+    .small-field-v  select { width: 100px; padding: 8px; }
+    .medium-field-v input,
+    .medium-field-v select { width: 150px; padding: 8px; }
+
+    .form-group-remark.large-field-v { display: flex; flex-direction: column; }
+    .form-group-remark textarea { width: 200px; height: 100px; padding: 8px; resize: none; }
+
+    .form-grid-item  { display: flex; flex-wrap: wrap; gap: 15px; }
+    .form-group-item { display: flex; flex-direction: column; }
+    .small-field     { flex: 1 1 10%; }
+    .medium-field    { flex: 1 1 20%; }
+
+    .formset-item { border: 1px solid #ddd; margin-bottom: 10px; padding: 15px; border-radius: 5px; background: #f9f9f9; }
+    .formset-item.to-delete { background: #ffebee; border-color: #f44336; }
+
+    .formset-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        font-weight: bold;
+        background: #e3f2fd;
+        padding: 10px;
+        border-radius: 4px;
+    }
+</style>
+
+<!-- ===== HEADER ===== -->
+<div class="main-container d-flex justify-content-between align-items-center mb-3">
+    <h2 class="m-0">{% if is_edit %}Edit{% else %}Create{% endif %} Opening Stock Voucher</h2>
+    <a href="{% url 'item_master:opening_stock_list' %}" class="btn btn-primary">View Report</a>
+</div>
+
+{% if messages %}
+<div class="messages mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<form id="openingStockForm" method="POST">
+    {% csrf_token %}
+
+    <!-- ===== VOUCHER MASTER DETAILS ===== -->
+    <div class="panel">
+        <div class="panel-header"><h4>Opening Stock Details</h4></div>
+        <div class="panel-body">
+            <div class="form-grid-v">
+
+                <div class="form-group-v small-field-v">
+                    <label>{{ voucher_form.voucher_no.label }}</label>
+                    {{ voucher_form.voucher_no }}
+                    {% if voucher_form.voucher_no.errors %}<div class="error-feedback">{{ voucher_form.voucher_no.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-group-v small-field-v">
+                    <label>{{ voucher_form.transaction_date.label }}</label>
+                    {{ voucher_form.transaction_date }}
+                    {% if voucher_form.transaction_date.errors %}<div class="error-feedback">{{ voucher_form.transaction_date.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-group-v medium-field-v">
+                    <label>{{ voucher_form.cost_center.label }}</label>
+                    {{ voucher_form.cost_center }}
+                    {% if voucher_form.cost_center.errors %}<div class="error-feedback">{{ voucher_form.cost_center.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-group medium-field" style="display:none;">
+                    <label>{{ voucher_form.voucherType.label }}</label>
+                    {{ voucher_form.voucherType }}
+                </div>
+
+                <div class="form-group-remark large-field-v">
+                    <label>{{ voucher_form.remarks.label }}</label>
+                    {{ voucher_form.remarks }}
+                    {% if voucher_form.remarks.errors %}<div class="error-feedback">{{ voucher_form.remarks.errors }}</div>{% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ITEMS — EDIT MODE (formset) ===== -->
+    {% if is_edit %}
+    <div class="panel">
+        <div class="panel-header"><h4>Opening Stock Items</h4></div>
+        <div class="panel-body">
+            {% if item_formset %}
+                {{ item_formset.management_form }}
+
+                {% for form in item_formset %}
+                <div class="formset-item" data-form-index="{{ forloop.counter0 }}">
+                    <div class="formset-header">
+                        <span>Item #{{ forloop.counter }}</span>
+                        {% if form.instance.pk %}
+                        <label>{{ form.DELETE }} Delete this item</label>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-grid-item">
+                        {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+
+                        <div class="form-group-item medium-field">
+                            <label>{{ form.item_group.label }}</label>{{ form.item_group }}
+                            {% if form.item_group.errors %}<div class="error-feedback">{{ form.item_group.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="form-group-item medium-field">
+                            <label>{{ form.item_name.label }}</label>{{ form.item_name }}
+                            {% if form.item_name.errors %}<div class="error-feedback">{{ form.item_name.errors }}</div>{% endif %}
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ form.item_code.label }}</label>{{ form.item_code }}
+                            {% if form.item_code.errors %}<div class="error-feedback">{{ form.item_code.errors }}</div>{% endif %}
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ form.barcode_code.label }}</label>{{ form.barcode_code }}
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ form.unit.label }}</label>{{ form.unit }}
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ form.quantity.label }}</label>{{ form.quantity }}
+                            {% if form.quantity.errors %}<div class="error-feedback">{{ form.quantity.errors }}</div>{% endif %}
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ form.purchase_rate.label }}</label>{{ form.purchase_rate }}
+                            {% if form.purchase_rate.errors %}<div class="error-feedback">{{ form.purchase_rate.errors }}</div>{% endif %}
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ form.item_net_amount.label }}</label>{{ form.item_net_amount }}
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ form.tax.label }}</label>{{ form.tax }}
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ form.item_tax_amount.label }}</label>{{ form.item_tax_amount }}
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ form.SerialNo.label }}</label>{{ form.SerialNo }}
+                        </div>
+                        <div class="form-group-item small-field">
+                            <label>{{ form.Cost.label }}</label>{{ form.Cost }}
+                        </div>
+                        <div class="form-group-item medium-field">
+                            <label>{{ form.item_total_amount.label }}</label>{{ form.item_total_amount }}
+                        </div>
+                    </div>
+
+                    {% if form.non_field_errors %}<div class="error-feedback">{{ form.non_field_errors }}</div>{% endif %}
+                </div>
+                {% endfor %}
+
+                {% if item_formset.non_form_errors %}
+                <div class="error-feedback">{{ item_formset.non_form_errors }}</div>
+                {% endif %}
+            {% endif %}
+
+            <div class="button-container">
+                <button type="button" class="button button-primary" id="addFormsetItemBtn">Add New Item</button>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ===== ITEMS — CREATE MODE (JS table) ===== -->
+    <div class="panel">
+        <div class="panel-header"><h4>Add Items</h4></div>
+        <div class="panel-body">
+            <input type="hidden" name="items_data" id="itemsData">
+
+            <div id="itemEntryForm">
+                <div class="form-grid-item">
+
+                    <div class="form-group-item medium-field">
+                        <label>{{ item_form.item_group.label }}</label>
+                        {{ item_form.item_group }}
+                    </div>
+                    
+                    <div class="form-group-item medium-field">
+                        <label>{{ item_form.item_name.label }}</label>
+                        {{ item_form.item_name }}
+                        <a href="{% url 'item_master:item_create_update' %}" class="btn btn-sm btn-outline-primary mt-1">+ Add Item</a>
+                    </div>
+                    <div class="form-group-item small-field">
+                        <label>{{ item_form.item_code.label }}</label>
+                        {{ item_form.item_code }}<div class="error-feedback"></div>
+                    </div>
+                    <div class="form-group-item small-field">
+                        <label>{{ item_form.barcode_code.label }}</label>
+                        {{ item_form.barcode_code }}<div class="error-feedback"></div>
+                    </div>
+                    <div class="form-group-item small-field">
+                        <label>{{ item_form.unit.label }}</label>
+                        {{ item_form.unit }}<div class="error-feedback"></div>
+                    </div>
+                    <div class="form-group-item small-field">
+                        <label>{{ item_form.quantity.label }}</label>
+                        {{ item_form.quantity }}<div class="error-feedback"></div>
+                        <small id="stockInfo" class="form-text text-muted" style="font-size:12px;"></small>
+                    </div>
+                    <div class="form-group-item small-field">
+                        <label>{{ item_form.purchase_rate.label }}</label>
+                        {{ item_form.purchase_rate }}<div class="error-feedback"></div>
+                    </div>
+                    <div class="form-group-item small-field">
+                        <label>{{ item_form.item_net_amount.label }}</label>
+                        {{ item_form.item_net_amount }}<div class="error-feedback"></div>
+                    </div>
+                    <div class="form-group-item small-field">
+                        <label>{{ item_form.tax.label }}</label>
+                        {{ item_form.tax }}<div class="error-feedback"></div>
+                    </div>
+                    <div class="form-group-item small-field">
+                        <label>{{ item_form.item_tax_amount.label }}</label>
+                        {{ item_form.item_tax_amount }}<div class="error-feedback"></div>
+                    </div>
+                    <div class="form-group-item small-field">
+                        <label>{{ item_form.SerialNo.label }}</label>
+                        {{ item_form.SerialNo }}<div class="error-feedback"></div>
+                    </div>
+                    <div class="form-group-item small-field">
+                        <label>{{ item_form.Cost.label }}</label>
+                        {{ item_form.Cost }}<div class="error-feedback"></div>
+                    </div>
+                    <div class="form-group-item medium-field">
+                        <label>{{ item_form.item_total_amount.label }}</label>
+                        {{ item_form.item_total_amount }}<div class="error-feedback"></div>
+                    </div>
+                </div>
+                <div class="button-container">
+                    <button type="button" class="button button-primary" id="addItemBtn">Add Item</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><h4>Added Items</h4></div>
+        <div class="panel-body">
+            <div class="table-container">
+                <table id="itemsTable">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Code</th>
+                            <th>Qty</th>
+                            <th>Rate</th>
+                            <th>Net Amount</th>
+                            <th>Tax %</th>
+                            <th>Tax Amt</th>
+                            <th>Unit</th>
+                            <th>Serial No</th>
+                            <th>Cost</th>
+                            <th>Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ===== TOTALS ===== -->
+    <div class="panel">
+        <div class="panel-header"><h4>Totals</h4></div>
+        <div class="panel-body">
+            <div class="form-grid">
+                <div class="form-group medium-field">
+                    <label>{{ voucher_form.total_net_value.label }}</label>
+                    {{ voucher_form.total_net_value }}
+                </div>
+                <div class="form-group medium-field">
+                    <label>{{ voucher_form.total_tax_amount.label }}</label>
+                    {{ voucher_form.total_tax_amount }}
+                </div>
+                <div class="form-group medium-field">
+                    <label>{{ voucher_form.grand_total_amount.label }}</label>
+                    {{ voucher_form.grand_total_amount }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <button type="submit" class="button button-success" id="saveVoucherBtn">
+            {% if is_edit %}Update{% else %}Save{% endif %} Voucher
+        </button>
+    </div>
+</form>
+
+<script>
+let _purchaseItems   = [];
+let _itemCounter     = 0;
+
+const isEditMode = {{ is_edit|yesno:"true,false" }};
+
+document.addEventListener("DOMContentLoaded", function () {
+    if (isEditMode) {
+        initEditMode();
+    } else {
+        initCreateMode();
+    }
+
+    initItemDetailsRetrieval();
+    initAlterUnits();
+    initStockFetch();
+    initItemGroupDropdown();
+});
+
+// ══════════════════════════════════════════════════════════════════
+// EDIT MODE
+// ══════════════════════════════════════════════════════════════════
+
+function initEditMode() {
+    document.querySelectorAll('.formset-item').forEach(item => {
+        setupFormsetItemCalc(item);
+        const del = item.querySelector('input[name$="-DELETE"]');
+        if (del) del.addEventListener('change', function () {
+            item.classList.toggle('to-delete', this.checked);
+            calculateVoucherTotals();
+        });
+    });
+
+    document.getElementById('addFormsetItemBtn')
+        ?.addEventListener('click', addNewFormsetItem);
+
+    calculateVoucherTotals();
+}
+
+function setupFormsetItemCalc(item) {
+    const q  = item.querySelector('input[name$="-quantity"]');
+    const pr = item.querySelector('input[name$="-purchase_rate"]');
+    const tx = item.querySelector('input[name$="-tax"]');
+
+    [q, pr, tx].forEach(f => f?.addEventListener('input', () => calcItemAmounts(item)));
+}
+
+function calcItemAmounts(item) {
+    const qty       = parseFloat(item.querySelector('input[name$="-quantity"]')?.value)       || 0;
+    const rate      = parseFloat(item.querySelector('input[name$="-purchase_rate"]')?.value)  || 0;
+    const tax       = parseFloat(item.querySelector('input[name$="-tax"]')?.value)             || 0;
+    const netF      = item.querySelector('input[name$="-item_net_amount"]');
+    const taxAmtF   = item.querySelector('input[name$="-item_tax_amount"]');
+    const totalF    = item.querySelector('input[name$="-item_total_amount"]');
+
+    const net    = qty * rate;
+    const taxAmt = net * tax / 100;
+
+    if (netF)    netF.value    = net.toFixed(3);
+    if (taxAmtF) taxAmtF.value = taxAmt.toFixed(3);
+    if (totalF)  totalF.value  = (net + taxAmt).toFixed(3);
+
+    calculateVoucherTotals();
+}
+
+function calculateVoucherTotals() {
+    let totalNet = 0, totalTax = 0, grandTotal = 0;
+
+    document.querySelectorAll('.formset-item').forEach(item => {
+        const del = item.querySelector('input[name$="-DELETE"]');
+        if (del?.checked) return;
+
+        totalNet   += parseFloat(item.querySelector('input[name$="-item_net_amount"]')?.value)   || 0;
+        totalTax   += parseFloat(item.querySelector('input[name$="-item_tax_amount"]')?.value)   || 0;
+        grandTotal += parseFloat(item.querySelector('input[name$="-item_total_amount"]')?.value) || 0;
+    });
+
+    setVal('id_total_net_value',   totalNet.toFixed(3));
+    setVal('id_total_tax_amount',  totalTax.toFixed(3));
+    setVal('id_grand_total_amount', grandTotal.toFixed(3));
+}
+
+function addNewFormsetItem() {
+    const totalInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    if (!totalInput) return;
+
+    const idx = parseInt(totalInput.value);
+    const wrap = document.createElement('div');
+    wrap.innerHTML = createFormsetItemHtml(idx);
+
+    const addBtn = document.getElementById('addFormsetItemBtn');
+    addBtn.parentElement.insertBefore(wrap.firstElementChild, addBtn.parentElement.lastElementChild);
+
+    totalInput.value = idx + 1;
+
+    const newItem = document.querySelector(`[data-form-index="${idx}"]`);
+    if (newItem) {
+        setupFormsetItemCalc(newItem);
+        const del = newItem.querySelector('input[name$="-DELETE"]');
+        if (del) del.addEventListener('change', function () {
+            newItem.classList.toggle('to-delete', this.checked);
+            calculateVoucherTotals();
+        });
+    }
+}
+
+function createFormsetItemHtml(index) {
+    return `
+        <div class="formset-item" data-form-index="${index}">
+            <div class="formset-header">
+                <span>Item #${index + 1}</span>
+                <label><input type="checkbox" name="form-${index}-DELETE" id="id_form-${index}-DELETE"> Delete</label>
+            </div>
+            <div class="form-grid-item">
+                <input type="hidden" name="form-${index}-id" id="id_form-${index}-id">
+                <div class="form-group-item medium-field">
+                    <label>Item Name</label>
+                    <select name="form-${index}-item_name" class="form-control">
+                        <option value="">---------</option>
+                        {% for item in items %}<option value="{{ item.id }}">{{ item.item_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group-item small-field"><label>Code</label>
+                    <input type="text" name="form-${index}-item_code" class="form-control"></div>
+                <div class="form-group-item small-field"><label>Barcode</label>
+                    <input type="text" name="form-${index}-barcode_code" class="form-control"></div>
+                <div class="form-group-item small-field"><label>Unit</label>
+                    <select name="form-${index}-unit" class="form-control"><option value="">---------</option></select>
+                </div>
+                <div class="form-group-item small-field"><label>Qty</label>
+                    <input type="number" name="form-${index}-quantity" class="form-control" min="1"></div>
+                <div class="form-group-item small-field"><label>Purchase Rate</label>
+                    <input type="number" step="0.001" name="form-${index}-purchase_rate" class="form-control"></div>
+                <div class="form-group-item small-field"><label>Net Amount</label>
+                    <input type="number" step="0.001" name="form-${index}-item_net_amount" class="form-control" readonly></div>
+                <div class="form-group-item small-field"><label>Tax %</label>
+                    <input type="number" step="0.001" name="form-${index}-tax" class="form-control"></div>
+                <div class="form-group-item small-field"><label>Tax Amt</label>
+                    <input type="number" step="0.001" name="form-${index}-item_tax_amount" class="form-control" readonly></div>
+                <div class="form-group-item small-field"><label>Serial No</label>
+                    <input type="text" name="form-${index}-SerialNo" class="form-control"></div>
+                <div class="form-group-item small-field"><label>Cost</label>
+                    <input type="number" step="0.001" name="form-${index}-Cost" class="form-control"></div>
+                <div class="form-group-item medium-field"><label>Total</label>
+                    <input type="number" step="0.001" name="form-${index}-item_total_amount" class="form-control" readonly></div>
+            </div>
+        </div>`;
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// CREATE MODE
+// ══════════════════════════════════════════════════════════════════
+
+function initCreateMode() {
+    const form          = document.getElementById("openingStockForm");
+    const addItemBtn    = document.getElementById("addItemBtn");
+    const itemsDataInput= document.getElementById("itemsData");
+
+    const F = id => document.getElementById(id);
+    const itemNameF     = F("id_item_name");
+    const itemCodeF     = F("id_item_code");
+    const barcodeF      = F("id_barcode_code");
+    const unitF         = F("id_unit");
+    const qtyF          = F("id_quantity");
+    const rateF         = F("id_purchase_rate");
+    const netF          = F("id_item_net_amount");
+    const taxF          = F("id_tax");
+    const taxAmtF       = F("id_item_tax_amount");
+    const serialNoF     = F("id_SerialNo");
+    const costF         = F("id_Cost");
+    const totalF        = F("id_item_total_amount");
+
+    function calcNet() {
+        const net = (parseFloat(qtyF.value) || 0) * (parseFloat(rateF.value) || 0);
+        netF.value = net.toFixed(3);
+        calcTax();
+    }
+
+    function calcTax() {
+        const taxAmt = (parseFloat(netF.value) || 0) * (parseFloat(taxF.value) || 0) / 100;
+        taxAmtF.value = taxAmt.toFixed(3);
+        calcTotal();
+    }
+
+    function calcTotal() {
+        totalF.value = ((parseFloat(netF.value) || 0) + (parseFloat(taxAmtF.value) || 0)).toFixed(3);
+    }
+
+    [qtyF, rateF].forEach(f => f?.addEventListener("input", calcNet));
+    taxF?.addEventListener("input", calcTax);
+
+    addItemBtn?.addEventListener("click", function () {
+        if (!itemNameF.value) { showError(itemNameF, "Please select an item"); return; }
+        if (!(parseInt(qtyF.value) > 0))   { showError(qtyF, "Enter a valid quantity"); return; }
+        if (!(parseFloat(rateF.value) > 0)) { showError(rateF, "Enter a valid purchase rate"); return; }
+
+        const item = buildItemObj();
+        _purchaseItems.push(item);
+        _addRowToTable(item);
+        updateCreateModeTotals();
+        resetItemFields();
+        showSuccessMessage("Item added successfully!");
+    });
+
+    function buildItemObj() {
+        return {
+            id:               'new_' + _itemCounter++,
+            item_name_id:     itemNameF.value,
+            item_name_text:   itemNameF.options[itemNameF.selectedIndex].text,
+            item_code:        itemCodeF.value,
+            barcode_code:     barcodeF.value,
+            unit_id:          unitF.value,
+            unit_text:        unitF.options[unitF.selectedIndex]?.text || '',
+            quantity:         parseInt(qtyF.value)          || 0,
+            purchase_rate:    parseFloat(rateF.value)       || 0,
+            item_net_amount:  parseFloat(netF.value)        || 0,
+            tax:              parseFloat(taxF.value)        || 0,
+            item_tax_amount:  parseFloat(taxAmtF.value)     || 0,
+            SerialNo:         serialNoF.value,
+            Cost:             parseFloat(costF.value)       || 0,
+            item_total_amount:parseFloat(totalF.value)      || 0,
+        };
+    }
+
+    function resetItemFields() {
+        [itemNameF,itemCodeF,barcodeF,unitF,qtyF,rateF,
+         netF,taxF,taxAmtF,serialNoF,costF,totalF].forEach(f => { if(f) f.value=''; });
+        clearAllErrorMessages();
+        itemNameF?.focus();
+    }
+
+    form?.addEventListener("submit", function (e) {
+        const rows = document.querySelectorAll("#itemsTable tbody tr");
+        if (rows.length === 0) {
+            e.preventDefault();
+            alert("Please add at least one item.");
+            return;
+        }
+        if (_purchaseItems.length > 0) {
+            itemsDataInput.value = JSON.stringify(_purchaseItems);
+        }
+    });
+}
+
+function _addRowToTable(item) {
+    const tbody = document.querySelector('#itemsTable tbody');
+    const row   = document.createElement('tr');
+    row.setAttribute('data-id', item.id);
+    row.innerHTML = `
+        <td>${item.item_name_text}</td>
+        <td>${item.item_code}</td>
+        <td>${item.quantity}</td>
+        <td>${item.purchase_rate.toFixed(3)}</td>
+        <td>${item.item_net_amount.toFixed(3)}</td>
+        <td>${item.tax.toFixed(3)}%</td>
+        <td>${item.item_tax_amount.toFixed(3)}</td>
+        <td>${item.unit_text}</td>
+        <td>${item.SerialNo}</td>
+        <td>${item.Cost.toFixed(3)}</td>
+        <td>${item.item_total_amount.toFixed(3)}</td>
+        <td>
+            <button type="button" class="button button-danger  remove-item" data-id="${item.id}">Remove</button>
+            <button type="button" class="button button-primary edit-item"   data-id="${item.id}">Edit</button>
+        </td>`;
+    tbody.appendChild(row);
+
+    row.querySelector('.remove-item').addEventListener('click', function () {
+        _purchaseItems = _purchaseItems.filter(i => i.id !== this.getAttribute('data-id'));
+        row.remove();
+        updateCreateModeTotals();
+    });
+
+    row.querySelector('.edit-item').addEventListener('click', function () {
+        const id   = this.getAttribute('data-id');
+        const item = _purchaseItems.find(i => i.id === id);
+        if (!item) return;
+
+        const F = k => document.getElementById(k);
+        F('id_item_name').value      = item.item_name_id;
+        F('id_item_code').value      = item.item_code;
+        F('id_barcode_code').value   = item.barcode_code;
+        F('id_unit').value           = item.unit_id;
+        F('id_quantity').value       = item.quantity;
+        F('id_purchase_rate').value  = item.purchase_rate;
+        F('id_item_net_amount').value= item.item_net_amount;
+        F('id_tax').value            = item.tax;
+        F('id_item_tax_amount').value= item.item_tax_amount;
+        F('id_SerialNo').value       = item.SerialNo;
+        F('id_Cost').value           = item.Cost;
+        F('id_item_total_amount').value = item.item_total_amount;
+
+        _purchaseItems = _purchaseItems.filter(i => i.id !== id);
+        row.remove();
+        updateCreateModeTotals();
+    });
+}
+
+function updateCreateModeTotals() {
+    let totalNet = 0, totalTax = 0, grand = 0;
+    _purchaseItems.forEach(i => {
+        totalNet += i.item_net_amount;
+        totalTax += i.item_tax_amount;
+        grand    += i.item_total_amount;
+    });
+
+    setVal('id_total_net_value',   totalNet.toFixed(3));
+    setVal('id_total_tax_amount',  totalTax.toFixed(3));
+    setVal('id_grand_total_amount', grand.toFixed(3));
+}
+
+function setVal(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ITEM DETAIL AUTO-FILL
+// ══════════════════════════════════════════════════════════════════
+
+function initItemDetailsRetrieval() {
+    document.querySelectorAll('[name="item_name"],[name$="-item_name"]').forEach(sel => {
+        sel.addEventListener('change', function () {
+            const id = this.value;
+            if (!id) { clearItemFields(this); return; }
+
+            fetch(`/get-item-details/?item_id=${id}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') fillItemFields(data, this);
+            });
+        });
+    });
+}
+
+function fillItemFields(data, sel) {
+    const c = sel.closest('.form-grid-item, .formset-item');
+    if (!c) return;
+
+    setField(c, 'item_code',    data.item_code    || '');
+    setField(c, 'barcode_code', data.barcode_code || '');
+    setField(c, 'tax',          data.TAX_percent  || 0);
+    setField(c, 'unit',         data.item_unit_id || '');
+
+    const rateField = c.querySelector('[name$="purchase_rate"]');
+    if (rateField && (!isEditMode || !rateField.value)) {
+        rateField.value = data.purchase_rate || 0;
+    }
+}
+
+function clearItemFields(sel) {
+    const c = sel.closest('.form-grid-item, .formset-item');
+    if (!c) return;
+    ['item_code','barcode_code','tax','unit','purchase_rate',
+     'quantity','item_net_amount','item_tax_amount','item_total_amount'
+    ].forEach(n => setField(c, n, ''));
+}
+
+function setField(container, name, value) {
+    const el = container.querySelector(`[name$="${name}"]`);
+    if (el) el.value = value;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ALTER UNITS  (create mode)
+// ══════════════════════════════════════════════════════════════════
+
+function initAlterUnits() {
+    const itemSel   = document.getElementById('id_item_name');
+    const unitSel   = document.getElementById('id_unit');
+    const barcodeI  = document.getElementById('id_barcode_code');
+    const rateI     = document.getElementById('id_purchase_rate');
+    if (!itemSel || !unitSel) return;
+
+    let unitData = {};
+
+    itemSel.addEventListener('change', function () {
+        const id = this.value;
+        if (!id) return;
+        fetch(`/api/item-alter-units/${id}/`)
+            .then(r => r.json())
+            .then(data => {
+                unitData = {};
+                unitSel.innerHTML = '';
+                data.units.forEach(u => {
+                    unitData[u.unit_id] = u;
+                    const o = document.createElement('option');
+                    o.value = u.unit_id; o.textContent = u.unit_code;
+                    unitSel.appendChild(o);
+                });
+                unitSel.dispatchEvent(new Event('change'));
+            });
+    });
+
+    unitSel.addEventListener('change', function () {
+        const u = unitData[this.value];
+        if (!u) return;
+        if (barcodeI) barcodeI.value = u.barcode_code;
+        if (rateI)    rateI.value    = u.purchase_rate;
+    });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STOCK FETCH  (create mode)
+// ══════════════════════════════════════════════════════════════════
+
+function initStockFetch() {
+    const stockInfo = document.getElementById('stockInfo');
+    if (!stockInfo) return;
+
+    function fetch_stock() {
+        const item = document.getElementById('id_item_name')?.value;
+        const unit = document.getElementById('id_unit')?.value;
+        const cc   = document.getElementById('id_cost_center')?.value;
+        if (!item || !unit || !cc) { stockInfo.textContent = ''; return; }
+
+        fetch(`/ajax/get-stock-quantity/?item_id=${item}&unit_id=${unit}&cost_center_id=${cc}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.stock_quantity !== null) {
+                    stockInfo.textContent = `Available Stock: ${data.stock_quantity}`;
+                    stockInfo.style.color = data.stock_quantity <= 0 ? 'red' : 'green';
+                } else {
+                    stockInfo.textContent = 'Stock not found';
+                    stockInfo.style.color = 'gray';
+                }
+            });
+    }
+
+    ['id_item_name','id_unit','id_cost_center'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', fetch_stock);
+    });
+    fetch_stock();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// AUTO VOUCHER NUMBER
+// ══════════════════════════════════════════════════════════════════
+
+{% if not is_edit %}
+function updateVoucherNumber() {
+    const sel   = document.getElementById('id_voucherType');
+    const input = document.getElementById('id_voucher_no');
+    if (!sel?.value || !input) { if (input) input.value = ''; return; }
+
+    input.value = "{% trans 'Loading...' %}";
+    fetch('/get-voucher-number-fleet/?voucher_type_id=' + sel.value)
+        .then(r => r.json())
+        .then(d => { input.value = d.success ? d.voucher_number : "{% trans 'Error' %}"; })
+        .catch(() => { input.value = "{% trans 'Error' %}"; });
+}
+
+window.addEventListener('DOMContentLoaded', function () {
+    const vs = document.getElementById('id_voucherType');
+    vs?.addEventListener('change', updateVoucherNumber);
+    updateVoucherNumber();
+});
+{% endif %}
+
+// ══════════════════════════════════════════════════════════════════
+// SHARED UTILITIES
+// ══════════════════════════════════════════════════════════════════
+
+function showError(field, msg) {
+    const div = field.nextElementSibling;
+    if (div?.classList.contains('error-feedback')) {
+        div.textContent = msg; div.style.display = 'block'; div.style.color = 'red';
+        setTimeout(() => { div.textContent = ''; div.style.display = 'none'; }, 3000);
+    }
+}
+
+function showSuccessMessage(msg) {
+    let div = document.getElementById('success-message');
+    if (!div) {
+        div = document.createElement('div');
+        div.id = 'success-message';
+        div.style.cssText = 'position:fixed;top:20px;right:20px;background:#28a745;color:#fff;' +
+                            'padding:10px 20px;border-radius:5px;z-index:1000;box-shadow:0 2px 5px rgba(0,0,0,.2);';
+        document.body.appendChild(div);
+    }
+    div.textContent = msg; div.style.display = 'block';
+    setTimeout(() => { div.style.display = 'none'; }, 2000);
+}
+
+function clearAllErrorMessages() {
+    document.querySelectorAll('#itemEntryForm .error-feedback').forEach(d => {
+        d.textContent = ''; d.style.display = 'none';
+    });
+}
+
+function initItemGroupDropdown() {
+
+    document.addEventListener("change", function(e){
+
+        if (
+            e.target.name === "item_group" ||
+            e.target.name.endsWith("-item_group")
+        ){
+
+            const groupSelect = e.target;
+            const container = groupSelect.closest(".form-grid-item, .formset-item");
+
+            if(!container) return;
+
+            const itemSelect = container.querySelector('[name$="item_name"]');
+
+            if(!itemSelect) return;
+
+            itemSelect.innerHTML =
+                '<option value="">---------</option>';
+
+            if(groupSelect.value === "")
+                return;
+
+            fetch(`/ajax/get-items-by-group/?group_id=${groupSelect.value}`)
+            .then(response => response.json())
+            .then(data => {
+
+                data.items.forEach(function(item){
+
+                    const option = document.createElement("option");
+
+                    option.value = item.id;
+                    option.text = item.item_name;
+
+                    itemSelect.appendChild(option);
+
+                });
+
+            });
+
+        }
+
+    });
+
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

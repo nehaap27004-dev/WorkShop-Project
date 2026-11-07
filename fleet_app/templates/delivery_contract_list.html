@@ -65,16 +65,23 @@
     <div class="card">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+
+                <!-- Search -->
+                <div style="margin-bottom:15px;">
+                    <input type="text" id="deliveryContractSearch" 
+                        placeholder="Search Voucher No or Customer..."
+                        style="width:100%; padding:8px; border:1px solid #ccc; border-radius:5px;">
+                </div>
+                <table class="table table-hover align-middle mb-0" id="deliveryContractTable">
                     <thead>
                         <tr>
                             <th style="width: 3%">#</th>
                             <th style="width: 10%">{% trans "Voucher No" %}</th>
                             <th style="width: 10%">{% trans "Date" %}</th>
                             <th style="width: 15%">{% trans "Customer" %}</th>
-                            <th style="width: 8%">{% trans "Type" %}</th>
                             <th style="width: 10%" class="text-end">{% trans "Total (OMR)" %}</th>
-                            <th style="width: 8%">{% trans "Startus" %}</th>
+                            <th style="width: 10%" class="text-center">{% trans "Location" %}</th>
+                            <!-- <th style="width: 8%">{% trans "Status" %}</th> -->
                             <th style="width: 10%" class="text-center">{% trans "Actions" %}</th>
                         </tr>
                     </thead>
@@ -97,17 +104,16 @@
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
-                                <td>
-                                    <span class="badge bg-info">
-                                        {{ contract.get_invoice_type_display }}
-                                    </span>
-                                </td>
+                               
                                 <td class="text-end">
                                     <strong>{{ contract.grand_total|floatformat:3 }}</strong>
                                 </td>
-                                <td>
-                                    {{ contract.IsCleared }}
+                                <td class="text-end">
+                                    <strong>{{ contract.location }}</strong>
                                 </td>
+                                <!-- <td>
+                                    {{ contract.IsCleared }}
+                                </td> -->
                                 <td class="text-center action-buttons">
                                     {% has_priv request.user 13 "can_edit" as can_edit %}
                                     {% has_priv request.user 13 "can_delete" as can_delete %}
@@ -231,6 +237,29 @@ function deleteContract(contractId, voucherNo) {
         alert('{% trans "Error deleting contract" %}');
     });
 }
+</script>
+
+<!-- search -->   
+<script>
+document.getElementById("deliveryContractSearch").addEventListener("keyup", function () {
+
+    let filter = this.value.toLowerCase();
+    let rows     = document.querySelectorAll("#deliveryContractTable tbody tr");
+
+    rows.forEach(function(row) {
+
+        if (row.children.length <= 1) return;
+
+        let voucher   = row.cells[1].textContent.toLowerCase();   // col 1 = Voucher No
+        let customer  = row.cells[3].textContent.toLowerCase();   // col 3 = Customer
+
+        if (voucher.includes(filter) || customer.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+});
 </script>
 
 {% endblock %}

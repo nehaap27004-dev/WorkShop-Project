@@ -1,0 +1,135 @@
+{% extends "fleet_base1.html" %}
+{% load privilege_tags %}
+{% block content %}
+
+<div class="container mt-4">
+    <h3 class="mb-4">Debit Note List</h3>
+
+    <div class="mb-3">
+        <a href="{% url 'accounts_app:create_debitnote' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create New Debit Note
+        </a>
+    </div>
+
+
+    <!-- search -->
+    <div style="margin-bottom:15px;">
+        <input type="text" id="billSearch" placeholder="Search Customer..."
+            style="width:100%; padding:8px; border:1px solid #ccc; border-radius:5px;">
+    </div>
+    <table class="table table-bordered table-striped table-hover" id="debitnoteTable">
+        <thead class="table-dark">
+            <tr>
+
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Ledger</th>
+
+
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+    {% for bill in debitnotes %}
+    <tr>
+        <td>{{ bill.date }}</td>
+        <td>{{ bill.supplier.ledger_name|default:"-" }}</td>
+        <td>{{ bill.ledger.ledger_name|default:"-" }}</td>
+        <td>
+            <a href="{% url 'accounts_app:view_debitnote' bill.id %}" class="btn btn-sm btn-warning">
+                <i class="bi bi-eye"></i> View
+            </a>
+
+            <a href="{% url 'accounts_app:debitnote_pdf' bill.id %}" target="_blank" class="btn btn-sm btn-info">
+                <i class="bi bi-file-earmark-pdf"></i> PDF
+            </a>
+
+            <button onclick="deleteDebitNote('{{ bill.id }}', '{{ bill.id }}')" class="btn btn-sm btn-danger">
+                Delete
+            </button>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="4" class="text-center">No debit notes found.</td>
+    </tr>
+    {% endfor %}
+</tbody>
+    </table>
+</div>
+<script>
+    function deleteDebitNote(id, voucherNo) {
+
+        if (!confirm(`Delete Debit Note ${voucherNo}?`)) {
+            return;
+        }
+
+        // ✅ STORE DELETE URL
+        window.pendingDeleteId = "{% url 'accounts_app:delete_debitnote' 0 %}".replace('/0/', `/${id}/`);
+
+        $.ajax({
+            url: window.pendingDeleteId,
+            type: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            dataType: 'json',
+
+            success: function (response) {
+                console.log("DELETE SUCCESS:", response);
+
+                if (response.admin_required) {
+                    $("#admin_error").text(response.message || "");
+                    $("#adminOverrideModal").modal("show");
+                    return;
+                }
+
+                if (response.success) {
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    alert(response.message || "Delete failed");
+                }
+            },
+
+            error: function (xhr) {
+                console.log("DELETE ERROR:", xhr.status, xhr.responseJSON);
+
+                if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                    $("#admin_error").text(xhr.responseJSON.message || "");
+                    $("#adminOverrideModal").modal("show");
+                } else {
+                    alert(xhr.responseJSON?.message || "Delete failed");
+                }
+            }
+        });
+    }
+</script>
+
+<!-- search -->
+<script>
+    document.getElementById("billSearch").addEventListener("keyup", function () {
+
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll("#debitnoteTable tbody tr");
+
+        rows.forEach(function (row) {
+
+            if (row.children.length <= 1) return;
+
+            // let voucher   = row.cells[0].textContent.toLowerCase();   // col 1
+            let customer = row.cells[1].textContent.toLowerCase();   // col 2
+
+            if (customer.includes(filter)) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    });
+</script>
+
+
+{% endblock %}

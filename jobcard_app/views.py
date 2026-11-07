@@ -8,13 +8,19 @@ from django.db import transaction
 from django.utils import timezone
 import logging
 import json
+import uuid
+from .constants import JOBCARD_MENU_ID, INSPECTION_MENU_ID, ESTIMATE_MENU_ID, QUOTATION_MENU_ID, DELIVERY_MENU_ID
+from accounts_app.common import check_privilege, check_admin_override
+from audit_app.common import log_activity
+from django.db import transaction, IntegrityError
 from .constants import JOBCARD_VOUCHER_ID
 from .constants import ESTIMATE_VOUCHER_ID
 from .constants import QUOTATION_VOUCHER_ID
 from .constants import INSPECTION_VOUCHER_ID
 from.constants import DELIVERY_NOTE_VOUCHER_ID  
 from fleet_app.models import Vouchers
-from fleet_app.models import FleetCustomer, Vehicle
+import uuid
+from django.db import IntegrityError, transaction
 from item_master.models import Item
 from accounts_app   .models import LedgerCreation
 from audit_app.common import log_activity
@@ -36,23 +42,10 @@ from .models import (
     Invoice,
     
 )
-from fleet_app.models import VehicleCategory
-
-from fleet_app.models import  Manufacturer, VehicleModel
-from fleet_app.models import VehicleCategory
-
-import logging
-from decimal import Decimal
- 
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.db.models import Q
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
- 
 from accounts_app.models import LedgerCreation
+from fleet_app.models import VehicleCategory
+from fleet_app.models import VehicleCategory
+from decimal import Decimal
 from fleet_app.models import Staff
 from .models import (
     DeliveryNoteVehicle, Estimate, EstimateComplaint, EstimateItem, EstimateVehicle,
@@ -70,10 +63,22 @@ from .common import (
 from .forms import (WorkshopVehicleForm,MODEL_CATEGORY_FIELD,   model_queryset,)
 
 from .models import WorkshopVehicle
-from decimal import Decimal
 from django.db.models import Sum, OuterRef, Subquery, DecimalField, Value
 from django.db.models.functions import Coalesce
 from django.db import models
+from .models import (
+    Estimate, EstimateItem, EstimateComplaint,
+    JobCard, WorkshopVehicle,
+)
+
+from django.db.models import Count, Q, Sum 
+from fleet_app.models import Staff, Vouchers
+ 
+from .forms import InvoiceHeaderForm
+from .models import (
+    DeliveryNote, Invoice, InvoiceItem, InvoiceVehicle, JobCard, WorkshopVehicle,
+)
+
 # ─────────────────────────────────────────────────────────────
 # SERVICE CATEGORY
 # ─────────────────────────────────────────────────────────────
@@ -512,101 +517,120 @@ def inspection_list(request):
         'with_jobcard':   VehicleInspection.objects.filter(jobcard__isnull=False).count(),
     })
  
- 
-# ─────────────────────────────────────────────────────────────
-# CREATE
-# ─────────────────────────────────────────────────────────────
-
-
-
 def inspection_create(request, vehicle_id=None):
-    customers = LedgerCreation.objects.filter( groups_id=29).order_by('ledger_name')
+    customers = LedgerCreation.objects.filter(groups_id=29).order_by('ledger_name')
     inspectors = Staff.objects.filter(
         status='Active',
         staff_category__name__in=['Inspector', 'Technician']
     ).order_by('full_name')
-    vehicles  = WorkshopVehicle.objects.filter(is_active=True)
+    vehicles = WorkshopVehicle.objects.filter(is_active=True)
 
-    preselected_vehicle  = None
+    preselected_vehicle = None
     preselected_customer = None
- 
     if vehicle_id:
-        preselected_vehicle  = get_object_or_404(WorkshopVehicle, pk=vehicle_id)
+        preselected_vehicle = get_object_or_404(WorkshopVehicle, pk=vehicle_id)
         preselected_customer = preselected_vehicle.customer
- 
+
+    # ---------- POST: save inspection ----------
     if request.method == 'POST':
+        # 1. Duplicate submission protection
+        try:
+            request_id = uuid.UUID(request.POST.get('request_id', '').strip())
+        except (ValueError, TypeError, AttributeError):
+            messages.error(request, 'Invalid submission ID. Please refresh the page and try again.')
+            return redirect('jobcard_app:inspection_create')
+
+        # 2. Already saved?
+        existing_insp = VehicleInspection.objects.filter(request_id=request_id).first()
+        if existing_insp:
+            messages.info(request, f'Inspection {existing_insp.inspection_number} was already saved.')
+            return redirect('jobcard_app:inspection_list')
+
+        # 3. Validate vehicle and customer
         vid = request.POST.get('vehicle')
         cid = request.POST.get('customer')
- 
         if not vid or not cid:
             messages.error(request, 'Vehicle and Customer are required.')
             return redirect('jobcard_app:inspection_create')
- 
-        vehicle  = get_object_or_404(WorkshopVehicle, pk=vid)
+
+        vehicle = get_object_or_404(WorkshopVehicle, pk=vid)
         customer = get_object_or_404(LedgerCreation, pk=cid)
-        inspector_id = request.POST.get("inspector")
- 
-        inspector = None
-        if inspector_id:
-            inspector = Staff.objects.filter(pk=inspector_id).first()
 
-        
- 
-        insp = VehicleInspection(
-            vehicle           = vehicle,
-            customer          = customer,
-            inspector         = inspector,
-            inspection_date   = datetime.strptime(request.POST.get("inspection_date"),"%Y-%m-%d").date(),
-            odometer          = request.POST.get('odometer') or None,
-            fuel_level        = request.POST.get('fuel_level', '1/2'),
-            driver_name       = request.POST.get('driver_name', '').strip(),
-            overall_status    = request.POST.get('overall_status', 'pass'),
-            created_by        = request.user.id if request.user.is_authenticated else None,
-        )
-        insp.save()
+        # 4. Inspector
+        inspector_id = request.POST.get('inspector')
+        inspector = Staff.objects.filter(pk=inspector_id).first() if inspector_id else None
 
-        veh_type_id  = request.POST.get('veh_type') or None
-        veh_mfr_id   = request.POST.get('veh_manufacturer') or None
-        veh_model_id = request.POST.get('veh_model') or None
-        veh_fuel     = request.POST.get('veh_fuel_type') or None
-        veh_color    = request.POST.get('veh_color', '').strip() or None
+        # 5. Atomic transaction
+        try:
+            with transaction.atomic():
+                insp = VehicleInspection(
+                    request_id=request_id,
+                    vehicle=vehicle,
+                    customer=customer,
+                    inspector=inspector,
+                    inspection_date=datetime.strptime(
+                        request.POST.get('inspection_date'), "%Y-%m-%d"
+                    ).date(),
+                    odometer=request.POST.get('odometer') or None,
+                    fuel_level=request.POST.get('fuel_level', '1/2'),
+                    driver_name=request.POST.get('driver_name', '').strip(),
+                    overall_status=request.POST.get('overall_status', 'pass'),
+                    created_by=request.user.id if request.user.is_authenticated else None,
+                )
+                insp.save()
 
-        if any([veh_type_id, veh_mfr_id, veh_model_id, veh_fuel, veh_color]):
-            if veh_type_id:  vehicle.vehicle_type_id = veh_type_id
-            if veh_mfr_id:   vehicle.manufacturer_id = veh_mfr_id
-            if veh_model_id: vehicle.vehicle_model_id = veh_model_id
-            if veh_fuel:      vehicle.fuel_type = veh_fuel
-            if veh_color:    vehicle.color = veh_color
-            vehicle.save()
- 
-        _save_inspection(request, insp)
- 
-        messages.success(
-            request,
-            f"Inspection {insp.inspection_number} saved successfully!")
+                # Update vehicle details
+                veh_type_id = request.POST.get('veh_type') or None
+                veh_mfr_id = request.POST.get('veh_manufacturer') or None
+                veh_model_id = request.POST.get('veh_model') or None
+                veh_fuel = request.POST.get('veh_fuel_type') or None
+                veh_color = request.POST.get('veh_color', '').strip() or None
+
+                if any([veh_type_id, veh_mfr_id, veh_model_id, veh_fuel, veh_color]):
+                    if veh_type_id:
+                        vehicle.vehicle_type_id = veh_type_id
+                    if veh_mfr_id:
+                        vehicle.manufacturer_id = veh_mfr_id
+                    if veh_model_id:
+                        vehicle.vehicle_model_id = veh_model_id
+                    if veh_fuel:
+                        vehicle.fuel_type = veh_fuel
+                    if veh_color:
+                        vehicle.color = veh_color
+                    vehicle.save()
+
+                # Save all inspection details
+                _save_inspection(request, insp)
+
+        # 6. Duplicate request (race condition)
+        except IntegrityError:
+            existing_insp = VehicleInspection.objects.filter(request_id=request_id).first()
+            if existing_insp:
+                messages.info(request, f'Inspection {existing_insp.inspection_number} was already saved.')
+                return redirect('jobcard_app:inspection_list')
+            raise  # a different integrity error: don't hide it
+
+        # 7. Success
+        messages.success(request, 'Vehicle Inspection saved successfully!')
         return redirect('jobcard_app:inspection_list')
- 
+
+    # ---------- GET: show form ----------
     ctx = _inspection_context()
     ctx.update({
-        'customers':            customers,
-        'inspectors':           inspectors,
-        'vehicles':             vehicles,
-
-# inside the ctx.update({...}) block, add:
-        'vehicle_types':        VehicleCategory.objects.all().order_by('category_name'),
+        'customers': customers,
+        'inspectors': inspectors,
+        'vehicles': vehicles,
+        'vehicle_types': VehicleCategory.objects.all().order_by('category_name'),
         'vehicle_fuel_choices': WorkshopVehicle.FUEL_CHOICES,
-        'preselected_vehicle':  preselected_vehicle,
+        'preselected_vehicle': preselected_vehicle,
         'preselected_customer': preselected_customer,
-        'next_insp_no':         get_next_document_number(
-                            INSPECTION_VOUCHER_ID, VehicleInspection, 'voucher_number'),
-        'today':                timezone.now().date(),
+        'next_insp_no': get_next_document_number(
+            INSPECTION_VOUCHER_ID, VehicleInspection, 'voucher_number'
+        ),
+        'today': timezone.now().date(),
+        'request_id': str(uuid.uuid4()),  # new ID for each form load
     })
     return render(request, 'jobcard_app/inspection_form.html', ctx)
- 
-# ─────────────────────────────────────────────────────────────
-# DETAIL
-# ─────────────────────────────────────────────────────────────
-
 # ─────────────────────────────────────────────────────────────
 # EDIT
 # ─────────────────────────────────────────────────────────────
@@ -711,8 +735,9 @@ def insp_get_vehicles(request):
 # ─────────────────────────────────────────────────────────────
 @login_required
 def jobcard_list(request):
+    if not check_privilege(request.user, JOBCARD_MENU_ID, "can_read"):
+        return render(request, 'no_permission.html')
     from django.core.paginator import Paginator
-    from django.db.models import Q
 
     jobs = (
         JobCard.objects
@@ -828,10 +853,17 @@ def jobcard_list(request):
 
 @login_required
 def jobcard_create(request):
-    from django.utils import timezone
-    from accounts_app.models import LedgerCreation
-    from .models import WorkshopVehicle, VehicleInspection
-    from .models import ServiceCategory
+    if request.method == 'POST':
+        action = "can_add"
+        
+        # 🔐 Check Privilege
+        if not check_privilege(request.user, JOBCARD_MENU_ID, action):
+            is_admin_ok, msg = check_admin_override(request)
+            if not is_admin_ok:
+                return JsonResponse({
+                    "admin_required": True,
+                    "message": msg
+                }, status=403)
 
     customers = LedgerCreation.objects.filter(groups_id=29).order_by('ledger_name')
     items = Item.objects.filter(isDeleted=False).order_by('item_name')
@@ -878,6 +910,7 @@ def jobcard_create(request):
 
     return render(request, 'jobcard_app/jobcard_form.html', {
         'jobcard':      None,
+        'request_id': str(uuid.uuid4()),
         'next_job_number': next_job_number,
         'voucher_types': voucher_types,
         'customers':    customers,
@@ -928,8 +961,18 @@ def get_next_quotation_number(request):
 
 @login_required
 def jobcard_edit(request, pk):
-  
     job = get_object_or_404(JobCard, pk=pk)
+    if request.method == 'POST':
+        action = "can_edit"
+        
+        # 🔐 Check Privilege
+        if not check_privilege(request.user, JOBCARD_MENU_ID, action):
+            is_admin_ok, msg = check_admin_override(request)
+            if not is_admin_ok:
+                return JsonResponse({
+                    "admin_required": True,
+                    "message": msg
+                }, status=403)
 
     if request.method == 'POST':
         return _save_jobcard(request, job=job)
@@ -961,7 +1004,35 @@ def jobcard_edit(request, pk):
 
 @transaction.atomic
 def _save_jobcard(request, job=None):
+    is_new_job = job is None or not getattr(job, 'pk', None)
 
+    request_id = None
+
+    if is_new_job:
+        raw_request_id = request.POST.get('request_id', '').strip()
+
+        try:
+            request_id = uuid.UUID(raw_request_id)
+        except (ValueError, TypeError, AttributeError):
+            messages.error(
+                request,
+                'Invalid submission ID. Please refresh the page and try again.'
+            )
+            return redirect('jobcard_app:jobcard_create')
+
+        # Check whether this submission was already processed.
+        existing_job = JobCard.objects.filter(
+            request_id=request_id
+        ).first()
+
+        if existing_job:
+            messages.info(
+                request,
+                f'Job Card {existing_job.job_number} was already saved.'
+            )
+            return redirect('jobcard_app:jobcard_list')
+
+    
     cid      = request.POST.get('customer')
     date       = request.POST.get('date') or timezone.now().date()
     advisor_id = request.POST.get('advisor')
@@ -986,7 +1057,7 @@ def _save_jobcard(request, job=None):
         }
 
     if job is None:
-        job = JobCard(created_by=request.user.id)
+        job = JobCard(created_by=request.user.id,request_id=request_id)
 
     job.customer          = customer
     job.customer_phone    = request.POST.get('customer_phone', '')
@@ -1284,18 +1355,30 @@ def _save_jobcard(request, job=None):
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
 @login_required
 @require_POST
 def jobcard_delete(request, pk):
+    # 🔐 Check Delete Privilege
+    if not check_privilege(request.user, JOBCARD_MENU_ID, "can_delete"):
+        is_admin_ok, msg = check_admin_override(request)
+        if not is_admin_ok:
+            return JsonResponse({
+                "admin_required": True,
+                "message": msg
+            }, status=403)
     job = get_object_or_404(JobCard, pk=pk)
-    job_number = job.voucher_number
-
+    voucher_no = job.voucher_number
     job.delete()
 
     messages.success(
         request,
-        f'Job Card {job_number} deleted successfully.'
+        f'Job Card {voucher_no} deleted successfully.'
+    )
+    log_activity(
+        user=request.user,
+        screen_name="Job Card",
+        action_type="DELETE",
+        remark=f"Job Card {voucher_no} deleted"
     )
     return redirect('jobcard_app:jobcard_list')
 
@@ -1308,7 +1391,6 @@ def ajax_wv_by_customer(request):
     if not customer_id:
         return JsonResponse({'vehicles': []})
 
-    from accounts_app.models import LedgerCreation
     customer_phone = ''
     try:
         cust = LedgerCreation.objects.get(pk=customer_id)
@@ -1592,26 +1674,10 @@ def ajax_get_inspections(request):
         })
 
     return JsonResponse({'inspections': result})
-# ─────────────────────────────────────────────────────────────
-# jobcard_app/views.py — ESTIMATE
-# ─────────────────────────────────────────────────────────────
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.utils import timezone
-from django.db import transaction
-from django.db.models import Q
-
-from accounts_app.models import LedgerCreation
-from .models import (
-    Estimate, EstimateItem, EstimateComplaint,
-    JobCard, WorkshopVehicle,
-)
 
 
 
-
+@transaction.atomic
 def _save_estimate(request, estimate=None):
     cid = request.POST.get('customer')
     jid = request.POST.get('loaded_jobcard')
@@ -1629,14 +1695,6 @@ def _save_estimate(request, estimate=None):
     if estimate is None:
         estimate = Estimate(created_by=request.user.id)
  
-    if estimate is None:
-        estimate = Estimate(created_by=request.user.id)
-        from fleet_app.models import Vouchers
-        vt_id = request.POST.get('voucherType')
-        if vt_id:
-            estimate.voucherType = Vouchers.objects.filter(pk=vt_id).first()
-        # voucher_number / estimate_number are generated in Estimate.save()
-
     estimate.customer    = customer
     estimate.jobcard     = jobcard
     estimate.advisor     = advisor
@@ -3195,10 +3253,7 @@ def ajax_wv_search(request):
 # ═══════════════════════════════════════════════════════
 # DELIVERY NOTE
 
-from django.utils import timezone
-from django.db.models import Q
 from django.contrib.auth.decorators import login_required
-from accounts_app.models import LedgerCreation
 from .models import (
     DeliveryNote, DeliveryService, DeliveryPart, DeliveryLabour,
     
@@ -3227,7 +3282,6 @@ def _checklist_items():
 def _save_delivery(request, dn=None):
     from item_master.models import Item, Stock, CostCenter
     from item_master.common import upsert_stock, to_base_qty
-    from django.utils import timezone
     from fleet_app.models import Vouchers
  
     cid = request.POST.get('customer')
@@ -3978,24 +4032,7 @@ def ajax_get_docs_for_delivery(request):
 # INVOICE
 # ═══════════════════════════════════════════════════════
 
-import logging
-from decimal import Decimal, InvalidOperation
- 
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.db.models import Count, Q, Sum
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
- 
-from accounts_app.models import LedgerCreation, LedgerPosting
-from fleet_app.models import Staff, Vouchers
- 
-from .forms import InvoiceHeaderForm
-from .models import (
-    DeliveryNote, Invoice, InvoiceItem, InvoiceVehicle, JobCard, WorkshopVehicle,
-)
+
  
 log = logging.getLogger(__name__)
  
@@ -4199,6 +4236,34 @@ def _assign_voucher_number(post, invoice, vt):
 def _save_invoice(request, invoice=None):
     """Create or update an invoice from request.POST. Returns the Invoice, or None on error."""
     post = request.POST.copy()                          # mutable copy
+    post = request.POST.copy()
+
+    is_new = invoice is None or not invoice.pk
+
+    # -------------------------------------------------
+    # 1. DUPLICATE SUBMISSION PROTECTION (CREATE ONLY)
+    # -------------------------------------------------
+    request_id = None
+
+    if is_new:
+        raw_request_id = post.get('request_id', '').strip()
+
+        try:
+            request_id = uuid.UUID(raw_request_id)
+        except (ValueError, TypeError, AttributeError):
+            messages.error(
+                request,
+                'Invalid or missing submission ID. Please refresh the page and try again.'
+            )
+            return None
+
+        # If this request was already processed, return its invoice.
+        existing_invoice = Invoice.objects.filter(
+            request_id=request_id
+        ).first()
+
+        if existing_invoice:
+            return existing_invoice
 
     cid = post.get('customer', '').strip()
     if not cid:
@@ -4212,6 +4277,7 @@ def _save_invoice(request, invoice=None):
 
     is_new = invoice is None or not invoice.pk
     old_vt = old_snapshot = None
+    
     if not is_new:
         old_vt = invoice.voucherType
         old_snapshot = _snapshot(invoice)
@@ -4428,6 +4494,20 @@ def invoice_list(request):
 def invoice_create(request):
     ctx = _form_context()
 
+    if request.method == 'POST':
+        inv = _save_invoice(request)
+        if inv:
+            messages.success(
+                request,
+                f'Invoice {inv.display_number} created!'
+            )
+            return redirect('jobcard_app:invoice_list')
+
+        posted_data = _posted_data(request)
+
+    else:
+        ctx['request_id'] = str(uuid.uuid4())
+
     prefill_jc = None
     if request.GET.get('from_jobcard'):
         prefill_jc = JobCard.objects.select_related('customer', 'workshop_vehicle', 'advisor').prefetch_related(
@@ -4454,6 +4534,10 @@ def invoice_create(request):
         'next_voucher_number': get_next_document_number(sel_vt.pk, Invoice, 'voucher_number'),
         'posted_data': posted_data,
     })
+    if request.method == 'GET':
+        ctx['request_id'] = str(uuid.uuid4())
+    else:
+        ctx['request_id'] = request.POST.get('request_id', '')
     return render(request, 'jobcard_app/invoice_form.html', ctx)
  
 @login_required

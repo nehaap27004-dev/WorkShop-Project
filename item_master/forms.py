@@ -2,7 +2,7 @@ from django import forms
 from accounts_app.models import Groups
 from item_master.models import *
 from django.forms import inlineformset_factory, modelformset_factory
-from fleet_app.common import get_ledgers_by_group_ids, get_ledgers_by_group_names, filter_voucher_types
+from fleet_app.common import get_ledgers_by_group_ids, filter_voucher_types
 
 
 
@@ -39,6 +39,17 @@ class ItemManufacturerForm(forms.ModelForm):
             ),
         }    
 
+class ItemGroupForm(forms.ModelForm):
+    class Meta:
+        model = ItemGroup
+        fields = ['group_code']
+        
+        widgets = {
+            'group_code': forms.TextInput(
+                attrs={'class': 'form-control', 'placeholder': 'Enter group name'}
+            ),
+        }    
+
 # ItemForm
 class ItemForm(forms.ModelForm):
     item_unit = forms.ModelChoiceField(
@@ -57,6 +68,7 @@ class ItemForm(forms.ModelForm):
             'item_category',
             'item_manufacturer',
             'TAX',
+            'sales_vat',
             'min_stock',
             'rack',
             'purchase_rate',
@@ -92,16 +104,21 @@ class ItemForm(forms.ModelForm):
             'TaxIncludPrchs',
             'cess',
             'IsProductSerial',
+            'item_group',
+            'quantity',
+            'inventory_nature',
         ]
 
         labels = {
             'item_name': 'Item Name',
             'item_code': 'Item Code',
+            'item_group': 'Group Code',
             'barcode_code': 'Barcode',
             'regional_name': 'Regional Name',
             'item_category': 'Item Category',
             'item_manufacturer': 'Manufacturer',
             'TAX': 'Tax',
+            'sales_vat': 'Sales VAT',
             'min_stock': 'Minimum Stock',
             'rack': 'Rack',
             'purchase_rate': 'Purchase Rate',
@@ -137,17 +154,21 @@ class ItemForm(forms.ModelForm):
             'TaxIncludPrchs': 'Tax Included in Purchase',
             'cess': 'Cess (%)',
             'IsProductSerial': 'Has Product Serial?',
+            'quantity': 'Quantity',
+            'inventory_nature': 'Inventory Nature',
         }
 
         widgets = {
             'item_name': forms.TextInput(attrs={'class': 'form-control'}),
             'item_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'item_group': forms.Select(attrs={'class': 'form-control'}),
             'IsItemBarcode': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'barcode_code': forms.TextInput(attrs={'class': 'form-control'}),
             'regional_name': forms.TextInput(attrs={'class': 'form-control'}),
             'item_category': forms.Select(attrs={'class': 'form-control'}),
             'item_manufacturer': forms.Select(attrs={'class': 'form-control'}),
             'TAX': forms.Select(attrs={'class': 'form-control'}),
+            'sales_vat': forms.Select(attrs={'class': 'form-control'}),
             'min_stock': forms.NumberInput(attrs={'class': 'form-control'}),
             'rack': forms.TextInput(attrs={'class': 'form-control'}),
             'purchase_rate': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -183,6 +204,8 @@ class ItemForm(forms.ModelForm):
             'TaxIncludPrchs': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'cess': forms.NumberInput(attrs={'class': 'form-control'}),
             'IsProductSerial': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
+            'inventory_nature': forms.Select(attrs={'class': 'form-control'}),
         }
         
         
@@ -262,6 +285,251 @@ class TAXForm(forms.ModelForm):
             'TAX_percent': forms.TextInput(attrs={'placeholder': 'Enter TAX %'}),
             'TAX_name': forms.TextInput(attrs={'placeholder': 'Enter TAX Name'}),
         }        
+
+
+class ItemGrvForm(forms.ModelForm):
+    class Meta:
+        model = ItemGrvMaster
+        fields = [
+            'auto_no',  
+            'voucher_no',
+            'transaction_date',
+            'ledger',
+            'remarks',
+            'cost_center',
+            'lrNo',
+            'transportCompany',
+            'Freight',
+            
+            'voucherType',
+            
+        ]
+        widgets = {
+            'auto_no': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'readonly': True,
+            }),
+            'voucher_no': forms.TextInput(attrs={
+                'placeholder': 'Voucher No',
+                'class': 'form-control',
+                'id': 'id_voucher_no',
+                'readonly': True,
+                
+            }),
+            'transaction_date': forms.DateInput(attrs={
+                'type': 'date',
+                'placeholder': 'Transaction Date',
+                'class': 'form-control'
+            }),
+            'ledger': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'remarks': forms.TextInput(attrs={
+                'placeholder': 'Remarks (optional)',
+                'class': 'form-control',
+                'rows': 3
+            }),
+            'cost_center': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'lrNo': forms.TextInput(attrs={
+                'placeholder': 'LR No',
+                'class': 'form-control'
+            }),
+            'transportCompany': forms.TextInput(attrs={
+                'placeholder': 'Transport Company',
+                'class': 'form-control'
+            }),
+            'Freight': forms.NumberInput(attrs={
+                'placeholder': 'Freight',
+                'class': 'form-control'
+            }),
+            'voucherType': forms.Select(attrs={
+                'class': 'form-control',
+                'id': 'id_voucherType',
+                'onchange': 'updateVoucherNumber()'
+            }),
+        }
+        labels = {
+            'auto_no': 'Auto Number',
+            'voucher_no': 'Invoice Number',
+            'transaction_date': 'Date',
+            'ledger': 'Vendor',
+            'remarks': 'Remarks',
+            'cost_center': 'Cost Center',
+            'lrNo': 'LR No',
+            'transportCompany': 'Transport Company',
+            'Freight': 'Freight',
+            'voucherType': 'Voucher Type',
+        }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['voucher_no'].required = False
+
+        # ✅ Only for NEW instance (creation)
+        if not self.instance.pk:
+            if 'voucherType' in self.data:   # POST create
+                try:
+                    voucher_type = Vouchers.objects.get(pk=self.data['voucherType'])
+                    self.fields['voucher_no'].initial = voucher_type.get_next_voucher_number()
+                except Vouchers.DoesNotExist:
+                    pass
+            elif self.initial.get('voucherType'):  # GET create
+                try:
+                    voucher_type = self.initial['voucherType']
+                    self.fields['voucher_no'].initial = voucher_type.get_next_voucher_number()
+                except Exception:
+                    pass
+        else:
+            # ✅ Editing: always use instance value
+            self.fields['voucher_no'].initial = self.instance.voucher_no
+
+            
+        # Ledger filter by Groups cash account & sundry Sundry Creditors 
+        from django.db.models import Q
+
+        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 28).filter(
+            Q(groups_id=8) | Q(groups_id=28, supplier_type='General')
+        )
+
+        # Voucher type filter 
+        filter_voucher_types(self, [22])    
+            
+    
+        
+
+class ItemGrvItemForm(forms.ModelForm):
+    
+    
+    class Meta:
+        model = ItemGrvDetail
+        fields = ['item_name','item_code', 'barcode_code', 'quantity', 'tax', 'unit', 'free_quantity', 'MFD', 'EXP', 
+                   'Batch', 'Cost']
+        widgets = {
+            
+            'item_name': forms.Select(attrs={'class': 'form-control', 'id': 'id_item_name'}),  
+            'item_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Item Code'}),  
+           
+            
+            'barcode_code': forms.TextInput(attrs={
+                'placeholder': 'Barcode',
+                'class': 'form-control'
+            }),
+            
+            'quantity': forms.NumberInput(attrs={
+                'placeholder': 'Quantity',
+                'class': 'form-control'
+            }),
+            'tax': forms.NumberInput(attrs={
+                'placeholder': 'Tax (%)',
+                'class': 'form-control'
+            }),
+            'unit': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'free_quantity': forms.NumberInput(attrs={
+                'placeholder': 'Free Quantity',
+                'class': 'form-control'
+            }),
+            'MFD': forms.DateInput(attrs={
+                'type': 'date',
+                'placeholder': 'Manufacture Date',
+                'class': 'form-control',
+                'id': 'id_MFD'
+            }),
+            'EXP': forms.DateInput(attrs={
+                'type': 'date',
+                'placeholder': 'Expire Date',
+                'class': 'form-control',
+                'id': 'id_EXP'
+            }),
+            
+            'Batch': forms.Select(attrs={
+                'class': 'form-control', 'id': 'id_Batch'
+            }),
+            
+            
+        }
+        labels = {
+            'item_code': 'Item Code',
+            'item_name': 'Item Name',
+            'barcode_code': 'Barcode',
+            'quantity': 'Quantity',
+            'tax': 'Tax (%)',
+            'unit': 'Unit',
+            'free_quantity': 'Free Quantity',
+            'MFD': 'MFD',
+            'EXP': 'EXP',
+            'Batch': 'Batch',
+            
+        }  
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Make certain fields not required
+        self.fields['item_code'].required = False
+        self.fields['barcode_code'].required = False
+        self.fields['MFD'].required = False
+        self.fields['EXP'].required = False
+        self.fields['Batch'].required = False
+        self.fields['free_quantity'].required = False
+        self.fields['Cost'].required = False
+        
+        # Set default values for numeric fields
+        if not self.instance.pk:  # New form
+            self.fields['quantity'].initial = 1
+            self.fields['tax'].initial = 0.00
+            self.fields['free_quantity'].initial = 0
+            self.fields['Cost'].initial = 0.00
+
+
+# Create the formset for PurchaseVoucherItem with proper validation
+ItemGrvItemFormSet = inlineformset_factory(
+    ItemGrvMaster,
+    ItemGrvDetail,
+    form=ItemGrvItemForm,
+    extra=0,  # Don't show extra empty forms
+    can_delete=True,
+    min_num=1,  # Require at least one item
+    validate_min=True,  # Validate minimum requirement
+    fields=[
+        'item_name', 'item_code', 'barcode_code', 'quantity', 
+        'tax', 'unit', 'free_quantity', 'MFD', 'EXP', 
+        'Batch', 'Cost'
+    ]
+)
+
+
+# Custom validation for the formset
+class CustomItemGrvItemFormSet(ItemGrvItemFormSet):
+    def clean(self):
+        """Add custom validation to the formset"""
+        if any(self.errors):
+            return
+            
+        # Check that at least one item exists and is not deleted
+        valid_forms = 0
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                valid_forms += 1
+                
+                # Validate required fields for non-deleted forms
+                if not form.cleaned_data.get('item_name'):
+                    raise forms.ValidationError("Each item must have an item name selected.")
+                if not form.cleaned_data.get('quantity') or form.cleaned_data.get('quantity') <= 0:
+                    raise forms.ValidationError("Each item must have a valid quantity greater than 0.")
+                if not form.cleaned_data.get('purchase_rate') or form.cleaned_data.get('purchase_rate') <= 0:
+                    raise forms.ValidationError("Each item must have a valid purchase rate greater than 0.")
+        
+        if valid_forms == 0:
+            raise forms.ValidationError("At least one item is required for the purchase voucher.")
+
+# Use the custom formset
+ItemGrvItemFormSet = CustomItemGrvItemFormSet    
+
+
         
 class PurchaseVoucherForm(forms.ModelForm):
     class Meta:
@@ -414,7 +682,9 @@ class PurchaseVoucherForm(forms.ModelForm):
 
             
         # Ledger filter by Groups cash account & sundry Sundry Creditors 
-        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Sundry Creditors')
+        from django.db.models import Q
+
+        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 28)
 
         # Voucher type filter 
         filter_voucher_types(self, [13])    
@@ -427,10 +697,10 @@ class PurchaseVoucherItemForm(forms.ModelForm):
     
     class Meta:
         model = PurchaseDetail
-        fields = ['item_name','item_code', 'barcode_code', 'quantity', 'purchase_rate', 'item_net_amount', 'tax', 'item_tax_amount', 'unit', 'free_quantity', 'MFD', 'EXP', 
+        fields = ['item_group', 'item_name','item_code', 'barcode_code', 'quantity', 'purchase_rate', 'item_net_amount', 'tax', 'item_tax_amount', 'unit', 'free_quantity', 'MFD', 'EXP', 
                   'sales_rate', 'profit', 'item_total_amount', 'Batch', 'Cost']
         widgets = {
-            
+            'item_group': forms.Select(attrs={'class': 'form-control'}),
             'item_name': forms.Select(attrs={'class': 'form-control', 'id': 'id_item_name'}),  
             'item_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Item Code'}),  
            
@@ -502,6 +772,7 @@ class PurchaseVoucherItemForm(forms.ModelForm):
             
         }
         labels = {
+            'item_group': 'Item Group',
             'item_code': 'Item Code',
             'item_name': 'Item Name',
             'barcode_code': 'Barcode',
@@ -533,18 +804,19 @@ class PurchaseVoucherItemForm(forms.ModelForm):
         self.fields['free_quantity'].required = False
         self.fields['Cost'].required = False
         
-        # Set default values for numeric fields
-        if not self.instance.pk:  # New form
+        # Set defaults only for the standalone item form used in CREATE mode.
+        # Do NOT set defaults for forms inside the Django formset.
+        if not self.instance.pk and not self.prefix:
             self.fields['quantity'].initial = 1
-            self.fields['purchase_rate'].initial = 0.00
-            self.fields['item_net_amount'].initial = 0.00
-            self.fields['tax'].initial = 0.00
-            self.fields['item_tax_amount'].initial = 0.00
-            self.fields['sales_rate'].initial = 0.00
-            self.fields['profit'].initial = 0.00
-            self.fields['item_total_amount'].initial = 0.00
+            self.fields['purchase_rate'].initial = 0.000
+            self.fields['item_net_amount'].initial = 0.000
+            self.fields['tax'].initial = 0.000
+            self.fields['item_tax_amount'].initial = 0.000
+            self.fields['sales_rate'].initial = 0.000
+            self.fields['profit'].initial = 0.000
+            self.fields['item_total_amount'].initial = 0.000
             self.fields['free_quantity'].initial = 0
-            self.fields['Cost'].initial = 0.00
+            self.fields['Cost'].initial = 0.000
 
 
 # Create the formset for PurchaseVoucherItem with proper validation
@@ -557,7 +829,7 @@ PurchaseVoucherItemFormSet = inlineformset_factory(
     min_num=1,  # Require at least one item
     validate_min=True,  # Validate minimum requirement
     fields=[
-        'item_name', 'item_code', 'barcode_code', 'quantity', 
+        'item_group','item_name', 'item_code', 'barcode_code', 'quantity', 
         'purchase_rate', 'item_net_amount', 'tax', 'item_tax_amount', 
         'unit', 'free_quantity', 'MFD', 'EXP', 'sales_rate', 
         'profit', 'item_total_amount', 'Batch', 'Cost'
@@ -565,37 +837,11 @@ PurchaseVoucherItemFormSet = inlineformset_factory(
 )
 
 
-# Custom validation for the formset
-class CustomPurchaseVoucherItemFormSet(PurchaseVoucherItemFormSet):
-    def clean(self):
-        """Add custom validation to the formset"""
-        if any(self.errors):
-            return
-            
-        # Check that at least one item exists and is not deleted
-        valid_forms = 0
-        for form in self.forms:
-            if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
-                valid_forms += 1
-                
-                # Validate required fields for non-deleted forms
-                if not form.cleaned_data.get('item_name'):
-                    raise forms.ValidationError("Each item must have an item name selected.")
-                if not form.cleaned_data.get('quantity') or form.cleaned_data.get('quantity') <= 0:
-                    raise forms.ValidationError("Each item must have a valid quantity greater than 0.")
-                if not form.cleaned_data.get('purchase_rate') or form.cleaned_data.get('purchase_rate') <= 0:
-                    raise forms.ValidationError("Each item must have a valid purchase rate greater than 0.")
-        
-        if valid_forms == 0:
-            raise forms.ValidationError("At least one item is required for the purchase voucher.")
-
-# Use the custom formset
-PurchaseVoucherItemFormSet = CustomPurchaseVoucherItemFormSet    
 
 
-class PurchaseReturnVoucherForm(forms.ModelForm):
+class SalesReturnVoucherForm(forms.ModelForm):
     class Meta:
-        model = PurchaseReturnMaster
+        model = SalesReturnMaster
         fields = [
             'auto_no',  
             'voucher_no',
@@ -702,7 +948,7 @@ class PurchaseReturnVoucherForm(forms.ModelForm):
         labels = {
             'auto_no': 'Auto Number',
             'voucher_no': 'Invoice Number',
-            'transaction_date': 'Transaction Date',
+            'transaction_date': 'Date',
             'ledger': 'Vendor',
             'payment_mode': 'Payment Mode',
             'remarks': 'Remarks',
@@ -744,19 +990,19 @@ class PurchaseReturnVoucherForm(forms.ModelForm):
 
             
         # Ledger filter by Groups cash account & sundry Sundry Creditors 
-        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Sundry Creditors')
+        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 28, 29)
 
         # Voucher type filter 
-        filter_voucher_types(self, [17])    
+        filter_voucher_types(self, [9])  
             
     
         
 
-class PurchaseReturnVoucherItemForm(forms.ModelForm):
+class SalesReturnVoucherItemForm(forms.ModelForm):
     
     
     class Meta:
-        model = PurchaseReturnDetail
+        model = SalesReturnDetail
         fields = ['item_name','item_code', 'barcode_code', 'quantity', 'purchase_rate', 'item_net_amount', 'tax', 'item_tax_amount', 'unit', 'free_quantity', 'MFD', 'EXP', 
                   'sales_rate', 'profit', 'item_total_amount', 'Batch', 'Cost']
         widgets = {
@@ -878,10 +1124,10 @@ class PurchaseReturnVoucherItemForm(forms.ModelForm):
 
 
 # Create the formset for PurchaseVoucherItem with proper validation
-PurchaseReturnVoucherItemFormSet = inlineformset_factory(
-    PurchaseReturnMaster,
-    PurchaseReturnDetail,
-    form=PurchaseReturnVoucherItemForm,
+SalesReturnVoucherItemFormSet = inlineformset_factory(
+    SalesReturnMaster,
+    SalesReturnDetail,
+    form=SalesReturnVoucherItemForm,
     extra=0,  # Don't show extra empty forms
     can_delete=True,
     min_num=1,  # Require at least one item
@@ -896,7 +1142,7 @@ PurchaseReturnVoucherItemFormSet = inlineformset_factory(
 
 
 # Custom validation for the formset
-class CustomPurchaseReturnVoucherItemFormSet(PurchaseReturnVoucherItemFormSet):
+class CustomSalesReturnVoucherItemFormSet(SalesReturnVoucherItemFormSet):
     def clean(self):
         """Add custom validation to the formset"""
         if any(self.errors):
@@ -917,10 +1163,10 @@ class CustomPurchaseReturnVoucherItemFormSet(PurchaseReturnVoucherItemFormSet):
                     raise forms.ValidationError("Each item must have a valid purchase rate greater than 0.")
         
         if valid_forms == 0:
-            raise forms.ValidationError("At least one item is required for the purchase voucher.")
+            raise forms.ValidationError("At least one item is required for the sales return voucher.")
 
 # Use the custom formset
-PurchaseReturnVoucherItemFormSet = CustomPurchaseReturnVoucherItemFormSet    
+SalesReturnVoucherItemFormSet = CustomSalesReturnVoucherItemFormSet    
 
 
 
@@ -1067,7 +1313,7 @@ class SalesVoucherForm(forms.ModelForm):
                 pass
         
         # Ledger filter by Groups cash account & sundry Sundry Debtors
-        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Customer', 'Sundry Debtors')
+        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 29)
 
         # Voucher type filter 
         filter_voucher_types(self, [14])    
@@ -1139,9 +1385,9 @@ SalesVoucherItemFormSet = inlineformset_factory(
     can_delete=True
 )
 
-class SalesReturnVoucherForm(forms.ModelForm):
+class PurchaseReturnVoucherForm(forms.ModelForm):
     class Meta:
-        model = SalesReturnMaster
+        model = PurchaseReturnMaster
         fields = [
             'voucher_no',
             'voucherType',
@@ -1235,20 +1481,21 @@ class SalesReturnVoucherForm(forms.ModelForm):
                 pass
         
         # Ledger filter by Groups cash account & sundry Sundry Debtors
-        self.fields['ledger'].queryset = get_ledgers_by_group_names('Cash & Bank', 'Customer', 'Sundry Debtors')
+        self.fields['ledger'].queryset = get_ledgers_by_group_ids(8, 29, 28)
 
         # Voucher type filter 
-        filter_voucher_types(self, [18])    
+        filter_voucher_types(self, [8])    
             
     
         
     
         
         
-class SalesReturnVoucherItemForm(forms.ModelForm):
+class PurchaseReturnVoucherItemForm(forms.ModelForm):
     class Meta:
-        model = SalesReturnDetail
+        model = PurchaseReturnDetail
         fields = [
+            'item_group',
             'item_name',
             'item_code',
             'barcode_code',
@@ -1265,6 +1512,7 @@ class SalesReturnVoucherItemForm(forms.ModelForm):
             
         ]
         labels = {
+            'item_group': 'Item Group',
             'item_name': 'Item Name',
             'item_code': 'Item Code',
             'barcode_code': 'Barcode',
@@ -1283,6 +1531,7 @@ class SalesReturnVoucherItemForm(forms.ModelForm):
             'BaseUnit': 'Base Unit Name',
         }
         widgets = {
+            'item_group': forms.Select(attrs={'class': 'form-control'}),
             'item_name': forms.Select(),
             'item_code': forms.TextInput(),
             'barcode_code': forms.TextInput(),
@@ -1299,10 +1548,10 @@ class SalesReturnVoucherItemForm(forms.ModelForm):
             
         }
 
-SalesReturnVoucherItemFormSet = inlineformset_factory(
-    SalesReturnMaster,                # parent model
-    SalesReturnDetail,               # child model
-    form=SalesReturnVoucherItemForm, # your custom form
+PurchaseReturnVoucherItemFormSet = inlineformset_factory(
+    PurchaseReturnMaster,                # parent model
+    PurchaseReturnDetail,               # child model
+    form=PurchaseReturnVoucherItemForm, # your custom form
     extra=1,
     can_delete=True
 )
@@ -1323,182 +1572,6 @@ class CostCenterForm(forms.ModelForm):
             'code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Cost Center Code'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Enter Description'}),
         }        
-        
-class OpeningStockForm(forms.ModelForm):
-    class Meta:
-        model = OpeningStockMaster
-        fields = [
-            'auto_no',  # Include auto_no in the fields
-            'voucher_no',
-            'transaction_date',
-            'ledger',
-            'payment_mode',
-            'remarks',
-            'total_net_value',
-            'total_tax_amount',
-            'discount',
-            'payment_terms',
-            'grand_total_amount',
-            'cost_center',
-        ]
-        widgets = {
-            'auto_no': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'readonly': True  # Make the field read-only
-            }),
-            'voucher_no': forms.TextInput(attrs={
-                'placeholder': 'Voucher No',
-                'class': 'form-control'
-            }),
-            'transaction_date': forms.DateInput(attrs={
-                'type': 'date',
-                'placeholder': 'Transaction Date',
-                'class': 'form-control'
-            }),
-            'ledger': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-            'payment_mode': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-            'remarks': forms.TextInput(attrs={
-                'placeholder': 'Remarks (optional)',
-                'class': 'form-control',
-                'rows': 3
-            }),
-            'total_net_value': forms.NumberInput(attrs={
-                'placeholder': 'Total Net Value',
-                'class': 'form-control',
-                'readonly': True
-            }),
-            'total_tax_amount': forms.NumberInput(attrs={
-                'placeholder': 'Total Tax Amount',
-                'class': 'form-control',
-                'readonly': True
-            }),
-            'discount': forms.NumberInput(attrs={
-                'placeholder': 'Discount (if any)',
-                'class': 'form-control'
-            }),
-            'payment_terms': forms.TextInput(attrs={
-                'placeholder': 'Payment Terms (optional)',
-                'class': 'form-control',
-                'rows': 3
-            }),
-            'grand_total_amount': forms.NumberInput(attrs={
-                'placeholder': 'Grand Total Amount',
-                'class': 'form-control', 
-                'readonly': True
-            }),
-            'cost_center': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-        }
-        labels = {
-            'auto_no': 'Auto Number',
-            'voucher_no': 'Voucher Number',
-            'transaction_date': 'Transaction Date',
-            'ledger': 'Ledger',
-            'payment_mode': 'Payment Mode',
-            'remarks': 'Remarks',
-            'total_net_value': 'Total Net Value',
-            'total_tax_amount': 'Total Tax Amount',
-            'discount': 'Discount',
-            'payment_terms': 'Payment Terms',
-            'grand_total_amount': 'Grand Total Amount',
-            'cost_center': 'Cost Center',
-        }
-
-class OpeningStockItemForm(forms.ModelForm):
-    
-    
-    class Meta:
-        model = OpeningStockDetail
-        fields = ['item_name','item_code', 'barcode_code', 'quantity', 'purchase_rate', 'item_net_amount', 'tax', 'item_tax_amount', 'unit', 'free_quantity', 'manufacture_date', 'expire_date', 'sales_rate', 'profit', 'item_total_amount']
-        widgets = {
-            
-            'item_name': forms.Select(attrs={'class': 'form-control'}),  
-            'item_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Item Code'}),  
-           
-            
-            'barcode_code': forms.TextInput(attrs={
-                'placeholder': 'Barcode',
-                'class': 'form-control'
-            }),
-            
-            'quantity': forms.NumberInput(attrs={
-                'placeholder': 'Quantity',
-                'class': 'form-control'
-            }),
-            'purchase_rate': forms.NumberInput(attrs={
-                'placeholder': 'Purchase Rate',
-                'class': 'form-control'
-            }),
-            'item_net_amount': forms.NumberInput(attrs={
-                'placeholder': 'Net Amount',
-                'class': 'form-control',
-                'readonly': True
-            }),
-            'tax': forms.NumberInput(attrs={
-                'placeholder': 'Tax (%)',
-                'class': 'form-control'
-            }),
-            'item_tax_amount': forms.NumberInput(attrs={
-                'placeholder': 'Tax Amount',
-                'class': 'form-control',
-                'readonly': True
-            }),
-            'unit': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-            'free_quantity': forms.NumberInput(attrs={
-                'placeholder': 'Free Quantity',
-                'class': 'form-control'
-            }),
-            'manufacture_date': forms.DateInput(attrs={
-                'type': 'date',
-                'placeholder': 'Manufacture Date',
-                'class': 'form-control'
-            }),
-            'expire_date': forms.DateInput(attrs={
-                'type': 'date',
-                'placeholder': 'Expire Date',
-                'class': 'form-control'
-            }),
-            'sales_rate': forms.NumberInput(attrs={
-                'placeholder': 'Sales Rate',
-                'class': 'form-control'
-            }),
-            'profit': forms.NumberInput(attrs={
-                'placeholder': 'Profit',
-                'class': 'form-control',
-                'readonly': True
-            }),
-            'item_total_amount': forms.NumberInput(attrs={
-                'placeholder': 'Total Amount',
-                'class': 'form-control',
-                'readonly': True
-            }),
-        }
-        labels = {
-            'item_code': 'Item Code',
-            'item_name': 'Item Name',
-            'barcode_code': 'Barcode',
-            'quantity': 'Quantity',
-            'purchase_rate': 'Purchase Rate',
-            'item_net_amount': 'Net Amount',
-            'tax': 'Tax (%)',
-            'item_tax_amount': 'Tax Amount',
-            'unit': 'Unit',
-            'free_quantity': 'Free Quantity',
-            'manufacture_date': 'Manufacture Date',
-            'expire_date': 'Expire Date',
-            'sales_rate': 'Sales Rate',
-            'profit': 'Profit',
-            'item_total_amount': 'Total Amount',
-        }  
-
-
 
 
 class BatchForm(forms.ModelForm):
@@ -1637,3 +1710,182 @@ class StockTransferItemForm(forms.ModelForm):
     }    
     
     
+class OpeningStockForm(forms.ModelForm):
+    class Meta:
+        model = OpeningStockMaster
+        fields = [
+            'voucher_no',
+            'voucherType',
+            'transaction_date',
+            'cost_center',
+            'remarks',
+            'total_net_value',
+            'total_tax_amount',
+            'grand_total_amount',
+        ]
+        widgets = {
+            'voucher_no': forms.TextInput(attrs={
+                'placeholder': 'Voucher No',
+                'class': 'form-control',
+                'id': 'id_voucher_no',
+                'readonly': True,
+            }),
+            'voucherType': forms.Select(attrs={
+                'class': 'form-control',
+                'id': 'id_voucherType',
+                'onchange': 'updateVoucherNumber()'
+            }),
+            'transaction_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control'
+            }),
+            'cost_center': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'remarks': forms.TextInput(attrs={
+                'placeholder': 'Remarks (optional)',
+                'class': 'form-control',
+                'rows': 3
+            }),
+            'total_net_value': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'readonly': True
+            }),
+            'total_tax_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'readonly': True
+            }),
+            'grand_total_amount': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'readonly': True
+            }),
+        }
+        labels = {
+            'voucher_no': 'Voucher Number',
+            'voucherType': 'Voucher Type',
+            'transaction_date': 'Date',
+            'cost_center': 'Cost Center',
+            'remarks': 'Remarks',
+            'total_net_value': 'Total Net Value',
+            'total_tax_amount': 'Total Tax Amount',
+            'grand_total_amount': 'Grand Total Amount',
+        }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['voucher_no'].required = False
+
+        if not self.instance.pk:
+            if 'voucherType' in self.data:
+                try:
+                    voucher_type = Vouchers.objects.get(pk=self.data['voucherType'])
+                    self.fields['voucher_no'].initial = voucher_type.get_next_voucher_number()
+                except Vouchers.DoesNotExist:
+                    pass
+            elif self.initial.get('voucherType'):
+                try:
+                    voucher_type = self.initial['voucherType']
+                    self.fields['voucher_no'].initial = voucher_type.get_next_voucher_number()
+                except Exception:
+                    pass
+        else:
+            self.fields['voucher_no'].initial = self.instance.voucher_no
+
+        # Filter voucher types if helper exists
+        try:
+           
+            filter_voucher_types(self, [29])
+        except ImportError:
+            pass
+
+
+class OpeningStockItemForm(forms.ModelForm):
+    class Meta:
+        model = OpeningStockDetail
+        fields = [
+            'item_group','item_name', 'item_code', 'barcode_code', 'quantity', 
+            'purchase_rate', 'item_net_amount', 'tax', 'item_tax_amount', 
+            'unit', 'item_total_amount', 'SerialNo', 'Cost'
+        ]
+        widgets = {
+            'item_group': forms.Select(attrs={'class': 'form-control'}),
+            'item_name': forms.Select(attrs={'class': 'form-control', 'id': 'id_item_name'}),  
+            'item_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Item Code'}),  
+            'barcode_code': forms.TextInput(attrs={'placeholder': 'Barcode', 'class': 'form-control'}),
+            'quantity': forms.NumberInput(attrs={'placeholder': 'Quantity', 'class': 'form-control'}),
+            'purchase_rate': forms.NumberInput(attrs={'placeholder': 'Purchase Rate', 'class': 'form-control'}),
+            'item_net_amount': forms.NumberInput(attrs={'placeholder': 'Net Amount', 'class': 'form-control', 'readonly': True}),
+            'tax': forms.NumberInput(attrs={'placeholder': 'Tax (%)', 'class': 'form-control'}),
+            'item_tax_amount': forms.NumberInput(attrs={'placeholder': 'Tax Amount', 'class': 'form-control', 'readonly': True}),
+            'unit': forms.Select(attrs={'class': 'form-control'}),
+            'item_total_amount': forms.NumberInput(attrs={'placeholder': 'Total Amount', 'class': 'form-control', 'readonly': True}),
+            'SerialNo': forms.TextInput(attrs={'placeholder': 'Serial No', 'class': 'form-control'}),
+            'Cost': forms.NumberInput(attrs={'placeholder': 'Cost', 'class': 'form-control'}),
+        }
+        labels = {
+            'item_group': 'Group Code',
+            'item_code': 'Item Code',
+            'item_name': 'Item Name',
+            'barcode_code': 'Barcode',
+            'quantity': 'Quantity',
+            'purchase_rate': 'Purchase Rate',
+            'item_net_amount': 'Net Amount',
+            'tax': 'Tax (%)',
+            'item_tax_amount': 'Tax Amount',
+            'unit': 'Unit',
+            'item_total_amount': 'Total Amount',
+            'SerialNo': 'Serial No',
+            'Cost': 'Cost',
+        }  
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['item_group'].required = False
+        self.fields['item_code'].required = False
+        self.fields['barcode_code'].required = False
+        self.fields['SerialNo'].required = False
+        self.fields['Cost'].required = False
+        
+        if not self.instance.pk:
+            self.fields['quantity'].initial = 1
+            self.fields['purchase_rate'].initial = 0.00
+            self.fields['item_net_amount'].initial = 0.00
+            self.fields['tax'].initial = 0.00
+            self.fields['item_tax_amount'].initial = 0.00
+            self.fields['item_total_amount'].initial = 0.00
+            self.fields['Cost'].initial = 0.00
+
+
+OpeningStockItemFormSet = inlineformset_factory(
+    OpeningStockMaster,
+    OpeningStockDetail,
+    form=OpeningStockItemForm,
+    extra=0,
+    can_delete=True,
+    min_num=1,
+    validate_min=True,
+    fields=[
+        'item_group','item_name', 'item_code', 'barcode_code', 'quantity', 
+        'purchase_rate', 'item_net_amount', 'tax', 'item_tax_amount', 
+        'unit', 'item_total_amount', 'SerialNo', 'Cost'
+    ]
+)
+
+class CustomOpeningStockItemFormSet(OpeningStockItemFormSet):
+    def clean(self):
+        if any(self.errors):
+            return
+            
+        valid_forms = 0
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                valid_forms += 1
+                if not form.cleaned_data.get('item_name'):
+                    raise forms.ValidationError("Each item must have an item name selected.")
+                if not form.cleaned_data.get('quantity') or form.cleaned_data.get('quantity') <= 0:
+                    raise forms.ValidationError("Each item must have a valid quantity greater than 0.")
+                if not form.cleaned_data.get('purchase_rate') or form.cleaned_data.get('purchase_rate') <= 0:
+                    raise forms.ValidationError("Each item must have a valid purchase rate greater than 0.")
+        
+        if valid_forms == 0:
+            raise forms.ValidationError("At least one item is required for the opening stock voucher.")

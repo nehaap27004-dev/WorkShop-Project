@@ -150,6 +150,134 @@
     .complex-column {
         display: none;
     }
+
+    /* ── MULTI CONTRACT PICKER ── */
+    .contract-picker {
+        position: relative;
+    }
+
+    .contract-picker-toggle {
+        min-width: 250px;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fff;
+    }
+
+    .contract-picker-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: calc(100% + 4px);
+        width: 320px;
+        max-height: 300px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        z-index: 1050;
+    }
+
+    .contract-picker-menu.show {
+        display: block;
+    }
+
+    .contract-picker-head {
+        padding: 8px 12px;
+        border-bottom: 1px solid #e9ecef;
+        background: #f8f9fa;
+        position: sticky;
+        top: 0;
+    }
+
+    .contract-picker-item,
+    .contract-picker-head label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        cursor: pointer;
+        font-weight: 400 !important;
+        font-size: 0.9rem;
+    }
+
+    .contract-picker-item {
+        padding: 7px 12px;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    .contract-picker-item:hover {
+        background: #f5f8ff;
+    }
+
+    /* ticked (selected) contract */
+    .contract-picker-item.is-selected {
+        background: #e3edff;
+        color: #1f4fbf;
+        font-weight: 600 !important;
+        box-shadow: inset 3px 0 0 #5A8DEE;
+    }
+
+    .contract-picker-item.is-selected:hover {
+        background: #d4e3ff;
+    }
+
+    .contract-picker-item.is-loaded {
+        color: #6c757d;
+        cursor: default;
+    }
+
+    /* override the global "input { width:100% !important }" for these checkboxes */
+    .contract-picker-menu input[type="checkbox"] {
+        width: 1.05em !important;
+        height: 1.05em;
+        padding: 0;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .loaded-contracts-bar {
+        display: none;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        background: #eef4ff;
+        border: 1px solid #d6e3ff;
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-bottom: 12px;
+        font-size: 0.9rem;
+    }
+
+    .contract-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #5A8DEE;
+        color: #fff;
+        border-radius: 14px;
+        padding: 2px 4px 2px 10px;
+        font-size: 0.85rem;
+    }
+
+    .contract-chip button {
+        border: none;
+        background: rgba(255, 255, 255, 0.25);
+        color: #fff;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        line-height: 18px;
+        padding: 0;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+
+    .contract-chip button:hover {
+        background: rgba(255, 255, 255, 0.45);
+    }
 </style>
 
 <div class="container mt-4 mb-5">
@@ -164,7 +292,7 @@
             {% endif %}
         </h2>
 
-        {% has_priv request.user 5 "can_read" as can_read_invoice %}
+        {% has_priv request.user 6 "can_read" as can_read_invoice %}
         {% if can_read_invoice %}
         <a href="{% url 'fleet_app:invoice_list' %}" class="btn btn-sm btn-primary">{% trans "View" %}</a>
         {% endif %}
@@ -234,6 +362,13 @@
                         {% endif %}
                     </div>
                     <div class="col-md-2">
+                        {{ invoice_form.due_date.label_tag }}
+                        {{ invoice_form.due_date }}
+                        {% if invoice_form.due_date.errors %}
+                        <div class="text-danger small">{{ invoice_form.due_date.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
                         {{ invoice_form.customer.label_tag }}
                         {{ invoice_form.customer }}
                         {% if invoice_form.customer.errors %}
@@ -282,6 +417,14 @@
                         {{ invoice_form.location }}
                         {% if invoice_form.location.errors %}
                         <div class="text-danger small">{{ invoice_form.location.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-2 complex-field">
+                        {{ invoice_form.staff.label_tag }}
+                        {{ invoice_form.staff }}
+                        {% if invoice_form.staff.errors %}
+                        <div class="text-danger small">{{ invoice_form.staff.errors }}</div>
                         {% endif %}
                     </div>
 
@@ -339,11 +482,25 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold text-secondary">{% trans "Add Invoice Details" %}</h5>
-                <div class="d-flex gap-2">
-                    <!-- Contract Selection Dropdown -->
-                    <select id="contractSelect" class="form-select form-select-sm" style="width: 250px;" disabled>
-                        <option value="">{% trans "Select Contract" %}</option>
-                    </select>
+                <div class="d-flex gap-2 align-items-start">
+                    <!-- Multi Contract Picker -->
+                    <div class="contract-picker" id="contractPicker">
+                        <button type="button" class="btn btn-sm btn-outline-secondary contract-picker-toggle"
+                            id="contractPickerToggle" onclick="toggleContractPicker()" disabled>
+                            <span id="contractPickerLabel">{% trans "Select Contracts" %}</span>
+                            <span>▾</span>
+                        </button>
+                        <div class="contract-picker-menu" id="contractPickerMenu">
+                            <div class="contract-picker-head">
+                                <label>
+                                    <input type="checkbox" id="contractSelectAll"
+                                        onchange="toggleSelectAllContracts(this)">
+                                    <strong>{% trans "Select all" %}</strong>
+                                </label>
+                            </div>
+                            <div id="contractList"></div>
+                        </div>
+                    </div>
 
                     <!-- Load Button -->
                     <button type="button" class="btn btn-sm btn-info" id="loadContractBtn"
@@ -353,10 +510,16 @@
                 </div>
             </div>
             <div class="card-body">
+                <!-- Loaded contracts (chips) -->
+                <div class="loaded-contracts-bar" id="loadedContractsBar">
+                    <span class="fw-semibold me-1">{% trans "Loaded contracts" %}:</span>
+                    <span id="loadedContractsList" class="d-inline-flex flex-wrap gap-2"></span>
+                </div>
+
                 <div class="row g-3 align-items-end mb-3">
                     <!-- Vehicle - Always visible -->
                     <div class="col-md-2">
-                        <label class="form-label">{% trans "Vehicle" %}</label>
+                        <label class="form-label">{% trans "Equipment" %}</label>
                         <select id="vehicle" class="form-control" onchange="onVehicleChange()">
                             <option value="" disabled selected>{% trans "Select vehicle" %}</option>
                             {% for vehicle in vehicles %}
@@ -367,7 +530,7 @@
 
                     <!-- Vehicle Model (auto-populated, read-only) -->
                     <div class="col-md-2">
-                        <label class="form-label">{% trans "Vehicle Model" %}</label>
+                        <label class="form-label">{% trans "Equipment Model" %}</label>
                         <input type="text" id="vehicle_model" class="form-control"
                             placeholder="{% trans 'Auto-filled' %}" readonly>
                     </div>
@@ -392,6 +555,7 @@
                             <option value="" disabled selected>{% trans "Select period" %}</option>
                             <option value="hourly">{% trans "Hourly" %}</option>
                             <option value="daily">{% trans "Daily" %}</option>
+                            <option value="weekly">{% trans "Weekly" %}</option>
                             <option value="monthly">{% trans "Monthly" %}</option>
                         </select>
                     </div>
@@ -455,7 +619,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 4%">#</th>
-                                <th style="width: 12%">{% trans "Vehicle" %}</th>
+                                <th style="width: 12%">{% trans "Equipment" %}</th>
                                 <th style="width: 10%">{% trans "Model" %}</th>
                                 <th style="width: 12%">{% trans "Description" %}</th>
                                 <th style="width: 10%">{% trans "Details" %}</th>
@@ -529,6 +693,15 @@
         selectPeriod: "{% trans 'Please select a period.' %}",
         validQuantity: "{% trans 'Please enter a valid quantity.' %}",
         validRate: "{% trans 'Please enter a valid rate.' %}",
+        selectContracts: "{% trans 'Select Contracts' %}",
+        noContracts: "{% trans 'No contracts found' %}",
+        selected: "{% trans 'selected' %}",
+        selectContractFirst: "{% trans 'Please select at least one contract first.' %}",
+        loadFromContract: "{% trans 'Load from Contract' %}",
+        loaded: "{% trans 'Loaded' %}",
+        noUncleared: "{% trans 'no uncleared details' %}",
+        removeContractConfirm: "{% trans 'Remove all rows loaded from contract' %}",
+        failedContracts: "{% trans 'Failed to load contracts' %}",
     };
 
     let details = [];
@@ -539,6 +712,19 @@
     // ── EDIT STATE ────────────────────────────────────────────────────────────
     // -1  = not editing;  >=0 = index of the row being edited
     let editingIndex = -1;
+
+    // ── MULTI CONTRACT STATE ─────────────────────────────────────────────────
+    let customerContracts = [];   // contracts available for the selected customer
+    let loadedContracts = {};     // { contractId: contractNo } already loaded into the table
+
+    function escapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
 
     // Toggle between Simple and Complex invoice
     function toggleInvoiceType() {
@@ -629,6 +815,7 @@
                     let rate = 0;
                     if (period === 'hourly') rate = parseFloat(data.rate_per_hr);
                     else if (period === 'daily') rate = parseFloat(data.rate_per_day);
+                    else if (period === 'weekly') rate = parseFloat(data.rate_per_week);
                     else if (period === 'monthly') rate = parseFloat(data.rate_per_month);
                     document.getElementById('unit_rate').value = rate.toFixed(3);
                     calculateAmount();
@@ -765,11 +952,7 @@
             vehicleSelect.focus();
             return;
         }
-        if (!location) {
-            alert(translations.enterLocation);
-            document.getElementById('location').focus();
-            return;
-        }
+
 
         if (isComplexInvoice) {
             period = document.getElementById('period').value;
@@ -802,20 +985,24 @@
         const total = amount + taxAmount;
 
         // ── If editing: remove old row's total from grand total ───────────
+        // Contract link (if the row came from a contract) is carried over to the updated row
+        let carriedContractId = null;
+        let carriedContractInput = null;
+        let oldHiddenInput = null;
+
         if (editingIndex >= 0) {
             const oldRow = document.querySelector(`#detailsTable tbody tr[data-index="${editingIndex}"]`);
             if (oldRow) {
+                carriedContractId = oldRow.getAttribute('data-contract-id');
                 // Find total cell (last numeric cell before Action)
                 const cells = oldRow.cells;
-                let totalCellIndex = isComplexInvoice ? (isTaxable ? 11 : 9) : (isTaxable ? 6 : 4);
+                let totalCellIndex = 13; // total is always the 14th cell (index 13), regardless of invoice type/tax
                 const oldTotal = parseFloat(cells[totalCellIndex].textContent) || 0;
                 grandTotalAmount -= oldTotal;
                 oldRow.remove();
             }
-            // Remove old hidden input
-            if (details[editingIndex]) {
-                details[editingIndex].remove();
-            }
+            oldHiddenInput = details[editingIndex] || null;
+            if (oldHiddenInput) carriedContractInput = oldHiddenInput.contractIdInput || null;
         }
 
         // ── Build row HTML ────────────────────────────────────────────────
@@ -825,8 +1012,10 @@
         const noDataRow = document.getElementById('noDataRow');
         if (noDataRow) noDataRow.style.display = 'none';
 
+        const contractAttr = carriedContractId ? ` data-contract-id="${carriedContractId}"` : '';
+
         let row = `
-            <tr data-index="${targetIndex}">
+            <tr data-index="${targetIndex}"${contractAttr}>
                 <td>${targetIndex + 1}</td>
                 <td>${vehicleName}</td>
                 <td>${vehicleModel}</td>
@@ -907,7 +1096,14 @@
             input.value = `${vehicleId}|${location}|${amount}|${tax}|${vehicleModel}|${detailDescription}`;
         }
 
-        hiddenDiv.appendChild(input);
+        // keep the link to the contract detail id (if any)
+        input.contractIdInput = carriedContractInput;
+
+        if (oldHiddenInput && oldHiddenInput.parentNode) {
+            oldHiddenInput.replaceWith(input);   // keep original order
+        } else {
+            hiddenDiv.appendChild(input);
+        }
 
         if (editingIndex >= 0) {
             details[editingIndex] = input;   // replace in-place
@@ -943,7 +1139,10 @@
         });
         // Sync hidden input data-index values
         details.forEach((inp, i) => {
-            if (inp) inp.setAttribute('data-index', i);
+            if (inp) {
+                inp.setAttribute('data-index', i);
+                if (inp.contractIdInput) inp.contractIdInput.setAttribute('data-index', i);
+            }
         });
     }
 
@@ -980,16 +1179,19 @@
         // If we were editing this row, cancel edit first
         const row = button.closest('tr');
         const rowIndex = parseInt(row.getAttribute('data-index'));
+        const rowContractId = row.getAttribute('data-contract-id');
         if (editingIndex === rowIndex) cancelEdit();
 
         const cells = row.cells;
-        let totalCellIndex = isComplexInvoice ? (isTaxable ? 11 : 9) : (isTaxable ? 6 : 4);
+        let totalCellIndex = 13; // fixed — see note above
         const totalAmount = parseFloat(cells[totalCellIndex].textContent) || 0;
         grandTotalAmount -= totalAmount;
 
         row.remove();
 
         if (details[rowIndex]) {
+            // also remove the linked contract_detail_ids[] input so that detail is not cleared on save
+            if (details[rowIndex].contractIdInput) details[rowIndex].contractIdInput.remove();
             details[rowIndex].remove();
             details.splice(rowIndex, 1);
         }
@@ -1004,6 +1206,8 @@
         }
 
         updateGrandTotal();
+
+        if (rowContractId) syncLoadedContract(rowContractId);
     }
 
     function updateGrandTotal() {
@@ -1023,16 +1227,146 @@
 
 
     // ════════════════════════════════════════════════════════════════════════
-    //  CONTRACT LOADING (unchanged)
+    //  MULTI CONTRACT PICKER
+    // ════════════════════════════════════════════════════════════════════════
+    function toggleContractPicker() {
+        const menu = document.getElementById('contractPickerMenu');
+        menu.classList.toggle('show');
+    }
+
+    function closeContractPicker() {
+        document.getElementById('contractPickerMenu').classList.remove('show');
+    }
+
+    // close when clicking outside the picker
+    document.addEventListener('click', function (e) {
+        const picker = document.getElementById('contractPicker');
+        if (picker && !picker.contains(e.target)) closeContractPicker();
+    });
+
+    function getContractCheckboxes() {
+        return Array.from(document.querySelectorAll('#contractList .contract-checkbox'));
+    }
+
+    function getSelectedContractIds() {
+        return getContractCheckboxes()
+            .filter(cb => cb.checked && !cb.disabled)
+            .map(cb => cb.value);
+    }
+
+    function toggleSelectAllContracts(master) {
+        getContractCheckboxes().forEach(cb => {
+            if (!cb.disabled) cb.checked = master.checked;
+        });
+        updateContractPickerLabel();
+    }
+
+    function updateContractPickerLabel() {
+        const label = document.getElementById('contractPickerLabel');
+        const selectAll = document.getElementById('contractSelectAll');
+        const available = getContractCheckboxes().filter(cb => !cb.disabled);
+        const count = getSelectedContractIds().length;
+
+        // highlight ticked contracts in a different colour
+        getContractCheckboxes().forEach(cb => {
+            const item = cb.closest('.contract-picker-item');
+            if (item) item.classList.toggle('is-selected', cb.checked && !cb.disabled);
+        });
+
+        if (customerContracts.length === 0) {
+            label.textContent = translations.selectContracts;
+        } else {
+            label.textContent = count > 0 ? `${count} ${translations.selected}` : translations.selectContracts;
+        }
+        if (selectAll) {
+            selectAll.checked = available.length > 0 && count === available.length;
+            selectAll.disabled = available.length === 0;
+        }
+    }
+
+    function renderContractList() {
+        const list = document.getElementById('contractList');
+        // keep currently ticked boxes ticked after re-render
+        const previouslyChecked = new Set(getSelectedContractIds());
+        list.innerHTML = '';
+
+        if (customerContracts.length === 0) {
+            list.innerHTML = `<div class="text-muted small p-2">${translations.noContracts}</div>`;
+            updateContractPickerLabel();
+            return;
+        }
+
+        customerContracts.forEach(contract => {
+            const id = String(contract.id);
+            const isLoaded = Object.prototype.hasOwnProperty.call(loadedContracts, id);
+            const item = document.createElement('label');
+            item.className = 'contract-picker-item' + (isLoaded ? ' is-loaded' : '');
+            item.innerHTML = `
+                <input type="checkbox" class="contract-checkbox" value="${escapeHtml(id)}"
+                       data-contract-no="${escapeHtml(contract.voucher_no)}"
+                       ${isLoaded ? 'disabled' : ''}
+                       ${!isLoaded && previouslyChecked.has(id) ? 'checked' : ''}
+                       onchange="updateContractPickerLabel()">
+                <span>${escapeHtml(contract.voucher_no)} - ${escapeHtml(contract.date)}</span>
+                ${isLoaded ? `<span class="badge bg-success ms-auto">${translations.loaded}</span>` : ''}`;
+            list.appendChild(item);
+        });
+
+        updateContractPickerLabel();
+    }
+
+    function renderLoadedContracts() {
+        const bar = document.getElementById('loadedContractsBar');
+        const list = document.getElementById('loadedContractsList');
+        const ids = Object.keys(loadedContracts);
+
+        bar.style.display = ids.length ? 'flex' : 'none';
+        list.innerHTML = ids.map(id => `
+            <span class="contract-chip">
+                ${escapeHtml(loadedContracts[id])}
+                <button type="button" title="{% trans 'Remove' %}" onclick="removeContract('${escapeHtml(id)}')">×</button>
+            </span>`).join('');
+    }
+
+    // If no rows of a contract remain in the table, mark it as not loaded again
+    function syncLoadedContract(contractId) {
+        const stillThere = document.querySelector(`#detailsTable tbody tr[data-contract-id="${contractId}"]`);
+        if (!stillThere && Object.prototype.hasOwnProperty.call(loadedContracts, String(contractId))) {
+            delete loadedContracts[String(contractId)];
+            renderLoadedContracts();
+            renderContractList();
+        }
+    }
+
+    // Remove every row that was loaded from one contract
+    function removeContract(contractId) {
+        const contractNo = loadedContracts[String(contractId)] || contractId;
+        if (!confirm(`${translations.removeContractConfirm} ${contractNo}?`)) return;
+
+        if (editingIndex >= 0) cancelEdit();
+
+        let row;
+        while ((row = document.querySelector(`#detailsTable tbody tr[data-contract-id="${contractId}"]`))) {
+            removeDetail(row.querySelector('.btn-danger'));
+        }
+        syncLoadedContract(contractId);
+    }
+
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  CONTRACT LOADING (multiple contracts)
     // ════════════════════════════════════════════════════════════════════════
     function loadCustomerContracts() {
         const customerId = document.querySelector('[name="customer"]').value;
-        const contractSelect = document.getElementById('contractSelect');
+        const toggleBtn = document.getElementById('contractPickerToggle');
         const loadBtn = document.getElementById('loadContractBtn');
 
-        contractSelect.innerHTML = '<option value="">{% trans "Select Contract" %}</option>';
-        contractSelect.disabled = true;
+        customerContracts = [];
+        document.getElementById('contractList').innerHTML = '';
+        toggleBtn.disabled = true;
         loadBtn.disabled = true;
+        closeContractPicker();
+        updateContractPickerLabel();
 
         if (!customerId) return;
 
@@ -1040,64 +1374,94 @@
             .then(r => r.json())
             .then(data => {
                 if (data.success && data.contracts.length > 0) {
-                    data.contracts.forEach(contract => {
-                        const option = document.createElement('option');
-                        option.value = contract.id;
-                        option.textContent = `${contract.voucher_no} - ${contract.date}`;
-                        contractSelect.appendChild(option);
-                    });
-                    contractSelect.disabled = false;
+                    customerContracts = data.contracts;
+                    renderContractList();
+                    toggleBtn.disabled = false;
                     loadBtn.disabled = false;
                 } else {
-                    contractSelect.innerHTML = '<option value="">{% trans "No contracts found" %}</option>';
+                    customerContracts = [];
+                    renderContractList();
+                    document.getElementById('contractPickerLabel').textContent = translations.noContracts;
                 }
             })
-            .catch(err => { console.error('Error:', err); alert('Failed to load contracts'); });
+            .catch(err => { console.error('Error:', err); alert(translations.failedContracts); });
+    }
+
+    // Fill invoice header fields from a contract — only fields that are still empty,
+    // so the first loaded contract wins and later contracts don't overwrite it
+    function fillHeaderFromContract(data) {
+        const fieldMap = {
+            'supplier_ref': data.supplier_ref,
+            'hire_contract_no': data.hire_contract_no,
+            'lpo_date': data.lpo_date,
+            'location': data.location,
+            'buyer_order_no': data.buyer_order_no,
+            'other_ref': data.other_ref,
+        };
+        Object.entries(fieldMap).forEach(([fieldName, value]) => {
+            const el = document.querySelector(`[name="${fieldName}"]`);
+            if (el && value && !String(el.value || '').trim()) el.value = value;
+        });
     }
 
     function loadDeliveryContractDetails() {
-        const contractId = document.getElementById('contractSelect').value;
-        if (!contractId) { alert('Please select a contract first'); return; }
+        const contractIds = getSelectedContractIds();
+        if (contractIds.length === 0) { alert(translations.selectContractFirst); return; }
+
+        if (editingIndex >= 0) cancelEdit();
 
         const loadButton = document.getElementById('loadContractBtn');
-        if (loadButton) { loadButton.disabled = true; loadButton.textContent = 'Loading...'; }
+        if (loadButton) { loadButton.disabled = true; loadButton.textContent = translations.loading; }
 
-        fetch(`/get-delivery-contract-details/?contract_id=${contractId}`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.details.length === 0) {
-                        alert('No uncleared details found for this contract.');
-                    } else {
-                        details = [];
-                        grandTotalAmount = 0;
-                        document.getElementById('hiddenDetails').innerHTML = '';
-                        document.querySelector('#detailsTable tbody').innerHTML =
-                            '<tr id="noDataRow"><td colspan="13" class="text-center text-muted">No details added yet</td></tr>';
-                        data.details.forEach(detail => loadContractDetail(detail));
+        const requests = contractIds.map(id =>
+            fetch(`/get-delivery-contract-details/?contract_id=${id}`)
+                .then(r => r.json())
+                .then(data => ({ id, data }))
+                .catch(err => {
+                    console.error('Error:', err);
+                    return { id, data: { success: false, message: 'Request failed' } };
+                })
+        );
 
-                        // ✅ Auto-fill Invoice header fields from Contract
-                        const fieldMap = {
-                            'supplier_ref': data.supplier_ref,
-                            'hire_contract_no': data.hire_contract_no,
-                            'location': data.location,
-                            'buyer_order_no': data.buyer_order_no,
-                            'other_ref': data.other_ref,
-                        };
-                        Object.entries(fieldMap).forEach(([fieldName, value]) => {
-                            const el = document.querySelector(`[name="${fieldName}"]`);
-                            if (el && value) el.value = value;
-                        });
+        Promise.all(requests)
+            .then(results => {
+                let contractCount = 0;
+                let detailCount = 0;
+                const problems = [];
 
-                        alert(`Loaded ${data.details.length} details from contract ${data.contract_no}`);
+                // results keep the same order as the selection
+                results.forEach(({ id, data }) => {
+                    const cb = document.querySelector(`#contractList .contract-checkbox[value="${id}"]`);
+                    const label = data.contract_no || (cb ? cb.getAttribute('data-contract-no') : id);
+
+                    if (!data.success) {
+                        problems.push(`${label}: ${data.message || translations.error}`);
+                        return;
                     }
-                } else {
-                    alert('Error loading contract details: ' + data.message);
-                }
+                    if (!data.details || data.details.length === 0) {
+                        problems.push(`${label}: ${translations.noUncleared}`);
+                        return;
+                    }
+
+                    data.details.forEach(detail => loadContractDetail(detail, id));
+                    loadedContracts[String(id)] = label;
+                    fillHeaderFromContract(data);
+
+                    contractCount++;
+                    detailCount += data.details.length;
+                });
+
+                renderLoadedContracts();
+                renderContractList();
+                closeContractPicker();
+
+                let msg = '';
+                if (contractCount > 0) msg += `Loaded ${detailCount} details from ${contractCount} contract(s).`;
+                if (problems.length) msg += (msg ? '\n\n' : '') + 'Not loaded:\n' + problems.join('\n');
+                if (msg) alert(msg);
             })
-            .catch(err => { console.error('Error:', err); alert('Failed to load contract details'); })
             .finally(() => {
-                if (loadButton) { loadButton.disabled = false; loadButton.textContent = '📋 Load from Contract'; }
+                if (loadButton) { loadButton.disabled = false; loadButton.textContent = '📋 ' + translations.loadFromContract; }
             });
     }
 
@@ -1106,7 +1470,7 @@
         if (customerSelect) customerSelect.addEventListener('change', loadCustomerContracts);
     });
 
-    function loadContractDetail(detail) {
+    function loadContractDetail(detail, contractId) {
         const index = details.length + 1;
         const isComplex = detail.period && detail.period.trim() !== '';
 
@@ -1119,7 +1483,7 @@
         const total = parseFloat(detail.total_amount);
 
         let row = `
-            <tr data-index="${index - 1}" data-contract-detail-id="${detail.id}">
+            <tr data-index="${index - 1}" data-contract-detail-id="${detail.id}" data-contract-id="${contractId}">
                 <td>${index}</td>
                 <td>${detail.vehicle_name}</td>
                 <td>${detail.vehicle_model || ''}</td>
@@ -1196,6 +1560,9 @@
         contractIdInput.value = detail.id;
         contractIdInput.setAttribute('data-index', index - 1);
         hiddenDiv.appendChild(contractIdInput);
+
+        // link detail input ↔ contract detail id input (used on edit/remove)
+        input.contractIdInput = contractIdInput;
 
         details.push(input);
         grandTotalAmount += total;
@@ -1401,8 +1768,26 @@
 
 <!-- admin override -->
 <script>
+    // ── Double-submit guard ──
+    let invoiceSubmitting = false;
+
+    function lockInvoiceSave() {
+        invoiceSubmitting = true;
+        $('#invoiceForm button[type="submit"]').prop("disabled", true);
+    }
+    function unlockInvoiceSave() {
+        invoiceSubmitting = false;
+        $('#invoiceForm button[type="submit"]').prop("disabled", false);
+    }
+
     $(document).on("submit", "#invoiceForm", function (e) {
+        // Validation handler above already blocked this submit -> don't post
+        if (e.isDefaultPrevented()) return false;
         e.preventDefault();
+
+        // A save is already in progress -> ignore extra clicks / Enter presses
+        if (invoiceSubmitting) return false;
+        lockInvoiceSave();
 
         window.pendingFormId = "invoiceForm";
         window.pendingFormAction = this.action;
@@ -1420,6 +1805,7 @@
 
             success: function (response) {
                 if (response.admin_required) {
+                    unlockInvoiceSave();
                     $("#admin_error").text(response.message || "");
                     $("#adminOverrideModal").modal("show");
                     return;
@@ -1428,10 +1814,14 @@
                     alert(response.message);
                     if (response.pdf_url) window.open(response.pdf_url, "_blank");
                     setTimeout(function () { window.location.href = window.afterSuccessRedirect; }, 1000);
+                    // stays locked: page is redirecting
+                } else {
+                    unlockInvoiceSave();
                 }
             },
 
             error: function (xhr) {
+                unlockInvoiceSave();
                 if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
                     $("#admin_error").text(xhr.responseJSON.message || "");
                     $("#adminOverrideModal").modal("show");
@@ -1486,33 +1876,29 @@
 <!-- Get Ledger by Group with selected payment mode -->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-
         const paymentModeField = document.getElementById("id_payment_mode");
         const ledgerField = document.getElementById("id_ledger");
 
+        // Capture what Django originally selected, before we ever touch the dropdown
+        const initialLedgerId = ledgerField.value;
+        let isFirstLoad = true;
+
         function getGroupId(paymentMode) {
-
             paymentMode = paymentMode.toLowerCase();
-
             if (paymentMode === "cash") return 8;
             if (paymentMode === "bank") return 5;
             if (paymentMode === "credit") return 29;
-
             return null;
         }
 
         function loadLedgers(paymentMode) {
-
             const groupId = getGroupId(paymentMode);
-
             if (!groupId) return;
 
             fetch(`/ajax/get-ledgers/?group_id=${groupId}`)
                 .then(response => response.json())
                 .then(data => {
-
                     ledgerField.innerHTML = "";
-
                     data.ledgers.forEach(function (ledger) {
                         const option = document.createElement("option");
                         option.value = ledger.id;
@@ -1520,6 +1906,11 @@
                         ledgerField.appendChild(option);
                     });
 
+                    // Restore the invoice's real ledger only on the very first load (edit mode)
+                    if (isFirstLoad && initialLedgerId) {
+                        ledgerField.value = initialLedgerId;
+                    }
+                    isFirstLoad = false;
                 });
         }
 
@@ -1530,8 +1921,6 @@
         paymentModeField.addEventListener("change", function () {
             loadLedgers(this.value);
         });
-
     });
 </script>
-
 {% endblock %}

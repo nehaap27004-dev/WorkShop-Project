@@ -3,83 +3,161 @@
 {% load i18n %}
 
 {% block content %}
-<!-- Custom CSS -->
 <style>
-    h2, h3, h4, h5 {
-        font-family: 'Segoe UI', sans-serif;
-    }
+    /* ── Azur Burgundy Module Standards ── */
+    .text-burgundy { color: #9f1045 !important; }
+    .bg-burgundy { background-color: #9f1045 !important; color: #fff !important; }
 
-    form label {
+    .btn-custom-primary {
+        background-color: #9f1045 !important;
+        border-color: #9f1045 !important;
+        color: #fff !important;
         font-weight: 500;
-        color: #444;
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-custom-primary:hover {
+        background-color: #830d38 !important;
+        border-color: #830d38 !important;
+        color: #fff !important;
     }
 
-    input, select, textarea {
-        width: 100% !important;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        padding: 6px 10px;
+    /* KPI Cards */
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+    }
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .kpi-content {
+        min-width: 0;
+    }
+    .kpi-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    /* Card Banner Header */
+    .card-banner-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.9rem 1.25rem;
+    }
+    .card-banner-title {
         font-size: 0.95rem;
+        font-weight: 700;
+        color: #2d3748;
+        display: inline-flex;
+        align-items: center;
     }
 
-    input:focus, select:focus, textarea:focus {
-        border-color: #5A8DEE;
-        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
-        outline: none;
+    .form-control:focus, .form-select:focus {
+        border-color: #9f1045 !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
     }
 
-    .btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
+    /* Table styling */
+    .table thead th {
+        background-color: #fafbfc;
+        color: #4a5568;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
     }
-
-    .btn-danger {
-        background-color: #dc3545 !important;
-        border-color: #dc3545 !important;
+    .table tbody td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+        vertical-align: middle;
     }
-
-    .card {
-        border-radius: 12px;
-    }
-
-    .card-header {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .table th {
-        background-color: #343a40;
-        color: white;
-        font-weight: 600;
-    }
-
-    .btn:hover {
-        opacity: 0.9;
-        transition: 0.2s ease-in-out;
+    .table-hover tbody tr:hover {
+        background-color: #fdfafb;
     }
 </style>
 
-<div class="container mt-4 mb-5">
-    <h2 class="mb-4 text-center fw-bold text-primary">{% trans "Vehicle Models" %}</h2>
+<div class="container-fluid p-0 mb-5">
 
-    <!-- Header with New Button -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div></div>
-        <a href="{% url 'fleet_app:create_vehicle_model' %}" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-            <i class="bi bi-plus-circle me-2"></i>{% trans "New" %}
+    <!-- Top Header Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-1">
+                <i class="bi bi-car-front text-burgundy mr-2"></i>{% trans "Vehicle Models" %}
+            </h2>
+            <div class="text-muted small">{% trans "Define and manage vehicle models, manufacturers and classification categories" %}</div>
+        </div>
+        <a href="{% url 'fleet_app:create_vehicle_model' %}" class="btn btn-custom-primary shadow-sm">
+            <i class="bi bi-plus-lg mr-1"></i>{% trans "New Vehicle Model" %}
         </a>
     </div>
 
-    <!-- Filter Section -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">{% trans "Filter Options" %}</h5>
+    <!-- KPI Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background:#fdf2f5 !important; color:#9f1045 !important;">
+                    <i class="bi bi-car-front"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">{% trans "TOTAL MODELS" %}</div>
+                    <div class="kpi-value text-burgundy">{{ vehicle_models|length }}</div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <!-- Manufacturer Filter -->
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <label for="manufacturer-select" class="form-label">{% trans "Select Manufacturer" %}</label>
-                    <select id="manufacturer-select" name="manufacturer_id" class="form-select" onchange="this.form.submit()">
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background:#e0f2fe !important; color:#0284c7 !important;">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">{% trans "MANUFACTURERS" %}</div>
+                    <div class="kpi-value text-dark">{{ manufacturers|length }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card shadow-sm border-0 mb-4" style="border-radius:10px;">
+        <div class="card-header card-banner-header">
+            <span class="card-banner-title"><i class="bi bi-funnel text-burgundy mr-2"></i>{% trans "Filter Vehicle Models" %}</span>
+        </div>
+        <div class="card-body p-3">
+            <form method="get" class="form-row align-items-end">
+                <div class="col-md-5 mb-2 mb-md-0">
+                    <label for="manufacturer-select" class="small text-muted mb-1 font-weight-bold">{% trans "Filter by Manufacturer" %}</label>
+                    <select id="manufacturer-select" name="manufacturer_id" class="form-control" onchange="this.form.submit()">
                         <option value="">{% trans "All Manufacturers" %}</option>
                         {% for manufacturer in manufacturers %}
                             <option value="{{ manufacturer.id }}"
@@ -89,58 +167,76 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div class="col-md-3 mb-2 mb-md-0 d-flex">
+                    {% if request.GET.manufacturer_id %}
+                    <a href="{% url 'fleet_app:vehicle_model_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle mr-1"></i>{% trans "Reset Filter" %}
+                    </a>
+                    {% endif %}
+                </div>
             </form>
         </div>
     </div>
 
     <!-- Vehicle Models Table -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">{% trans "Vehicle Models List" %}</h5>
+    <div class="card shadow-sm border-0" style="border-radius:10px;">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="card-banner-title"><i class="bi bi-list-task text-burgundy mr-2"></i>{% trans "Vehicle Models List" %}</span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold" style="border-radius:6px;">{% trans "Total" %}: {{ vehicle_models|length }}</span>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle text-center">
-                    <thead class="table-dark">
+                <table class="table table-hover mb-0">
+                    <thead>
                         <tr>
-                            <th><i class="bi bi-building me-2"></i>{% trans "Manufacturer" %}</th>
-                            <th><i class="bi bi-car-front me-2"></i>{% trans "Model Name" %}</th>
-                            <th><i class="bi bi-tag me-2"></i>{% trans "Category" %}</th>
-                            <th><i class="bi bi-gear me-2"></i>{% trans "Actions" %}</th>
+                            <th>{% trans "Manufacturer" %}</th>
+                            <th>{% trans "Model Name" %}</th>
+                            <th>{% trans "Category / Type" %}</th>
+                            <th style="width: 150px;" class="text-center">{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for vehicle_model in vehicle_models %}
                         <tr>
-                            <td>{{ vehicle_model.manufacturer.manufacturer_name }}</td>
-                            <td><strong>{{ vehicle_model.model_name }}</strong></td>
-                            <td>{{ vehicle_model.vehicle_category.category_name }}</td>
-                            <td>
-                                <div class="d-flex justify-content-center gap-2">
-                                    <!-- Edit button -->
-                                    <a href="{% url 'fleet_app:update_vehicle_model' vehicle_model.id %}"
-                                       class="btn btn-sm btn-primary px-3 py-1">
-                                        <i class="bi bi-pencil-square me-1"></i>{% trans "Edit" %}
-                                    </a>
-
-                                    <!-- Delete form -->
-                                    <form method="post"
-                                          action="{% url 'fleet_app:delete_vehicle_model' vehicle_model.id %}"
-                                          onsubmit="return confirm('{% trans "Are you sure you want to delete" %} {{ vehicle_model.model_name }}?');"
-                                          style="display: inline;">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-danger px-3 py-1">
-                                            <i class="bi bi-trash me-1"></i>{% trans "Delete" %}
-                                        </button>
-                                    </form>
-                                </div>
+                            <td class="align-middle">
+                                <span class="font-weight-600 text-dark">
+                                    <i class="bi bi-building text-secondary mr-1"></i>
+                                    {{ vehicle_model.manufacturer.manufacturer_name }}
+                                </span>
+                            </td>
+                            <td class="align-middle">
+                                <a href="{% url 'fleet_app:update_vehicle_model' vehicle_model.id %}" class="font-weight-bold text-burgundy" style="font-size:14px;">
+                                    {{ vehicle_model.model_name }}
+                                </a>
+                            </td>
+                            <td class="align-middle">
+                                <span class="badge badge-light border text-dark font-weight-600 px-2 py-1">
+                                    <i class="bi bi-tag text-secondary mr-1"></i>
+                                    {{ vehicle_model.vehicle_category.category_name|default:"—" }}
+                                </span>
+                            </td>
+                            <td class="align-middle text-center text-nowrap">
+                                <a href="{% url 'fleet_app:update_vehicle_model' vehicle_model.id %}"
+                                   class="btn btn-sm btn-outline-secondary mr-1"
+                                   title="{% trans 'Edit Model' %}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="post"
+                                      action="{% url 'fleet_app:delete_vehicle_model' vehicle_model.id %}"
+                                      onsubmit="return confirm('{% trans "Are you sure you want to delete" %} {{ vehicle_model.model_name }}?');"
+                                      style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete' %}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">
-                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                {% trans 'No models found. Create your first model by clicking the "New" button above.' %}
+                            <td colspan="4" class="text-center text-muted py-5">
+                                <i class="bi bi-car-front display-4 d-block mb-2 text-secondary"></i>
+                                {% trans 'No models found. Create your first model by clicking "New Vehicle Model" above.' %}
                             </td>
                         </tr>
                         {% endfor %}

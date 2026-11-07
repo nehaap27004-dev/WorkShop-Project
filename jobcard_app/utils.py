@@ -114,7 +114,4 @@ def get_next_document_number(voucher_type_id, model_cls, number_field):
             f"Voucher type {voucher_type_id} does not exist."
         )
 
-    return voucher.get_next_voucher_number(
-        model_cls,
-        number_field
-    )
+    return voucher.get_next_voucher_number()

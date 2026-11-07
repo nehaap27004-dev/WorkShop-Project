@@ -3,9 +3,22 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h3 class="mb-4">Receipt List</h3>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'accounts_app:receipt_create' %}"
+        class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Receipt
+        </a>
+    </div>
+    <!-- <h3 class="mb-4">Receipt List</h3> -->
 
-    <table class="table table-bordered table-striped table-hover">
+    <!-- search -->
+<div style="margin-bottom:15px;">
+    <input type="text" id="receiptSearch" 
+        placeholder="Search Voucher No or Customer..."
+        style="width:100%; padding:8px; border:1px solid #ccc; border-radius:5px;">
+</div>
+
+    <table class="table table-bordered table-striped table-hover" id="receiptTable">
         <thead class="table-dark">
             <tr>
                 <th>Voucher No</th>
@@ -14,6 +27,7 @@
                 <th>Received From</th>
                 <th>Total Amount</th>
                 <th>PDC</th>
+                 <th>Advance</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -23,7 +37,7 @@
             <tr>
                 <td>{{ r.voucher_no }}</td>
                 <td>{{ r.Date }}</td>
-                <td>{{ r.Ledger.name }}</td>
+                <td>{{ r.Ledger.ledger_name }}</td>
                 <td>{{ r.ReceivedFrom }}</td>
                 <td>{{ r.TotalAmount }}</td>
                 <td>
@@ -34,12 +48,23 @@
                     {% endif %}
                 </td>
                 <td>
+                    <span class="badge 
+                        {% if r.IsAdvance == True %}badge-success{% else %}badge-warning{% endif %}">
+                        {{ r.IsAdvance }}
+                    </span>
+                </td>
+                <td>
                     <a href="{% url 'accounts_app:edit_receipt' r.id %}" 
-                       class="btn btn-sm btn-warning">
+                    class="btn btn-sm btn-warning">
                         <i class="bi bi-pencil"></i> Edit
                     </a>
 
-                    <!-- ✅ CHANGED TO BUTTON WITH ONCLICK -->
+                    <a href="{% url 'accounts_app:receipt_pdf' r.id %}" 
+                    target="_blank"
+                    class="btn btn-sm btn-info">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </a>
+
                     <button onclick="deleteReceipt({{ r.id }}, '{{ r.voucher_no }}')" 
                             class="btn btn-sm btn-danger">
                         <i class="bi bi-trash"></i> Delete
@@ -48,7 +73,7 @@
             </tr>
         {% empty %}
             <tr>
-                <td colspan="7" class="text-center text-muted">No receipts found</td>
+                <td colspan="8" class="text-center text-muted">No receipts found</td>
             </tr>
         {% endfor %}
         </tbody>
@@ -104,5 +129,29 @@ function deleteReceipt(id, voucherNo) {
     });
 }
 </script>
+
+<!-- search -->
+<script>
+document.getElementById("receiptSearch").addEventListener("keyup", function () {
+
+    let filter = this.value.toLowerCase();
+    let rows     = document.querySelectorAll("#receiptTable tbody tr");
+
+    rows.forEach(function(row) {
+
+        if (row.children.length <= 1) return;
+
+        let voucher   = row.cells[0].textContent.toLowerCase();   // col 1 = Voucher No
+        let customer  = row.cells[3].textContent.toLowerCase();   // col 5 = Received From
+
+        if (voucher.includes(filter) || customer.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+});
+</script>
+
 
 {% endblock %}

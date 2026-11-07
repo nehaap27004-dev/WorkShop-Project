@@ -1,10 +1,8 @@
-{% extends 'item_base.html' %}
+{% extends 'fleet_base1.html' %}
 {% load static %}
 
 {% block content %}
 <style>
-
-
   h2 {
       margin-bottom: 20px;
       text-align: center;
@@ -36,7 +34,7 @@
   }
 
   .voucher-table a {
-      color: #0066cc;
+      color: #b01033;
       text-decoration: none;
   }
 
@@ -58,7 +56,7 @@
       background-color: #45a049;
   }
 
-  td[colspan="5"] {
+  td[colspan="8"] {
       text-align: center;
       color: #888;
       font-style: italic;
@@ -66,39 +64,83 @@
 </style>
 
 <h2>Opening Stock List</h2>
-
-<table class="voucher-table">
+<div style="margin-bottom:15px;">
+    <input type="text" id="voucherSearch" placeholder="Search Voucher No or Cost Center..."
+           style="width:100%; padding:8px; border:1px solid #ccc; border-radius:5px;">
+</div>
+<table class="voucher-table" id="voucherTable">
     <thead>
         <tr>
+            <th>S.No.</th>
+            <th>ID</th>
             <th>Voucher No</th>
             <th>Voucher Date</th>
-            <th>Supplier</th>
-            <th>Total</th>
             <th>Cost Center</th>
+            <th>Total</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for voucher in vouchers %}
         <tr>
+            <td></td> <!-- Serial number will go here dynamically -->
+            <td>{{ voucher.id }}</td>
             <td>{{ voucher.voucher_no }}</td>
             <td>{{ voucher.transaction_date }}</td>
-            <td>{{ voucher.ledger }}</td>
-            <td>{{ voucher.grand_total_amount }}</td>
             <td>{{ voucher.cost_center }}</td>
+            <td>{{ voucher.grand_total_amount }}</td>
+            
             <td>
-                <a href="{% url 'item_master:Opening_stock_detail' voucher.id %}">View Details</a>
+                <a href="{% url 'item_master:opening_stock_edit' voucher.id %}">Edit</a> |
+                <form method="post" action="{% url 'item_master:opening_stock_delete' voucher.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this voucher?');">
+                    {% csrf_token %}
+                    <button type="submit" style="background:none; border:none; color:red; cursor:pointer; padding: 0;">Delete</button>
+                </form>
             </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="5">No Opening Stock available.</td>
+            <td colspan="8">No opening stock vouchers available.</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+<a href="{% url 'item_master:create_openingstock_voucher' %}" class="create-link">Create New Opening Stock Voucher</a>
 
-<a href="{% url 'item_master:create_opeingstock_voucher' %}" class="create-link">Create New Opening Stock</a>
 
+<script>
+    // Add serial numbers after DOM loads
+    document.addEventListener("DOMContentLoaded", function () {
+        const rows = document.querySelectorAll("#voucherTable tbody tr");
+        let count = 1;
+        rows.forEach(row => {
+            // Skip the empty row when there's no data
+            if (row.children.length > 1) {
+                row.children[0].textContent = count++;
+            }
+        });
+    });
+</script>
+
+<!-- search -->
+<script>
+document.getElementById("voucherSearch").addEventListener("keyup", function () {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#voucherTable tbody tr");
+
+    rows.forEach(function (row) {
+        // Skip empty row (no data case)
+        if (row.children.length <= 1) return;
+
+        let voucherNo  = row.cells[2].textContent.toLowerCase(); // Voucher No column
+        let costCenter = row.cells[4].textContent.toLowerCase(); // Cost Center column
+
+        if (voucherNo.includes(filter) || costCenter.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+});
+</script>
 {% endblock %}
-

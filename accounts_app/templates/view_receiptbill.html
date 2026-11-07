@@ -1,0 +1,137 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load i18n %}
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 { font-family: 'Segoe UI', sans-serif; }
+    .card { border-radius: 12px; }
+    .card-header { border-bottom: 1px solid #e9ecef; }
+    .table th { background-color: #f8f9fa; font-weight: 600; }
+    .badge-invoice { background-color: #007bff; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .badge-opening { background-color: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .info-label { font-weight: 500; color: #666; font-size: 0.85rem; }
+    .info-value { font-size: 1rem; }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary mb-0">{% trans "View Receipt Bill Clearance" %}</h2>
+        <div>
+            <a href="{% url 'accounts_app:receiptbill_pdf' receipt_bill_instance.id %}" target="_blank" class="btn btn-info">
+                <i class="bi bi-file-earmark-pdf"></i> {% trans "PDF" %}
+            </a>
+            <a href="{% url 'accounts_app:list_receiptbill' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> {% trans "Back to List" %}
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0 fw-bold text-secondary">{% trans "Receipt Information" %}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <div class="info-label">{% trans "Voucher No" %}</div>
+                    <div class="info-value">{{ receipt_bill_instance.voucher_no|default:"-" }}</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="info-label">{% trans "Date" %}</div>
+                    <div class="info-value">{{ receipt_bill_instance.Date }}</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="info-label">{% trans "Client" %}</div>
+                    <div class="info-value">{{ receipt_bill_instance.Customer }}</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="info-label">{% trans "Ledger" %}</div>
+                    <div class="info-value">{{ receipt_bill_instance.Ledger }}</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="info-label">{% trans "TR No" %}</div>
+                    <div class="info-value">{{ receipt_bill_instance.TrnNo|default:"-" }}</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="info-label">{% trans "Total Amount" %}</div>
+                    <div class="info-value">{{ receipt_bill_instance.TotalAmount|floatformat:3 }}</div>
+                </div>
+
+                <div class="col-md-2">
+                    <div class="info-label">{% trans "PDC" %}</div>
+                    <div class="info-value">
+                        {% if receipt_bill_instance.IsPDC %}
+                            <span class="badge bg-warning">{% trans "Yes" %}</span>
+                        {% else %}
+                            <span class="badge bg-success">{% trans "No" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="info-label">{% trans "Cheque No" %}</div>
+                    <div class="info-value">{{ receipt_bill_instance.ChequeNo|default:"-" }}</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="info-label">{% trans "Cheque Date" %}</div>
+                    <div class="info-value">{{ receipt_bill_instance.ChequeDate|default:"-" }}</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="info-label">{% trans "Cheque Status" %}</div>
+                    <div class="info-value">{{ receipt_bill_instance.get_ChequeStatus_display|default:"-" }}</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="info-label">{% trans "Cleared" %}</div>
+                    <div class="info-value">{{ receipt_bill_instance.Cleared }}</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-label">{% trans "Remark" %}</div>
+                    <div class="info-value">{{ receipt_bill_instance.Remark|default:"-" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0 fw-bold text-secondary">{% trans "Cleared Invoice / Opening Entries" %}</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{% trans "Type" %}</th>
+                            <th>{% trans "Voucher #" %}</th>
+                            <th>{% trans "Current Amount" %}</th>
+                            <th>{% trans "Amount Cleared" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detail in details %}
+                        <tr>
+                            <td>
+                                {% if detail.voucherType.id == 2 %}
+                                    <span class="badge-invoice">{% trans "Invoice" %}</span>
+                                {% elif detail.voucherType.id == 16 %}
+                                    <span class="badge-opening">{% trans "Opening" %}</span>
+                                {% else %}
+                                    {{ detail.voucherType }}
+                                {% endif %}
+                            </td>
+                            <td>{{ detail.VoucherNo }}</td>
+                            <td class="text-end">{{ detail.CurrentAmount|floatformat:3 }}</td>
+                            <td class="text-end">{{ detail.Amount|floatformat:3 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">{% trans "No details found." %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

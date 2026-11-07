@@ -13,7 +13,7 @@ django.setup()
 
 from django.conf import settings
 
-DB_NAME = "rabwafahoud"
+DB_NAME = "SilverL"
 DB_USER = "postgres"
 DB_PASS = "shnd6775"
 DB_HOST = "localhost"
@@ -41,7 +41,8 @@ def import_billwise_opening():
                 ledger_id = int(row["ledger_id"])
                 voucher_type_id = int(row["voucherType_id"])
                 inv_no = row["InvNo"].strip()
-                inv_date = row["InvDate"]
+                inv_date = datetime.strptime(row["InvDate"], "%d/%m/%Y").date()
+                po_no = row.get("po_no", "").strip() or None
                 inv_amount = float(row["InvAmount"])
                 inv_balance = float(row["InvBalance"])
                 dr_cr = row["dr_cr"].strip().upper()
@@ -57,8 +58,8 @@ def import_billwise_opening():
 
                 cur.execute("""
                     INSERT INTO accounts_app_billwiseopening
-                    (ledger_id,"voucherType_id","InvNo","InvDate","InvAmount","InvBalance","dr_cr","IsCleared","IsClosed","CreatedOn","UpdatedOn")
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    (ledger_id,"voucherType_id","InvNo","InvDate","po_no","InvAmount","InvBalance","dr_cr","IsCleared","IsClosed","CreatedOn","UpdatedOn")
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     ON CONFLICT (ledger_id,"InvNo","voucherType_id") DO NOTHING
                     RETURNING id;
                 """, (
@@ -66,6 +67,7 @@ def import_billwise_opening():
                     voucher_type_id,
                     inv_no,
                     inv_date,
+                    po_no,
                     inv_amount,
                     inv_balance,
                     dr_cr,
@@ -85,9 +87,10 @@ def import_billwise_opening():
                 cur.execute("""
                     INSERT INTO accounts_app_ledgerposting
                     ("date","VoucherType_id","VoucherNo","ledger_id","debit","credit",
-                     "RefVoucherNo","RefVoucherType_id","CostCenter_id","FY",
-                     "IsDeleted","created_on","updated_on","created_by","updated_by")
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
+                    "RefVoucherNo","RefVoucherType_id","CostCenter_id","FY",
+                    "IsDeleted","IsOpening",
+                    "created_on","updated_on","created_by","updated_by")
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
                 """, (
                     fy_date,
                     voucher_type_id,
@@ -99,7 +102,8 @@ def import_billwise_opening():
                     None,
                     None,
                     fy_year,
-                    False,
+                    False,      # IsDeleted
+                    True,       # IsOpening
                     imported_at,
                     imported_at,
                     None,

@@ -1,0 +1,329 @@
+/* ==========================================================================
+   AZUR ERP - GLOBAL OVERRIDE SHIELD (azur_override.css)
+   Loaded LAST in every base template to neutralize legacy Vali-Admin theme
+   gray backgrounds, skin-color tints, and ensure strict pure white throughout.
+   ========================================================================== */
+
+/* ── 1. NUCLEAR PURE WHITE RESET (#ffffff) ───────────────────────────────── */
+/* Strictly enforce #ffffff pure white across all page containers, wrappers, */
+/* cards, sections, widgets, tables, modals and forms. Zero grays or off-whites. */
+
+html,
+body,
+body.light-skin,
+body.hold-transition,
+body.theme-classic,
+body.erp-layout,
+.wrapper,
+.content-wrapper,
+.erp-content-wrapper,
+main,
+section.content,
+.container-fluid,
+.container,
+.wrap,
+.pw,
+.iw,
+.jc-wrapper,
+.el-wrap {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ── 2. CARDS, PANELS, HERO, AND WIDGETS — PURE WHITE ONLY ──────────────── */
+.erp-hero-card,
+.erp-filter-bar,
+.erp-stat-card,
+.erp-quick-tile,
+.erp-panel-card,
+.erp-panel-body,
+.box,
+.box-body,
+.box-solid .box-body,
+.card,
+.card-body,
+.card-header,
+.card-footer,
+.info-box,
+.small-box,
+.form-box,
+.sec,
+.sec-body,
+.sec-hdr,
+.erp-form-section,
+.erp-form-section-header,
+.erp-form-section-body,
+.nav-tabs-custom,
+.tab-content,
+.tab-pane,
+.jc-card,
+.jc-card-body,
+.grand-totals-card,
+.parts-adder-panel,
+.totals-bar-inline,
+.gt-item,
+.el-card,
+.top-header {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+}
+
+/* Header styling on all cards: pure white with a clean border */
+.card-header,
+.sec-hdr,
+.erp-form-section-header,
+.erp-panel-header,
+.jc-card-hdr,
+.card-hdr,
+.el-card-hdr {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+/* ── 3. DATE/PERIOD BUTTONS & FILTER INPUTS — PURE WHITE ─────────────────── */
+.erp-period-pill:not(.active),
+.erp-date-field,
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+select,
+textarea,
+.form-control,
+.fi,
+.fc,
+.select2-container .select2-selection,
+.select2-dropdown {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+}
+
+/* ── 4. TABLE ROWS & CELLS — PURE WHITE ONLY ─────────────────────────────── */
+table,
+.table,
+.table-striped > tbody > tr:nth-of-type(odd),
+.table-striped > tbody > tr:nth-of-type(even),
+tbody tr,
+.table td,
+.table th,
+thead th,
+.stbl thead th,
+.stbl tbody td,
+.est-tbl thead th,
+.est-tbl tbody td,
+.dn-tbl thead th,
+.dn-tbl tbody td,
+.el-tbl thead th,
+.el-tbl tbody td,
+.inv-tbl thead th,
+.inv-tbl tbody td {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+}
+
+.table-hover tbody tr:hover,
+tbody tr:hover,
+.stbl tbody tr:hover,
+.est-tbl tbody tr:hover,
+.dn-tbl tbody tr:hover,
+.el-tbl tbody tr:hover {
+    background-color: #fbfbfc !important;
+}
+
+/* ── 5. TOP NAVBAR / HEADER — PURE WHITE ─────────────────────────────────── */
+.main-header,
+.main-header .navbar,
+.main-header .logo,
+.erp-header,
+header.erp-header,
+.navbar,
+.navbar-custom,
+.azur-navbar {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+/* ── 6. MODALS & POPUPS — PURE WHITE ─────────────────────────────────────── */
+.modal-content,
+.modal-body,
+.modal-footer,
+.doc-modal-dialog {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+}
+
+/* ── 7. DROPDOWN MENUS — PURE WHITE ──────────────────────────────────────── */
+.dropdown-menu,
+.dropdown-content,
+.azur-dropdown-menu {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+}
+
+/* ── 8. FOOTER — PURE WHITE ──────────────────────────────────────────────── */
+.main-footer,
+footer {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    border-top: 1px solid #e5e7eb !important;
+    color: #6b7280 !important;
+}
+
+/* ── 9. SIDEBAR STAYS PITCH DARK (#0d0f12) ───────────────────────────────── */
+.light-skin .main-sidebar,
+.light-skin .left-side,
+.light-skin .sidebar,
+.erp-sidebar {
+    background-color: #0d0f12 !important;
+    background: #0d0f12 !important;
+}
+
+/* ── 10. SCROLLBARS ──────────────────────────────────────────────────────── */
+.erp-content-wrapper::-webkit-scrollbar,
+main::-webkit-scrollbar {
+    width: 6px;
+}
+.erp-content-wrapper::-webkit-scrollbar-track,
+main::-webkit-scrollbar-track {
+    background: #ffffff !important;
+}
+.erp-content-wrapper::-webkit-scrollbar-thumb,
+main::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+/* ── 11. UNIFORM BRAND PALETTE & ELIMINATION OF HARDCODED BLUE ───────────── */
+/* Replace all hardcoded #2563eb / #1d4ed8 / blue accents with Burgundy #9f1045 */
+:root {
+    --erp-primary: #9f1045 !important;
+    --erp-primary-hover: #830d38 !important;
+    --erp-primary-light: #fdf2f5 !important;
+    --erp-primary-border: #f9c9d5 !important;
+    --erp-bg-body: #ffffff !important;
+    --erp-bg-content: #ffffff !important;
+    --erp-card-bg: #ffffff !important;
+    --primary: #9f1045 !important;
+    --blue: #9f1045 !important;
+}
+
+/* Buttons - Uniform Burgundy */
+.btn-primary,
+.btn-custom-primary,
+.custom-btn-primary,
+.btn-save,
+.btn-add,
+.btn-add-row,
+.btn-doc-load,
+.el-btn-primary,
+.el-btn.blue,
+.btn-register {
+    background-color: #9f1045 !important;
+    background: #9f1045 !important;
+    border-color: #9f1045 !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(159, 16, 69, 0.25) !important;
+}
+
+.btn-primary:hover,
+.btn-custom-primary:hover,
+.custom-btn-primary:hover,
+.btn-save:hover,
+.btn-add:hover,
+.btn-add-row:hover,
+.btn-doc-load:hover,
+.el-btn-primary:hover,
+.el-btn.blue:hover,
+.btn-register:hover {
+    background-color: #830d38 !important;
+    background: #830d38 !important;
+    border-color: #830d38 !important;
+    color: #ffffff !important;
+}
+
+/* Text primary & Links */
+.text-primary,
+a.text-primary,
+.text-burgundy,
+a.text-burgundy,
+.totals-val,
+.gt-val.grand,
+.doc-loader-title {
+    color: #9f1045 !important;
+}
+
+/* Light Burgundy Accents for Icon Wrappers & Badges */
+.jc-page-icon,
+.page-icon,
+.sec-icon.si-blue,
+.btn-insp-load,
+.gt-item.highlight,
+.el-tab.active,
+.doc-loader-card {
+    background-color: #fdf2f5 !important;
+    background: #fdf2f5 !important;
+    border-color: #f9c9d5 !important;
+    color: #9f1045 !important;
+}
+
+.doc-loader-icon {
+    background: #9f1045 !important;
+    color: #ffffff !important;
+}
+
+.doc-loader-sub,
+.gt-item.highlight .gt-lbl,
+.el-tab.n-all .n,
+.el-tab.n-sent .n {
+    color: #9f1045 !important;
+}
+
+.btn-insp-load:hover {
+    background-color: #fae1e8 !important;
+    color: #830d38 !important;
+    border-color: #f4a2b9 !important;
+}
+
+/* Input Focus Rings - Burgundy instead of blue */
+.fi:focus,
+.fc:focus,
+.form-control:focus,
+input:focus,
+select:focus,
+textarea:focus,
+.el-search input:focus,
+.dn-tbl input:focus,
+.dn-tbl select:focus,
+.est-tbl input:focus,
+.est-tbl select:focus {
+    border-color: #9f1045 !important;
+    box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+    outline: none !important;
+}
+
+/* Remove any blur filters */
+.save-bar,
+.doc-modal-overlay {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.save-bar {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Focus outlines */
+a:focus-visible,
+button:focus-visible {
+    outline: 2px solid #9f1045 !important;
+    outline-offset: 2px;
+}
+
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}

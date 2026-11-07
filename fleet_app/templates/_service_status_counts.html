@@ -1,0 +1,33 @@
+{# templates/_service_status_counts.html #}
+{# Needs in context: status_counts, total_in_service #}
+<style>
+    .sd-counts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                 gap: 10px; margin-bottom: 20px; }
+    .sd-count { background: #fff; border: 1px solid #e5e8eb; border-left-width: 4px;
+                border-radius: 6px; padding: 10px 12px; }
+    .sd-count .num { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+    .sd-count .label { font-size: .8rem; color: #5d6d7e; }
+    .sd-count.total { background: #34495e; border-color: #34495e; color: #fff; }
+    .sd-count.total .label { color: #d6dbdf; }
+    .sd-count.c-awaiting-inspection { border-left-color: #a93226; }
+    .sd-count.c-under-inspection    { border-left-color: #9a5b00; }
+    .sd-count.c-under-service       { border-left-color: #1f5f9e; }
+    .sd-count.c-under-repair        { border-left-color: #6c3483; }
+    .sd-count.c-awaiting-parts      { border-left-color: #b7950b; }
+    .sd-count.c-final-inspection    { border-left-color: #117a65; }
+    .sd-count.c-ready-for-yard      { border-left-color: #1e8449; }
+    .sd-count.c-move-to-yard        { border-left-color: #145a32; }
+</style>
+
+<div class="sd-counts">
+    <div class="sd-count total">
+        <div class="num">{{ total_in_service }}</div>
+        <div class="label">In service now</div>
+    </div>
+    {% for value, label, count in status_counts %}
+        <div class="sd-count c-{{ value|slugify }}">
+            <div class="num">{{ count }}</div>
+            <div class="label">{{ label }}</div>
+        </div>
+    {% endfor %}
+</div>

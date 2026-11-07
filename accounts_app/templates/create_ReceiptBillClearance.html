@@ -5,7 +5,10 @@
 {% block content %}
 <!-- Custom CSS -->
 <style>
-    h2, h3, h4, h5 {
+    h2,
+    h3,
+    h4,
+    h5 {
         font-family: 'Segoe UI', sans-serif;
     }
 
@@ -14,7 +17,9 @@
         color: #444;
     }
 
-    input, select, textarea {
+    input,
+    select,
+    textarea {
         width: 100% !important;
         border: 1px solid #ced4da;
         border-radius: 6px;
@@ -22,7 +27,9 @@
         font-size: 0.95rem;
     }
 
-    input:focus, select:focus, textarea:focus {
+    input:focus,
+    select:focus,
+    textarea:focus {
         border-color: #5A8DEE;
         box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
         outline: none;
@@ -91,7 +98,7 @@
 <div class="container mt-4 mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary mb-0">
-            {% if edit_mode %}{% trans "Edit" %}{% else %}{% trans "Create" %}{% endif %} {% trans "Receipt Bill Clearance" %}
+            Receipt Bill Clearance
         </h2>
         {% has_priv request.user 11 "can_read" as can_view_receiptbill %}
         {% if can_view_receiptbill %}
@@ -101,8 +108,6 @@
         {% endif %}
     </div>
 
-    
-    
     <form method="POST" id="receiptForm" class="needs-validation">
         {% csrf_token %}
 
@@ -115,9 +120,17 @@
             </div>
 
             <div class="card-body">
-                <div class="row g-3">
+                <div class="row g-2">
 
                     <!-- Row 1 -->
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Voucher No" %}</label>
+                        {{ master_form.voucher_no }}
+                    </div>
+                    <div class="col-md-2" style="display: none;">
+                        <label class="form-label">{% trans "Voucher Type" %}</label>
+                        {{ master_form.voucherType }}
+                    </div>
                     <div class="col-md-2">
                         <label class="form-label">{% trans "Date" %}</label>
                         {{ master_form.Date }}
@@ -147,9 +160,7 @@
                         <label class="form-label">{% trans "PDC" %}</label>
                         <div class="form-check mt-2">
                             {{ master_form.IsPDC }}
-                            <label class="form-check-label ms-2" for="id_IsPDC">
-                                
-                            </label>
+                            <label class="form-check-label ms-2" for="id_IsPDC"></label>
                         </div>
                     </div>
 
@@ -167,6 +178,12 @@
                     <div class="col-md-2">
                         <label class="form-label">{% trans "Cheque Status" %}</label>
                         {{ master_form.ChequeStatus }}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Max Amount" %}</label>
+                        <input type="number" step="0.001" min="0" id="maxAmountField"
+                               class="form-control" placeholder="0.000" autocomplete="off">
                     </div>
 
                 </div>
@@ -223,9 +240,9 @@
         <div class="text-end mt-4">
             <button type="submit" class="btn btn-success px-4 py-2">
                 {% if edit_mode %}
-                    <i class="bi bi-check-circle"></i> {% trans "Update" %}
+                <i class="bi bi-check-circle"></i> {% trans "Update" %}
                 {% else %}
-                    <i class="bi bi-save"></i> {% trans "Save" %}
+                <i class="bi bi-save"></i> {% trans "Save" %}
                 {% endif %}
             </button>
             <a href="{% url 'accounts_app:list_receiptbill' %}" class="btn btn-secondary px-4 py-2">
@@ -236,132 +253,78 @@
 </div>
 
 <script>
-// Translation strings for JavaScript
-const translations = {
-    errorLoadingInvoices: "{% trans 'Error loading invoices. Please try again.' %}",
-    amountExceedBalance: "{% trans 'Amount cannot exceed receivable balance!' %}",
-    enterAmount: "{% trans 'Please enter at least one amount to clear.' %}"
-};
+    const translations = {
+        errorLoadingInvoices: "{% trans 'Error loading invoices. Please try again.' %}",
+        amountExceedBalance: "{% trans 'Amount cannot exceed receivable balance!' %}",
+        enterAmount: "{% trans 'Please enter at least one amount to clear.' %}",
+        amountExceedMax: "{% trans 'Amount cannot exceed the Max Amount you entered!' %}",
+        maxAmountNotCleared: "{% trans 'Please entre the full amount.' %}"
+    };
 
-$(document).ready(function() {
-    let allData = [];  // Combined invoices and openings
+    $(document).ready(function () {
+    let allData = [];
+    var editMode = {% if edit_mode %}true{% else %}false{% endif %};
+    var receiptBillId = "{% if receipt_bill_instance %}{{ receipt_bill_instance.id }}{% endif %}";
 
-    console.log("Document ready - Receipt Bill Clearance");
+    var customerField = $("#id_Customer").length > 0 ? $("#id_Customer") : $("#id_customer");
 
-    {% if edit_mode and receipt_bill_instance %}
-    // ✅ If in edit mode, load existing receipt bill details
-    var editMode = true;
-    var existingDetails = [
-        {% for detail in receipt_bill_instance.receiptbilldetails_set.all %}
-        {
-            voucher_no: {{ detail.VoucherNo }},
-            voucher_type: {{ detail.voucherType.id }},
-            current_amount: parseFloat("{{ detail.CurrentAmount }}"),
-            amount: parseFloat("{{ detail.Amount }}")
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ];
+    // ---- Max Amount pool (client-side aid only — does not affect saved data) ----
+    // maxAmountOriginal holds the total pool the user typed in; the visible
+    // field is continuously updated to show what's left of that pool.
+    var maxAmountOriginal = null;
 
-    console.log("=== EDIT MODE DEBUG ===");
-    console.log("Existing details from database:", existingDetails);
+    function sumEnteredAmounts() {
+        var total = 0;
+        $(".amount-input").each(function () {
+            total += parseFloat($(this).val()) || 0;
+        });
+        return total;
+    }
 
-    // Fetch full data for existing details
-    if (existingDetails.length > 0) {
-        var customerId = {{ receipt_bill_instance.Customer.id }};
-        console.log("Fetching data for customer ID:", customerId);
-        
-        $.ajax({
-            url: "{% url 'accounts_app:get_customer_invoices_and_openings' %}",
-            data: { customer_id: customerId },
-            success: function(response) {
-                console.log("=== AJAX RESPONSE ===");
-                console.log("Invoices from API:", response.invoices);
-                console.log("Openings from API:", response.openings);
-                
-                // Combine invoices and openings
-                allData = [...response.invoices, ...response.openings];
-                console.log("Combined data count:", allData.length);
+    function recalcMaxAmount() {
+        if (maxAmountOriginal === null) return;
+        var remaining = maxAmountOriginal - sumEnteredAmounts();
+        $("#maxAmountField").val(remaining.toFixed(3));
+    }
 
-                // Merge existing amounts into data
-                allData.forEach(function(item) {
-                    console.log("\n--- Checking item ---");
-                    console.log("Type:", item.type);
-                    console.log("Item ID:", item.type === 'invoice' ? item.invoice_id : item.opening_id);
-                    console.log("Voucher No:", item.voucher_no);
-                    
-                    var existingDetail = existingDetails.find(function(detail) {
-                        console.log("  Comparing with detail - VoucherNo:", detail.voucher_no, "Type:", detail.voucher_type);
-                        
-                        if (item.type === 'invoice') {
-                            var match = detail.voucher_no === item.invoice_id && detail.voucher_type === 2;
-                            console.log("  Invoice match:", match);
-                            return match;
-                        } else {
-                            var match = detail.voucher_no === item.opening_id && detail.voucher_type === 12;
-                            console.log("  Opening match:", match, "(checking voucher_no:", detail.voucher_no, "=== opening_id:", item.opening_id, "AND voucher_type:", detail.voucher_type, "=== 12)");
-                            return match;
-                        }
-                    });
-                    
-                    if (existingDetail) {
-                        console.log("✅ MATCH FOUND! Amount:", existingDetail.amount);
-                        item.existing_amount = existingDetail.amount;
-                    } else {
-                        console.log("❌ NO MATCH - setting to 0");
-                        item.existing_amount = 0;
-                    }
-                });
-
-                console.log("\n=== FINAL MERGED DATA ===");
-                console.log(allData);
-                
-                renderData();
-                $("#invoiceTableContainer").show();
-                $("#filterSection").show();
-            },
-            error: function(xhr, status, error) {
-                console.error("Error fetching data:", error);
-                alert(translations.errorLoadingInvoices);
-            }
+    function clearAllAmounts() {
+        $(".amount-input").each(function () {
+            $(this).val((0).toFixed(3));
+            var receivable = parseFloat($(this).attr('data-max')) || 0;
+            $(this).closest("tr").find(".balance").text(receivable.toFixed(3));
         });
     }
-    {% else %}
-    var editMode = false;
-    console.log("Create mode - no existing details");
-    {% endif %}
 
-    // Customer field change handler
-    var customerField = $("#id_Customer").length > 0 ? $("#id_Customer") : $("#id_customer");
-    console.log("Using customer field:", customerField.attr('id'));
+    $("#maxAmountField").on("change", function () {
+        // Any change to Max Amount resets all entered bill amounts to zero,
+        // so allocation always starts fresh against the new pool.
+        clearAllAmounts();
 
-    customerField.change(function() {
-        var customer_id = $(this).val();
-        console.log("Customer changed:", customer_id);
-        
-        if (!customer_id) {
+        var val = parseFloat($(this).val());
+        if (isNaN(val) || val < 0) {
+            maxAmountOriginal = null;
+            return;
+        }
+        maxAmountOriginal = val;
+        recalcMaxAmount();
+    });
+    // ---- end Max Amount pool ----
+
+    function loadCustomerData(customerId) {
+        if (!customerId) {
             $("#invoiceTableContainer").hide();
             $("#filterSection").hide();
             return;
         }
 
-        // Don't reload if in edit mode and we already have data
-        if (editMode && allData.length > 0) {
-            console.log("Edit mode - using existing data");
-            return;
-        }
-
-        console.log("Fetching invoices and openings for customer:", customer_id);
-        
         $.ajax({
             url: "{% url 'accounts_app:get_customer_invoices_and_openings' %}",
-            data: { customer_id: customer_id },
-            success: function(response) {
-                console.log("AJAX Response:", response);
-                
-                // Combine invoices and openings
-                allData = [...response.invoices, ...response.openings];
-                console.log("Combined data:", allData);
-                
+            data: { customer_id: customerId, receipt_bill_id: receiptBillId },
+            success: function (response) {
+                var invoices = response.invoices || [];
+                var openings = response.openings || [];
+                allData = [...invoices, ...openings];
+
                 if (allData.length === 0) {
                     alert("No pending invoices or openings found for this customer.");
                     $("#invoiceTableContainer").hide();
@@ -372,39 +335,41 @@ $(document).ready(function() {
                     $("#filterSection").show();
                 }
             },
-            error: function(xhr, status, error) {
-                console.error("AJAX Error:", error);
+            error: function (xhr, status, error) {
+                console.error("Error fetching data:", error);
                 alert(translations.errorLoadingInvoices);
             }
         });
+    }
+
+    customerField.change(function () {
+        loadCustomerData($(this).val());
     });
 
-    // Filter checkboxes
-    $("#showInvoices, #showOpenings").change(function() {
-        renderData();
-    });
+    if (editMode) {
+        var initialCustomerId = customerField.val() || "{% if receipt_bill_instance and receipt_bill_instance.Customer %}{{ receipt_bill_instance.Customer.id }}{% endif %}";
+        if (initialCustomerId) {
+            loadCustomerData(initialCustomerId);
+        }
+    }
+
+    $("#showInvoices, #showOpenings").change(function () { renderData(); });
 
     function renderData() {
-        console.log("\n=== RENDER DATA START ===");
         var tbody = $("#invoiceTableBody");
         var formsetDiv = $("#formsetManagement");
-        
         tbody.empty();
         formsetDiv.empty();
 
-        // Apply filters
         var showInvoices = $("#showInvoices").is(":checked");
         var showOpenings = $("#showOpenings").is(":checked");
-        
-        var filteredData = allData.filter(function(item) {
+
+        var filteredData = allData.filter(function (item) {
             if (item.type === 'invoice' && !showInvoices) return false;
             if (item.type === 'opening' && !showOpenings) return false;
             return true;
         });
 
-        console.log("Filtered data count:", filteredData.length);
-
-        // Add formset management fields
         formsetDiv.append(`
             <input type="hidden" name="form-TOTAL_FORMS" value="${filteredData.length}">
             <input type="hidden" name="form-INITIAL_FORMS" value="0">
@@ -412,149 +377,185 @@ $(document).ready(function() {
             <input type="hidden" name="form-MAX_NUM_FORMS" value="1000">
         `);
 
-        filteredData.forEach(function(item, index) {
+        filteredData.forEach(function (item, index) {
             var isInvoice = item.type === 'invoice';
-            var voucherTypeId = isInvoice ? 2 : 12;  // 2=Invoice, 12=Opening
-            var voucherNo = isInvoice ? item.invoice_id : item.opening_id;
-            var typeBadge = isInvoice 
-                ? '<span class="badge-invoice">Invoice</span>' 
+            var voucherTypeId = isInvoice ? 2 : 16;
+            var voucherNo = isInvoice ? item.invoice_id : item.opening_id;  // PK — used for saving
+            var typeBadge = isInvoice
+                ? '<span class="badge-invoice">Invoice</span>'
                 : '<span class="badge-opening">Opening</span>';
-            
-            // Use existing amount if available (edit mode), otherwise 0
-            var amountValue = item.existing_amount ? parseFloat(item.existing_amount).toFixed(2) : "0";
-            var balanceValue = parseFloat(item.receivable_balance) - (item.existing_amount || 0);
 
-            console.log(`Row ${index}: Type=${item.type}, VoucherNo=${voucherNo}, ExistingAmount=${item.existing_amount}, AmountValue=${amountValue}`);
+            var amountValue = parseFloat(item.existing_amount || 0).toFixed(3);
+            var receivableMax = parseFloat(item.receivable_balance) || 0;
+            var balanceValue = receivableMax - (parseFloat(item.existing_amount) || 0);
 
             var row = `
                 <tr data-type="${item.type}">
                     <td>${typeBadge}</td>
-                    <td>${item.customer}</td>
-                    <td>${item.date}</td>
+                    <td>${item.customer || ''}</td>
+                    <td>${item.date || '-'}</td>
                     <td>${item.voucher_no}</td>
-                    <td class="text-end">${parseFloat(item.grand_total).toFixed(2)}</td>
-                    <td class="text-end">${parseFloat(item.amount_cleared).toFixed(2)}</td>
-                    <td class="text-end receivable">${parseFloat(item.receivable_balance).toFixed(2)}</td>
+                    <td class="text-end">${parseFloat(item.grand_total || 0).toFixed(3)}</td>
+                    <td class="text-end">${parseFloat(item.amount_cleared || 0).toFixed(3)}</td>
+                    <td class="text-end receivable">${receivableMax.toFixed(3)}</td>
                     <td>
                         <input type="hidden" name="form-${index}-voucherType" value="${voucherTypeId}">
                         <input type="hidden" name="form-${index}-VoucherNo" value="${voucherNo}">
-                        <input type="hidden" name="form-${index}-CurrentAmount" value="${parseFloat(item.grand_total).toFixed(2)}">
-                        <input type="number" step="0.01" name="form-${index}-Amount"
+                        <input type="hidden" name="form-${index}-CurrentAmount" value="${parseFloat(item.grand_total || 0).toFixed(3)}">
+                        <input type="number" step="0.001" name="form-${index}-Amount"
                                class="form-control form-control-sm amount-input"
-                               min="0"
-                               max="${item.receivable_balance}"
-                               data-max="${item.receivable_balance}"
+                               min="0" max="${receivableMax}" data-max="${receivableMax}"
                                value="${amountValue}">
                     </td>
-                    <td class="text-end balance">${balanceValue.toFixed(2)}</td>
+                    <td class="text-end balance">${balanceValue.toFixed(3)}</td>
                 </tr>`;
             tbody.append(row);
         });
-        
-        console.log("=== RENDER DATA END ===\n");
+
+        // Keep the Max Amount pool in sync with whatever is now on screen
+        // (e.g. pre-filled amounts in edit mode, or rows changing via filter).
+        recalcMaxAmount();
     }
 
-    // Dynamic Balance calculation
-    $(document).on("input", ".amount-input", function() {
+    $(document).on("input", ".amount-input", function () {
         var row = $(this).closest("tr");
-        var receivable = parseFloat($(this).attr('data-max'));
+        var receivable = parseFloat($(this).attr('data-max')) || 0;
         var entered = parseFloat($(this).val()) || 0;
-        
         if (entered > receivable) {
             alert(translations.amountExceedBalance);
-            $(this).val(receivable.toFixed(2));
+            $(this).val(receivable.toFixed(3));
             entered = receivable;
         }
-        
-        var balance = receivable - entered;
-        row.find(".balance").text(balance.toFixed(2));
+
+        // Enforce the Max Amount pool across all bills for this customer, if set.
+        if (maxAmountOriginal !== null) {
+            var othersTotal = sumEnteredAmounts() - entered;
+            var allowedForThisRow = maxAmountOriginal - othersTotal;
+            if (entered > allowedForThisRow) {
+                alert(translations.amountExceedMax);
+                entered = allowedForThisRow > 0 ? allowedForThisRow : 0;
+                $(this).val(entered.toFixed(3));
+            }
+        }
+
+        row.find(".balance").text((receivable - entered).toFixed(3));
+        recalcMaxAmount();
     });
 
-    // Form validation before submit
-    $("#receiptForm").submit(function(e) {
+    $("#receiptForm").submit(function (e) {
         var hasAmount = false;
-        $(".amount-input").each(function() {
-            if (parseFloat($(this).val()) > 0) {
-                hasAmount = true;
-                return false;
-            }
+        $(".amount-input").each(function () {
+            if (parseFloat($(this).val()) > 0) { hasAmount = true; return false; }
         });
-
         if (!hasAmount) {
             e.preventDefault();
             alert(translations.enterAmount);
             return false;
         }
-    });
-});
-</script>
 
-<!-- Admin Override -->
-<script>
-$(document).on("submit", "#receiptForm", function (e) {
-    e.preventDefault();
-
-    console.log("RECEIPT BILL FORM SUBMIT");
-
-    window.pendingFormId = "receiptForm";
-    window.pendingFormAction = this.action;
-    window.afterSuccessRedirect = "{% url 'accounts_app:list_receiptbill' %}";
-
-    let formData = new FormData(this);
-
-    $.ajax({
-        url: window.pendingFormAction,
-        type: "POST",
-        data: formData,
-        processData: false,
-        contentType: false,
-        dataType: 'json',
-        headers: { "X-Requested-With": "XMLHttpRequest" },
-
-        success: function (response) {
-            console.log("RECEIPT BILL SUCCESS:", response);
-
-            if (response.admin_required) {
-                console.log("Admin required - showing modal");
-                $("#admin_error").text(response.message || "");
-                $("#adminOverrideModal").modal("show");
-                return;
+        // Max Amount must be fully allocated (i.e. driven down to 0) before saving.
+        if (maxAmountOriginal !== null) {
+            var remainingMax = parseFloat($("#maxAmountField").val()) || 0;
+            if (remainingMax > 0) {
+                e.preventDefault();
+                alert(translations.maxAmountNotCleared);
+                return false;
             }
-
-            if (response.success) {
-                alert(response.message);
-                window.location.href = window.afterSuccessRedirect;
-            } else {
-                alert(response.message || "Operation failed");
-            }
-        },
-
-        error: function (xhr) {
-            console.log("RECEIPT BILL ERROR:", xhr.status, xhr.responseJSON);
-            console.log("Response Text:", xhr.responseText);
-
-            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
-                console.log("403 with admin_required - showing modal");
-                $("#admin_error").text(xhr.responseJSON.message || "");
-                $("#adminOverrideModal").modal("show");
-                return;
-            }
-
-            if (xhr.status === 400 && xhr.responseJSON) {
-                console.log("400 validation error");
-                alert(xhr.responseJSON?.message || "Validation error");
-                return;
-            }
-
-            if (xhr.status === 500) {
-                console.log("500 server error");
-                alert(xhr.responseJSON?.message || "Server error - check console");
-                return;
-            }
-
-            alert(xhr.responseJSON?.message || "Something went wrong");
         }
     });
 });
 </script>
+
+<!-- AJAX Form Submit & Admin Override -->
+<script>
+    $(document).on("submit", "#receiptForm", function (e) {
+        e.preventDefault();
+
+        window.pendingFormId = "receiptForm";
+        window.pendingFormAction = this.action;
+        window.afterSuccessRedirect = "{% url 'accounts_app:list_receiptbill' %}";
+
+        let formData = new FormData(this);
+
+        $.ajax({
+            url: window.pendingFormAction,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+
+            success: function (response) {
+                if (response.admin_required) {
+                    $("#admin_error").text(response.message || "");
+                    $("#adminOverrideModal").modal("show");
+                    return;
+                }
+
+                if (response.success) {
+                    if (response.pdf_url) {
+                        window.open(response.pdf_url, '_blank');
+                    }
+                    alert(response.message);
+                    window.location.href = window.afterSuccessRedirect;
+                } else {
+                    alert(response.message || "Operation failed");
+                }
+            },
+
+            error: function (xhr) {
+                if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                    $("#admin_error").text(xhr.responseJSON.message || "");
+                    $("#adminOverrideModal").modal("show");
+                    return;
+                }
+
+                if (xhr.status === 400 && xhr.responseJSON) {
+                    alert(xhr.responseJSON?.message || "Validation error");
+                    return;
+                }
+
+                if (xhr.status === 500) {
+                    alert(xhr.responseJSON?.message || "Server error - check console");
+                    return;
+                }
+
+                alert(xhr.responseJSON?.message || "Something went wrong");
+            }
+        });
+    });
+</script>
+
+<!-- Get Next Voucher_no (only in create mode) -->
+{% if not edit_mode %}
+<script>
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
+
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) { input.value = data.voucher_number; }
+                    else { input.value = "{% trans 'Error' %}"; }
+                })
+                .catch(() => { input.value = "{% trans 'Error' %}"; });
+        } else if (input) {
+            input.value = '';
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
 {% endblock %}

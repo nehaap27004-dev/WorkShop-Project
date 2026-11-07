@@ -1,0 +1,28 @@
+id,name,url
+1,Timesheet,Timesheet
+2,Simple Quotation,Simple Quotation
+3,Repair,Repair
+4,Delivery Contract,Delivery Contract
+5,Off Hire,Off Hire
+6,Invoice,invoice/create/
+7,Hire,Hire
+8,Replacement,Replacement
+9,Return Spareparts,Return Spareparts
+10,Service Department,Service Department
+11,Opening Voucher,Opening Voucher
+12,Receipt,Receipt
+13,Expense,Expense
+14,Payment,Payment
+15,Journal,Journal
+16,Contra,Contra
+17,Cheque Clearance,Cheque Clearance
+18,Local Payment,Local Payment
+19,Receipt-Bill,Receipt-Bill
+20,Payment-Bill,Payment-Bill
+21,Debit Note,Debit Note
+22,Credit Note,Credit Note
+23,Job Card,Job Card
+24,Inspection,Inspection
+25,Estimate,Estimate
+26,Quotation,Quotation
+27,Delivery,Delivery

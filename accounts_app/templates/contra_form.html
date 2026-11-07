@@ -1,0 +1,202 @@
+{% extends 'fleet_base1.html' %}
+{% block title %}{% if is_edit %}Edit Contra{% else %}New Contra{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+      <i class="fas fa-exchange-alt mr-2"></i>
+      {% if is_edit %}Edit Contra — {{ instance.voucher_no }}{% else %}New Contra Voucher{% endif %}
+    </h4>
+    <a href="{% url 'accounts_app:contra_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-list mr-1"></i> View List
+    </a>
+  </div>
+
+  <!-- Alerts -->
+  {% for msg in messages %}
+    <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show">
+      {{ msg }}
+      <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+  {% endfor %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    <!-- ── Section 1 : Voucher Info ── -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-primary text-white py-2">
+        <strong><i class="fas fa-file-invoice mr-1"></i> Voucher Information</strong>
+      </div>
+      <div class="card-body">
+        <div class="row">
+
+          <div class="col-md-3 form-group">
+            <label>Voucher No <span class="text-danger">*</span></label>
+            {{ form.voucher_no }}
+            {% if form.voucher_no.errors %}
+              <small class="text-danger">{{ form.voucher_no.errors.0 }}</small>
+            {% endif %}
+          </div>
+
+          <div class="col-md-3 form-group" hidden>
+            <label>Voucher Type <span class="text-danger"></span></label>
+            {{ form.voucherType }}
+            {% if form.voucherType.errors %}
+              <small class="text-danger">{{ form.voucherType.errors.0 }}</small>
+            {% endif %}
+          </div>
+
+          <div class="col-md-3 form-group">
+            <label>Date <span class="text-danger">*</span></label>
+            {{ form.date }}
+            {% if form.date.errors %}
+              <small class="text-danger">{{ form.date.errors.0 }}</small>
+            {% endif %}
+          </div>
+
+          <div class="col-md-3 form-group">
+            <label>Cost Center <span class="text-danger">*</span></label>
+            {{ form.cost_center }}
+            {% if form.cost_center.errors %}
+              <small class="text-danger">{{ form.cost_center.errors.0 }}</small>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 2 : Transfer Details ── -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-dark text-white py-2">
+        <strong><i class="fas fa-random mr-1"></i> Transfer Details</strong>
+      </div>
+      <div class="card-body">
+
+        <!-- Transfer From / To visual block -->
+        <div class="row justify-content-center align-items-center">
+
+          <!-- Transfer To -->
+          <div class="col-md-5">
+            <div class="card border-success h-100">
+              <div class="card-header bg-success text-white py-2 text-center">
+                <i class="fas fa-arrow-circle-down mr-1"></i>
+                <strong>Transfer To (DR)</strong>
+              </div>
+              <div class="card-body">
+                <label class="small text-muted">Destination Account <span class="text-danger">*</span></label>
+                {{ form.transfer_to }}
+                {% if form.transfer_to.errors %}
+                  <small class="text-danger">{{ form.transfer_to.errors.0 }}</small>
+                {% endif %}
+                <small class="form-text text-muted mt-1">
+                  <i class="fas fa-info-circle mr-1"></i>Funds will be credited to this ledger.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="col-md-2 text-center my-3 my-md-0">
+            <div class="d-flex flex-column align-items-center">
+              <div class="bg-light border rounded-circle p-3 mb-2" style="width:56px;height:56px;">
+                <i class="fas fa-arrow-right text-primary" style="font-size:1.4rem;"></i>
+              </div>
+              <small class="text-muted font-weight-bold">TRANSFER</small>
+            </div>
+          </div>
+
+          <!-- Transfer From -->
+          <div class="col-md-5">
+            <div class="card border-danger h-100">
+              <div class="card-header bg-danger text-white py-2 text-center">
+                <i class="fas fa-arrow-circle-up mr-1"></i>
+                <strong>Transfer From (CR)</strong>
+              </div>
+              <div class="card-body">
+                <label class="small text-muted">Source Account <span class="text-danger">*</span></label>
+                {{ form.transfer_from }}
+                {% if form.transfer_from.errors %}
+                  <small class="text-danger">{{ form.transfer_from.errors.0 }}</small>
+                {% endif %}
+                <small class="form-text text-muted mt-1">
+                  <i class="fas fa-info-circle mr-1"></i>Funds will be deducted from this ledger.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          
+
+        </div>
+
+        <!-- Amount -->
+        <div class="row justify-content-center mt-4">
+          <div class="col-md-4">
+            <div class="card border-primary">
+              <div class="card-header bg-primary text-white py-2 text-center">
+                <i class="fas fa-coins mr-1"></i>
+                <strong>Transfer Amount</strong>
+              </div>
+              <div class="card-body text-center">
+                <label class="small text-muted">Amount <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-white font-weight-bold">OMR</span>
+                  </div>
+                  {{ form.amount }}
+                </div>
+                {% if form.amount.errors %}
+                  <small class="text-danger">{{ form.amount.errors.0 }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Save / Cancel -->
+    <div class="d-flex justify-content-end">
+      <a href="{% url 'accounts_app:contra_list' %}" class="btn btn-secondary mr-2">
+        <i class="fas fa-times mr-1"></i> Cancel
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save mr-1"></i>
+        {% if is_edit %}Update Contra{% else %}Save Contra{% endif %}
+      </button>
+    </div>
+
+  </form>
+</div>
+
+<!-- Get Next Voucher_no -->
+{% if not is_edit %}
+<script>
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
+        if (select && input && select.value) {
+            input.value = "Loading...";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(r => r.json())
+                .then(data => { input.value = data.success ? data.voucher_number : "Error"; })
+                .catch(() => { input.value = "Error"; });
+        } else if (input) { input.value = ''; }
+    }
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
+{% endblock %}

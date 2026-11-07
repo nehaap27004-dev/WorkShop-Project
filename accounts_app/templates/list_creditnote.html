@@ -1,0 +1,149 @@
+{% extends "fleet_base1.html" %}
+{% load privilege_tags %}
+{% block content %}
+
+<div class="container mt-4">
+    <h3 class="mb-4">Credit Note List</h3>
+
+    <div class="mb-3">
+        <a href="{% url 'accounts_app:create_creditnote' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create New Credit Note
+        </a>
+    </div>
+
+
+    <!-- search -->
+<div style="margin-bottom:15px;">
+    <input type="text" id="billSearch"
+        placeholder="Search Customer..."
+        style="width:100%; padding:8px; border:1px solid #ccc; border-radius:5px;">
+</div>
+    <table class="table table-bordered table-striped table-hover" id="creditnoteTable">
+        <thead class="table-dark">
+            <tr>
+
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Ledger</th>
+                <th>Total Amount</th>
+
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for bill in creditnotes %}
+            <tr>
+
+                <td>{{ bill.date }}</td>
+                <td>{{ bill.client.ledger_name|default:"-" }}</td>
+                <td>{{ bill.ledger.ledger_name|default:"-" }}</td>
+                <td>{{ bill.total_amount|floatformat:3 }}</td>
+
+                <td>
+    <a href="{% url 'accounts_app:view_creditnote' bill.id %}" class="btn btn-sm btn-warning">
+                <i class="bi bi-eye"></i> View
+            </a>
+
+    <a href="{% url 'accounts_app:creditnote_pdf' bill.id %}" target="_blank" class="btn btn-sm btn-info">
+        <i class="bi bi-file-earmark-pdf"></i> PDF
+    </a>
+
+    <button type="button" onclick="deleteCreditNote({{ bill.id }}, '{{ bill.voucher_no|default:bill.id|escapejs }}', this)" class="btn btn-sm btn-danger">
+        Delete
+    </button>
+</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="10" class="text-center">No credit notes found.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+// ✅ Name now matches the button's onclick (was deleteReceiptBill)
+function deleteCreditNote(id, voucherNo, btn) {
+
+    if (!confirm(`Delete Credit Note ${voucherNo}?`)) {
+        return;
+    }
+
+    // Double-click guard
+    if (btn) {
+        if (btn.disabled) return;
+        btn.disabled = true;
+    }
+
+    // ✅ STORE DELETE URL
+    window.pendingDeleteId = "{% url 'accounts_app:delete_creditnote' 0 %}".replace('/0/', `/${id}/`);
+
+    $.ajax({
+        url: window.pendingDeleteId,
+        type: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        dataType: 'json',
+
+        success: function (response) {
+            console.log("DELETE SUCCESS:", response);
+
+            if (response.admin_required) {
+                if (btn) btn.disabled = false;
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+                location.reload();
+            } else {
+                if (btn) btn.disabled = false;
+                alert(response.message || "Delete failed");
+            }
+        },
+
+        error: function (xhr) {
+            console.log("DELETE ERROR:", xhr.status, xhr.responseJSON);
+            if (btn) btn.disabled = false;
+
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+            } else {
+                alert(xhr.responseJSON?.message || "Delete failed");
+            }
+        }
+    });
+}
+</script>
+
+<!-- search -->
+<script>
+document.getElementById("billSearch").addEventListener("keyup", function () {
+
+    let filter = this.value.toLowerCase();
+    // ✅ Table id fixed (was #receiptbillTable)
+    let rows     = document.querySelectorAll("#creditnoteTable tbody tr");
+
+    rows.forEach(function(row) {
+
+        if (row.children.length <= 1) return;
+
+        let customer  = row.cells[1].textContent.toLowerCase();   // Customer column
+
+        if (customer.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+});
+</script>
+
+
+{% endblock %}

@@ -10,16 +10,26 @@
         </a>
     </div>
 
-    <table class="table table-bordered table-striped table-hover">
+
+<!-- search -->
+<div style="margin-bottom:15px;">
+    <input type="text" id="paymentbillSearch" 
+        placeholder="Search Party..."
+        style="width:100%; padding:8px; border:1px solid #ccc; border-radius:5px;">
+</div>
+
+    <table class="table table-bordered table-striped table-hover" id="paymentbillTable">
         <thead class="table-dark">
             <tr>
                 <th>Date</th>
+                <th>Voucher No</th>
                 <th>Supplier</th>
                 <th>Ledger</th>
                 <th>Total Amount</th>
                 <th>PDC</th>
                 <th>Cheque No</th>
                 <th>Cheque Status</th>
+                <th>Cleared</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -28,6 +38,7 @@
         {% for bill in payment_bills %}
             <tr>
                 <td>{{ bill.Date }}</td>
+                <td>{{ bill.voucher_no|default:"-" }}</td>
                 <td>{{ bill.Supplier.ledger_name|default:"-" }}</td>
                 <td>{{ bill.Ledger.ledger_name|default:"-" }}</td>
                 <td>{{ bill.TotalAmount|floatformat:3 }}</td>
@@ -46,16 +57,22 @@
                         -
                     {% endif %}
                 </td>
+                
                 <td>
-                    
-                    <a href="{% url 'accounts_app:edit_paymentbill' bill.id %}" class="btn btn-sm btn-warning">
-                        <i class="bi bi-pencil"></i> Edit
+                    {{ bill.Cleared }}
+                </td>
+                <td>
+                   <a href="{% url 'accounts_app:view_paymentbill' bill.id %}" class="btn btn-sm btn-warning">
+                        <i class="bi bi-eye"></i> View
                     </a>
-                    
-                    <button onclick="deletePaymentBill({{ bill.id }})" 
-        class="btn btn-sm btn-danger">
-    <i class="bi bi-trash"></i> Delete
-</button>
+
+                    <a href="{% url 'accounts_app:paymentbill_pdf' bill.id %}" target="_blank" class="btn btn-sm btn-info">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </a>
+
+                    <button onclick="deletePaymentBill({{ bill.id }})" class="btn btn-sm btn-danger">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
                 </td>
             </tr>
         {% empty %}
@@ -115,4 +132,28 @@ function deletePaymentBill(id) {
     });
 }
 </script>
+
+<!-- search -->
+<script>
+document.getElementById("paymentbillSearch").addEventListener("keyup", function () {
+
+    let filter = this.value.toLowerCase();
+    let rows     = document.querySelectorAll("#paymentbillTable tbody tr");
+
+    rows.forEach(function(row) {
+
+        if (row.children.length <= 1) return;
+
+        // let voucher   = row.cells[0].textContent.toLowerCase();   // col 1
+        let party     = row.cells[1].textContent.toLowerCase();   // col 2
+
+        if (party.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+});
+</script>
+
 {% endblock %}

@@ -1,0 +1,337 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+
+<style>
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-header h5 {
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.page-header p {
+  color: #64748b;
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+.entity-toggle {
+  display: inline-flex;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.entity-toggle button {
+  border: none;
+  background: #fff;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.entity-toggle button.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+.report-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.aging-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+
+.aging-table thead th {
+  padding: 12px 14px;
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.aging-table tbody td {
+  padding: 12px 14px;
+  border-top: 1px solid #f1f5f9;
+  white-space: nowrap;
+}
+
+.aging-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.aging-table td.r,
+.aging-table th.r {
+  text-align: right;
+}
+
+.aging-table tfoot td {
+  padding: 12px 14px;
+  font-weight: 700;
+  background: #f8fafc;
+  border-top: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.party-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.total-cell {
+  font-weight: 700;
+  color: #d97706;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #94a3b8;
+}
+
+</style>
+
+<div class="container-fluid py-3 px-3 px-md-4">
+
+<!-- HEADER -->
+
+<div class="page-header d-flex justify-content-between align-items-start flex-wrap">
+
+<div>
+
+<h5>
+<i class="fas fa-hourglass-half mr-2 text-primary"></i>
+Aging Report
+</h5>
+
+<p>Outstanding balances grouped by age of invoice/bill date</p>
+
+</div>
+
+<div class="entity-toggle">
+
+<form method="get" id="entityForm" class="d-flex">
+
+<input type="hidden" name="as_of_date" value="{{ as_of_date }}">
+<input type="hidden" name="bucket_size" value="{{ bucket_size }}">
+<input type="hidden" name="bucket_start" value="{{ bucket_start }}">
+<input type="hidden" name="num_buckets" value="{{ num_buckets }}">
+
+<button type="submit" name="entity" value="client"
+class="{% if entity == 'client' %}active{% endif %}">
+Client
+</button>
+
+<button type="submit" name="entity" value="supplier"
+class="{% if entity == 'supplier' %}active{% endif %}">
+Supplier
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+<!-- FILTERS -->
+
+<div class="card mb-3 no-print">
+<div class="card-body py-2">
+
+<form method="get">
+
+<input type="hidden" name="entity" value="{{ entity }}">
+
+<div class="form-row align-items-end">
+
+<div class="col-md-3 mb-2">
+
+<label class="small font-weight-bold">
+{% if entity == 'supplier' %}Supplier{% else %}Customer{% endif %}
+</label>
+
+<select name="entity_id" class="form-control form-control-sm">
+
+<option value="">
+{% if entity == 'supplier' %}All Suppliers{% else %}All Customers{% endif %}
+</option>
+
+{% for p in parties %}
+
+<option value="{{ p.id }}"
+{% if entity_id == p.id|stringformat:"s" %}selected{% endif %}>
+
+{{ p.ledger_name }}
+
+</option>
+
+{% endfor %}
+
+</select>
+
+</div>
+
+<div class="col-md-2 mb-2">
+
+<label class="small font-weight-bold">As Of Date</label>
+
+<input type="date"
+name="as_of_date"
+class="form-control form-control-sm"
+value="{{ as_of_date }}">
+
+</div>
+
+<div class="col-md-2 mb-2">
+
+<label class="small font-weight-bold">Bucket Start (days)</label>
+
+<input type="number"
+name="bucket_start"
+min="0"
+class="form-control form-control-sm"
+value="{{ bucket_start }}">
+
+</div>
+
+<div class="col-md-2 mb-2">
+
+<label class="small font-weight-bold">Bucket Size (days)</label>
+
+<input type="number"
+name="bucket_size"
+min="1"
+class="form-control form-control-sm"
+value="{{ bucket_size }}">
+
+</div>
+
+<div class="col-md-2 mb-2">
+
+<label class="small font-weight-bold">No. of Buckets</label>
+
+<input type="number"
+name="num_buckets"
+min="1"
+max="20"
+class="form-control form-control-sm"
+value="{{ num_buckets }}">
+
+</div>
+
+<div class="col-md-12 mb-2">
+
+<button type="submit" class="btn btn-sm btn-primary mr-1">
+<i class="fas fa-filter"></i> Apply
+</button>
+
+<a href="{% url 'accounts_app:aging_report' %}?entity={{ entity }}" class="btn btn-sm btn-secondary">
+Reset
+</a>
+
+</div>
+
+</div>
+
+</form>
+
+</div>
+</div>
+
+<!-- REPORT -->
+
+<div class="report-card">
+
+{% if report %}
+
+<div class="table-responsive">
+
+<table class="aging-table">
+
+<thead>
+
+<tr>
+
+<th>{% if entity == 'supplier' %}Supplier{% else %}Customer{% endif %}</th>
+
+{% for label in bucket_labels %}
+<th class="r">{{ label }}</th>
+{% endfor %}
+
+<th class="r">Total Amount</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for entry in report %}
+
+<tr>
+
+<td class="party-name">{{ entry.party.ledger_name }}</td>
+
+{% for value in entry.bucket_values %}
+<td class="r">{{ value|floatformat:3 }}</td>
+{% endfor %}
+
+<td class="r total-cell">{{ entry.total|floatformat:3 }}</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+<tfoot>
+
+<tr>
+
+<td>Grand Total</td>
+
+{% for value in grand_totals_list %}
+<td class="r">{{ value|floatformat:3 }}</td>
+{% endfor %}
+
+<td class="r">{{ grand_total_amount|floatformat:3 }}</td>
+
+</tr>
+
+</tfoot>
+
+</table>
+
+</div>
+
+{% else %}
+
+<div class="empty-state">
+No outstanding records found
+</div>
+
+{% endif %}
+
+</div>
+
+</div>
+
+{% endblock %}

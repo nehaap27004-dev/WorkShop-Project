@@ -1,0 +1,728 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load privilege_tags %}
+{% load i18n %}
+
+{% block content %}
+<style>
+    h2, h3, h5 { font-family: 'Segoe UI', sans-serif; }
+
+    form label { font-weight: 500; color: #444; }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90,141,238,0.4);
+        outline: none;
+    }
+
+    .btn-primary   { background-color: #5A8DEE !important; border-color: #5A8DEE !important; }
+    .btn-secondary { background-color: #6c757d !important; border-color: #6c757d !important; }
+    .btn-success   { background-color: #28a745 !important; border-color: #28a745 !important; }
+    .btn-danger    { background-color: #dc3545 !important; border-color: #dc3545 !important; }
+    .btn-warning   { background-color: #fd7e14 !important; border-color: #fd7e14 !important; }
+
+    .card          { border-radius: 12px; }
+    .card-header   { border-bottom: 1px solid #e9ecef; }
+    .table th      { background-color: #f8f9fa; font-weight: 600; }
+    .btn:hover     { opacity: 0.9; transition: 0.2s ease-in-out; }
+
+    #detailsTable tbody tr:hover { background-color: #f8f9fa; }
+
+    .contract-selector {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    /* badge-like label for old / new vehicle */
+    .badge-old { background: #ffeeba; color: #856404; padding: 2px 8px; border-radius: 4px; font-size: 0.82rem; }
+    .badge-new { background: #d4edda; color: #155724; padding: 2px 8px; border-radius: 4px; font-size: 0.82rem; }
+
+    .arrow-cell { font-size: 1.2rem; color: #6c757d; }
+</style>
+
+<div class="container mt-4 mb-5">
+
+    <!-- Title -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text-primary mb-0">
+            {% if is_edit_mode %}
+                🔄 {% trans "Edit Replacement Note" %} #{{ replacement_instance.voucher_no }}
+            {% else %}
+                🔄 {% trans "Create Replacement Note" %}
+            {% endif %}
+        </h2>
+        <a href="{% url 'fleet_app:replacement_list' %}" class="btn btn-sm btn-primary">{% trans "View List" %}</a>
+    </div>
+
+    <form method="post" id="replacementForm" class="needs-validation">
+        {% csrf_token %}
+
+        <!-- ── Customer & Contract Selector ── -->
+        <div class="contract-selector">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="fw-bold mb-1">{% trans "Customer" %}</label>
+                    {{ form.customer }}
+                </div>
+                <div class="col-md-4">
+                    <label class="fw-bold mb-1">{% trans "Delivery Contract" %}</label>
+                    <select id="id_delivery_contract" name="delivery_contract" class="form-control">
+                        <option value="">{% trans "Select customer first" %}</option>
+                        {% if replacement_instance %}
+                            <option value="{{ replacement_instance.delivery_contract.id }}" selected>
+                                {{ replacement_instance.delivery_contract.voucher_no }}
+                            </option>
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="d-block mb-1">&nbsp;</label>
+                    <button type="button" class="btn btn-success w-100" onclick="loadHiredVehicles()">
+                        📥 {% trans "Load Hired Vehicles" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Master Information ── -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Replacement Information" %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        {{ form.voucher_no.label_tag }}
+                        {{ form.voucher_no }}
+                        {% if form.voucher_no.errors %}<div class="text-danger small">{{ form.voucher_no.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.date.label_tag }}
+                        {{ form.date }}
+                        {% if form.date.errors %}<div class="text-danger small">{{ form.date.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-2" style="display:none;">
+                        {{ form.voucherType.label_tag }}
+                        {{ form.voucherType }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.replacement_date_time.label_tag }}
+                        {{ form.replacement_date_time }}
+                        {% if form.replacement_date_time.errors %}<div class="text-danger small">{{ form.replacement_date_time.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.remarks.label_tag }}
+                        {{ form.remarks }}
+                        {% if form.remarks.errors %}<div class="text-danger small">{{ form.remarks.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.delivery_person.label_tag }}
+                        {{ form.delivery_person }}
+                        {% if form.delivery_person.errors %}<div class="text-danger small">{{ form.delivery_person.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Add Replacement Detail ── -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Add Replacement" %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 align-items-end mb-3">
+
+                    <!-- Old vehicle (hired — from contract) -->
+                    <div class="col-md-3">
+                        <label class="form-label">
+                            <span class="badge-old">OLD</span> {% trans "Breakdown Vehicle" %}
+                        </label>
+                        <select id="old_vehicle_select" class="form-control" onchange="onOldVehicleChange()">
+                            <option value="" disabled selected>{% trans "Select hired vehicle" %}</option>
+                        </select>
+                    </div>
+
+                    <!-- New vehicle (free) -->
+                    <div class="col-md-3">
+                        <label class="form-label">
+                            <span class="badge-new">NEW</span> {% trans "Replacement Vehicle" %}
+                        </label>
+                        <select id="new_vehicle_select" class="form-control">
+                            <option value="" disabled selected>{% trans "Select free vehicle" %}</option>
+                        </select>
+                    </div>
+
+                    <!-- Reason -->
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "Reason / Issue" %}</label>
+                        <input type="text" id="reason_input" class="form-control"
+                               placeholder="{% trans 'e.g. Engine breakdown' %}">
+                    </div>
+
+                    <!-- Add button -->
+                    <div class="col-md-3">
+                        <label class="d-block">&nbsp;</label>
+                        <button type="button" class="btn btn-warning text-white w-100" onclick="openDetailModal()">
+                            ➕ {% trans "Add Details & Confirm" %}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Details Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center" id="detailsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:4%">#</th>
+                                <th style="width:18%">{% trans "Breakdown Vehicle" %}</th>
+                                <th style="width:3%" class="arrow-cell">→</th>
+                                <th style="width:18%">{% trans "Replacement Vehicle" %}</th>
+                                <th style="width:16%">{% trans "Reason" %}</th>
+                                <th style="width:9%">{% trans "Old Meter" %}</th>
+                                <th style="width:9%">{% trans "New Meter" %}</th>
+                                <th style="width:8%">{% trans "Old Fuel" %}</th>
+                                <th style="width:9%">{% trans "Date/Time" %}</th>
+                                <th style="width:6%">{% trans "Action" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr id="noDataRow">
+                                <td colspan="10" class="text-center text-muted py-3">
+                                    {% trans "Load a delivery contract, then add replacement details above." %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden inputs -->
+        <div id="hiddenDetails"></div>
+
+        <!-- Actions -->
+        <div class="text-end mt-4">
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                {% if is_edit_mode %}💾 {% trans "Update Replacement" %}
+                {% else %}💾 {% trans "Save Replacement" %}{% endif %}
+            </button>
+            <button type="button" class="btn btn-secondary px-4 py-2 ms-3"
+                    onclick="window.history.back()">← {% trans "Back" %}</button>
+        </div>
+    </form>
+</div>
+
+<!-- ── Detail Modal ── -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">🔄 {% trans "Replacement Detail" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Summary row -->
+                <div class="alert alert-info py-2 mb-3" id="modal_summary">
+                    <!-- populated by JS -->
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{% trans "Old Vehicle Meter Reading" %}</label>
+                        <input type="number" id="modal_old_meter" class="form-control"
+                               placeholder="{% trans 'Meter reading (km/hrs)' %}" step="0.01">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{% trans "New Vehicle Meter Reading" %}</label>
+                        <input type="number" id="modal_new_meter" class="form-control"
+                               placeholder="{% trans 'Meter reading (km/hrs)' %}" step="0.01">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{% trans "Old Vehicle Fuel Level" %}</label>
+                        <select id="modal_old_fuel" class="form-control">
+                            <option value="">{% trans "Select fuel level" %}</option>
+                            <option value="Full">{% trans "Full" %}</option>
+                            <option value="3/4">3/4</option>
+                            <option value="1/2">1/2</option>
+                            <option value="1/4">1/4</option>
+                            <option value="Empty">{% trans "Empty" %}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{% trans "Replacement Date & Time" %}</label>
+                        <input type="datetime-local" id="modal_replacement_dt" class="form-control">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">{% trans "Old Vehicle Condition" %}</label>
+                        <textarea id="modal_old_condition" class="form-control" rows="2"
+                                  placeholder="{% trans 'Describe condition at time of replacement...' %}"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-success" onclick="confirmAddDetail()">
+                    ✅ {% trans "Confirm Replacement" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── State ──
+    let details = [];        // committed rows
+    let editingIndex = null; // null = new row, number = editing existing
+
+    // ─────────────────────────────────────────
+    //  Customer → load contracts
+    // ─────────────────────────────────────────
+    document.getElementById('id_customer').addEventListener('change', function () {
+        const customerId = this.value;
+        const contractSel = document.getElementById('id_delivery_contract');
+
+        if (!customerId) {
+            contractSel.innerHTML = '<option value="">{% trans "Select customer first" %}</option>';
+            return;
+        }
+
+        contractSel.innerHTML = '<option value="">{% trans "Loading..." %}</option>';
+
+        fetch(`/get-customer-contracts-replacement/?customer_id=${customerId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    contractSel.innerHTML = '<option value="">{% trans "Select contract" %}</option>';
+                    data.contracts.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = `${c.voucher_no} - ${c.date} (${c.hired_vehicles} hired)`;
+                        contractSel.appendChild(opt);
+                    });
+                } else {
+                    contractSel.innerHTML = '<option value="">{% trans "No contracts found" %}</option>';
+                }
+            })
+            .catch(() => {
+                contractSel.innerHTML = '<option value="">{% trans "Error loading contracts" %}</option>';
+            });
+    });
+
+    // ─────────────────────────────────────────
+    //  Load hired vehicles for selected contract
+    // ─────────────────────────────────────────
+    function loadHiredVehicles() {
+        const contractId = document.getElementById('id_delivery_contract').value;
+        if (!contractId) {
+            alert('{% trans "Please select a delivery contract first." %}');
+            return;
+        }
+
+        fetch(`/get-contract-hired-vehicles/?contract_id=${contractId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) { alert(data.message); return; }
+                if (data.vehicles.length === 0) {
+                    alert('{% trans "No hired vehicles found in this contract." %}');
+                    return;
+                }
+
+                const oldSel = document.getElementById('old_vehicle_select');
+                oldSel.innerHTML = '<option value="" disabled selected>{% trans "Select breakdown vehicle" %}</option>';
+
+                data.vehicles.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.vehicle_id;
+                    opt.textContent = v.vehicle_name;
+                    // Store extra data on the option
+                    opt.dataset.contractDetailId = v.contract_detail_id;
+                    opt.dataset.location         = v.location;
+                    opt.dataset.period           = v.period;
+                    opt.dataset.fromDate         = v.from_date;
+                    opt.dataset.toDate           = v.to_date;
+                    oldSel.appendChild(opt);
+                });
+
+                // Also set customer if auto-populated
+                if (data.customer_id) {
+                    const custSel = document.getElementById('id_customer');
+                    if (!custSel.value) custSel.value = data.customer_id;
+                }
+            })
+            .catch(() => alert('{% trans "Error loading vehicles." %}'));
+    }
+
+    // ─────────────────────────────────────────
+    //  When old vehicle is selected → load free vehicles
+    // ─────────────────────────────────────────
+    function onOldVehicleChange() {
+        const oldVehicleId = document.getElementById('old_vehicle_select').value;
+        const newSel = document.getElementById('new_vehicle_select');
+
+        if (!oldVehicleId) return;
+
+        newSel.innerHTML = '<option value="" disabled selected>{% trans "Loading..." %}</option>';
+
+        fetch(`/get-free-vehicles/?exclude_vehicle_id=${oldVehicleId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) { alert(data.message); return; }
+
+                newSel.innerHTML = '<option value="" disabled selected>{% trans "Select replacement vehicle" %}</option>';
+                data.vehicles.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = v.vehicle_name;
+                    newSel.appendChild(opt);
+                });
+            })
+            .catch(() => {
+                newSel.innerHTML = '<option value="" disabled selected>{% trans "Error loading vehicles" %}</option>';
+            });
+    }
+
+    // ─────────────────────────────────────────
+    //  Open detail modal (for new or edit)
+    // ─────────────────────────────────────────
+    function openDetailModal(editIndex) {
+        const oldSel    = document.getElementById('old_vehicle_select');
+        const newSel    = document.getElementById('new_vehicle_select');
+        const reasonInp = document.getElementById('reason_input');
+
+        if (editIndex !== undefined) {
+            // Editing existing row
+            editingIndex = editIndex;
+            const d = details[editIndex];
+
+            // Populate summary
+            document.getElementById('modal_summary').innerHTML =
+                `<strong>🔄 ${d.old_vehicle_name}</strong> → <strong>${d.new_vehicle_name}</strong>`;
+
+            document.getElementById('modal_old_meter').value      = d.old_meter || '';
+            document.getElementById('modal_new_meter').value      = d.new_meter || '';
+            document.getElementById('modal_old_fuel').value       = d.old_fuel || '';
+            document.getElementById('modal_replacement_dt').value = d.replacement_datetime || '';
+            document.getElementById('modal_old_condition').value  = d.old_vehicle_condition || '';
+
+        } else {
+            // New row — validate selections first
+            editingIndex = null;
+
+            const oldVehicleId   = oldSel.value;
+            const oldVehicleName = oldSel.options[oldSel.selectedIndex]?.text;
+            const newVehicleId   = newSel.value;
+            const newVehicleName = newSel.options[newSel.selectedIndex]?.text;
+
+            if (!oldVehicleId) {
+                alert('{% trans "Please select the breakdown vehicle." %}');
+                return;
+            }
+            if (!newVehicleId) {
+                alert('{% trans "Please select the replacement vehicle." %}');
+                return;
+            }
+
+            // Check duplicate old vehicle
+            const alreadyAdded = details.some(d => String(d.old_vehicle_id) === String(oldVehicleId));
+            if (alreadyAdded) {
+                alert(`⚠️ "${oldVehicleName}" has already been added for replacement. Remove the existing row first if you want to re-replace.`);
+                return;
+            }
+
+            document.getElementById('modal_summary').innerHTML =
+                `<strong class="badge-old">OLD</strong> ${oldVehicleName} &nbsp;→&nbsp; <strong class="badge-new">NEW</strong> ${newVehicleName}`;
+
+            // Pre-fill datetime from master field
+            const masterDt = document.querySelector('[name="replacement_date_time"]')?.value || '';
+            document.getElementById('modal_old_meter').value      = '';
+            document.getElementById('modal_new_meter').value      = '';
+            document.getElementById('modal_old_fuel').value       = '';
+            document.getElementById('modal_replacement_dt').value = masterDt;
+            document.getElementById('modal_old_condition').value  = '';
+        }
+
+        new bootstrap.Modal(document.getElementById('detailModal')).show();
+    }
+
+    // ─────────────────────────────────────────
+    //  Confirm and commit the detail
+    // ─────────────────────────────────────────
+    function confirmAddDetail() {
+        const oldMeter      = document.getElementById('modal_old_meter').value;
+        const newMeter      = document.getElementById('modal_new_meter').value;
+        const oldFuel       = document.getElementById('modal_old_fuel').value;
+        const replaceDt     = document.getElementById('modal_replacement_dt').value;
+        const oldCondition  = document.getElementById('modal_old_condition').value;
+
+        if (editingIndex !== null) {
+            // Update existing
+            details[editingIndex].old_meter            = oldMeter;
+            details[editingIndex].new_meter            = newMeter;
+            details[editingIndex].old_fuel             = oldFuel;
+            details[editingIndex].replacement_datetime = replaceDt;
+            details[editingIndex].old_vehicle_condition = oldCondition;
+
+            rebuildTable();
+
+        } else {
+            // Build new detail object
+            const oldSel    = document.getElementById('old_vehicle_select');
+            const newSel    = document.getElementById('new_vehicle_select');
+            const reasonInp = document.getElementById('reason_input');
+
+            const oldOpt = oldSel.options[oldSel.selectedIndex];
+
+            details.push({
+                contract_detail_id:    oldOpt.dataset.contractDetailId,
+                old_vehicle_id:        oldSel.value,
+                old_vehicle_name:      oldOpt.text,
+                new_vehicle_id:        newSel.value,
+                new_vehicle_name:      newSel.options[newSel.selectedIndex].text,
+                reason:                reasonInp.value.trim(),
+                old_meter:             oldMeter,
+                new_meter:             newMeter,
+                old_fuel:              oldFuel,
+                old_vehicle_condition: oldCondition,
+                replacement_datetime:  replaceDt,
+            });
+
+            rebuildTable();
+            clearAddInputs();
+        }
+
+        updateHiddenInputs();
+        bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide();
+    }
+
+    // ─────────────────────────────────────────
+    //  Rebuild the visible table from details[]
+    // ─────────────────────────────────────────
+    function rebuildTable() {
+        const tbody = document.querySelector('#detailsTable tbody');
+        tbody.innerHTML = '';
+
+        if (details.length === 0) {
+            tbody.innerHTML = `
+                <tr id="noDataRow">
+                    <td colspan="10" class="text-center text-muted py-3">
+                        {% trans "No replacement details added yet." %}
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        details.forEach((d, i) => {
+            const dtDisplay = d.replacement_datetime
+                ? new Date(d.replacement_datetime).toLocaleString('en-GB')
+                : '-';
+
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr data-index="${i}">
+                    <td>${i + 1}</td>
+                    <td>
+                        <span class="badge-old">OLD</span><br>
+                        <strong>${d.old_vehicle_name}</strong>
+                    </td>
+                    <td class="arrow-cell">→</td>
+                    <td>
+                        <span class="badge-new">NEW</span><br>
+                        <strong>${d.new_vehicle_name}</strong>
+                    </td>
+                    <td class="text-start small">${d.reason || '-'}</td>
+                    <td>${d.old_meter || '-'}</td>
+                    <td>${d.new_meter || '-'}</td>
+                    <td>${d.old_fuel || '-'}</td>
+                    <td class="small">${dtDisplay}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-primary mb-1"
+                                onclick="openDetailModal(${i})" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger"
+                                onclick="removeDetail(${i})" title="Remove">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>`);
+        });
+    }
+
+    // ─────────────────────────────────────────
+    //  Remove a row
+    // ─────────────────────────────────────────
+    function removeDetail(index) {
+        details.splice(index, 1);
+        rebuildTable();
+        updateHiddenInputs();
+    }
+
+    // ─────────────────────────────────────────
+    //  Sync hidden inputs
+    // ─────────────────────────────────────────
+    function updateHiddenInputs() {
+        const div = document.getElementById('hiddenDetails');
+        div.innerHTML = '';
+
+        details.forEach(d => {
+            const inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'details[]';
+            // contract_detail_id | old_vehicle_id | new_vehicle_id | reason |
+            // old_meter | new_meter | old_fuel | old_condition | replacement_datetime
+            inp.value = [
+                d.contract_detail_id,
+                d.old_vehicle_id,
+                d.new_vehicle_id,
+                d.reason,
+                d.old_meter,
+                d.new_meter,
+                d.old_fuel,
+                d.old_vehicle_condition,
+                d.replacement_datetime,
+            ].join('|');
+            div.appendChild(inp);
+        });
+    }
+
+    // ─────────────────────────────────────────
+    //  Clear add-row inputs after confirming
+    // ─────────────────────────────────────────
+    function clearAddInputs() {
+        document.getElementById('old_vehicle_select').selectedIndex = 0;
+        document.getElementById('new_vehicle_select').innerHTML =
+            '<option value="" disabled selected>{% trans "Select free vehicle" %}</option>';
+        document.getElementById('reason_input').value = '';
+    }
+
+    // ─────────────────────────────────────────
+    //  Form submit → AJAX (same pattern as DC / OffHire)
+    // ─────────────────────────────────────────
+    $(document).on('submit', '#replacementForm', function (e) {
+        e.preventDefault();
+
+        if (details.length === 0) {
+            alert('{% trans "Please add at least one replacement detail before saving." %}');
+            return;
+        }
+
+        updateHiddenInputs();
+
+        window.afterSuccessRedirect = "{% url 'fleet_app:replacement_list' %}";
+        const formData = new FormData(this);
+
+        $.ajax({
+            url: this.action,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+
+            success: function (response) {
+                if (response.admin_required) {
+                    $('#admin_error').text(response.message || '');
+                    $('#adminOverrideModal').modal('show');
+                    return;
+                }
+                if (response.success) {
+                    alert(response.message);
+                    if (response.pdf_url) window.open(response.pdf_url, '_blank');
+                    setTimeout(() => window.location.href = window.afterSuccessRedirect, 800);
+                }
+            },
+
+            error: function (xhr) {
+                if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                    $('#admin_error').text(xhr.responseJSON.message || '');
+                    $('#adminOverrideModal').modal('show');
+                } else {
+                    alert('Error: ' + (xhr.responseJSON?.message || 'Something went wrong'));
+                }
+            }
+        });
+    });
+
+    // ─────────────────────────────────────────
+    //  Defaults on page load
+    // ─────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+        // Date default
+        const dateInput = document.querySelector('[name="date"]');
+        if (dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        // Datetime default
+        const dtInput = document.querySelector('[name="replacement_date_time"]');
+        if (dtInput && !dtInput.value) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            dtInput.value = now.toISOString().slice(0, 16);
+        }
+    });
+</script>
+
+<!-- ── Auto voucher number (create mode only) ── -->
+{% if not is_edit_mode %}
+<script>
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        const voucherInput  = document.getElementById('id_voucher_no');
+
+        function updateVoucherNumber() {
+            if (voucherSelect && voucherInput && voucherSelect.value) {
+                voucherInput.value = '{% trans "Loading..." %}';
+                fetch('/get-voucher-number-fleet/?voucher_type_id=' + voucherSelect.value)
+                    .then(r => r.json())
+                    .then(data => {
+                        voucherInput.value = data.success ? data.voucher_number : '{% trans "Error" %}';
+                    })
+                    .catch(() => { voucherInput.value = '{% trans "Error" %}'; });
+            }
+        }
+
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
+<!-- ── Edit mode: pre-load existing details ── -->
+{% if is_edit_mode and existing_details %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        {% for d in existing_details %}
+        details.push({
+            contract_detail_id:    "{{ d.delivery_contract_detail.id }}",
+            old_vehicle_id:        "{{ d.old_vehicle.id }}",
+            old_vehicle_name:      "{{ d.old_vehicle.vehicle_name|escapejs }}",
+            new_vehicle_id:        "{{ d.new_vehicle.id }}",
+            new_vehicle_name:      "{{ d.new_vehicle.vehicle_name|escapejs }}",
+            reason:                "{{ d.reason|default:''|escapejs }}",
+            old_meter:             "{{ d.old_meter_reading|default:'' }}",
+            new_meter:             "{{ d.new_meter_reading|default:'' }}",
+            old_fuel:              "{{ d.old_fuel_level|default:''|escapejs }}",
+            old_vehicle_condition: "{{ d.old_vehicle_condition|default:''|escapejs }}",
+            replacement_datetime:  "{% if d.replacement_date_time %}{{ d.replacement_date_time|date:'Y-m-d\\TH:i' }}{% endif %}",
+        });
+        {% endfor %}
+
+        rebuildTable();
+        updateHiddenInputs();
+    });
+</script>
+{% endif %}
+
+{% endblock %}

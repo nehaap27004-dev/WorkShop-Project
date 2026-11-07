@@ -21,8 +21,6 @@
   margin: 4px 0 0;
 }
 
-/* Summary cards */
-
 .stat-card {
   background: #fff;
   border: 1px solid #e2e8f0;
@@ -54,16 +52,12 @@
 .stat-card.stat-balance { border-left-color:#f59e0b; }
 .stat-card.stat-balance .stat-value { color:#d97706; }
 
-/* Report card */
-
 .report-card {
   background:#fff;
   border:1px solid #e2e8f0;
   border-radius:8px;
   overflow:hidden;
 }
-
-/* Column header */
 
 .col-header {
   display:flex;
@@ -84,9 +78,7 @@
 .col-header .ch-num { width:36px; }
 .col-header .ch-name { flex:1; }
 .col-header .ch-amt { width:150px; text-align:right; }
-.col-header .ch-arrow { width:32px; }
-
-/* Client row */
+.col-header .ch-arrow { width:60px; text-align:right; }
 
 .client-summary-row {
   display:flex;
@@ -115,7 +107,29 @@
   font-size:.95rem;
 }
 
-.client-summary-row .col-arrow { width:32px; }
+.client-summary-row .col-arrow {
+  width:60px;
+  text-align:right;
+}
+
+.pdf-btn {
+  display:inline-block;
+  padding:3px 10px;
+  font-size:11px;
+  font-weight:700;
+  color:#dc2626;
+  border:1px solid #dc2626;
+  border-radius:4px;
+  text-decoration:none;
+  white-space:nowrap;
+  background:#fff;
+}
+
+.pdf-btn:hover {
+  background:#dc2626;
+  color:#fff;
+  text-decoration:none;
+}
 
 .client-name {
   font-size:14px;
@@ -127,8 +141,6 @@
 .text-paid { color:#16a34a; font-weight:600; }
 .text-balance { color:#d97706; font-weight:700; }
 .text-zero { color:#94a3b8; }
-
-/* Arrow */
 
 .arrow-icon {
   width:24px;
@@ -147,8 +159,6 @@
   color:#fff;
 }
 
-/* Detail panel */
-
 .detail-panel {
   display:none;
   background:#f9fafb;
@@ -162,8 +172,6 @@
   padding:18px 16px 20px 52px;
 }
 
-/* Section titles */
-
 .section-title {
   font-size:.95rem;
   font-weight:700;
@@ -172,8 +180,6 @@
   color:#64748b;
   margin-bottom:10px;
 }
-
-/* Inner tables */
 
 .inner-table {
   width:100%;
@@ -223,8 +229,6 @@
   border-radius:4px;
 }
 
-/* Status badge */
-
 .status-badge {
   font-size:.72rem;
   font-weight:700;
@@ -232,11 +236,6 @@
   padding:4px 9px;
   border-radius:20px;
 }
-
-.badge-cleared { background:#dcfce7; color:#16a34a; }
-.badge-pending { background:#fff7ed; color:#c2410c; }
-
-/* Grand row */
 
 .grand-row {
   display:flex;
@@ -276,10 +275,111 @@
   color:#94a3b8;
 }
 
+/* PDC panel */
+.pdc-btn {
+  border-color:#dc2626;
+  color:#dc2626;
+}
+
+.pdc-btn:hover {
+  background:#dc2626;
+  color:#fff;
+}
+
+.pdc-btn .count-pill {
+  background:#fee2e2;
+  color:#dc2626;
+}
+
+.pdc-panel {
+  display:none;
+}
+
+.pdc-panel .col-header .ch { color:#dc2626; }
+
+.print-header,
+.print-footer {
+  display: none;
+}
+
+@media print {
+
+  .no-print {
+    display: none !important;
+  }
+
+  .detail-panel {
+    display: block !important;
+  }
+
+  .pdc-panel {
+    display: block !important;
+  }
+
+  .client-summary-row .arrow-icon {
+    display: none;
+  }
+
+  @page {
+    margin: 100px 0 80px 0;
+  }
+
+  .print-header {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-header img {
+    display: block;
+    width: 100%;
+    max-height: 90px;
+    object-fit: contain;
+  }
+
+  .print-footer {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-footer img {
+    display: block;
+    width: 100%;
+    max-height: 70px;
+    object-fit: contain;
+  }
+
+  .container-fluid {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+}
 </style>
 
 
 <div class="container-fluid py-3 px-3 px-md-4">
+
+  <!-- PRINT HEADER (visible only when printing) -->
+
+<div class="print-header">
+<img src="/media/timesheet_head/silver_head.jpg" alt="Header">
+</div>
+
+<!-- PRINT FOOTER (visible only when printing) -->
+
+<div class="print-footer">
+<img src="/media/timesheet_head/silver_footer.jpg" alt="Footer">
+</div>
 
 <!-- HEADER -->
 
@@ -292,11 +392,18 @@
 Client Outstanding Report
 </h5>
 
-<p>Credit invoices — click a client to see invoices & receipts</p>
+<p>Credit invoices — click a client to see invoices & bill details</p>
 
 </div>
 
 <div class="no-print">
+
+{% if selected_customer and pdc_list %}
+<button onclick="togglePdcPanel()" class="btn btn-sm btn-outline-danger pdc-btn mr-1">
+<i class="fas fa-money-check-alt"></i> Show PDC List
+<span class="count-pill">{{ pdc_list|length }}</span>
+</button>
+{% endif %}
 
 <button onclick="expandAll()" class="btn btn-sm btn-outline-secondary mr-1">
 Expand All
@@ -403,6 +510,13 @@ Reset
 </div>
 </div>
 
+<div class="col-md-3 mb-2">
+<div class="stat-card stat-invoice">
+<div class="stat-label">Opening Amount</div>
+<div class="stat-value">{{ grand_opening|floatformat:3 }}</div>
+</div>
+</div>
+
 <div class="col-md-4 mb-2">
 <div class="stat-card stat-paid">
 <div class="stat-label">Total Received Amount</div>
@@ -420,6 +534,7 @@ Reset
 </div>
 
 
+
 <div class="report-card">
 
 {% if report %}
@@ -428,48 +543,51 @@ Reset
 
 <span class="ch ch-num">#</span>
 <span class="ch ch-name">Client</span>
-<span class="ch ch-amt">Invoice</span>
-<span class="ch ch-amt">Paid</span>
-<span class="ch ch-amt">Balance</span>
+<span class="ch ch-amt">Total INV AMT</span>
+<span class="ch ch-amt">Total Opening AMT</span>
+<span class="ch ch-amt">Total Received AMT</span>
+<span class="ch ch-amt">Total Balance AMT</span>
+<span class="ch ch-arrow">PDF</span>
+
 
 </div>
 
 
 {% for row in report %}
 
-<div class="client-summary-row"
-id="cr-{{ forloop.counter }}"
-onclick="toggleRow({{ forloop.counter }})">
-
-<div class="col-num">{{ forloop.counter }}</div>
-
-<div class="col-name">
-<div class="client-name">{{ row.customer.ledger_name }}</div>
+<div class="client-summary-row" id="cr-{{ forloop.counter }}" onclick="toggleRow({{ forloop.counter }})">
+    <div class="col-num">{{ forloop.counter }}</div>
+    <div class="col-name">
+        <div class="client-name">{{ row.customer.ledger_name }}</div>
+    </div>
+    <div class="col-amt text-invoice">{{ row.total_invoice|floatformat:3 }}</div>
+    <div class="col-amt text-invoice">{{ row.total_opening|floatformat:3 }}</div>
+    <div class="col-amt text-paid">{{ row.total_paid|floatformat:3 }}</div>
+    <div class="col-amt {% if row.balance > 0 %}text-balance{% else %}text-zero{% endif %}">
+        {{ row.balance|floatformat:3 }}
+    </div>
+    <div class="col-arrow">
+    <a href="{% url 'accounts_app:client_outstanding_pdf' row.customer.id %}?from_date={{ from_date|default_if_none:'' }}&to_date={{ to_date|default_if_none:'' }}"
+      target="_blank"
+      class="no-print pdf-btn"
+      onclick="event.stopPropagation();"
+      title="Download PDF">
+        PDF
+    </a>
+    </div>
 </div>
-
-<div class="col-amt text-invoice">
-{{ row.total_invoice|floatformat:3 }}
-</div>
-
-<div class="col-amt text-paid">
-{{ row.total_paid|floatformat:3 }}
-</div>
-
-<div class="col-amt {% if row.balance > 0 %}text-balance{% else %}text-zero{% endif %}">
-{{ row.balance|floatformat:3 }}
-</div>
-
-
-</div>
-
 
 <div class="detail-panel" id="dp-{{ forloop.counter }}">
 
 <div class="detail-inner">
 
-<!-- Invoices -->
+<!-- Bills (Invoices & Opening Bills combined) -->
 
-<div class="section-title">Invoices</div>
+<div class="section-title">
+Bills
+</div>
+
+{% if row.bill_rows %}
 
 <table class="inner-table">
 
@@ -478,10 +596,15 @@ onclick="toggleRow({{ forloop.counter }})">
 <tr>
 
 <th>#</th>
-<th>Voucher</th>
+<th>Type</th>
+<th>Voucher / Invoice No</th>
+<th>PO No</th>
 <th>Date</th>
-<th class="r">Amount</th>
-<th>Status</th>
+<th class="text-center">Age (Days)</th>
+<th class="r">Debit</th>
+<th class="r">Credit</th>
+<th class="r">Outstnd Bal</th>
+<th class="r">Cumulative Bal</th>
 
 </tr>
 
@@ -489,82 +612,49 @@ onclick="toggleRow({{ forloop.counter }})">
 
 <tbody>
 
-{% for inv in row.invoice_rows %}
+{% for bill in row.bill_rows %}
 
 <tr>
 
 <td>{{ forloop.counter }}</td>
 
 <td>
-<span class="v-no">{{ inv.voucher_no }}</span>
+{% if bill.bill_type == 'invoice' %}
+<span class="status-badge" style="background:#dbeafe;color:#2563eb;">Invoice</span>
+{% else %}
+<span class="status-badge" style="background:#dcfce7;color:#16a34a;">Opening</span>
+{% endif %}
 </td>
 
-<td>{{ inv.date|date:"d M Y" }}</td>
+<td>
+<span class="v-no">{{ bill.number }}</span>
+</td>
+
+<td>
+{{ bill.po_no|default:"-" }}
+</td>
+
+<td>{{ bill.date|date:"d M Y" }}</td>
+
+<!-- Age column (Days between Invoice Date & Today) -->
+<td class="text-center font-weight-bold bill-age" data-date="{{ bill.date|date:'Y-m-d' }}">
+{{ bill.age|default:'' }}
+</td>
 
 <td class="r text-invoice">
-{{ inv.grand_total|floatformat:3 }}
+{{ bill.debit_amt|floatformat:3 }}
 </td>
-
-<td>
-
-{% if inv.IsCleared %}
-<span class="status-badge badge-cleared">Cleared</span>
-{% else %}
-<span class="status-badge badge-pending">Pending</span>
-{% endif %}
-
-</td>
-
-</tr>
-
-{% endfor %}
-
-</tbody>
-
-</table>
-
-
-<!-- Receipts -->
-
-<div class="section-title">Receipts</div>
-
-{% if row.receipt_rows %}
-
-<table class="inner-table">
-
-<thead>
-
-<tr>
-
-<th>#</th>
-<th>Date</th>
-<th>Ledger</th>
-<th>Cheque</th>
-<th>Remark</th>
-<th class="r">Amount</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-{% for receipt in row.receipt_rows %}
-
-<tr>
-
-<td>{{ forloop.counter }}</td>
-
-<td>{{ receipt.Date|date:"d M Y" }}</td>
-
-<td>{{ receipt.Ledger.LedgerName }}</td>
-
-<td>{{ receipt.ChequeNo|default:"-" }}</td>
-
-<td>{{ receipt.Remark|default:"-"|truncatechars:30 }}</td>
 
 <td class="r text-paid">
-{{ receipt.TotalAmount|floatformat:3 }}
+{{ bill.credit_amt|floatformat:3 }}
+</td>
+
+<td class="r {% if bill.outstanding_amt > 0 %}text-balance{% else %}text-zero{% endif %}">
+{{ bill.outstanding_amt|floatformat:3 }}
+</td>
+
+<td class="r text-balance">
+{{ bill.cumulative_amt|floatformat:3 }}
 </td>
 
 </tr>
@@ -573,11 +663,41 @@ onclick="toggleRow({{ forloop.counter }})">
 
 </tbody>
 
+<tfoot>
+
+<tr>
+
+<td colspan="6" class="text-right">
+Total
+</td>
+
+<td class="r text-invoice">
+{{ row.total_debit|floatformat:3 }}
+</td>
+
+<td class="r text-paid">
+{{ row.total_credit|floatformat:3 }}
+</td>
+
+<td class="r text-balance">
+{{ row.total_outstanding|floatformat:3 }}
+</td>
+
+<td class="r text-balance">
+{{ row.final_cumulative|floatformat:3 }}
+</td>
+
+</tr>
+
+</tfoot>
+
 </table>
 
 {% else %}
 
-<p class="text-muted">No receipts recorded.</p>
+<p class="text-muted">
+No bills recorded.
+</p>
 
 {% endif %}
 
@@ -603,6 +723,10 @@ Grand Total
 {{ grand_invoice|floatformat:3 }}
 </div>
 
+<div class="col-amt text-invoice">
+{{ grand_opening|floatformat:3 }}
+</div>
+
 <div class="col-amt text-paid">
 {{ grand_paid|floatformat:3 }}
 </div>
@@ -612,6 +736,67 @@ Grand Total
 </div>
 
 </div>
+
+<!-- PDC LIST PANEL (only when a single customer is selected) -->
+
+{% if selected_customer and pdc_list %}
+<div class="report-card mb-3 pdc-panel" id="pdc-panel">
+
+<div class="col-header">
+<span class="ch" style="flex:1;">
+<i class="fas fa-money-check-alt mr-1"></i> List of PDCs
+</span>
+</div>
+
+<table class="inner-table" style="margin:16px 16px 16px; width:calc(100% - 32px);">
+
+<thead>
+<tr>
+<th>#</th>
+<th>Date</th>
+<th>Voucher No</th>
+<th>Cheque No</th>
+<th>Maturity Date</th>
+<th class="r">Debit</th>
+<th class="r">Credit</th>
+<th class="r">Balance</th>
+<th>Remark</th>
+</tr>
+</thead>
+
+<tbody>
+{% for row in pdc_list %}
+<tr>
+<td>{{ row.sl_no }}</td>
+<td>{{ row.date|date:"d/m/Y" }}</td>
+<td><span class="v-no">{{ row.voucher_no }}</span></td>
+<td>{{ row.cheque_no|default:"-" }}</td>
+<td>{{ row.cheque_date|date:"d/m/Y" }}</td>
+<td class="r text-zero">0.000</td>
+<td class="r text-paid">{{ row.credit|floatformat:3 }}</td>
+<td class="r {% if row.balance > 0 %}text-balance{% else %}text-zero{% endif %}">
+{{ row.balance|floatformat:3 }}
+</td>
+<td>{{ row.remark }}</td>
+</tr>
+{% endfor %}
+</tbody>
+
+<tfoot>
+<tr>
+<td colspan="5" class="text-right">Total</td>
+<td class="r text-zero">0.000</td>
+<td class="r text-paid">{{ pdc_grand_credit|floatformat:3 }}</td>
+<td class="r">{{ pdc_list.last.balance|floatformat:3 }}</td>
+<td></td>
+</tr>
+</tfoot>
+
+</table>
+
+</div>
+{% endif %}
+
 
 {% else %}
 
@@ -660,6 +845,38 @@ document.querySelectorAll('.detail-panel.open').forEach(p=>p.classList.remove('o
 document.querySelectorAll('.client-summary-row.active').forEach(r=>r.classList.remove('active'))
 
 }
+
+function togglePdcPanel(){
+
+var p = document.getElementById('pdc-panel')
+if(!p) return
+
+if(p.style.display === 'block'){
+  p.style.display = 'none'
+} else {
+  p.style.display = 'block'
+}
+
+}
+
+// Calculate Age (Days from Invoice Date to Today) dynamically
+document.addEventListener("DOMContentLoaded", function() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  document.querySelectorAll('.bill-age').forEach(el => {
+    const dateStr = el.getAttribute('data-date');
+    if (dateStr) {
+      const invDate = new Date(dateStr);
+      invDate.setHours(0, 0, 0, 0);
+      if (!isNaN(invDate.getTime())) {
+        const diffTime = today - invDate;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        el.textContent = diffDays >= 0 ? diffDays : 0;
+      }
+    }
+  });
+});
 
 </script>
 

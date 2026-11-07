@@ -22,7 +22,15 @@
 
 {% csrf_token %}
 
-<table>
+
+<!-- search -->
+<div style="margin-bottom:15px;">
+    <input type="text" id="paymentSearch" 
+        placeholder="Search Voucher No or Party..."
+        style="width:100%; padding:8px; border:1px solid #ccc; border-radius:5px;">
+</div>
+
+<table id="paymentTable">
     <thead>
         <tr>
             <th>Voucher No</th>
@@ -112,5 +120,29 @@ function deleteLocalPayment(id, voucherNo) {
         }
     });
 }
+</script>
+
+
+<!-- search -->
+<script>
+document.getElementById("paymentSearch").addEventListener("keyup", function () {
+
+    let filter = this.value.toLowerCase();
+    let rows     = document.querySelectorAll("#paymentTable tbody tr");
+
+    rows.forEach(function(row) {
+
+        if (row.children.length <= 1) return;
+
+        let voucher   = row.cells[0].textContent.toLowerCase();   // col 1
+        let ledger    = row.cells[2].textContent.toLowerCase();   // col 3
+
+        if (voucher.includes(filter) || ledger.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+});
 </script>
 {% endblock %}

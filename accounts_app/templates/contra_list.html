@@ -1,63 +1,143 @@
-{% extends 'base.html' %}
+{% extends 'fleet_base1.html' %}
+{% block title %}Contra Vouchers{% endblock %}
 
 {% block content %}
+<div class="container-fluid py-4">
 
-<style>
-    
-    .table-container {
-        max-width: 900px;
-        margin: 50px auto;
-        background: #ffffff;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-    .table-container h1 {
-        font-size: 24px;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-    .btn-primary {
-        margin-bottom: 15px;
-    }
-</style>
-</head>
-<body>
-<div class="table-container">
-    <h1>Contra List</h1>
-    <a href="{% url 'accounts_app:contra_create' %}" class="btn btn-primary">Create New Contra</a>
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+      <i class="fas fa-exchange-alt mr-2"></i> Contra Vouchers
+    </h4>
+    <a href="{% url 'accounts_app:contra_create' %}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus mr-1"></i> New Contra
+    </a>
+  </div>
+
+  {% for msg in messages %}
+    <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show">
+      {{ msg }}
+      <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+  {% endfor %}
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0">
+          <thead class="thead-dark">
             <tr>
-                <th>#</th>
-                <th>Date</th>
-                <th>Voucher No</th>
-                <th>Type</th>
-                <th>Debit Ledger</th>
-                <th>Credit Ledger</th>
-                <th>Amount</th>
-                
+              <th>#</th>
+              <th>Voucher No</th>
+              <th>Type</th>
+              <th>Date</th>
+              <th>Cost Center</th>
+              <th>Transfer From</th>
+              <th>Transfer To</th>
+              <th class="text-right">Amount</th>
+              <th class="text-center" style="width: 180px;">Actions</th>
             </tr>
-        </thead>
-        <tbody>
-            {% for contra in contras %}
+          </thead>
+          <tbody>
+            {% for c in contras %}
             <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ contra.date }}</td>
-                <td>{{ contra.voucher_no }}</td>
-                <td>{{ contra.get_contra_type_display }}</td>
-                <td>{{ contra.dr_ledger }}</td>
-                <td>{{ contra.cr_ledger }}</td>
-                <td>{{ contra.amount }}</td>
-                
+              <td>{{ forloop.counter }}</td>
+              <td><strong>{{ c.voucher_no }}</strong></td>
+              <td><span class="badge badge-secondary">{{ c.voucherType }}</span></td>
+              <td>{{ c.date|date:"d-m-Y" }}</td>
+              <td>{{ c.cost_center }}</td>
+              <td>
+                <span class="text-danger">
+                  <i class="fas fa-arrow-up mr-1"></i>
+                </span>{{ c.transfer_from }}
+              </td>
+              <td>
+                <span class="text-success">
+                  <i class="fas fa-arrow-down mr-1"></i>
+                </span>{{ c.transfer_to }}
+              </td>
+              <td class="text-right font-weight-bold">{{ c.amount|floatformat:3 }}</td>
+              <td class="text-center">
+
+                <!-- Edit -->
+                <a href="{% url 'accounts_app:contra_edit' c.pk %}"
+                   class="btn btn-xs btn-warning mr-1" title="Edit">
+                  Edit
+                </a>
+
+                <!-- PDF -->
+                <a href="{% url 'accounts_app:contra_pdf' c.pk %}"
+                   class="btn btn-xs btn-danger mr-1" title="Export PDF" target="_blank">
+                  PDF
+                </a>
+
+                <!-- CSV -->
+                <a href="{% url 'accounts_app:contra_csv' c.pk %}"
+                   class="btn btn-xs btn-success mr-1" title="Export CSV">
+                  CSV
+                </a>
+
+                <!-- Delete -->
+                <button type="button"
+                        class="btn btn-xs btn-outline-danger"
+                        title="Delete"
+                        data-toggle="modal"
+                        data-target="#deleteModal"
+                        data-pk="{{ c.pk }}"
+                        data-voucher="{{ c.voucher_no }}">
+                  <i class="fas fa-trash"></i>
+                </button>
+
+              </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" class="text-center">No Contra entries found.</td>
+              <td colspan="9" class="text-center text-muted py-4">
+                <i class="fas fa-inbox mr-1"></i> No contra vouchers found.
+              </td>
             </tr>
             {% endfor %}
-        </tbody>
-    </table>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-exclamation-triangle text-danger mr-2"></i> Confirm Delete
+        </h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete contra voucher
+        <strong id="modalVoucher"></strong>?
+        This action cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <form method="post" id="deleteForm">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash mr-1"></i> Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+$('#deleteModal').on('show.bs.modal', function (e) {
+  const btn     = $(e.relatedTarget);
+  const pk      = btn.data('pk');
+  const voucher = btn.data('voucher');
+  $('#modalVoucher').text(voucher);
+  $('#deleteForm').attr('action', '/contra/' + pk + '/delete/');
+});
+</script>
 {% endblock %}

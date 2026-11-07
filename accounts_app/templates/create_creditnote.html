@@ -1,0 +1,660 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load i18n %}
+{% load privilege_tags %}
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2, h3, h4, h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input, select, textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-success {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+
+    .alert {
+        border-radius: 8px;
+    }
+
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .form-check-inline {
+        margin-right: 20px;
+    }
+
+    .form-check-input {
+        width: auto !important;
+        margin-right: 5px;
+    }
+
+    .badge-hire {
+        background-color: #007bff;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+    .badge-opening {
+        background-color: #28a745;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+    .badge-purchase {
+        background-color: #cec32b;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+    .badge-asset-purchase {
+        background-color: #dc3545;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary mb-0">
+            {% if edit_mode %}{% trans "Edit" %}{% else %}{% trans "Create" %}{% endif %} {% trans "Credit Note" %}
+        </h2>
+        {% has_priv request.user 12 "can_read" as can_read_creditnote %}
+        {% if can_read_creditnote %}
+        <a href="{% url 'accounts_app:list_creditnote' %}" class="btn btn-primary">
+            <i class="bi bi-list-ul"></i> {% trans "View List" %}
+        </a>
+        {% endif %}
+    </div>
+
+    <form method="POST" id="creditNoteForm" class="needs-validation">
+        {% csrf_token %}
+
+        <!-- Payment Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">
+                    {% trans "Credit Note Information" %}
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Voucher No" %}</label>
+                        {{ master_form.voucher_no }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Voucher Type" %}</label>
+                        {{ master_form.voucherType }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Date" %}</label>
+                        {{ master_form.date }}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Client" %}</label><span class="text-danger">*</span>
+                        {{ master_form.client }}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Ledger" %}</label><span class="text-danger">*</span>
+                        {{ master_form.ledger }}
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Ref No" %}</label>
+                        {{ master_form.ref_no }}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Remark" %}</label>
+                        {{ master_form.remark }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section" id="filterSection" style="display: none;">
+            <label class="form-label fw-bold">{% trans "Filter by Type:" %}</label>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showInvoices" checked>
+                <label class="form-check-label" for="showInvoice">
+                    <span class="badge-invoice">{% trans "Invoices" %}</span>
+                </label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showOpenings" checked>
+                <label class="form-check-label" for="showOpenings">
+                    <span class="badge-opening">{% trans "Openings" %}</span>
+                </label>
+            </div>
+           
+        </div>
+
+        <!-- Pending Purchase Bills & Openings -->
+        <div class="card shadow-sm mb-4" id="hireTableContainer" style="display: none;">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Pending Invoices & Openings" %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center" id="billTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{% trans "Type" %}</th>
+                                <th>{% trans "Customer" %}</th>
+                                <th>{% trans "Date" %}</th>
+                                <th>{% trans "Voucher #" %}</th>
+                                <th>{% trans "Current Amount" %}</th>
+                                <th>{% trans "Amount Cleared" %}</th>
+                                <th>{% trans "Receivable Balance" %}</th>
+                                <th>{% trans "Credit Amount" %}</th>
+                                <th>{% trans "Balance" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hireTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formset Management Form -->
+        <div id="formsetManagement"></div>
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn btn-success px-4 py-2">
+                {% if edit_mode %}
+                    <i class="bi bi-check-circle"></i> {% trans "Update" %}
+                {% else %}
+                    <i class="bi bi-save"></i> {% trans "Save" %}
+                {% endif %}
+            </button>
+            <a href="{% url 'accounts_app:list_creditnote' %}" class="btn btn-secondary px-4 py-2">
+                <i class="bi bi-x-circle"></i> {% trans "Cancel" %}
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Translation strings for JavaScript
+const translations = {
+    errorLoadingBills: "{% trans 'Error loading invoices. Please try again.' %}",
+    amountExceedBalance: "{% trans 'Amount cannot exceed receivable balance!' %}",
+    enterAmount: "{% trans 'Please enter at least one amount to clear.' %}"
+};
+
+$(document).ready(function () {
+
+    let allData = [];
+
+    console.log("Document ready - Credit Note");
+
+    {% if edit_mode and creditnote_instance %}
+
+    var editMode = true;
+
+    var existingDetails = [
+        {% for detail in creditnote_instance.creditnotedetail_set.all %}
+        {
+            voucher_no: {{ detail.VoucherNo }},
+            voucher_type: {{ detail.voucherType.id }},
+            current_amount: parseFloat("{{ detail.CurrentAmount }}"),
+            amount: parseFloat("{{ detail.Amount }}")
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    console.log("Existing Details:", existingDetails);
+
+    if (existingDetails.length > 0) {
+
+        var customerId = {{ creditnote_instance.client.id }};
+
+        $.ajax({
+
+            url: "{% url 'accounts_app:get_customer_invoices_and_openings' %}",
+
+            data: {
+                customer_id: customerId,
+                credit_note_id: {{ creditnote_instance.id }}
+            },
+
+            success: function (response) {
+
+                console.log("AJAX Response:", response);
+
+                allData = [
+                    ...response.invoices,
+                    ...response.openings
+                ];
+
+                allData.forEach(function (item) {
+
+                    var existingDetail = existingDetails.find(function (detail) {
+
+                        if (item.type === 'invoice') {
+
+                            return detail.voucher_no === item.invoice_id
+                                && detail.voucher_type === 2;
+
+                        } else if (item.type === 'opening') {
+
+                            return detail.voucher_no === item.opening_id
+                                && detail.voucher_type === 16;
+                        }
+                    });
+
+                    if (existingDetail) {
+
+                        item.existing_amount = existingDetail.amount;
+
+                    } else {
+
+                        item.existing_amount = 0;
+                    }
+                });
+
+                renderData();
+
+                $("#hireTableContainer").show();
+                $("#filterSection").show();
+            },
+
+            error: function () {
+
+                alert(translations.errorLoadingBills);
+            }
+        });
+    }
+
+    {% else %}
+
+    var editMode = false;
+
+    {% endif %}
+
+    // Customer Change
+
+    var customerField = $("#id_client");
+
+    customerField.change(function () {
+
+        var customer_id = $(this).val();
+
+        console.log("Customer changed:", customer_id);
+
+        if (!customer_id) {
+
+            $("#hireTableContainer").hide();
+            $("#filterSection").hide();
+
+            return;
+        }
+
+        if (editMode && allData.length > 0) {
+
+            return;
+        }
+
+        $.ajax({
+
+            url: "{% url 'accounts_app:get_customer_invoices_and_openings' %}",
+
+            data: {
+                customer_id: customer_id
+            },
+
+            success: function (response) {
+
+                console.log("AJAX Response:", response);
+
+                allData = [
+                    ...response.invoices,
+                    ...response.openings
+                ];
+
+                if (allData.length === 0) {
+
+                    alert(
+                        "No pending invoices or openings found for this customer."
+                    );
+
+                    $("#hireTableContainer").hide();
+                    $("#filterSection").hide();
+
+                } else {
+
+                    renderData();
+
+                    $("#hireTableContainer").show();
+                    $("#filterSection").show();
+                }
+            },
+
+            error: function () {
+
+                alert(translations.errorLoadingBills);
+            }
+        });
+    });
+
+    // Filters
+
+    $("#showInvoices, #showOpenings").change(function () {
+
+        renderData();
+    });
+
+    function renderData() {
+
+        var tbody = $("#hireTableBody");
+
+        var formsetDiv = $("#formsetManagement");
+
+        tbody.empty();
+
+        formsetDiv.empty();
+
+        var showInvoices = $("#showInvoices").is(":checked");
+
+        var showOpenings = $("#showOpenings").is(":checked");
+
+        var filteredData = allData.filter(function (item) {
+
+            if (item.type === 'invoice' && !showInvoices)
+                return false;
+
+            if (item.type === 'opening' && !showOpenings)
+                return false;
+
+            return true;
+        });
+
+        formsetDiv.append(`
+            <input type="hidden" name="form-TOTAL_FORMS" value="${filteredData.length}">
+            <input type="hidden" name="form-INITIAL_FORMS" value="0">
+            <input type="hidden" name="form-MIN_NUM_FORMS" value="0">
+            <input type="hidden" name="form-MAX_NUM_FORMS" value="1000">
+        `);
+
+        filteredData.forEach(function (item, index) {
+
+            var isInvoice = item.type === 'invoice';
+
+            var voucherTypeId = isInvoice ? 2 : 16;
+
+            var voucherNo = isInvoice
+                ? item.invoice_id
+                : item.opening_id;
+
+            var typeBadge = isInvoice
+                ? '<span class="badge-hire">Invoice</span>'
+                : '<span class="badge-opening">Opening</span>';
+
+            var amountValue = item.existing_amount
+                ? parseFloat(item.existing_amount).toFixed(3)
+                : "0.000";
+
+            var balanceValue =
+                parseFloat(item.receivable_balance)
+                - (item.existing_amount || 0);
+
+            var row = `
+                <tr data-type="${item.type}">
+
+                    <td>${typeBadge}</td>
+
+                    <td>${item.customer}</td>
+
+                    <td>${item.date}</td>
+
+                    <td>${item.voucher_no}</td>
+
+                    <td class="text-end">
+                        ${parseFloat(item.grand_total).toFixed(3)}
+                    </td>
+
+                    <td class="text-end">
+                        ${parseFloat(item.amount_cleared).toFixed(3)}
+                    </td>
+
+                    <td class="text-end receivable">
+                        ${parseFloat(item.receivable_balance).toFixed(3)}
+                    </td>
+
+                    <td>
+
+                        <input type="hidden"
+                               name="form-${index}-voucherType"
+                               value="${voucherTypeId}">
+
+                        <input type="hidden"
+                               name="form-${index}-VoucherNo"
+                               value="${voucherNo}">
+
+                        <input type="hidden"
+                               name="form-${index}-CurrentAmount"
+                               value="${parseFloat(item.receivable_balance).toFixed(3)}">
+
+                        <input type="number"
+                               step="0.001"
+                               name="form-${index}-Amount"
+                               class="form-control form-control-sm amount-input"
+                               min="0"
+                               max="${item.receivable_balance}"
+                               data-max="${item.receivable_balance}"
+                               value="${amountValue}">
+
+                    </td>
+
+                    <td class="text-end balance">
+                        ${balanceValue.toFixed(3)}
+                    </td>
+
+                </tr>
+            `;
+
+            tbody.append(row);
+        });
+    }
+
+    // Dynamic Balance
+
+    $(document).on("input", ".amount-input", function () {
+
+        var row = $(this).closest("tr");
+
+        var receivable = parseFloat($(this).attr('data-max'));
+
+        var entered = parseFloat($(this).val()) || 0;
+
+        if (entered > receivable) {
+
+            alert(translations.amountExceedBalance);
+
+            $(this).val(receivable.toFixed(3));
+
+            entered = receivable;
+        }
+
+        var balance = receivable - entered;
+
+        row.find(".balance").text(balance.toFixed(3));
+    });
+
+    // Validation
+
+    $("#creditNoteForm").submit(function (e) {
+
+        var hasAmount = false;
+
+        $(".amount-input").each(function () {
+
+            if (parseFloat($(this).val()) > 0) {
+
+                hasAmount = true;
+
+                return false;
+            }
+        });
+
+        if (!hasAmount) {
+
+            e.preventDefault();
+
+            alert(translations.enterAmount);
+
+            return false;
+        }
+    });
+
+});
+</script>
+
+<!-- Admin Override Script -->
+<script>
+$(document).on("submit", "#creditNoteForm", function (e) {
+    e.preventDefault();
+
+    console.log("CREDIT NOTE FORM SUBMIT");
+
+    window.pendingFormId = "creditNoteForm";
+    window.pendingFormAction = this.action || window.location.pathname;
+    window.afterSuccessRedirect = "{% url 'accounts_app:list_creditnote' %}";
+
+    let formData = new FormData(this);
+
+    $.ajax({
+        url: window.pendingFormAction,
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+
+        success: function (response) {
+            console.log("CREDIT NOTE SUCCESS:", response);
+
+            if (response.admin_required) {
+                console.log("Admin required - showing modal");
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (response.success) {
+                alert(response.message);
+                window.location.href = window.afterSuccessRedirect;
+            } else {
+                alert(response.message || "Operation failed");
+            }
+        },
+
+        error: function (xhr) {
+            console.log("CREDIT NOTE ERROR:", xhr.status, xhr.responseJSON);
+            console.log("Response Text:", xhr.responseText);
+
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                console.log("403 with admin_required - showing modal");
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+
+            if (xhr.status === 400 && xhr.responseJSON) {
+                console.log("400 validation error");
+                alert(xhr.responseJSON?.message || "Validation error");
+                return;
+            }
+
+            if (xhr.status === 500) {
+                console.log("500 server error");
+                alert(xhr.responseJSON?.message || "Server error - check console");
+                return;
+            }
+
+            alert(xhr.responseJSON?.message || "Something went wrong");
+        }
+    });
+});
+</script>
+
+<!-- Get Next Voucher_no -->
+{% if not edit_mode %}
+<script>
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
+        if (select && input && select.value) {
+            input.value = "Loading...";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(r => r.json())
+                .then(data => { input.value = data.success ? data.voucher_number : "Error"; })
+                .catch(() => { input.value = "Error"; });
+        } else if (input) { input.value = ''; }
+    }
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
+{% endblock %}

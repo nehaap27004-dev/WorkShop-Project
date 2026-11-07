@@ -180,7 +180,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 3%">#</th>
-                                <th style="width: 12%">{% trans "Vehicle" %}</th>
+                                <th style="width: 12%">{% trans "Equipment" %}</th>
                                 <th style="width: 10%">{% trans "Location" %}</th>
                                 <th style="width: 6%">{% trans "Period" %}</th>
                                 <th style="width: 5%">{% trans "Qty" %}</th>
@@ -727,7 +727,7 @@ $(document).on("submit", "#offhireForm", function (e) {
 
             if (response.success) {
                 alert(response.message);
-
+                if (response.pdf_url) window.open(response.pdf_url, "_blank");
                 setTimeout(function () {
                     window.location.href = window.afterSuccessRedirect;
                 }, 1000);

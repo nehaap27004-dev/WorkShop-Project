@@ -225,9 +225,9 @@
             <div class="card-body">
                 <div class="row g-3 align-items-end mb-3">
                     <div class="col-md-3">
-                        <label class="form-label">{% trans "Fleet " %}</label>
+                        <label class="form-label">{% trans "Equipment " %}</label>
                         <select class="form-select" id="vehicle">
-                            <option value="">{% trans "Select Fleet" %}</option>
+                            <option value="">{% trans "Select Equipment" %}</option>
                             {% for vehicle in vehicles %}
                             <option value="{{ vehicle.id }}" data-rate-hr="{{ vehicle.rate_per_hr|default:'0' }}"
                                 data-rate-day="{{ vehicle.rate_per_day|default:'0' }}"
@@ -246,18 +246,19 @@
                         <label class="form-label">{% trans "Quantity" %}</label>
                         <input type="number" class="form-control" id="quantity" min="1" oninput="calculateAmounts()">
                     </div>
-                    <div class="col-md-1">
-                        <label class="form-label">{% trans "Rent" %}</label>
-                        <input type="number" class="form-control" id="rent" step="0.001" oninput="calculateAmounts()">
-                    </div>
                     <div class="col-md-2">
                         <label class="form-label">{% trans "Period" %}</label>
                         <select class="form-select" id="period" onchange="populateRateFromVehicle()">
                             <option value="Hour">{% trans "Hour" %}</option>
                             <option value="Day">{% trans "Day" %}</option>
                             <option value="Week">{% trans "Week" %}</option>
-                            <option value="Month">{% trans "Month" %}</option>
+                            <option value="Month" selected>{% trans "Month" %}</option>
+                            <option value="Lumpsum">{% trans "Lumpsum" %}</option>
                         </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">{% trans "Rent" %}</label>
+                        <input type="number" class="form-control" id="rent" step="0.001" oninput="calculateAmounts()">
                     </div>
                     <div class="col-md-2">
                         <button type="button" class="btn text-white w-100" style="background-color:#5A8DEE;"
@@ -269,7 +270,7 @@
                     <table class="table table-bordered align-middle text-center" id="detailsTable">
                         <thead class="table-light">
                             <tr>
-                                <th>{% trans "Fleet " %}</th>
+                                <th>{% trans "Equipment " %}</th>
                                 <th>{% trans "Description" %}</th>
                                 <th>{% trans "Quantity" %}</th>
                                 <th>{% trans "Rent" %}</th>
@@ -389,6 +390,8 @@
                 rate = selectedOption.getAttribute('data-rate-week') || 0;
             } else if (period === 'Month') {
                 rate = selectedOption.getAttribute('data-rate-month') || 0;
+            }else if (period === 'Lumpsum') {
+                rate = selectedOption.getAttribute('data-rate-lumpsum') || 0;
             }
             rentInput.value = parseFloat(rate).toFixed(3);
         }
@@ -517,7 +520,7 @@
         document.getElementById('description').value = '';
         document.getElementById('quantity').value = '';
         document.getElementById('rent').value = '';
-        document.getElementById('period').selectedIndex = 0;
+        document.getElementById('period').value = 'Month';
     }
 
 </script>

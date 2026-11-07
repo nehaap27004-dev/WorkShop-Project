@@ -1,152 +1,281 @@
 {% extends "fleet_base1.html" %}
+{% load static %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-
 <style>
-  .btn-purple            { background-color:#6f42c1; border-color:#6f42c1; color:#fff; }
-  .btn-purple:hover      { background-color:#5a32a3; color:#fff; }
-  .text-purple           { color:#6f42c1 !important; }
-  .bg-purple-light       { background-color:#f3effe !important; }
-  .card                  { border-radius:10px; }
-  .card-header           { border-bottom:1px solid #e9ecef; }
-  .thead-purple-light th { background-color:#e8dff8; color:#4a2d8c; white-space:nowrap; font-weight:600; }
-  .btn-xs                { padding:2px 8px; font-size:.75rem; }
-  form label             { font-weight:500; color:#444; }
-  .total-field           { background-color:#f8f9fa !important; font-weight:600; }
+  :root {
+    --primary-burgundy: #9f1045;
+    --primary-burgundy-hover: #830d38;
+    --primary-burgundy-light: #fff5f8;
+    --primary-burgundy-border: #f1d6df;
+  }
+
+  .po-form-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+  }
+
+  .text-burgundy {
+    color: var(--primary-burgundy) !important;
+  }
+
+  .btn-custom-primary {
+    background-color: var(--primary-burgundy) !important;
+    border-color: var(--primary-burgundy) !important;
+    color: #ffffff !important;
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 0.6rem 1.5rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-custom-primary:hover {
+    background-color: var(--primary-burgundy-hover) !important;
+    border-color: var(--primary-burgundy-hover) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+  }
+
+  .btn-outline-burgundy {
+    color: var(--primary-burgundy) !important;
+    border-color: var(--primary-burgundy) !important;
+    background-color: transparent !important;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .btn-outline-burgundy:hover {
+    background-color: var(--primary-burgundy) !important;
+    color: #ffffff !important;
+  }
+
+  /* Form Cards */
+  .form-card {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+
+  .card-banner-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #f1f3f5;
+    padding: 1.15rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .card-banner-header h5 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #1e293b;
+  }
+
+  .field-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #495057;
+    margin-bottom: 0.35rem;
+    display: block;
+  }
+
+  .form-card .form-control,
+  .form-card select {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+  }
+
+  .form-card .form-control:focus,
+  .form-card select:focus {
+    border-color: var(--primary-burgundy) !important;
+    box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+    outline: none;
+  }
+
+  .total-field {
+    background-color: #f8fafc !important;
+    font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+    font-weight: 600;
+  }
+
+  /* Line Items Table */
+  .table-modern {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .table-modern thead th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    border-top: none;
+  }
+
+  .table-modern tbody td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+    font-size: 0.88rem;
+    border-bottom: 1px solid #f1f3f5;
+  }
+
+  .entry-box {
+    background-color: #fafbfc;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
 </style>
 
-<div class="container-fluid mt-4 mb-5">
-
-  <!-- Page header -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="fw-bold text-purple mb-0">
-      <i class="fas fa-file-invoice mr-2"></i>{{ title }}
-    </h4>
-    <a href="{% url 'fleet_app:po_list' %}" class="btn btn-sm btn-outline-secondary">
-      <i class="fas fa-arrow-left mr-1"></i> Back to List
-    </a>
+<div class="po-form-container">
+  <!-- Top Bar -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+      <a href="{% url 'fleet_app:po_list' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back to Purchase Orders
+      </a>
+    </div>
+    <div class="text-muted small">
+      <i class="bi bi-info-circle me-1"></i> All fields marked with <span class="text-danger">*</span> are required
+    </div>
   </div>
 
   <!-- Messages -->
   {% for msg in messages %}
-  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show py-2" role="alert">
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show py-2 mb-3" role="alert">
     {{ msg|safe }}
-    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
   {% endfor %}
 
-  <form method="post" id="po-form">
+  <form method="post" id="po-form" novalidate>
     {% csrf_token %}
 
-    <!-- ══════════════════════════════════════
-         PO HEADER CARD
-    ══════════════════════════════════════ -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-purple-light py-2">
-        <h5 class="mb-0 fw-bold text-purple">
-          <i class="fas fa-info-circle mr-1"></i> PO Header
-        </h5>
+    <!-- PO HEADER CARD -->
+    <div class="form-card">
+      <div class="card-banner-header">
+        <i class="bi bi-receipt text-burgundy fs-5"></i>
+        <h5>{{ title }} – Header Information</h5>
       </div>
-      <div class="card-body">
-
+      <div class="p-4">
         <div class="row g-3">
-          <div class="col-md-2">
-            <label>PO No. <span class="text-danger">*</span></label>
+          <div class="col-md-3">
+            <label class="field-label">PO No. <span class="text-danger">*</span></label>
             {{ form.PO_no }}
-            {% if form.PO_no.errors %}<small class="text-danger">{{ form.PO_no.errors.0 }}</small>{% endif %}
-          </div>
-          <div class="col-md-2">
-            <label>PO Date <span class="text-danger">*</span></label>
-            {{ form.PO_date }}
-            {% if form.PO_date.errors %}<small class="text-danger">{{ form.PO_date.errors.0 }}</small>{% endif %}
-          </div>
-          <div class="col-md-2">
-            <label>Quote Reference</label>
-            {{ form.quote_ref }}
-          </div>
-          <div class="col-md-2">
-            <label>Quote Ref Date</label>
-            {{ form.quote_ref_date }}
-          </div>
-          <div class="col-md-2">
-            <label>Delivery Date</label>
-            {{ form.delivery_date }}
-          </div>
-          <div class="col-md-4">
-            <label>Supplier <span class="text-danger">*</span></label>
-            {{ form.supplier }}
-            {% if form.supplier.errors %}<small class="text-danger">{{ form.supplier.errors.0 }}</small>{% endif %}
+            {% if form.PO_no.errors %}<div class="text-danger small mt-1">{{ form.PO_no.errors.0 }}</div>{% endif %}
           </div>
           <div class="col-md-3">
-            <label>Payment Terms 1</label>
+            <label class="field-label">PO Date <span class="text-danger">*</span></label>
+            {{ form.PO_date }}
+            {% if form.PO_date.errors %}<div class="text-danger small mt-1">{{ form.PO_date.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="field-label">Quote Reference</label>
+            {{ form.quote_ref }}
+          </div>
+          <div class="col-md-3">
+            <label class="field-label">Quote Ref Date</label>
+            {{ form.quote_ref_date }}
+          </div>
+
+          <div class="col-md-4">
+            <label class="field-label">Supplier <span class="text-danger">*</span></label>
+            {{ form.supplier }}
+            {% if form.supplier.errors %}<div class="text-danger small mt-1">{{ form.supplier.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="col-md-2">
+            <label class="field-label">Delivery Date</label>
+            {{ form.delivery_date }}
+          </div>
+          <div class="col-md-3">
+            <label class="field-label">Payment Terms 1</label>
             {{ form.payment_terms1 }}
           </div>
           <div class="col-md-3">
-            <label>Payment Terms 2</label>
+            <label class="field-label">Payment Terms 2</label>
             {{ form.payment_terms2 }}
           </div>
-          <div class="col-md-2">
-            <label>Kind Attention</label>
+
+          <div class="col-md-12">
+            <label class="field-label">Kind Attention / Contact Person</label>
             {{ form.kind_attn }}
           </div>
         </div>
-
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         LINE ITEMS CARD
-    ══════════════════════════════════════ -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-purple-light py-2">
-        <h5 class="mb-0 fw-bold text-purple">
-          <i class="fas fa-list mr-1"></i> Add Line Item
-        </h5>
+    <!-- LINE ITEMS CARD -->
+    <div class="form-card">
+      <div class="card-banner-header">
+        <i class="bi bi-list-check text-burgundy fs-5"></i>
+        <h5>Purchase Order Line Items</h5>
       </div>
-      <div class="card-body">
-
-        <!-- ── ENTRY ROW ── -->
-        <div class="row g-3 mb-3">
-          <div class="col-md-4">
-            <label>Description</label>
-            <input type="text" id="entry-description" class="form-control" placeholder="Item description">
-          </div>
-          <div class="col-md-1">
-            <label>Units</label>
-            <input type="text" id="entry-units" class="form-control" placeholder="pcs">
-          </div>
-          <div class="col-md-2">
-            <label>Quantity</label>
-            <input type="number" id="entry-quantity" class="form-control" step="0.001" placeholder="0.000" min="0">
-          </div>
-          <div class="col-md-2">
-            <label>Rate</label>
-            <input type="number" id="entry-rate" class="form-control" step="0.001" placeholder="0.000" min="0">
-          </div>
-          <div class="col-md-2">
-            <label>Amount</label>
-            <input type="number" id="entry-amount" class="form-control total-field" step="0.001" placeholder="0.000" readonly>
-          </div>
-          <div class="col-md-1 d-flex align-items-end">
-            <button type="button" class="btn btn-success w-100" id="btn-add-item">
-              <i class="fas fa-plus mr-1"></i> Add
-            </button>
+      <div class="p-4">
+        <!-- ENTRY ROW -->
+        <div class="entry-box">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="field-label">Description <span class="text-danger">*</span></label>
+              <input type="text" id="entry-description" class="form-control" placeholder="Item description / specifications">
+            </div>
+            <div class="col-md-2">
+              <label class="field-label">Unit of Measure</label>
+              <input type="text" id="entry-units" class="form-control" placeholder="pcs, kg, box...">
+            </div>
+            <div class="col-md-2">
+              <label class="field-label">Quantity <span class="text-danger">*</span></label>
+              <input type="number" id="entry-quantity" class="form-control" step="0.001" placeholder="0.000" min="0">
+            </div>
+            <div class="col-md-2">
+              <label class="field-label">Rate (OMR) <span class="text-danger">*</span></label>
+              <input type="number" id="entry-rate" class="form-control" step="0.001" placeholder="0.000" min="0">
+            </div>
+            <div class="col-md-2">
+              <label class="field-label">Amount (OMR)</label>
+              <div class="d-flex gap-2">
+                <input type="number" id="entry-amount" class="form-control total-field" step="0.001" placeholder="0.000" readonly>
+                <button type="button" class="btn btn-custom-primary" id="btn-add-item" style="white-space:nowrap;">
+                  <i class="bi bi-plus-lg"></i> Add
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- ── ITEMS TABLE ── -->
-        <div class="table-responsive mt-2">
-          <table class="table table-bordered table-sm align-middle" id="details-table">
-            <thead class="thead-purple-light">
+        <!-- ITEMS TABLE -->
+        <div class="table-responsive">
+          <table class="table table-modern align-middle" id="details-table">
+            <thead>
               <tr>
-                <th style="width:35%">Description</th>
-                <th style="width:9%" class="text-center">Units</th>
-                <th style="width:12%" class="text-center">Quantity</th>
-                <th style="width:13%" class="text-center">Rate</th>
-                <th style="width:13%" class="text-center">Amount</th>
-                <th style="width:8%" class="text-center">Action</th>
+                <th style="width:40%">Description</th>
+                <th style="width:12%" class="text-center">Units</th>
+                <th style="width:14%" class="text-center">Quantity</th>
+                <th style="width:14%" class="text-center">Rate</th>
+                <th style="width:14%" class="text-end">Amount</th>
+                <th style="width:6%" class="text-center">Action</th>
               </tr>
             </thead>
             <tbody id="items-body">
@@ -155,63 +284,55 @@
           </table>
         </div>
 
-      </div>
-
-      <!-- ── TOTALS FOOTER ── -->
-      <div class="card-footer bg-light">
-        <div class="row justify-content-end">
-          <div class="col-md-4">
-            <table class="table table-sm table-borderless mb-0">
-              <tr>
-                <td class="text-right font-weight-bold small">Taxable Amount</td>
-                <td style="width:150px">
-                  <input id="display_taxable" type="text"
-                         class="form-control form-control-sm text-right total-field" readonly>
-                </td>
-              </tr>
-              <tr>
-                <td class="text-right font-weight-bold small">VAT (5%)</td>
-                <td>
-                  <input id="display_vat" type="text"
-                         class="form-control form-control-sm text-right total-field" readonly>
-                </td>
-              </tr>
-              <tr class="border-top">
-                <td class="text-right font-weight-bold">Grand Total</td>
-                <td>
-                  <input id="display_grand" type="text"
-                         class="form-control form-control-sm text-right total-field" readonly>
-                </td>
-              </tr>
-            </table>
+        <!-- TOTALS SECTION -->
+        <div class="row justify-content-end mt-4">
+          <div class="col-md-5 col-lg-4">
+            <div class="p-3 rounded-3 bg-light border">
+              <table class="table table-sm table-borderless mb-0">
+                <tr>
+                  <td class="text-secondary small fw-bold">Taxable Amount:</td>
+                  <td class="text-end" style="width: 160px;">
+                    <input id="display_taxable" type="text" class="form-control form-control-sm text-end total-field" readonly>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-secondary small fw-bold">VAT (5%):</td>
+                  <td class="text-end">
+                    <input id="display_vat" type="text" class="form-control form-control-sm text-end total-field text-muted" readonly>
+                  </td>
+                </tr>
+                <tr class="border-top">
+                  <td class="fw-bold text-dark pt-2">Grand Total:</td>
+                  <td class="text-end pt-2">
+                    <input id="display_grand" type="text" class="form-control form-control-sm text-end total-field text-burgundy fw-bold fs-6" readonly>
+                  </td>
+                </tr>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Submit -->
-    <div class="d-flex justify-content-end mt-2 mb-4">
-      <a href="{% url 'fleet_app:po_list' %}" class="btn btn-outline-secondary mr-2">
-        <i class="fas fa-times mr-1"></i> Cancel
-      </a>
-      <button type="submit" class="btn btn-purple px-4">
-        <i class="fas fa-save mr-1"></i> {{ action }} Purchase Order
-      </button>
+      <!-- Action Bar -->
+      <div class="p-3 bg-light border-top d-flex justify-content-end gap-2">
+        <a href="{% url 'fleet_app:po_list' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-x-lg me-1"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-custom-primary">
+          <i class="bi bi-check-lg me-1"></i> {{ action }} Purchase Order
+        </button>
+      </div>
     </div>
-
   </form>
 </div>
 
-
 <script>
-// ── Escape HTML to safely inject into innerHTML ───────────
 function escHtml(str) {
   const d = document.createElement('div');
   d.appendChild(document.createTextNode(str));
   return d.innerHTML;
 }
 
-// ── Auto-calc Amount in entry row ─────────────────────────
 document.getElementById('entry-quantity').addEventListener('input', calcEntryAmount);
 document.getElementById('entry-rate').addEventListener('input', calcEntryAmount);
 
@@ -221,7 +342,6 @@ function calcEntryAmount() {
   document.getElementById('entry-amount').value = (qty * rate).toFixed(3);
 }
 
-// ── Add row ───────────────────────────────────────────────
 document.getElementById('btn-add-item').addEventListener('click', function () {
   const descEl = document.getElementById('entry-description');
   const unitEl = document.getElementById('entry-units');
@@ -241,7 +361,6 @@ document.getElementById('btn-add-item').addEventListener('click', function () {
 
   appendRow(desc, unit, qty, rate, amt);
 
-  // Clear entry fields
   descEl.value = '';
   unitEl.value = '';
   qtyEl.value  = '';
@@ -252,13 +371,9 @@ document.getElementById('btn-add-item').addEventListener('click', function () {
   recalcTotals();
 });
 
-// ── Build and append a single table row ───────────────────
 function appendRow(desc, unit, qty, rate, amt) {
   const tbody = document.getElementById('items-body');
   const tr    = document.createElement('tr');
-
-  // Use DOM methods for hidden inputs — avoids any innerHTML escaping issues
-  // that could mangle the POST key name or value
 
   function makeHidden(name, value) {
     const inp = document.createElement('input');
@@ -268,42 +383,42 @@ function appendRow(desc, unit, qty, rate, amt) {
     return inp;
   }
 
-  // Description cell
+  // Description
   const tdDesc = document.createElement('td');
   tdDesc.appendChild(makeHidden('details-description[]', desc));
   tdDesc.appendChild(document.createTextNode(desc));
 
-  // Units cell
+  // Units
   const tdUnit = document.createElement('td');
   tdUnit.className = 'text-center';
   tdUnit.appendChild(makeHidden('details-units[]', unit));
   tdUnit.appendChild(document.createTextNode(unit || '—'));
 
-  // Qty cell
+  // Qty
   const tdQty = document.createElement('td');
-  tdQty.className = 'text-center';
+  tdQty.className = 'text-center font-monospace';
   tdQty.appendChild(makeHidden('details-quantity[]', qty));
   tdQty.appendChild(document.createTextNode(parseFloat(qty).toFixed(3)));
 
-  // Rate cell
+  // Rate
   const tdRate = document.createElement('td');
-  tdRate.className = 'text-center';
+  tdRate.className = 'text-center font-monospace';
   tdRate.appendChild(makeHidden('details-rate[]', rate));
   tdRate.appendChild(document.createTextNode(parseFloat(rate).toFixed(3)));
 
-  // Amount cell
+  // Amount
   const tdAmt = document.createElement('td');
-  tdAmt.className = 'text-center';
+  tdAmt.className = 'text-end font-monospace fw-bold text-dark';
   tdAmt.appendChild(makeHidden('details-amount[]', amt));
   tdAmt.appendChild(document.createTextNode(parseFloat(amt).toFixed(3)));
 
-  // Delete button cell
+  // Delete button
   const tdDel = document.createElement('td');
   tdDel.className = 'text-center';
   const delBtn = document.createElement('button');
   delBtn.type      = 'button';
-  delBtn.className = 'btn btn-danger btn-xs';
-  delBtn.innerHTML = '<i class="fas fa-times"></i>';
+  delBtn.className = 'btn btn-outline-danger btn-sm';
+  delBtn.innerHTML = '<i class="bi bi-trash"></i>';
   delBtn.addEventListener('click', function () {
     tr.remove();
     recalcTotals();
@@ -320,7 +435,6 @@ function appendRow(desc, unit, qty, rate, amt) {
   tbody.appendChild(tr);
 }
 
-// ── Recalc footer totals ──────────────────────────────────
 function recalcTotals() {
   let taxable = 0;
   document.querySelectorAll('#items-body input[name="details-amount[]"]').forEach(function (inp) {
@@ -333,7 +447,6 @@ function recalcTotals() {
   document.getElementById('display_grand').value   = grand.toFixed(3);
 }
 
-// ── Guard on submit ───────────────────────────────────────
 document.getElementById('po-form').addEventListener('submit', function (e) {
   if (document.querySelectorAll('#items-body tr').length === 0) {
     e.preventDefault();
@@ -341,10 +454,6 @@ document.getElementById('po-form').addEventListener('submit', function (e) {
   }
 });
 
-
-// ════════════════════════════════════════════════════════
-//  EDIT MODE — preload existing details on page load
-// ════════════════════════════════════════════════════════
 {% if existing_details %}
 document.addEventListener('DOMContentLoaded', function () {
   {% for d in existing_details %}
@@ -359,7 +468,5 @@ document.addEventListener('DOMContentLoaded', function () {
   recalcTotals();
 });
 {% endif %}
-
 </script>
-
 {% endblock %}

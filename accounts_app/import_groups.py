@@ -1,15 +1,23 @@
-import psycopg2
+import psycopg2  # pyright: ignore[reportMissingModuleSource]
 import csv
 import datetime
+from pathlib import Path
+import os
+
 # Database connection details
 DB_NAME = "erp_db"
 DB_USER = "postgres"
-DB_PASS = "Admin"
+DB_PASS = "Pass@@Azur26%"
 DB_HOST = "localhost"
 DB_PORT = "5432"
+# DB_HOST = 'Rbizgroup-4102.postgres.pythonanywhere-services.com'
+# DB_NAME = 'SilverL'
+# DB_USER = 'super'
+# DB_PASS = 'pass@12345678'
+# DB_PORT = '14102'
 
 # CSV file path
-CSV_FILE = "accounts_app/Accounts.csv"
+CSV_FILE = Path(__file__).resolve().parent / "Accounts.csv"
 
 # Connect to PostgreSQL
 conn = psycopg2.connect(
@@ -37,19 +45,11 @@ with open(CSV_FILE, "r", encoding="utf-8") as f:
         now = datetime.datetime.now()
 
         cur.execute("""
-            INSERT INTO accounts_app_groups
+            INSERT INTO accounts_app_groups 
             (id, "groupName", "groupId_id", "isDefault", "natureOfGroup", created_on, updated_on)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
-
-            ON CONFLICT (id) DO UPDATE SET
-                "groupName" = EXCLUDED."groupName",
-                "groupId_id" = EXCLUDED."groupId_id",
-                "isDefault" = EXCLUDED."isDefault",
-                "natureOfGroup" = EXCLUDED."natureOfGroup",
-                updated_on = EXCLUDED.updated_on;
-               """,
-         
-          (
+            ON CONFLICT (id) DO NOTHING;
+        """, (
             row["id"],
             row["groupName"],
             group_id,

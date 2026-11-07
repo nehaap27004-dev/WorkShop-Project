@@ -1,0 +1,234 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Edit{% else %}Create{% endif %} Opening Voucher{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">{% if is_edit %}Edit Opening Voucher{% else %}Create Opening Voucher{% endif %}</h4>
+            <a href="{% url 'accounts_app:list_openingvoucher' %}" class="btn btn-secondary btn-sm">Back to List</a>
+        </div>
+        <div class="card-body">
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if master_form.non_field_errors %}
+                    <div class="alert alert-danger">{{ master_form.non_field_errors }}</div>
+                {% endif %}
+
+                <!-- Master Fields -->
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Voucher No <span class="text-danger"></span></label>
+                        {{ master_form.voucher_no }}
+                        {% if master_form.voucher_no.errors %}
+                            <div class="text-danger small">{{ master_form.voucher_no.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Date <span class="text-danger">*</span></label>
+                        {{ master_form.date }}
+                        {% if master_form.date.errors %}
+                            <div class="text-danger small">{{ master_form.date.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3" style="display: none;">
+                        <label class="form-label">Voucher Type <span class="text-danger"></span></label>
+                        {{ master_form.voucherType }}
+                        {% if master_form.voucherType.errors %}
+                            <div class="text-danger small">{{ master_form.voucherType.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Cost Center <span class="text-danger"></span></label>
+                        {{ master_form.cost_conter }}
+                        {% if master_form.cost_conter.errors %}
+                            <div class="text-danger small">{{ master_form.cost_conter.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Sales Person <span class="text-danger"></span></label>
+                        {{ master_form.sales_person }}
+                        {% if master_form.sales_person.errors %}
+                            <div class="text-danger small">{{ master_form.sales_person.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-9 mb-3">
+                        <label class="form-label">Remark</label>
+                        {{ master_form.remark }}
+                        {% if master_form.remark.errors %}
+                            <div class="text-danger small">{{ master_form.remark.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Details Formset -->
+                <h5 class="mb-3">Voucher Details</h5>
+                {{ formset.management_form }}
+                {% if formset.non_form_errors %}
+                    <div class="alert alert-danger">{{ formset.non_form_errors }}</div>
+                {% endif %}
+
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="details-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 45%;">Ledger</th>
+                                <th style="width: 20%;">Debit Amount</th>
+                                <th style="width: 20%;">Credit Amount</th>
+                                <th style="width: 10%;">Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="details-body">
+                            {% for form in formset %}
+                                <tr class="detail-row">
+                                    {% if form.instance.pk %}{{ form.id }}{% endif %}
+                                    <td>
+                                        {{ form.ledger }}
+                                        {% if form.ledger.errors %}
+                                            <div class="text-danger small">{{ form.ledger.errors|join:", " }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ form.debit_amount }}
+                                        {% if form.debit_amount.errors %}
+                                            <div class="text-danger small">{{ form.debit_amount.errors|join:", " }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ form.credit_amount }}
+                                        {% if form.credit_amount.errors %}
+                                            <div class="text-danger small">{{ form.credit_amount.errors|join:", " }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if form.instance.pk %}
+                                            <div style="display:none;">{{ form.DELETE }}</div>
+                                            <button type="button" class="btn btn-sm btn-danger remove-row">&times;</button>
+                                        {% else %}
+                                            <button type="button" class="btn btn-sm btn-danger remove-row">&times;</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <button type="button" id="add-row" class="btn btn-outline-primary btn-sm mb-4">
+                    + Add Item
+                </button>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        {% if is_edit %}Update Voucher{% else %}Save Voucher{% endif %}
+                    </button>
+                    <a href="{% url 'accounts_app:list_openingvoucher' %}" class="btn btn-light">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Empty form template for JS cloning (rendered outside the visible table, display:none) -->
+<table style="display:none;">
+    <tbody id="empty-form-row">
+        <tr class="detail-row">
+            <td>{{ formset.empty_form.ledger }}</td>
+            <td>{{ formset.empty_form.debit_amount }}</td>
+            <td>{{ formset.empty_form.credit_amount }}</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-danger remove-row">&times;</button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const detailsBody = document.getElementById('details-body');
+    const addRowBtn = document.getElementById('add-row');
+    const totalFormsInput = document.querySelector('#id_details-TOTAL_FORMS');
+    const emptyFormRow = document.getElementById('empty-form-row').querySelector('.detail-row');
+
+    // Add new row
+    addRowBtn.addEventListener('click', function () {
+        let formIndex = parseInt(totalFormsInput.value);
+
+        let newRow = emptyFormRow.cloneNode(true);
+        newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, formIndex);
+
+        detailsBody.appendChild(newRow);
+        totalFormsInput.value = formIndex + 1;
+    });
+
+    // Remove row (handles both new unsaved rows and existing rows via DELETE checkbox)
+    detailsBody.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-row')) {
+            const row = e.target.closest('.detail-row');
+            const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+
+            if (deleteCheckbox) {
+                // Existing row tied to a DB record: mark for deletion and hide
+                deleteCheckbox.checked = true;
+                row.style.display = 'none';
+            } else {
+                // New row not yet saved: just remove it from the DOM
+                row.remove();
+            }
+        }
+    });
+
+    // Prevent submitting with zero visible detail rows
+    document.querySelector('form').addEventListener('submit', function (e) {
+        const visibleRows = detailsBody.querySelectorAll('.detail-row:not([style*="display: none"])');
+        if (visibleRows.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one detail row.');
+        }
+    });
+});
+</script>
+
+<!-- Get Next Voucher_no -->
+{% if not is_edit %}
+<script>
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
+        if (select && input && select.value) {
+            input.value = "Loading...";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(r => r.json())
+                .then(data => { input.value = data.success ? data.voucher_number : "Error"; })
+                .catch(() => { input.value = "Error"; });
+        } else if (input) { input.value = ''; }
+    }
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
+{% endblock %}

@@ -3,70 +3,105 @@
 {% load i18n %}
 
 {% block content %}
-<!-- Custom CSS -->
 <style>
-    h2, h3, h4, h5 {
-        font-family: 'Segoe UI', sans-serif;
+    /* ── Azur Burgundy Module Standards ── */
+    :root {
+        --field-h: 42px;
+        --field-radius: 6px;
+        --field-border: #ced4da;
+    }
+    .text-burgundy { color: #9f1045 !important; }
+    .bg-burgundy { background-color: #9f1045 !important; color: #fff !important; }
+
+    .btn-custom-primary {
+        background-color: #9f1045 !important;
+        border-color: #9f1045 !important;
+        color: #fff !important;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-custom-primary:hover {
+        background-color: #830d38 !important;
+        border-color: #830d38 !important;
+        color: #fff !important;
     }
 
-    form label {
-        font-weight: 500;
-        color: #444;
+    label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.82rem;
+        margin-bottom: 0.35rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     input, select, textarea {
         width: 100% !important;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
+        border: 1px solid var(--field-border);
+        border-radius: var(--field-radius);
         padding: 6px 10px;
         font-size: 0.95rem;
+        height: var(--field-h);
+        background-color: #ffffff;
     }
 
     input:focus, select:focus, textarea:focus {
-        border-color: #5A8DEE;
-        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        border-color: #9f1045 !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
         outline: none;
     }
 
-    .btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
+    .card-banner-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.9rem 1.25rem;
+    }
+    .card-banner-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #2d3748;
+        display: inline-flex;
+        align-items: center;
     }
 
-    .btn-secondary {
-        background-color: #6c757d !important;
-        border-color: #6c757d !important;
-    }
-
-    .card {
-        border-radius: 12px;
-    }
-
-    .card-header {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .btn:hover {
-        opacity: 0.9;
-        transition: 0.2s ease-in-out;
-    }
-
-    .img-thumbnail {
-        border: 2px solid #dee2e6;
+    .action-bar {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 8px;
-        padding: 5px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
     }
 </style>
 
-<div class="container mt-4 mb-5">
-    <h2 class="mb-4 text-center fw-bold text-primary">{% trans "Create Manufacturer" %}</h2>
+<div class="container-fluid p-0 mb-5">
+
+    <!-- Top Breadcrumb & Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <div class="small text-muted mb-1">
+                <a href="{% url 'fleet_app:manufacturer_list' %}" class="text-burgundy text-decoration-none font-weight-bold">{% trans "Manufacturers" %}</a>
+                <span class="mx-1">/</span>
+                <span class="text-dark font-weight-bold">{% trans "New Manufacturer" %}</span>
+            </div>
+            <h2 class="module-title mb-0">
+                <i class="bi bi-building text-burgundy mr-2"></i>{% trans "Create Manufacturer" %}
+            </h2>
+        </div>
+        <a href="{% url 'fleet_app:manufacturer_list' %}" class="btn btn-secondary shadow-sm">
+            <i class="bi bi-arrow-left mr-1"></i>{% trans "Back to Manufacturers" %}
+        </a>
+    </div>
 
     <!-- Form -->
     <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
         {% csrf_token %}
 
         {% if form.non_field_errors %}
-        <div class="alert alert-danger">
+        <div class="alert alert-danger shadow-sm mb-4">
             {% for error in form.non_field_errors %}
                 <div>{{ error }}</div>
             {% endfor %}
@@ -74,15 +109,17 @@
         {% endif %}
 
         <!-- Manufacturer Information -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">{% trans "Manufacturer Information" %}</h5>
+        <div class="card shadow-sm border-0 mb-4" style="border-radius:10px;">
+            <div class="card-header card-banner-header">
+                <span class="card-banner-title">
+                    <i class="bi bi-info-circle text-burgundy mr-2"></i>{% trans "Manufacturer Information & Profile" %}
+                </span>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <div class="row g-3">
-                    <div class="col-md-4">
-                        <label for="{{ form.manufacturer_name.id_for_label }}" class="form-label">
-                            {{ form.manufacturer_name.label }}
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.manufacturer_name.id_for_label }}">
+                            {{ form.manufacturer_name.label }} <span class="text-danger">*</span>
                         </label>
                         {{ form.manufacturer_name }}
                         {% if form.manufacturer_name.errors %}
@@ -90,19 +127,19 @@
                         {% endif %}
                     </div>
 
-                    <div class="col-md-4">
-                        <label for="{{ form.manufacturer_logo.id_for_label }}" class="form-label">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.manufacturer_logo.id_for_label }}">
                             {{ form.manufacturer_logo.label }}
                         </label>
                         {{ form.manufacturer_logo }}
-                        <img id="logo-preview" src="" alt="{% trans 'Logo preview' %}" class="mt-2 img-thumbnail d-none" style="max-width: 200px; max-height: 100px;">
+                        <img id="logo-preview" src="" alt="{% trans 'Logo preview' %}" class="mt-2 img-thumbnail d-none" style="max-width: 160px; max-height: 80px; border-radius:6px;">
                         {% if form.manufacturer_logo.errors %}
                         <div class="text-danger small mt-1">{{ form.manufacturer_logo.errors.0 }}</div>
                         {% endif %}
                     </div>
 
-                    <div class="col-md-4">
-                        <label for="{{ form.vehicle_type.id_for_label }}" class="form-label">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.vehicle_type.id_for_label }}">
                             {{ form.vehicle_type.label }}
                         </label>
                         {{ form.vehicle_type }}
@@ -114,24 +151,27 @@
             </div>
         </div>
 
-        <div class="d-flex justify-content-between mt-4">
-            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-                {% trans "Create Manufacturer" %}
+        <!-- Sticky Footer Action Bar -->
+        <div class="action-bar mb-5">
+            <a href="{% url 'fleet_app:manufacturer_list' %}" class="btn btn-outline-secondary px-4">{% trans "Cancel" %}</a>
+            <button type="submit" class="btn btn-custom-primary px-4 shadow-sm">
+                <i class="bi bi-check2-circle mr-1"></i>{% trans "Save Manufacturer" %}
             </button>
-            <a href="{% url 'fleet_app:manufacturer_list' %}" class="btn btn-secondary px-4 py-2">{% trans "Cancel" %}</a>
         </div>
     </form>
 </div>
 
 <!-- JavaScript for Logo Preview -->
 <script>
-    document.getElementById('{{ form.manufacturer_logo.id_for_label }}').addEventListener('change', function(e) {
+    document.getElementById('{{ form.manufacturer_logo.id_for_label }}')?.addEventListener('change', function(e) {
         if (e.target.files && e.target.files[0]) {
             var reader = new FileReader();
             reader.onload = function(e) {
                 var preview = document.getElementById('logo-preview');
-                preview.src = e.target.result;
-                preview.classList.remove('d-none');
+                if (preview) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('d-none');
+                }
             };
             reader.readAsDataURL(e.target.files[0]);
         }

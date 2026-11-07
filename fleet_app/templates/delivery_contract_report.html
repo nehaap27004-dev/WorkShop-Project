@@ -1,0 +1,299 @@
+{% extends 'fleet_base1.html' %}
+{% load static humanize %}
+
+{% block content %}
+<style>
+  .dcr-card { border: 0; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+  .dcr-stat { border-radius: 10px; padding: 14px 16px; color: #fff; }
+  .dcr-stat .lbl { font-size: 12px; opacity: .9; text-transform: uppercase; letter-spacing: .5px; }
+  .dcr-stat .val { font-size: 20px; font-weight: 700; }
+  .bg-c1 { background: #4e73df; } .bg-c2 { background: #1cc88a; } .bg-c3 { background: #f6c23e; }
+  .bg-c4 { background: #e74a3b; } .bg-c5 { background: #36b9cc; }
+  .dcr-table th { background: #f4f6fb; font-size: 12px; text-transform: uppercase; white-space: nowrap; }
+  .dcr-table td { font-size: 13px; vertical-align: middle; }
+  .dcr-toggle { cursor: pointer; }
+  .dcr-sub { background: #fafbfd; }
+  .dcr-sub table th { background: #eef1f8; font-size: 11px; }
+  .dcr-sub table td { font-size: 12px; }
+  .num { text-align: right; white-space: nowrap; }
+  .print-header, .print-footer { display: none; }
+
+  @media print {
+    .no-print, .navbar, .sidebar, footer { display: none !important; }
+    .print-header, .print-footer { display: block; }
+    .dcr-card { box-shadow: none; }
+    .dcr-sub { display: table-row !important; }   /* expand all rows when printing */
+    body { font-size: 11px; }
+  }
+</style>
+
+<div class="container-fluid py-3">
+
+  <div class="print-header text-center mb-2">
+    <h4 class="mb-0">Delivery Contract Report</h4>
+    <small>
+      {% if filters.from_date %}From {{ filters.from_date }}{% endif %}
+      {% if filters.to_date %} To {{ filters.to_date }}{% endif %}
+    </small>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    <h4 class="mb-0"><i class="fas fa-file-contract text-primary mr-2"></i>Delivery Contract Report</h4>
+    <div>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="expandAll"><i class="fas fa-plus-square"></i> Expand all</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="collapseAll"><i class="fas fa-minus-square"></i> Collapse all</button>
+      <button type="button" class="btn btn-sm btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card dcr-card mb-3 no-print">
+    <div class="card-body">
+      <form method="get">
+        <div class="form-row">
+          <div class="form-group col-md-2">
+            <label class="small mb-1">From Date</label>
+            <input type="date" name="from_date" value="{{ filters.from_date }}" class="form-control form-control-sm">
+          </div>
+          <div class="form-group col-md-2">
+            <label class="small mb-1">To Date</label>
+            <input type="date" name="to_date" value="{{ filters.to_date }}" class="form-control form-control-sm">
+          </div>
+          <div class="form-group col-md-3">
+            <label class="small mb-1">Customer</label>
+            <select name="customer" class="form-control form-control-sm">
+              <option value="">All Customers</option>
+              {% for c in customers %}
+                <option value="{{ c.id }}" {% if filters.customer == c.id|stringformat:"s" %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group col-md-2">
+            <label class="small mb-1">Vehicle</label>
+            <select name="vehicle" class="form-control form-control-sm">
+              <option value="">All Vehicles</option>
+              {% for v in vehicles %}
+                <option value="{{ v.id }}" {% if filters.vehicle == v.id|stringformat:"s" %}selected{% endif %}>{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group col-md-3">
+            <label class="small mb-1">Salesman</label>
+            <select name="salesman" class="form-control form-control-sm">
+              <option value="">All Salesmen</option>
+              {% for s in salesmen %}
+                <option value="{{ s.id }}" {% if filters.salesman == s.id|stringformat:"s" %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="form-group col-md-4">
+            <label class="small mb-1">Search</label>
+            <input type="text" name="q" value="{{ filters.q }}" class="form-control form-control-sm"
+                   placeholder="Voucher / Hire Contract / LPO / Ref / Location / Contact">
+          </div>
+          <div class="form-group col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-sm btn-primary mr-2"><i class="fas fa-filter"></i> Filter</button>
+            <a href="{% url 'fleet_app:delivery_contract_report' %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-undo"></i> Reset</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="row mb-3">
+    <div class="col-md col-6 mb-2"><div class="dcr-stat bg-c1"><div class="lbl">Contracts</div><div class="val">{{ summary.count }}</div></div></div>
+    <!-- <div class="col-md col-6 mb-2"><div class="dcr-stat bg-c2"><div class="lbl">On Hire / Off Hire</div><div class="val">{{ summary.onhire }} / {{ summary.offhire }}</div></div></div>
+    <div class="col-md col-6 mb-2"><div class="dcr-stat bg-c3"><div class="lbl">Pending / Invoiced</div><div class="val">{{ summary.pending }} / {{ summary.cleared }}</div></div></div> -->
+    <div class="col-md col-6 mb-2"><div class="dcr-stat bg-c5"><div class="lbl">Tax (OMR)</div><div class="val">{{ summary.tax|floatformat:3|intcomma }}</div></div></div>
+    <div class="col-md col-12 mb-2"><div class="dcr-stat bg-c4"><div class="lbl">Total (OMR)</div><div class="val">{{ summary.grand|floatformat:3|intcomma }}</div></div></div>
+  </div>
+
+  <!-- Report table -->
+  <div class="card dcr-card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover dcr-table mb-0">
+          <thead>
+            <tr>
+              <th class="no-print" style="width:30px;"></th>
+              <th>#</th>
+              <th>Voucher No</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Hire Contract</th>
+              <th>LPO No</th>
+              <th>Location</th>
+              <th>Salesman</th>
+              <th>On Hire</th>
+              <th>Off Hire</th>
+              <th class="text-center">Lines</th>
+              <th class="num">Amount</th>
+              <th class="num">Tax</th>
+              <th class="num">Total</th>
+              <th class="text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in contracts %}
+              {% with c=row.obj %}
+              <tr class="dcr-toggle" data-target="#sub-{{ c.id }}">
+                <td class="text-center no-print"><i class="fas fa-chevron-right text-muted toggle-icon"></i></td>
+                <td>{{ forloop.counter }}</td>
+                <td><strong>{{ c.voucher_no }}</strong></td>
+                <td>{{ c.date|date:"d-m-Y" }}</td>
+                <td>{{ c.customer|default:"-" }}</td>
+                <td>{{ c.hire_contract_no|default:"-" }}{% if c.hire_contract_date %}<br><small class="text-muted">{{ c.hire_contract_date|date:"d-m-Y" }}</small>{% endif %}</td>
+                <td>{{ c.buyer_order_no|default:"-" }}{% if c.lpo_date %}<br><small class="text-muted">{{ c.lpo_date|date:"d-m-Y" }}</small>{% endif %}</td>
+                <td>{{ c.location|default:"-" }}</td>
+                <td>{{ c.salesman|default:"-" }}</td>
+                <td>{{ c.onhire_date_time|date:"d-m-Y H:i"|default:"-" }}</td>
+                <td>{{ c.offhire_date_time|date:"d-m-Y H:i"|default:"-" }}</td>
+                <td class="text-center">{{ row.cleared_lines }}/{{ row.line_count }}</td>
+                <td class="num">{{ row.amount|floatformat:3|intcomma }}</td>
+                <td class="num">{{ row.tax|floatformat:3|intcomma }}</td>
+                <td class="num"><strong>{{ row.total|floatformat:3|intcomma }}</strong></td>
+                <td class="text-center">
+                  {% if row.is_onhire %}<span class="badge badge-success">On Hire</span>{% else %}<span class="badge badge-secondary">Off Hire</span>{% endif %}
+                  {% if c.IsCleared %}<span class="badge badge-info">Invoiced</span>{% else %}<span class="badge badge-warning">Pending</span>{% endif %}
+                </td>
+              </tr>
+
+              <!-- Expandable detail row -->
+              <tr class="dcr-sub" id="sub-{{ c.id }}" style="display:none;">
+                <td colspan="16" class="p-3">
+                  <div class="row mb-2 small">
+                    <div class="col-md-3"><strong>Site Contact:</strong> {{ c.site_contact_person|default:"-" }} {% if c.contact_no %}({{ c.contact_no }}){% endif %}</div>
+                    <div class="col-md-3"><strong>Delivery Person:</strong> {{ c.delivery_person|default:"-" }}</div>
+                    <div class="col-md-2"><strong>Ref No:</strong> {{ c.ref_no|default:"-" }}</div>
+                    <div class="col-md-2"><strong>Type:</strong> {{ c.get_invoice_type_display }}</div>
+                    <div class="col-md-2"><strong>Payment:</strong> {{ c.get_payment_mode_display }}</div>
+                  </div>
+
+                  <h6 class="small font-weight-bold text-primary mb-1">Equipment</h6>
+                  <table class="table table-sm table-bordered mb-3">
+                    <thead>
+                      <tr>
+                        <th>#</th><th>Vehicle</th><th>Model</th><th>Description</th><th>Location</th>
+                        <th>Period</th><th class="num">Qty</th><th class="num">Rate</th>
+                        <th>From</th><th>To</th>
+                        <th class="num">Amount</th><th class="num">Tax %</th><th class="num">Tax</th><th class="num">Total</th>
+                        <th class="text-center">Invoiced</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for d in row.details %}
+                      <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ d.vehicle }}</td>
+                        <td>{{ d.vehicle_model|default:"-" }}</td>
+                        <td>{{ d.description|default:"-"|linebreaksbr }}</td>
+                        <td>{{ d.location|default:"-" }}</td>
+                        <td>{{ d.get_period_display|default:"-" }}</td>
+                        <td class="num">{{ d.quantity|default_if_none:"-" }}</td>
+                        <td class="num">{{ d.unit_rate|floatformat:3|default:"-" }}</td>
+                        <td>{{ d.from_date|date:"d-m-Y"|default:"-" }}</td>
+                        <td>{{ d.to_date|date:"d-m-Y"|default:"-" }}</td>
+                        <td class="num">{{ d.amount|floatformat:3|intcomma }}</td>
+                        <td class="num">{{ d.tax|floatformat:2 }}</td>
+                        <td class="num">{{ d.tax_amount|floatformat:3|intcomma }}</td>
+                        <td class="num">{{ d.total_amount|floatformat:3|intcomma }}</td>
+                        <td class="text-center">
+                          {% if d.IsCleared %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-clock text-warning"></i>{% endif %}
+                        </td>
+                      </tr>
+                      {% empty %}
+                      <tr><td colspan="15" class="text-center text-muted">No equipment lines</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+
+                  {% if row.spares %}
+                  <h6 class="small font-weight-bold text-primary mb-1">Accessories / Spare Parts</h6>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>#</th><th>Item Group</th><th>Item</th><th>Part No</th>
+                        <th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th>
+                        <th class="text-center">Warranty</th><th>Condition</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for s in row.spares %}
+                      <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ s.item_group|default:"-" }}</td>
+                        <td>{{ s.sparepart|default:"-" }}</td>
+                        <td>{{ s.part_no|default:"-" }}</td>
+                        <td class="num">{{ s.quantity|floatformat:3 }}</td>
+                        <td class="num">{{ s.rate|floatformat:3 }}</td>
+                        <td class="num">{{ s.amount|floatformat:3|intcomma }}</td>
+                        <td class="text-center">{% if s.warranty %}Yes{% else %}No{% endif %}</td>
+                        <td>
+                          {% if s.condition == 'Damage' %}<span class="badge badge-danger">Damage</span>{% else %}<span class="badge badge-success">{{ s.condition|default:"-" }}</span>{% endif %}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                      <tr class="font-weight-bold">
+                        <td colspan="6" class="num">Spare Parts Total</td>
+                        <td class="num">{{ row.spare_amount|floatformat:3|intcomma }}</td>
+                        <td colspan="2"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endwith %}
+            {% empty %}
+              <tr><td colspan="16" class="text-center text-muted py-4">No delivery contracts found for the selected filters.</td></tr>
+            {% endfor %}
+          </tbody>
+          {% if contracts %}
+          <tfoot>
+            <tr class="font-weight-bold" style="background:#f4f6fb;">
+              <td class="no-print"></td>
+              <td colspan="11" class="num">Grand Total (OMR)</td>
+              <td class="num">{{ summary.amount|floatformat:3|intcomma }}</td>
+              <td class="num">{{ summary.tax|floatformat:3|intcomma }}</td>
+              <td class="num">{{ summary.grand|floatformat:3|intcomma }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="print-footer text-center mt-3"><small>Printed on {% now "d-m-Y H:i" %}</small></div>
+</div>
+
+<script>
+  (function () {
+    function setRow(tr, open) {
+      var sub = document.querySelector(tr.getAttribute('data-target'));
+      var icon = tr.querySelector('.toggle-icon');
+      if (!sub) return;
+      sub.style.display = open ? 'table-row' : 'none';
+      if (icon) {
+        icon.classList.toggle('fa-chevron-right', !open);
+        icon.classList.toggle('fa-chevron-down', open);
+      }
+    }
+    document.querySelectorAll('.dcr-toggle').forEach(function (tr) {
+      tr.addEventListener('click', function () {
+        var sub = document.querySelector(tr.getAttribute('data-target'));
+        setRow(tr, sub && sub.style.display === 'none');
+      });
+    });
+    document.getElementById('expandAll').addEventListener('click', function () {
+      document.querySelectorAll('.dcr-toggle').forEach(function (tr) { setRow(tr, true); });
+    });
+    document.getElementById('collapseAll').addEventListener('click', function () {
+      document.querySelectorAll('.dcr-toggle').forEach(function (tr) { setRow(tr, false); });
+    });
+  })();
+</script>
+{% endblock %}

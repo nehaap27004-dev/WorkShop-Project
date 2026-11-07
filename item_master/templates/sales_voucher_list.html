@@ -3,118 +3,388 @@
 
 {% block content %}
 <style>
-  h2 {
-      margin-bottom: 20px;
-      text-align: center;
-  }
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
 
-  .voucher-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-  }
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
 
-  .voucher-table th, .voucher-table td {
-      padding: 12px 15px;
-      text-align: left;
-      border: 1px solid #ddd;
-  }
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
 
-  .voucher-table th {
-      background-color: #f4f4f4;
-      font-weight: bold;
-  }
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        border-radius: 8px;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
 
-  .voucher-table tr:nth-child(even) {
-      background-color: #f9f9f9;
-  }
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+    }
 
-  .voucher-table tr:hover {
-      background-color: #f1f1f1;
-  }
+    .btn-outline-burgundy {
+        color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        background-color: transparent !important;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
 
-  .voucher-table a {
-      color: #0066cc;
-      text-decoration: none;
-  }
+    .btn-outline-burgundy:hover {
+        background-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+    }
 
-  .voucher-table a:hover {
-      text-decoration: underline;
-  }
+    /* Page Header Banner */
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
 
-  .create-link {
-      display: inline-block;
-      padding: 10px 20px;
-      background-color: #4CAF50;
-      color: white;
-      text-align: center;
-      text-decoration: none;
-      border-radius: 5px;
-  }
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.25rem;
+        height: 100%;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
 
-  .create-link:hover {
-      background-color: #45a049;
-  }
+    .kpi-icon-box {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background-color: var(--primary-burgundy-light);
+        color: var(--primary-burgundy);
+        border: 1px solid var(--primary-burgundy-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
 
-  td[colspan="5"] {
-      text-align: center;
-      color: #888;
-      font-style: italic;
-  }
+    .kpi-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0;
+        line-height: 1.2;
+    }
+
+    /* Content Card */
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .search-wrapper {
+        position: relative;
+        min-width: 280px;
+    }
+
+    .search-wrapper input {
+        padding-left: 2.35rem;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        font-size: 0.88rem;
+    }
+
+    .search-wrapper input:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
+    }
+
+    .search-wrapper i {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+    }
+
+    .table-modern {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top: none;
+        white-space: nowrap;
+    }
+
+    .table-modern tbody td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        border-bottom: 1px solid #f1f3f5;
+        color: #334155;
+    }
+
+    .table-modern tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: #fafbfc;
+    }
+
+    .voucher-badge {
+        font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--primary-burgundy);
+        background-color: var(--primary-burgundy-light);
+        border: 1px solid var(--primary-burgundy-border);
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    .currency-amount {
+        font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+    }
+
+    .status-cleared {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+    }
+
+    .status-pending {
+        background-color: #fff8e1;
+        color: #b78103;
+        border: 1px solid #ffe082;
+    }
 </style>
 
-<h2>Sales Voucher List</h2>
+<div class="voucher-container">
+    <!-- Header Banner -->
+    <div class="page-header-card d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="kpi-icon-box" style="width: 54px; height: 54px; font-size: 1.75rem;">
+                <i class="bi bi-box-arrow-right"></i>
+            </div>
+            <div>
+                <h4 class="mb-1 fw-bold text-dark">Issue Vouchers</h4>
+                <p class="text-muted small mb-0">Record and track inventory issues, outbound disbursements, and clearance</p>
+            </div>
+        </div>
+        <div>
+            <a href="{% url 'item_master:sales_voucher_create' %}" class="btn-custom-primary">
+                <i class="bi bi-plus-lg"></i> Create Issue Voucher
+            </a>
+        </div>
+    </div>
 
-<table class="voucher-table" id="voucherTable">
-    <thead>
-        <tr>
-            <th>S.No.</th>
-            
-            <th>Voucher No</th>
-            <th>Voucher Date</th>
-            <th>Customer</th>
-            <th>Total</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for voucher in vouchers %}
-        <tr>
-            <td></td> <!-- Serial number will go here -->
-            <td>{{ voucher.voucher_no }}</td>
-            <td>{{ voucher.transaction_date }}</td>
-            <td>{{ voucher.customer }}</td>
-            <td>{{ voucher.grand_total_amount }}</td>
-            <td>
-                <a href="{% url 'item_master:sales_voucher_detail' voucher.id %}">View Details</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="5">No sales vouchers available.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <!-- KPI Summary Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-icon-box">
+                    <i class="bi bi-file-earmark-arrow-up"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Issue Vouchers</div>
+                    <div class="kpi-value">{{ vouchers|length }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-icon-box" style="background-color: #e8f5e9; color: #2e7d32; border-color: #c8e6c9;">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Disbursement Status</div>
+                    <div class="kpi-value text-success" style="font-size: 1.25rem;">Outward Complete</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-icon-box" style="background-color: #f8fafc; color: #64748b; border-color: #e2e8f0;">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Stock Posting</div>
+                    <div class="kpi-value text-muted" style="font-size: 1.15rem;">Real-time Deducted</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<a href="{% url 'item_master:sales_voucher_create' %}" class="create-link">Create New Sales Voucher</a>
+    <!-- Table Directory Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <div class="d-flex align-items-center gap-2">
+                <h6 class="mb-0 fw-bold text-dark">Issue Voucher Directory</h6>
+                <span class="badge rounded-pill bg-light text-muted border px-2 py-1 ms-1">{{ vouchers|length }} Records</span>
+            </div>
+            <div class="search-wrapper">
+                <i class="bi bi-search"></i>
+                <input type="text" id="salesSearch" class="form-control" placeholder="Search Voucher No or Customer...">
+            </div>
+        </div>
 
-
-
+        <div class="table-responsive">
+            <table class="table table-modern align-middle" id="voucherTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Voucher No</th>
+                        <th>Voucher Date</th>
+                        <th>Customer / Recipient</th>
+                        <th class="text-end">Total Amount</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end" style="width: 140px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for voucher in vouchers %}
+                    <tr>
+                        <td class="text-muted small fw-medium serial-cell">{{ forloop.counter }}</td>
+                        <td>
+                            <span class="voucher-badge">{{ voucher.voucher_no }}</span>
+                        </td>
+                        <td class="text-secondary small">{{ voucher.transaction_date|default:"-" }}</td>
+                        <td>
+                            <div class="fw-semibold text-dark">{{ voucher.ledger.ledger_name }}</div>
+                        </td>
+                        <td class="text-end currency-amount text-dark fw-bold">{{ voucher.grand_total_amount }}</td>
+                        <td class="text-center">
+                            {% if voucher.IsCleared %}
+                                <span class="status-badge status-cleared"><i class="bi bi-check-circle-fill me-1"></i>Cleared</span>
+                            {% else %}
+                                <span class="status-badge status-pending"><i class="bi bi-clock-history me-1"></i>Pending</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end" style="white-space:nowrap;">
+                            <div class="d-inline-flex gap-1">
+                                <a href="{% url 'item_master:sales_voucher_edit' voucher.id %}" class="btn btn-sm btn-outline-burgundy" title="Edit Voucher">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="POST" action="{% url 'item_master:sales_voucher_delete' voucher.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Voucher" onclick="return confirm('Are you sure you want to delete this voucher?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="py-4">
+                                <i class="bi bi-box-arrow-right text-muted opacity-50" style="font-size: 3rem;"></i>
+                                <h6 class="mt-3 fw-semibold text-secondary">No Issue Vouchers Available</h6>
+                                <p class="text-muted small mb-3">Get started by creating your first issue voucher entry.</p>
+                                <a href="{% url 'item_master:sales_voucher_create' %}" class="btn-custom-primary">
+                                    <i class="bi bi-plus-lg"></i> Create Issue Voucher
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 <script>
-    // Add serial numbers after DOM loads
     document.addEventListener("DOMContentLoaded", function () {
-        const rows = document.querySelectorAll("#voucherTable tbody tr");
-        let count = 1;
-        rows.forEach(row => {
-            // Skip the empty row when there's no data
-            if (row.children.length > 1) {
-                row.children[0].textContent = count++;
-            }
-        });
+        const searchInput = document.getElementById("salesSearch");
+        const table = document.getElementById("voucherTable");
+
+        if (searchInput && table) {
+            searchInput.addEventListener("keyup", function () {
+                const filter = this.value.toLowerCase().trim();
+                const rows = table.querySelectorAll("tbody tr");
+
+                rows.forEach(function (row) {
+                    if (row.cells.length <= 1) return;
+                    const voucherNo = row.cells[1].textContent.toLowerCase();
+                    const customer  = row.cells[3].textContent.toLowerCase();
+
+                    if (voucherNo.includes(filter) || customer.includes(filter)) {
+                        row.style.display = "";
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+            });
+        }
     });
 </script>
-
-
 {% endblock %}

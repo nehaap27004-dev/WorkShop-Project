@@ -1,0 +1,162 @@
+{% extends 'fleet_base1.html' %}
+{% block title %}Supplier PDC Report{% endblock %}
+
+{% block content %}
+<style>
+  .pdc-stat .icon { width: 44px; height: 44px; border-radius: 10px; display: flex;
+                    align-items: center; justify-content: center; font-size: 18px; color: #fff; }
+  .pdc-cust-row td { background: #f1f4f9; font-weight: 600; }
+  .pdc-sub-row td  { background: #fafbfc; font-weight: 600; }
+  .pdc-table td, .pdc-table th { vertical-align: middle; font-size: 13px; }
+  .num { text-align: right; white-space: nowrap; }
+  .print-header, .print-footer { display: none; }
+  @media print {
+    .no-print { display: none !important; }
+    .print-header, .print-footer { display: block; }
+    .card { border: none !important; box-shadow: none !important; }
+    .pdc-cust-row td, .pdc-sub-row td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge { border: 1px solid #999; color: #000 !important; background: none !important; }
+  }
+</style>
+
+<div class="container-fluid">
+
+  <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    <h4 class="mb-0"><i class="fas fa-money-check-alt mr-2"></i>Supplier PDC Report</h4>
+    <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+      <i class="fas fa-print mr-1"></i> Print
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="card shadow-sm mb-3 no-print">
+    <div class="card-body">
+      <form method="get" class="form-row align-items-end">
+        <div class="col-md-4 mb-2">
+          <label class="small text-muted mb-1">Supplier</label>
+          <select name="supplier" class="form-control form-control-sm">
+            <option value="">All Suppliers</option>
+            {% for c in all_suppliers %}
+              <option value="{{ c.pk }}" {% if selected_supplier == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.ledger_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3 mb-2">
+          <label class="small text-muted mb-1">Cheque Date From</label>
+          <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-3 mb-2">
+          <label class="small text-muted mb-1">Cheque Date To</label>
+          <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-2 mb-2">
+          <button type="submit" class="btn btn-primary btn-sm btn-block"><i class="fas fa-filter mr-1"></i> Filter</button>
+          <a href="{% url 'accounts_app:supplier_pdc_report' %}" class="btn btn-light btn-sm btn-block">Reset</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="row no-print">
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm pdc-stat"><div class="card-body d-flex align-items-center">
+        <div class="icon bg-primary mr-3"><i class="fas fa-file-invoice"></i></div>
+        <div><div class="small text-muted">Pending PDCs</div>
+          <div class="h5 mb-0">{{ total_count }} <small class="text-muted">/ {{ supplier_count }} suppliers</small></div></div>
+      </div></div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm pdc-stat"><div class="card-body d-flex align-items-center">
+        <div class="icon bg-success mr-3"><i class="fas fa-coins"></i></div>
+        <div><div class="small text-muted">Total PDC Amount</div>
+          <div class="h5 mb-0">{{ grand_total|floatformat:3 }}</div></div>
+      </div></div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm pdc-stat"><div class="card-body d-flex align-items-center">
+        <div class="icon bg-danger mr-3"><i class="fas fa-exclamation-circle"></i></div>
+        <div><div class="small text-muted">Matured (not cleared)</div>
+          <div class="h5 mb-0">{{ matured_amount|floatformat:3 }}</div></div>
+      </div></div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm pdc-stat"><div class="card-body d-flex align-items-center">
+        <div class="icon bg-warning mr-3"><i class="fas fa-calendar-week"></i></div>
+        <div><div class="small text-muted">Due in next 7 days</div>
+          <div class="h5 mb-0">{{ due_week_amount|floatformat:3 }}</div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- Report -->
+  <div class="card shadow-sm">
+    <div class="print-header text-center mb-3">
+      <h5 class="mb-1">Supplier PDC Report</h5>
+      <small>
+        As on {{ today|date:"d-m-Y" }}
+        {% if date_from or date_to %} &middot; Cheque date {{ date_from|default:"…" }} to {{ date_to|default:"…" }}{% endif %}
+      </small>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm mb-0 pdc-table">
+          <thead class="thead-light">
+            <tr>
+              <th style="width:45px">Sl</th>
+              <th>Payment No</th>
+              <th>Payment Date</th>
+              <th>Cheque No</th>
+              <th>Cheque Date</th>
+              <th>Status</th>
+              <th>Remarks</th>
+              <th class="num">PDC Amount</th>
+              <th class="num">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for g in groups %}
+              <tr class="pdc-cust-row">
+                <td colspan="7">{{ g.ledger.ledger_name }}</td>
+                <td class="num small text-muted">Payable</td>
+                <td class="num">{{ g.outstanding|floatformat:3 }}</td>
+              </tr>
+              {% for r in g.rows %}
+                <tr>
+                  <td>{{ r.sl_no }}</td>
+                  <td>{{ r.voucher_no }}</td>
+                  <td>{{ r.date|date:"d-m-Y" }}</td>
+                  <td>{{ r.cheque_no|default:"-" }}</td>
+                  <td>{{ r.cheque_date|date:"d-m-Y"|default:"-" }}</td>
+                  <td><span class="badge badge-{{ r.status_class }}">{{ r.status_text }}</span></td>
+                  <td>{{ r.remark }}</td>
+                  <td class="num">{{ r.debit|floatformat:3 }}</td>
+                  <td class="num">{{ r.balance|floatformat:3 }}</td>
+                </tr>
+              {% endfor %}
+              <tr class="pdc-sub-row">
+                <td colspan="7" class="text-right">Total PDC — {{ g.ledger.ledger_name }}</td>
+                <td class="num">{{ g.total|floatformat:3 }}</td>
+                <td class="num">{{ g.balance_after|floatformat:3 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="9" class="text-center text-muted py-4">No pending PDCs for the selected filters.</td></tr>
+            {% endfor %}
+          </tbody>
+          {% if groups %}
+          <tfoot>
+            <tr class="font-weight-bold" style="background:#e8ecf3">
+              <td colspan="7" class="text-right">Grand Total</td>
+              <td class="num">{{ grand_total|floatformat:3 }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,398 @@
+{% extends "fleet_base1.html" %}
+{% block content %}
+<style>
+    .stock-report-wrapper {
+        padding: 20px 0 40px;
+    }
+
+    .filter-card {
+        background: #fff;
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        padding: 22px 24px;
+        margin-bottom: 24px;
+    }
+
+    .filter-card label {
+        font-size: 12.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        color: #6c757d;
+        margin-bottom: 4px;
+    }
+
+    .filter-card .form-control,
+    .filter-card select.form-control {
+        border-radius: 6px;
+        border: 1px solid #dfe3e8;
+        height: 40px;
+        font-size: 14px;
+    }
+
+    .filter-card .form-control:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.15rem rgba(78,115,223,.15);
+    }
+
+    .btn-filter {
+        background: linear-gradient(135deg, #4e73df, #3f5fc4);
+        border: none;
+        color: #fff;
+        font-weight: 600;
+        border-radius: 6px;
+        height: 40px;
+        transition: opacity .15s;
+    }
+    .btn-filter:hover { opacity: .9; color: #fff; }
+
+    .btn-reset {
+        border-radius: 6px;
+        height: 40px;
+        font-weight: 600;
+        border: 1px solid #dfe3e8;
+        color: #6c757d;
+        background: #fff;
+    }
+    .btn-reset:hover { background: #f1f3f6; }
+
+    .page-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+    .page-header-row h2 {
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+        font-size: 24px;
+    }
+    .page-header-row h2 i {
+        color: #4e73df;
+        margin-right: 8px;
+    }
+
+    .summary-cards {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    .summary-card {
+        flex: 1;
+        min-width: 160px;
+        border-radius: 10px;
+        padding: 16px 20px;
+        color: #fff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .summary-card .label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        opacity: .9;
+        margin-bottom: 4px;
+    }
+    .summary-card .value {
+        font-size: 24px;
+        font-weight: 700;
+    }
+    .summary-in { background: linear-gradient(135deg, #1cc88a, #17a673); }
+    .summary-out { background: linear-gradient(135deg, #e74a3b, #c0392b); }
+    .summary-balance { background: linear-gradient(135deg, #4e73df, #3f5fc4); }
+    .summary-count { background: linear-gradient(135deg, #858796, #6b6d7c); }
+
+    .report-card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+
+    .table-responsive-wrap {
+        max-height: 65vh;
+        overflow-y: auto;
+    }
+
+    table.stock-table {
+        margin-bottom: 0;
+        font-size: 14px;
+    }
+    table.stock-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #2c3e50;
+        color: #fff;
+        border: none;
+        font-weight: 600;
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        padding: 12px 14px;
+        white-space: nowrap;
+    }
+    table.stock-table tbody td {
+        padding: 11px 14px;
+        vertical-align: middle;
+        border-color: #eef0f3;
+    }
+    table.stock-table tbody tr:hover {
+        background-color: #f7f9fc;
+    }
+
+    .badge-voucher {
+        background-color: #eef1fb;
+        color: #4e73df;
+        font-weight: 600;
+        font-size: 11.5px;
+        padding: 5px 10px;
+        border-radius: 20px;
+    }
+
+    .stock-in-val {
+        color: #17a673;
+        font-weight: 700;
+    }
+    .stock-out-val {
+        color: #e74a3b;
+        font-weight: 700;
+    }
+    .zero-val {
+        color: #c3c7ce;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 70px 20px;
+        color: #9099a6;
+    }
+    .empty-state i {
+        font-size: 48px;
+        color: #dfe3e8;
+        margin-bottom: 14px;
+        display: block;
+    }
+    .empty-state h5 {
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 6px;
+    }
+    .empty-state p {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    tfoot.stock-tfoot td {
+        font-weight: 700;
+        background: #f8f9fc;
+        border-top: 2px solid #dfe3e8;
+        padding: 12px 14px;
+    }
+
+    .btn-print {
+        background: linear-gradient(135deg, #2c3e50, #4e73df);
+        border: none;
+        color: #fff;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 8px 20px;
+        font-size: 14px;
+        transition: opacity .15s;
+        cursor: pointer;
+    }
+    .btn-print:hover { opacity: .85; color: #fff; }
+
+    @media print {
+        /* Hide everything except the report */
+        .navbar, .sidebar, nav, .filter-card,
+        .summary-cards, .btn-print,
+        .page-header-row .btn-print {
+            display: none !important;
+        }
+
+        /* Remove scrolling constraints */
+        .table-responsive-wrap {
+            max-height: none !important;
+            overflow: visible !important;
+        }
+
+        .stock-report-wrapper {
+            padding: 0 !important;
+        }
+
+        /* Show item name as print heading */
+        .print-heading {
+            display: block !important;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        table.stock-table thead th {
+            background: #2c3e50 !important;
+            color: #fff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .report-card {
+            box-shadow: none !important;
+            border: 1px solid #ddd;
+        }
+
+        .stock-in-val { color: #17a673 !important; }
+        .stock-out-val { color: #e74a3b !important; }
+    }
+</style>
+
+<div class="stock-report-wrapper">
+    <div class="page-header-row">
+        <h2><i class="fas fa-boxes"></i>Stock Report</h2>
+        {% if selected_item %}
+        <button class="btn-print" onclick="window.print()">
+            <i class="fas fa-print mr-1"></i> Print
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-card">
+        <form method="get" class="form-row align-items-end">
+            <div class="col-md-3 form-group mb-md-0 mb-3">
+                <label>Item</label>
+                <select name="item" class="form-control" required>
+                    <option value="">-- Select Item --</option>
+                    {% for item in items %}
+                        <option value="{{ item.id }}" {% if item.id|stringformat:"s" == selected_item %}selected{% endif %}>
+                            {{ item.item_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 form-group mb-md-0 mb-3">
+                <label>From Date</label>
+                <input type="date" name="from_date" class="form-control" value="{{ from_date }}">
+            </div>
+            <div class="col-md-2 form-group mb-md-0 mb-3">
+                <label>To Date</label>
+                <input type="date" name="to_date" class="form-control" value="{{ to_date }}">
+            </div>
+            <div class="col-md-3 form-group mb-md-0 mb-3">
+                <label>Voucher Type</label>
+                <select name="voucher_type" class="form-control">
+                    <option value="">-- All --</option>
+                    {% for vt in voucher_types %}
+                        <option value="{{ vt.id }}" {% if vt.id|stringformat:"s" == selected_voucher_type %}selected{% endif %}>
+                            {{ vt.VoucherName }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 form-group mb-md-0 mb-3">
+                <div class="d-flex" style="gap: 8px;">
+                    <button type="submit" class="btn btn-filter flex-fill">
+                        <i class="fas fa-filter mr-1"></i>Filter
+                    </button>
+                    <a href="{% url 'item_master:stock_report' %}" class="btn btn-reset" title="Reset filters">
+                        <i class="fas fa-redo-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if selected_item %}
+
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card summary-in">
+                <div class="label">Total Stock In</div>
+                <div class="value">{{ total_in|default:0 }}</div>
+            </div>
+            <div class="summary-card summary-out">
+                <div class="label">Total Stock Out</div>
+                <div class="value">{{ total_out|default:0 }}</div>
+            </div>
+           
+            <div class="summary-card summary-count">
+                <div class="label">Transactions</div>
+                <div class="value">{{ report_rows|length }}</div>
+            </div>
+        </div>
+
+        <!-- Report Table -->
+        <div class="report-card">
+            <div class="table-responsive-wrap">
+                <table class="table stock-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Voucher No</th>
+                            <th>Voucher Type</th>
+                            <th>Ledger</th>
+                            <th class="text-right">Stock In</th>
+                            <th class="text-right">Stock Out</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report_rows %}
+                        <tr>
+                            <td>{{ row.date|date:"d M Y" }}</td>
+                            <td><strong>{{ row.voucher_no }}</strong></td>
+                            <td><span class="badge-voucher">{{ row.voucher_type }}</span></td>
+                            <td>{{ row.ledger }}</td>
+                            <td class="text-right">
+                                {% if row.stock_in %}
+                                    <span class="stock-in-val">+{{ row.stock_in }}</span>
+                                {% else %}
+                                    <span class="zero-val">0</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-right">
+                                {% if row.stock_out %}
+                                    <span class="stock-out-val">-{{ row.stock_out }}</span>
+                                {% else %}
+                                    <span class="zero-val">0</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <h5>No records found</h5>
+                                    <p>There are no stock movements for this item in the selected range.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% if report_rows %}
+                    <tfoot class="stock-tfoot">
+                        <tr>
+                            <td colspan="4" class="text-right">Total</td>
+                            <td class="text-right stock-in-val">{{ total_in|default:0 }}</td>
+                            <td class="text-right stock-out-val">{{ total_out|default:0 }}</td>
+                        </tr>
+                    </tfoot>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+    {% else %}
+        <div class="report-card">
+            <div class="empty-state">
+                <i class="fas fa-search"></i>
+                <h5>Select an item to view its stock report</h5>
+                <p>Use the filter panel above to choose an item, optional date range, and voucher type.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

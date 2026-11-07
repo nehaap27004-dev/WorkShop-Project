@@ -1,0 +1,57 @@
+def create_ledger_postings_for_receipt(receipt_master):
+    """
+    Create LedgerPosting entries for Receipt Voucher.
+    Rules:
+    - Master Entry: Debit Cash / Bank ledger with total amount
+    - Detail Entries: Credit Customer / Income ledgers with detail amount
+    - Purges prior postings on edit
+    """
+    try:
+        voucher_type = getattr(receipt_master, 'voucherType', None) or get_or_create_voucher_type('Receipt', 'Receipt', 'RCP-')
+
+        # ⛔ Skip ledger posting if PDC and not cleared
+        if getattr(receipt_master, 'IsPDC', False) and getattr(receipt_master, 'ChequeStatus', '') != "cleared":
+            print(f"⏸️ ReceiptMaster #{receipt_master.id} skipped (PDC Not Cleared)")
+            return
+
+        delete_ledger_postings_by_voucher(voucher_type, receipt_master.id)
+
+        # -------- MASTER DEBIT ENTRY (Cash / Bank Account) --------
+        if receipt_master.TotalAmount and receipt_master.TotalAmount > 0:
+            LedgerPosting.objects.create(
+                date=receipt_master.Date,
+                VoucherType=voucher_type,
+                VoucherNo=receipt_master.id,
+                ledger=receipt_master.Ledger,
+                debit=receipt_master.TotalAmount,
+                credit=None,
+                IsDeleted=False
+            )
+
+        # -------- DETAIL CREDIT ENTRIES (Customer / Income Ledgers) --------
+        for det in receipt_master.details.all():
+            if det.Amount and det.Amount > 0:
+                LedgerPosting.objects.create(
+                    date=receipt_master.Date,
+                    VoucherType=voucher_type,
+                    VoucherNo=receipt_master.id,
+                    ledger=det.Ledger,
+                    debit=None,
+                    credit=det.Amount,
+                    IsDeleted=False
+                )
+
+        print(f"✅ Ledger postings created for Receipt #{receipt_master.id}")
+
+    except Exception as e:
+        print(f"❌ Ledger posting failed for Receipt #{receipt_master.id}: {e}")
+
+
+def delete_ledger_postings_for_receipt(receipt_master):
+    """Delete all LedgerPosting entries related to a Receipt voucher."""
+    voucher_type = getattr(receipt_master, 'voucherType', None) or Vouchers.objects.filter(VoucherType="Receipt").first()
+    if voucher_type:
+        delete_ledger_postings_by_voucher(voucher_type, receipt_master.id)
+
+
+def create_ledger_postings_for_local_payment(local_payment):

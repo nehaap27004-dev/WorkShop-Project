@@ -115,7 +115,7 @@ tfoot td.num{text-align:right;font-family:monospace}
           <tr>
             <td>{{ post.date|date:"d-m-Y" }}</td>
             <td><span class="vtype-badge">{{ post.VoucherType.VoucherName|default:"Manual" }}</span></td>
-            <td class="link-cell">{{ post.VoucherNo }}</td>
+            <td class="link-cell">{{ post.display_no|default:post.VoucherNo }}</td>
             <td>{{ post.ledger.ledger_name }}</td>
             <td class="num">{% if post.debit %}{{ post.debit|floatformat:3 }}{% else %}-{% endif %}</td>
             <td class="num">{% if post.credit %}{{ post.credit|floatformat:3 }}{% else %}-{% endif %}</td>

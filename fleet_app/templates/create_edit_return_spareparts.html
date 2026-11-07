@@ -1,0 +1,362 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block content %}
+<style>
+    #detailsTable select.form-control,
+    #detailsTable input.form-control {
+        min-width: 140px;
+    }
+    #detailsTable input[name$="-amount"] {
+        background-color: #f8f9fa;
+    }
+    .detail-row.marked-deleted {
+        display: none;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="font-weight-bold text-primary mb-0">
+            {% if is_edit_mode %}
+                {% trans "Edit Return Spare Parts" %} #{{ return_instance.voucher_no }}
+            {% else %}
+                {% trans "Create Return Spare Parts" %}
+            {% endif %}
+        </h2>
+        <a href="{% url 'fleet_app:list_return_spareparts' %}" class="btn btn-sm btn-primary">{% trans "View" %}</a>
+    </div>
+
+    <form method="post" id="returnForm">
+        {% csrf_token %}
+
+        <!-- Master Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 font-weight-bold text-secondary">{% trans "Return Information" %}</h5>
+            </div>
+            <div class="card-body">
+                                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        {{ return_form.voucherType.label_tag }}
+                        {{ return_form.voucherType }}
+                        {% if return_form.voucherType.errors %}
+                        <div class="text-danger small">{{ return_form.voucherType.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-3">
+                        {{ return_form.voucher_no.label_tag }}
+                        {{ return_form.voucher_no }}
+                        {% if return_form.voucher_no.errors %}
+                        <div class="text-danger small">{{ return_form.voucher_no.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-3">
+                        {{ return_form.date.label_tag }}
+                        {{ return_form.date }}
+                        {% if return_form.date.errors %}
+                        <div class="text-danger small">{{ return_form.date.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-3">
+                        {{ return_form.ledger.label_tag }}
+                        {{ return_form.ledger }}
+                        {% if return_form.ledger.errors %}
+                        <div class="text-danger small">{{ return_form.ledger.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if return_form.non_field_errors %}
+                <div class="text-danger small">{{ return_form.non_field_errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Spare Parts Detail Formset -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 font-weight-bold text-secondary">{% trans "Spare Parts to Return" %}</h5>
+                <button type="button" class="btn btn-success btn-sm" id="addRowBtn">
+                    <i class="fas fa-plus"></i> {% trans "Add" %}
+                </button>
+            </div>
+            <div class="card-body">
+                {{ formset.management_form }}
+                {% if formset.non_form_errors %}
+                <div class="text-danger small mb-2">{{ formset.non_form_errors }}</div>
+                {% endif %}
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center" id="detailsTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width:3%">#</th>
+                                <th>{% trans "Item Group" %}</th>
+                                <th>{% trans "Spare Part" %}</th>
+                                <th>{% trans "Part No" %}</th>
+                                <th style="width:8%">{% trans "Qty" %}</th>
+                                <th style="width:10%">{% trans "Rate" %}</th>
+                                <th style="width:10%">{% trans "Amount" %}</th>
+                                <th style="width:10%">{% trans "Condition" %}</th>
+                                <th style="width:6%">{% trans "Action" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailsTableBody">
+                            {% for form in formset %}
+                            <tr class="detail-row">
+                                {{ form.id }}
+                                <td class="row-number">{{ forloop.counter }}</td>
+                                <td>
+                                    {{ form.item_group }}
+                                    {% if form.item_group.errors %}<div class="text-danger small">{{ form.item_group.errors }}</div>{% endif %}
+                                </td>
+                                <td>
+                                    {{ form.sparepart }}
+                                    {% if form.sparepart.errors %}<div class="text-danger small">{{ form.sparepart.errors }}</div>{% endif %}
+                                </td>
+                                <td>{{ form.part_no }}</td>
+                                <td>{{ form.quantity }}</td>
+                                <td>{{ form.rate }}</td>
+                                <td>{{ form.amount }}</td>
+                                <td>{{ form.condition }}</td>
+                                <td>
+                                    <div class="form-check d-none">
+                                        {{ form.DELETE }}
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-danger remove-row-btn" title="{% trans 'Remove' %}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div id="noRowsMsg" class="text-center text-muted" style="display:none;">
+                    {% trans "No spare parts added" %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden template for cloning new rows -->
+        <template id="empty-form-template">
+            <tr class="detail-row">
+                {{ formset.empty_form.id }}
+                <td class="row-number">*</td>
+                <td>{{ formset.empty_form.item_group }}</td>
+                <td>{{ formset.empty_form.sparepart }}</td>
+                <td>{{ formset.empty_form.part_no }}</td>
+                <td>{{ formset.empty_form.quantity }}</td>
+                <td>{{ formset.empty_form.rate }}</td>
+                <td>{{ formset.empty_form.amount }}</td>
+                <td>{{ formset.empty_form.condition }}</td>
+                <td>
+                    <div class="form-check d-none">
+                        {{ formset.empty_form.DELETE }}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-danger remove-row-btn" title="{% trans 'Remove' %}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        </template>
+
+        <div class="text-right mt-4">
+            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
+                {% if is_edit_mode %}
+                    <i class="fas fa-save"></i> {% trans "Update" %}
+                {% else %}
+                    <i class="fas fa-save"></i> {% trans "Save" %}
+                {% endif %}
+            </button>
+            <button type="button" class="btn btn-secondary px-4 py-2 ml-3" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i> {% trans "Back" %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+const detailsBody = document.getElementById('detailsTableBody');
+const totalFormsInput = document.getElementById('id_details-TOTAL_FORMS');
+const emptyFormTemplate = document.getElementById('empty-form-template').innerHTML;
+const noRowsMsg = document.getElementById('noRowsMsg');
+
+function visibleRowCount() {
+    return detailsBody.querySelectorAll('.detail-row:not(.marked-deleted)').length;
+}
+
+function renumberRows() {
+    let n = 1;
+    detailsBody.querySelectorAll('.detail-row:not(.marked-deleted)').forEach(row => {
+        row.querySelector('.row-number').textContent = n++;
+    });
+    noRowsMsg.style.display = visibleRowCount() === 0 ? '' : 'none';
+}
+
+function addDetailRow() {
+    const formIndex = parseInt(totalFormsInput.value, 10);
+    const html = emptyFormTemplate.replace(/__prefix__/g, formIndex);
+
+    const wrapper = document.createElement('tbody');
+    wrapper.innerHTML = html.trim();
+    const newRow = wrapper.firstElementChild;
+
+    detailsBody.appendChild(newRow);
+    totalFormsInput.value = formIndex + 1;
+    renumberRows();
+}
+
+function removeDetailRow(button) {
+    const row = button.closest('tr');
+    const idField = row.querySelector('input[name$="-id"]');
+    const deleteCheckbox = row.querySelector('input[name$="-DELETE"]');
+
+    if (idField && idField.value) {
+        // Existing saved row — flag for deletion, keep it in the DOM so it's submitted
+        if (deleteCheckbox) deleteCheckbox.checked = true;
+        row.classList.add('marked-deleted');
+    } else {
+        // Newly added, unsaved row — safe to remove outright
+        row.remove();
+    }
+    renumberRows();
+}
+
+function onGroupChange(groupSelect) {
+    const row = groupSelect.closest('tr');
+    const sparepartSelect = row.querySelector('select[name$="-sparepart"]');
+    const groupId = groupSelect.value;
+
+    sparepartSelect.innerHTML = `<option value="">{% trans "Loading..." %}</option>`;
+    if (!groupId) {
+        sparepartSelect.innerHTML = `<option value="">{% trans "Select group first" %}</option>`;
+        return;
+    }
+
+    fetch(`/ajax/get-items-by-group/?group_id=${groupId}`)
+        .then(r => r.json())
+        .then(data => {
+            sparepartSelect.innerHTML = `<option value="">{% trans "Select Spare Part" %}</option>`;
+            (data.items || []).forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = item.item_name;
+                sparepartSelect.appendChild(opt);
+            });
+        })
+        .catch(err => console.error('Error fetching items:', err));
+}
+
+function recalcAmount(inputEl) {
+    const row = inputEl.closest('tr');
+    const qty = parseFloat(row.querySelector('input[name$="-quantity"]').value) || 0;
+    const rate = parseFloat(row.querySelector('input[name$="-rate"]').value) || 0;
+    const amountField = row.querySelector('input[name$="-amount"]');
+    if (amountField) amountField.value = (qty * rate).toFixed(3);
+}
+
+// Event delegation — works for both initial rows and cloned rows
+document.addEventListener('change', function (e) {
+    if (e.target.matches('select[name$="-item_group"]')) {
+        onGroupChange(e.target);
+    }
+});
+
+document.addEventListener('input', function (e) {
+    if (e.target.matches('input[name$="-quantity"]') || e.target.matches('input[name$="-rate"]')) {
+        recalcAmount(e.target);
+    }
+});
+
+document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.remove-row-btn');
+    if (btn) removeDetailRow(btn);
+});
+
+document.getElementById('addRowBtn').addEventListener('click', addDetailRow);
+
+// Prevent submit if every visible row is deleted / no real spare part selected
+document.getElementById('returnForm').addEventListener('submit', function (e) {
+    const rows = detailsBody.querySelectorAll('.detail-row:not(.marked-deleted)');
+    let hasSparepart = false;
+    rows.forEach(row => {
+        const sp = row.querySelector('select[name$="-sparepart"]');
+        if (sp && sp.value) hasSparepart = true;
+    });
+    if (!hasSparepart) {
+        e.preventDefault();
+        alert("{% trans 'Please add at least one spare part before saving.' %}");
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const dateInput = document.querySelector('input[name="date"]');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    renumberRows();
+});
+</script>
+
+{% if not is_edit_mode %}
+<script>
+function updateVoucherNumber() {
+    const select = document.getElementById('id_voucherType');
+    const input = document.getElementById('id_voucher_no');
+    if (select && input && select.value) {
+        input.value = "{% trans 'Loading...' %}";
+        fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+            .then(r => r.json())
+            .then(data => { input.value = data.success ? data.voucher_number : "{% trans 'Error' %}"; })
+            .catch(() => { input.value = "{% trans 'Error' %}"; });
+    }
+}
+window.addEventListener('DOMContentLoaded', function () {
+    const sel = document.getElementById('id_voucherType');
+    if (sel) {
+        sel.addEventListener('change', updateVoucherNumber);
+        updateVoucherNumber();
+    }
+});
+</script>
+{% endif %}
+
+<script>
+$(document).on("submit", "#returnForm", function (e) {
+    e.preventDefault();
+    let formData = new FormData(this);
+    const actionUrl = "{% if is_edit_mode %}{% url 'fleet_app:edit_return_spareparts' return_instance.id %}{% else %}{% url 'fleet_app:create_return_spareparts' %}{% endif %}";
+
+    $.ajax({
+        url: actionUrl,
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        success: function (response) {
+            if (response.admin_required) {
+                $("#admin_error").text(response.message || "");
+                $("#adminOverrideModal").modal("show");
+                return;
+            }
+            if (response.success) {
+                alert(response.message);
+                window.location.href = "{% url 'fleet_app:list_return_spareparts' %}";
+            }
+        },
+        error: function (xhr) {
+            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                $("#admin_error").text(xhr.responseJSON.message || "");
+                $("#adminOverrideModal").modal("show");
+            } else {
+                const errMsg = xhr.responseJSON?.message || "Something went wrong";
+                alert("Error: " + errMsg);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

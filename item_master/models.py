@@ -108,6 +108,18 @@ class TAX(models.Model):
         return f" {self.TAX_percent}%"
     
         
+
+class ItemGroup(models.Model):
+    group_code = models.CharField(max_length=50, unique=True)
+    isDefault = models.BooleanField(default=False)
+    
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.group_code}"        
         
 
 class Item(models.Model):
@@ -117,19 +129,28 @@ class Item(models.Model):
         ('Service Item', 'Service Item'),
     ]
 
-    item_name = models.CharField(max_length=100)
-    item_code = models.CharField(max_length=50)
+    INVENTORY_NATURE_CHOICES = [
+        ('Regular', 'Regular'),
+        ('Non-Consumable', 'Non-Consumable'),
+        ('Returnable', 'Returnable'),
+        ('Recoverable Scrap', 'Recoverable Scrap'),
+    ]
+
+    item_name = models.CharField(max_length=100, unique=True)
+    item_code = models.CharField(max_length=50, unique=True)
+    item_group = models.ForeignKey(ItemGroup, on_delete=models.CASCADE, null=True, blank=True)
     IsItemBarcode = models.BooleanField(default=True)
-    barcode_code = models.CharField(max_length=50, null=True, blank=True)
+    barcode_code = models.CharField(max_length=50, null=True, blank=True, unique=True)
     regional_name = models.CharField(max_length=100, blank=True, null=True)
     item_category = models.ForeignKey(ItemCategory, on_delete=models.CASCADE, null=True, blank=True)
     item_manufacturer = models.ForeignKey(ItemManufacturer, on_delete=models.CASCADE, null=True, blank=True)
-    TAX = models.ForeignKey(TAX, on_delete=models.CASCADE, null=True, blank=True)
+    TAX = models.ForeignKey('TAX', on_delete=models.CASCADE, null=True, blank=True)
+    sales_vat = models.ForeignKey('TAX', on_delete=models.CASCADE, null=True, blank=True, related_name='sales_vat')
     min_stock = models.PositiveIntegerField(default=0, blank=True, null=True)
     rack = models.CharField(max_length=50, blank=True, null=True)
-    purchase_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    sales_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    MRP = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, blank=True, null=True)  # Maximum Retail Price
+    purchase_rate = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)
+    sales_rate = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)
+    MRP = models.DecimalField(max_digits=10, decimal_places=3, default=0.000, blank=True, null=True)  # Maximum Retail Price
     item_unit = models.ForeignKey(Unit, on_delete=models.PROTECT)
     uc_factor = models.PositiveIntegerField(default=1, blank=True, null=True)
     remarks = models.TextField(blank=True, null=True)
@@ -140,27 +161,30 @@ class Item(models.Model):
     MaxStock = models.PositiveIntegerField(default=0, blank=True, null=True)
     Reorder = models.PositiveIntegerField(default=0, blank=True, null=True)
     isDeleted = models.BooleanField(default=False)
-    WholeSalePrice = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    SchemaPerc = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    ProfitPerc = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    CrediRateRet = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    CreditRateWhol = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    WholeProfitPerc = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    WholeSalePrice = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)
+    SchemaPerc = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)
+    ProfitPerc = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)
+    CrediRateRet = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)
+    CreditRateWhol = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)
+    WholeProfitPerc = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)
     Warrenty = models.PositiveIntegerField(default=0, blank=True, null=True)
     IsBatch = models.BooleanField(default=False)
     IsExpiry = models.BooleanField(default=False)
     TaxIncludExclud = models.BooleanField(default=False)
-    ProfitPercWholeCredit = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    ProfitPercRetCrdt = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    ProfitPercWholeCredit = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)
+    ProfitPercRetCrdt = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)
     HSN = models.CharField(max_length=50, blank=True, null=True)
     Rack = models.CharField(max_length=50, blank=True, null=True)
     IsNonInventory = models.BooleanField(default=False)
     SizeId = models.PositiveIntegerField(default=0, blank=True, null=True)
     IsSkipPrint = models.BooleanField(default=False)
     TaxIncludPrchs = models.BooleanField(default=False)
-    cess = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    cess = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)
     IsProductSerial = models.BooleanField(default=False)
     D1 = models.DateTimeField(auto_now_add=True)
+
+    quantity = models.DecimalField(max_digits=20, decimal_places=3, default=0.000)
+    inventory_nature = models.CharField(max_length=50, choices=INVENTORY_NATURE_CHOICES, null=True, blank=True)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -175,8 +199,8 @@ class ItemAlterUnit(models.Model):
     is_base_unit = models.BooleanField(default=False)
     uc_factor = models.DecimalField(max_digits=10, decimal_places=4 )
     barcode_code = models.CharField(max_length=50,  null=True, blank=True)
-    purchase_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    sales_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    purchase_rate = models.DecimalField(max_digits=10, decimal_places=3, default=0.000)
+    sales_rate = models.DecimalField(max_digits=10, decimal_places=3, default=0.000)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -264,7 +288,8 @@ class Vouchers(models.Model):
             
         return voucher_number
 
-    
+    def __str__(self):
+        return f"{self.VoucherType} - {self.VoucherName}"
 
     def __str__(self):
      return f"{self.VoucherName}"
@@ -297,6 +322,89 @@ class Vendor(models.Model):
         db_table = 'Item_Vendor'
         verbose_name_plural = 'Item_Vendor'     
 
+
+class ItemGrvMaster(models.Model):
+    
+    # PAYMENT_MODE_CHOICES = [
+    #     ('Cash', 'Cash'),
+    #     ('Bank', 'Bank'),
+    #     ('Credit', 'Credit'),
+    # ]
+    
+    auto_no = models.IntegerField(unique=True, blank=True, null=True)  # Auto-increment field
+    voucher_no = models.CharField(max_length=100, unique=True, blank=False)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=1)
+    transaction_date = models.DateField(default=datetime.now)
+    ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, default=13)
+    # payment_mode = models.CharField(max_length=10, choices=PAYMENT_MODE_CHOICES, default='Cash')
+    # VendorInvNo = models.CharField(max_length=100, blank=True, null=True)
+    # InvoiceDate = models.DateField(blank=True, null=True)
+    remarks = models.TextField(blank=True, null=True)
+    # total_net_value = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    # total_tax_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    # discount = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    # payment_terms = models.TextField(blank=True, null=True)
+    # grand_total_amount = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    cost_center = models.ForeignKey(CostCenter, on_delete=models.PROTECT, null=True, blank=True, default=1)
+    lrNo = models.CharField(max_length=100, blank=True, null=True)
+    transportCompany = models.CharField(max_length=100, blank=True, null=True)
+    isDeleted = models.BooleanField(default=False)
+    Freight = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    # IsCleared = models.BooleanField(default=False)
+    IsInvoiced = models.BooleanField(default=False)
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+
+        if not self.voucher_no and self.voucherType:
+            self.voucher_no = self.voucherType.get_next_voucher_number()
+
+        super().save(*args, **kwargs)
+
+    
+    def __str__(self):
+        return f"item_grv {self.voucher_no}"
+    
+    
+
+class ItemGrvDetail(models.Model):
+    item_grv = models.ForeignKey(ItemGrvMaster, related_name='items', on_delete=models.CASCADE)
+    item_code = models.CharField(max_length=100, blank=True, null=True)
+    item_name = models.ForeignKey(Item, on_delete=models.PROTECT, blank=True, null=True)
+    
+    barcode_code = models.CharField(max_length=100, blank=True, null=True)
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], blank=True, null=True)
+    # purchase_rate = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    # item_net_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    tax = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    # item_tax_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    unit = models.ForeignKey(Unit, related_name='item_grv_unit_details', on_delete=models.PROTECT, blank=True, null=True)
+    free_quantity = models.PositiveIntegerField(default=0, blank=True, null=True)
+    MFD = models.DateField(blank=True, null=True)
+    EXP = models.DateField(blank=True, null=True)
+    # sales_rate_percentage = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    # sales_rate = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    # profit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    # item_total_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    Batch = models.ForeignKey(Batch, on_delete=models.PROTECT, blank=True, null=True)
+    isexp = models.BooleanField(default=False)
+    QtyInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    RateInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    BaseUnit = models.ForeignKey(Unit, related_name='item_grv_baseunit_details', on_delete=models.SET_NULL, null=True, blank=True)
+    Cess = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    SerialNo = models.CharField(max_length=100, blank=True, null=True)
+    Cost = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.item_name} for {self.item_grv.voucher_no}"
+    
+    
+
+
         
 
 
@@ -310,36 +418,41 @@ class PurchaseMaster(models.Model):
     
     auto_no = models.IntegerField(unique=True, blank=True, null=True)  # Auto-increment field
     voucher_no = models.CharField(max_length=100, unique=True, blank=False)
-    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=13)
-    transaction_date = models.DateField()
-    ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, default=1)
-    payment_mode = models.CharField(max_length=10, choices=PAYMENT_MODE_CHOICES, default='Cash')
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=1)
+    transaction_date = models.DateField(default=datetime.now)
+    ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, default=13)
+    payment_mode = models.CharField(max_length=10, choices=PAYMENT_MODE_CHOICES, default='Credit')
     VendorInvNo = models.CharField(max_length=100, blank=True, null=True)
-    InvoiceDate = models.DateField(blank=True, null=True)
+    InvoiceDate = models.DateField(default=datetime.now)
     remarks = models.TextField(blank=True, null=True)
-    total_net_value = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    total_tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_net_value = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    total_tax_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    discount = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     payment_terms = models.TextField(blank=True, null=True)
-    grand_total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    grand_total_amount = models.DecimalField(max_digits=15, decimal_places=3, default=0)
     cost_center = models.ForeignKey(CostCenter, on_delete=models.PROTECT, null=True, blank=True, default=1)
     lrNo = models.CharField(max_length=100, blank=True, null=True)
     transportCompany = models.CharField(max_length=100, blank=True, null=True)
     isDeleted = models.BooleanField(default=False)
-    Freight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    
+    Freight = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    IsCleared = models.BooleanField(default=False)
+    item_grv = models.ForeignKey(ItemGrvMaster, on_delete=models.CASCADE, blank=True, null=True)
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
         if not self.voucher_no and self.voucherType:
             self.voucher_no = self.voucherType.get_next_voucher_number()
-        super().save(*args, **kwargs)
-    
-    
-    
 
-    
+        # Keep IsCleared in sync with payment_mode on BOTH create and edit.
+        # Cash/Bank = paid immediately → cleared. Credit = not cleared until settled.
+        if self.payment_mode == 'Credit':
+            self.IsCleared = False
+        else:
+            self.IsCleared = True
+
+        super().save(*args, **kwargs)
+
     
     def __str__(self):
         return f"Purchase {self.voucher_no}"
@@ -351,31 +464,32 @@ class PurchaseMaster(models.Model):
 
 class PurchaseDetail(models.Model):
     purchase = models.ForeignKey(PurchaseMaster, related_name='items', on_delete=models.CASCADE)
+    item_group = models.ForeignKey(ItemGroup, on_delete=models.CASCADE, blank=True, null=True)
     item_code = models.CharField(max_length=100, blank=True, null=True)
     item_name = models.ForeignKey(Item, on_delete=models.PROTECT, blank=True, null=True)
     
     barcode_code = models.CharField(max_length=100, blank=True, null=True)
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], blank=True, null=True)
-    purchase_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    item_net_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    tax = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    item_tax_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    purchase_rate = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    item_net_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    tax = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    item_tax_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     unit = models.ForeignKey(Unit, related_name='purchase_unit_details', on_delete=models.PROTECT, blank=True, null=True)
     free_quantity = models.PositiveIntegerField(default=0, blank=True, null=True)
     MFD = models.DateField(blank=True, null=True)
     EXP = models.DateField(blank=True, null=True)
-    sales_rate_percentage = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    sales_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    profit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    item_total_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    sales_rate_percentage = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    sales_rate = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    profit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    item_total_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     Batch = models.ForeignKey(Batch, on_delete=models.PROTECT, blank=True, null=True)
     isexp = models.BooleanField(default=False)
-    QtyInBaseUnit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    RateInBaseUnit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    QtyInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    RateInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     BaseUnit = models.ForeignKey(Unit, related_name='purchase_baseunit_details', on_delete=models.SET_NULL, null=True, blank=True)
-    Cess = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    Cess = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     SerialNo = models.CharField(max_length=100, blank=True, null=True)
-    Cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    Cost = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -387,7 +501,7 @@ class PurchaseDetail(models.Model):
         db_table = 'purchase_items'
         verbose_name_plural = 'Purchase Items'
 
-class PurchaseReturnMaster(models.Model):
+class SalesReturnMaster(models.Model):
     
     PAYMENT_MODE_CHOICES = [
         ('Cash', 'Cash'),
@@ -397,23 +511,23 @@ class PurchaseReturnMaster(models.Model):
     
     auto_no = models.IntegerField(unique=True, blank=True, null=True)  # Auto-increment field
     voucher_no = models.CharField(max_length=100, unique=True, blank=False)
-    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=1)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=9)
     transaction_date = models.DateField()
-    ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, default=1)
+    ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, default=15)
     payment_mode = models.CharField(max_length=10, choices=PAYMENT_MODE_CHOICES, default='Cash')
     VendorInvNo = models.CharField(max_length=100, blank=True, null=True)
     InvoiceDate = models.DateField(blank=True, null=True)
     remarks = models.TextField(blank=True, null=True)
-    total_net_value = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    total_tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_net_value = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    total_tax_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    discount = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     payment_terms = models.TextField(blank=True, null=True)
-    grand_total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    grand_total_amount = models.DecimalField(max_digits=15, decimal_places=3, default=0)
     cost_center = models.ForeignKey(CostCenter, on_delete=models.PROTECT, null=True, blank=True, default=1)
     lrNo = models.CharField(max_length=100, blank=True, null=True)
     transportCompany = models.CharField(max_length=100, blank=True, null=True)
     isDeleted = models.BooleanField(default=False)
-    Freight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    Freight = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -423,56 +537,42 @@ class PurchaseReturnMaster(models.Model):
             self.voucher_no = self.voucherType.get_next_voucher_number()
         super().save(*args, **kwargs)
     
-    
-    
-
-    
-    
     def __str__(self):
-        return f"Purchase {self.voucher_no}"
-    
-    class meta:
-        db_table = 'purchases'
-        verbose_name_plural = 'Purchases'
-        ordering = ['auto_no']
+        return f"Sales Return {self.voucher_no}"
 
-class PurchaseReturnDetail(models.Model):
-    purchase = models.ForeignKey(PurchaseReturnMaster, related_name='items', on_delete=models.CASCADE)
+class SalesReturnDetail(models.Model):
+    sales_return = models.ForeignKey(SalesReturnMaster, related_name='items', on_delete=models.CASCADE)
     item_code = models.CharField(max_length=100, blank=True, null=True)
     item_name = models.ForeignKey(Item, on_delete=models.PROTECT, blank=True, null=True)
     
     barcode_code = models.CharField(max_length=100, blank=True, null=True)
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], blank=True, null=True)
-    purchase_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    item_net_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    tax = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    item_tax_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    unit = models.ForeignKey(Unit, related_name='purchaseReturn_unit_details', on_delete=models.PROTECT, blank=True, null=True)
+    purchase_rate = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    item_net_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    tax = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    item_tax_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    unit = models.ForeignKey(Unit, related_name='salesReturn_unit_details', on_delete=models.PROTECT, blank=True, null=True)
     free_quantity = models.PositiveIntegerField(default=0, blank=True, null=True)
     MFD = models.DateField(blank=True, null=True)
     EXP = models.DateField(blank=True, null=True)
-    sales_rate_percentage = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    sales_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    profit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    item_total_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    sales_rate_percentage = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    sales_rate = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    profit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    item_total_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     Batch = models.ForeignKey(Batch, on_delete=models.PROTECT, blank=True, null=True)
     isexp = models.BooleanField(default=False)
-    QtyInBaseUnit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    RateInBaseUnit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    BaseUnit = models.ForeignKey(Unit, related_name='purchaseReturn_baseunit_details', on_delete=models.SET_NULL, null=True, blank=True)
-    Cess = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    QtyInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    RateInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    BaseUnit = models.ForeignKey(Unit, related_name='salesReturn_baseunit_details', on_delete=models.SET_NULL, null=True, blank=True)
+    Cess = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     SerialNo = models.CharField(max_length=100, blank=True, null=True)
-    Cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    Cost = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.item_name} for {self.purchase.voucher_no}"
-    
-    class meta:
-        db_table = 'purchase_items'
-        verbose_name_plural = 'Purchase Items'
+        return f"{self.item_name} for {self.salesReturn.voucher_no}"
 
 
         
@@ -493,7 +593,6 @@ class Customer(models.Model):
     customer_description = models.TextField(null=True, blank=True, help_text=" description")
     customer_VAT = models.CharField(null=True, blank=True,max_length=255, help_text="customer VAT number")
     customer_TRN_or_CRN = models.CharField(null=True, blank=True,max_length=255, help_text="customer TRN or CRN number")
-    ledger = models.ForeignKey('accounts_app.LedgerCreation', null=True, blank=True, on_delete=models.SET_NULL, related_name='item_master_customers')
     
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -511,79 +610,6 @@ class Customer(models.Model):
         
             
 class SalesMaster(models.Model):
-    VOUCHER_PAYMENT_MODE_CHOICES = [
-        ('cash', 'Cash'),
-        ('bank', 'Bank'),
-        ('Credit', 'Credit'),
-    ]
-    
-    auto_no = models.IntegerField(unique=True, blank=True, null=True)  # Auto-increment field
-    voucher_no = models.CharField(max_length=20, unique=True)
-    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=14)
-    transaction_date = models.DateField(default=datetime.now)
-    ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, default=1)
-    payment_mode = models.CharField(max_length=10, choices=VOUCHER_PAYMENT_MODE_CHOICES, default='cash')
-    InvoiceNo = models.CharField(max_length=100, blank=True, null=True)
-    InvoiceDate = models.DateField(blank=True, null=True)
-    PO_number = models.CharField(max_length=50, null=True, blank=True)  # Purchase Order number
-    DO_number = models.CharField(max_length=50, null=True, blank=True)  # Delivery Order number
-    mobile = models.CharField(max_length=15, null=True, blank=True)
-    customer_TRN = models.CharField(max_length=20, null=True, blank=True)  # Tax Registration Number
-    vehicle_number = models.ForeignKey('fleet_app.Vehicle', on_delete=models.PROTECT, null=True, blank=True)
-    location = models.CharField(max_length=255, null=True, blank=True)
-    terms_and_conditions = models.TextField(null=True, blank=True)
-    remarks = models.TextField(null=True, blank=True)
-    total_net_value = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    total_tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    grand_total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    cost_center = models.ForeignKey(CostCenter, on_delete=models.PROTECT, null=True, blank=True, default=1)
-    lrNo = models.CharField(max_length=100, blank=True, null=True)
-    transportCompany = models.CharField(max_length=100, blank=True, null=True)
-    isDeleted = models.BooleanField(default=False)
-    Freight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    
-    created_on = models.DateTimeField(auto_now_add=True)
-    updated_on = models.DateTimeField(auto_now=True)
-    
-    def save(self, *args, **kwargs):
-        if not self.voucher_no and self.voucherType:
-            self.voucher_no = self.voucherType.get_next_voucher_number()
-        super().save(*args, **kwargs)
-    
-    
-
-    def __str__(self):
-        return f"{self.voucher_no} - {self.ledger.ledger_name}"    
-            
-
-class SalesDetail(models.Model):
-    sales_voucher = models.ForeignKey(SalesMaster, related_name='items', on_delete=models.CASCADE)
-    item_code = models.CharField(max_length=50, blank=True, null=True)
-    item_name = models.ForeignKey(Item, on_delete=models.PROTECT, blank=True, null=True)
-    barcode_code = models.CharField(max_length=50, blank=True, null=True)
-    quantity = models.PositiveIntegerField(default=0, blank=True, null=True)
-    unit = models.ForeignKey(Unit, on_delete=models.PROTECT, blank=True, null=True, related_name='salesReturn_unit_details')
-    sales_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, blank=True, null=True)
-    item_net_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, blank=True, null=True)
-    tax = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, blank=True, null=True)  
-    item_tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, blank=True, null=True)
-    item_total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, blank=True, null=True)
-    Batch = models.ForeignKey(Batch, on_delete=models.PROTECT, blank=True, null=True)
-    MFD = models.DateField(blank=True, null=True)
-    EXP = models.DateField(blank=True, null=True)
-    QtyInBaseUnit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    RateInBaseUnit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    BaseUnit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True, blank=True, related_name='salesReturn_baseunit_details')
-    
-    
-    created_on = models.DateTimeField(auto_now_add=True)
-    updated_on = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.item_name} - {self.sales_voucher.voucher_no}"     
-
-class SalesReturnMaster(models.Model):
     VOUCHER_PAYMENT_MODE_CHOICES = [
         ('cash', 'Cash'),
         ('bank', 'Bank'),
@@ -615,6 +641,79 @@ class SalesReturnMaster(models.Model):
     transportCompany = models.CharField(max_length=100, blank=True, null=True)
     isDeleted = models.BooleanField(default=False)
     Freight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    IsCleared = models.BooleanField(default=False)
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.voucher_no and self.voucherType:
+            self.voucher_no = self.voucherType.get_next_voucher_number()
+        super().save(*args, **kwargs)
+    
+    
+
+    def __str__(self):
+        return f"{self.voucher_no} - {self.ledger.ledger_name}"    
+            
+
+class SalesDetail(models.Model):
+    sales_voucher = models.ForeignKey(SalesMaster, related_name='items', on_delete=models.CASCADE)
+    item_code = models.CharField(max_length=50, blank=True, null=True)
+    item_name = models.ForeignKey(Item, on_delete=models.PROTECT, blank=True, null=True)
+    barcode_code = models.CharField(max_length=50, blank=True, null=True)
+    quantity = models.PositiveIntegerField(default=0, blank=True, null=True)
+    unit = models.ForeignKey(Unit, on_delete=models.PROTECT, blank=True, null=True, related_name='sales_unit_details')
+    sales_rate = models.DecimalField(max_digits=10, decimal_places=3, default=0.00, blank=True, null=True)
+    item_net_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0.00, blank=True, null=True)
+    tax = models.DecimalField(max_digits=5, decimal_places=3, default=0.00, blank=True, null=True)  
+    item_tax_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0.00, blank=True, null=True)
+    item_total_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0.00, blank=True, null=True)
+    Batch = models.ForeignKey(Batch, on_delete=models.PROTECT, blank=True, null=True)
+    MFD = models.DateField(blank=True, null=True)
+    EXP = models.DateField(blank=True, null=True)
+    QtyInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    RateInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    BaseUnit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True, blank=True, related_name='sales_baseunit_details')
+    
+    
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.item_name} - {self.sales_voucher.voucher_no}"     
+
+class PurchaseReturnMaster(models.Model):
+    VOUCHER_PAYMENT_MODE_CHOICES = [
+        ('cash', 'Cash'),
+        ('bank', 'Bank'),
+        ('Credit', 'Credit'),
+    ]
+    
+    auto_no = models.IntegerField(unique=True, blank=True, null=True)  # Auto-increment field
+    voucher_no = models.CharField(max_length=20, unique=True)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=8)
+    transaction_date = models.DateField(default=datetime.now)
+    ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, default=1)
+    payment_mode = models.CharField(max_length=10, choices=VOUCHER_PAYMENT_MODE_CHOICES, default='cash')
+    InvoiceNo = models.CharField(max_length=100, blank=True, null=True)
+    InvoiceDate = models.DateField(blank=True, null=True)
+    PO_number = models.CharField(max_length=50, null=True, blank=True)  # Purchase Order number
+    DO_number = models.CharField(max_length=50, null=True, blank=True)  # Delivery Order number
+    mobile = models.CharField(max_length=15, null=True, blank=True)
+    customer_TRN = models.CharField(max_length=20, null=True, blank=True)  # Tax Registration Number
+    vehicle_number = models.CharField(max_length=50, null=True, blank=True)
+    location = models.CharField(max_length=255, null=True, blank=True)
+    terms_and_conditions = models.TextField(null=True, blank=True)
+    remarks = models.TextField(null=True, blank=True)
+    total_net_value = models.DecimalField(max_digits=10, decimal_places=3, default=0.00)
+    total_tax_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    discount = models.DecimalField(max_digits=10, decimal_places=3, default=0.00)
+    grand_total_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0.00)
+    cost_center = models.ForeignKey(CostCenter, on_delete=models.PROTECT, null=True, blank=True, default=1)
+    lrNo = models.CharField(max_length=100, blank=True, null=True)
+    transportCompany = models.CharField(max_length=100, blank=True, null=True)
+    isDeleted = models.BooleanField(default=False)
+    Freight = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -630,45 +729,46 @@ class SalesReturnMaster(models.Model):
         return f"{self.voucher_no} - {self.ledger.ledger_name}"   
      
 
-class SalesReturnDetail(models.Model):
-    sales_voucher = models.ForeignKey(SalesReturnMaster, related_name='items', on_delete=models.CASCADE)
+class PurchaseReturnDetail(models.Model):
+    purchase_return = models.ForeignKey(PurchaseReturnMaster, related_name='items', on_delete=models.CASCADE)
+    item_group = models.ForeignKey(ItemGroup, on_delete=models.CASCADE, blank=True, null=True)
     item_code = models.CharField(max_length=50, blank=True, null=True)
     item_name = models.ForeignKey(Item, on_delete=models.PROTECT, blank=True, null=True)
     barcode_code = models.CharField(max_length=50, blank=True, null=True)
     quantity = models.PositiveIntegerField(default=0, blank=True, null=True)
-    unit = models.ForeignKey(Unit, on_delete=models.PROTECT, blank=True, null=True, related_name='sales_unit_details')
-    sales_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, blank=True, null=True)
-    item_net_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, blank=True, null=True)
-    tax = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, blank=True, null=True)  
-    item_tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, blank=True, null=True)
-    item_total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, blank=True, null=True)
+    unit = models.ForeignKey(Unit, on_delete=models.PROTECT, blank=True, null=True, related_name='purchase_return_unit_details')
+    sales_rate = models.DecimalField(max_digits=10, decimal_places=3, default=0.00, blank=True, null=True)
+    item_net_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0.00, blank=True, null=True)
+    tax = models.DecimalField(max_digits=5, decimal_places=3, default=0.00, blank=True, null=True)  
+    item_tax_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0.00, blank=True, null=True)
+    item_total_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0.00, blank=True, null=True)
     Batch = models.ForeignKey(Batch, on_delete=models.PROTECT, blank=True, null=True)
     MFD = models.DateField(blank=True, null=True)
     EXP = models.DateField(blank=True, null=True)
-    QtyInBaseUnit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    RateInBaseUnit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    BaseUnit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True, blank=True, related_name='sales_baseunit_details')
+    QtyInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    RateInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    BaseUnit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True, blank=True, related_name='purchase_return_baseunit_details')
     
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.item_name} - {self.sales_voucher.voucher_no}"     
+        return f"{self.item_name} - {self.purchase_return.voucher_no}"     
            
     
 class Stock(models.Model):
     voucherDate = models.DateField()
     voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT)
     voucherNo = models.BigIntegerField()  
-    item = models.ForeignKey('Item', on_delete=models.PROTECT)  # Adjust 'Item' to your actual model name
-    batch = models.ForeignKey('Batch', on_delete=models.PROTECT, null=True, blank=True)  # Adjust 'Batch' accordingly
-    unit = models.ForeignKey('Unit', on_delete=models.PROTECT)  # Adjust 'Unit' accordingly
-    costCenter = models.ForeignKey('CostCenter', on_delete=models.PROTECT)  # Adjust 'CostCenter' accordingly
-    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    item = models.ForeignKey('Item', on_delete=models.CASCADE)  # Adjust 'Item' to your actual model name
+    batch = models.ForeignKey('Batch', on_delete=models.CASCADE, null=True, blank=True)  # Adjust 'Batch' accordingly
+    unit = models.ForeignKey('Unit', on_delete=models.CASCADE)  # Adjust 'Unit' accordingly
+    costCenter = models.ForeignKey('CostCenter', on_delete=models.CASCADE)  # Adjust 'CostCenter' accordingly
+    rate = models.DecimalField(max_digits=10, decimal_places=3, default=0.00)
     in_quantity = models.IntegerField(default=0)
     out_quantity = models.IntegerField(default=0)
-    stock_value = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    stock_value = models.DecimalField(max_digits=10, decimal_places=3, default=0.00)
     fyId = models.IntegerField(null=True, blank=True) # will change to Fk in future
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -724,70 +824,7 @@ class DayBookReport(models.Model):
     def __str__(self):
         return f"{self.date} - {self.ledger} ({self.voucher_type})"    
     
-    
- 
-    
-  
-class OpeningStockMaster(models.Model):
-    
-    PAYMENT_MODE_CHOICES = [
-        ('Cash', 'Cash'),
-        ('Bank', 'Bank'),
-        ('Credit', 'Credit'),
-    ]
-    
-    auto_no = models.IntegerField(unique=True, blank=True, null=True)  # Auto-increment field
-    voucher_no = models.CharField(max_length=100, unique=True, blank=False)
-    transaction_date = models.DateField()
-    ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.CASCADE)
-    payment_mode = models.CharField(max_length=10, choices=PAYMENT_MODE_CHOICES, default='Cash')
-    
-    remarks = models.TextField(blank=True, null=True)
-    total_net_value = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    total_tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    payment_terms = models.TextField(blank=True, null=True)
-    grand_total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    cost_center = models.ForeignKey(CostCenter, on_delete=models.CASCADE, null=True, blank=True)  
-    lrNo = models.CharField(max_length=100, blank=True, null=True)
-    transportCompany = models.CharField(max_length=100, blank=True, null=True)
-    isDeleted = models.BooleanField(default=False)
-    Freight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    
-    created_on = models.DateTimeField(auto_now_add=True)
-    updated_on = models.DateTimeField(auto_now=True)
-    
-
-class OpeningStockDetail(models.Model):
-    opening_stock = models.ForeignKey(OpeningStockMaster, related_name='items', on_delete=models.CASCADE)
-    item_code = models.CharField(max_length=100, blank=True, null=True)
-    item_name = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
-    
-    barcode_code = models.CharField(max_length=100, blank=True, null=True)
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], blank=True, null=True)
-    purchase_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    item_net_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    tax = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    item_tax_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    unit = models.ForeignKey('Unit', on_delete=models.CASCADE, blank=True, null=True)
-    free_quantity = models.PositiveIntegerField(default=0, blank=True, null=True)
-    manufacture_date = models.DateField(blank=True, null=True)
-    expire_date = models.DateField(blank=True, null=True)
-    sales_rate_percentage = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    sales_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    profit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    item_total_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True) 
-    BatchId = models.ForeignKey('Batch', on_delete=models.CASCADE, blank=True, null=True)
-    isexp = models.BooleanField(default=False)
-    QtyInBaseUnit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    RateInBaseUnit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    Cess = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    SerialNo = models.CharField(max_length=100, blank=True, null=True)
-       
-    
-    created_on = models.DateTimeField(auto_now_add=True)
-    updated_on = models.DateTimeField(auto_now=True)
-    
+        
     
     
 class StockTransfer(models.Model):
@@ -826,3 +863,48 @@ class StockTransferItem(models.Model):
         return f"{self.item} ({self.quantity} {self.unit})"
     
     
+class OpeningStockMaster(models.Model):
+    voucher_no = models.CharField(max_length=100, unique=True, blank=False)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=1)
+    transaction_date = models.DateField(default=datetime.now)
+    cost_center = models.ForeignKey(CostCenter, on_delete=models.PROTECT, null=True, blank=True, default=1)
+    remarks = models.TextField(blank=True, null=True)
+    total_net_value = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    total_tax_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    grand_total_amount = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    IsCleared = models.BooleanField(default=False)
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.voucher_no and self.voucherType:
+            self.voucher_no = self.voucherType.get_next_voucher_number()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Opening {self.voucher_no}"
+
+
+class OpeningStockDetail(models.Model):
+    opening_stock = models.ForeignKey(OpeningStockMaster, related_name='items', on_delete=models.CASCADE)
+    item_group = models.ForeignKey(ItemGroup, on_delete=models.CASCADE, blank=True, null=True)
+    item_code = models.CharField(max_length=100, blank=True, null=True)
+    item_name = models.ForeignKey(Item, on_delete=models.PROTECT, blank=True, null=True)
+    barcode_code = models.CharField(max_length=100, blank=True, null=True)
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], blank=True, null=True)
+    purchase_rate = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    item_net_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    tax = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    item_tax_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    unit = models.ForeignKey(Unit, related_name='opening_stock_unit_details', on_delete=models.PROTECT, blank=True, null=True)
+    item_total_amount = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    QtyInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    RateInBaseUnit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    BaseUnit = models.ForeignKey(Unit, related_name='opening_stock_baseunit_details', on_delete=models.SET_NULL, null=True, blank=True)
+    SerialNo = models.CharField(max_length=100, blank=True, null=True)
+    Cost = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.item_name} for {self.opening_stock.voucher_no}"

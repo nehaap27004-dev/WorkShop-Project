@@ -1,0 +1,481 @@
+{% extends 'fleet_base1.html' %}
+
+
+{% block content %}
+<style>
+    .bill-type-card {
+        cursor: pointer;
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 1.2rem 1.5rem;
+        transition: all .2s;
+        text-align: center;
+        background: #fff;
+    }
+    .bill-type-card:hover { border-color: #5A8DEE; background: #f0f4ff; }
+    .bill-type-card.active-receipt {
+        border-color: #28a745;
+        background: #f0fff4;
+    }
+    .bill-type-card.active-payment {
+        border-color: #dc3545;
+        background: #fff0f0;
+    }
+    .bill-type-card .icon { font-size: 2rem; margin-bottom: .4rem; }
+    .bill-type-card .label { font-weight: 600; font-size: .95rem; }
+    .hire-chevron { transition: transform .2s; }
+    .detail-panel { background: #f8f9fa; border-top: 1px solid #dee2e6; }
+    .cheque-badge { font-size: 11px; }
+</style>
+
+<div class="container-fluid py-3">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="mb-0 fw-bold">
+            <i class="fas fa-exchange-alt me-2 text-primary"></i>Bill by Bill Report
+        </h5>
+        <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+            <i class="fas fa-print me-1"></i>Print
+        </button>
+    </div>
+
+    <!-- Bill type selector -->
+    <div class="row g-3 mb-4 justify-content-center">
+        <div class="col-md-3">
+            <div class="bill-type-card {% if bill_type == 'receipt' %}active-receipt{% endif %}"
+                 onclick="switchBillType('receipt')">
+                <div class="icon text-success">
+                    <i class="fas fa-arrow-circle-down"></i>
+                </div>
+                <div class="label text-success">Receipt Bills</div>
+                <div class="small text-muted mt-1">Collections from customers</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="bill-type-card {% if bill_type == 'payment' %}active-payment{% endif %}"
+                 onclick="switchBillType('payment')">
+                <div class="icon text-danger">
+                    <i class="fas fa-arrow-circle-up"></i>
+                </div>
+                <div class="label text-danger">Payment Bills</div>
+                <div class="small text-muted mt-1">Payments to suppliers</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body py-3">
+            <form method="GET" id="filter-form">
+                <input type="hidden" name="bill_type" value="{{ bill_type }}">
+                <div class="row g-2 align-items-end">
+
+                    <!-- Customer (receipt) -->
+                    {% if bill_type == 'receipt' %}
+                    <div class="col-md-4">
+                        <label class="form-label small mb-1">
+                            <i class="fas fa-user me-1 text-success"></i>Customer
+                        </label>
+                        <select name="party_id" class="form-select form-select-sm">
+                            <option value="">All Customers</option>
+                            {% for c in customers %}
+                            <option value="{{ c.id }}"
+                                {% if filters.party_id == c.id|stringformat:"s" %}selected{% endif %}>
+                                {{ c.ledger_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% else %}
+                    <!-- Supplier (payment) -->
+                    <div class="col-md-4">
+                        <label class="form-label small mb-1">
+                            <i class="fas fa-truck me-1 text-danger"></i>Supplier
+                        </label>
+                        <select name="party_id" class="form-select form-select-sm">
+                            <option value="">All Suppliers</option>
+                            {% for s in suppliers %}
+                            <option value="{{ s.id }}"
+                                {% if filters.party_id == s.id|stringformat:"s" %}selected{% endif %}>
+                                {{ s.ledger_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">From Date</label>
+                        <input type="date" name="from_date"
+                               class="form-control form-control-sm"
+                               value="{{ filters.from_date }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">To Date</label>
+                        <input type="date" name="to_date"
+                               class="form-control form-control-sm"
+                               value="{{ filters.to_date }}">
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="fas fa-search me-1"></i>Search
+                        </button>
+                        <a href="?bill_type={{ bill_type }}"
+                           class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-3">
+            <div class="card text-center py-2 shadow-sm">
+                <div class="small text-muted">Total Records</div>
+                <div class="fw-bold fs-6">{{ totals.count }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center py-2 shadow-sm
+                {% if bill_type == 'receipt' %}border-success{% else %}border-danger{% endif %}">
+                <div class="small text-muted">Total Amount</div>
+                <div class="fw-bold fs-6
+                    {% if bill_type == 'receipt' %}text-success{% else %}text-danger{% endif %}">
+                    {{ totals.total_amount|floatformat:3 }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ RECEIPT TABLE ═══════════════ -->
+    {% if bill_type == 'receipt' %}
+    <div class="card shadow-sm">
+        <div class="card-header bg-light py-2">
+            <span class="fw-bold text-success">
+                <i class="fas fa-arrow-circle-down me-1"></i>Receipt Bills
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:36px"></th>
+                        <th>Trn No</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Ledger</th>
+                        <th class="text-end">Total Amount</th>
+                        <th class="text-center">PDC</th>
+                        <th>Cheque No</th>
+                        <th>Cheque Date</th>
+                        <th class="text-center">Cheque Status</th>
+                        <th>Remark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for master in receipt_masters %}
+
+                    <tr class="bill-parent"
+                        data-target="r-detail-{{ master.pk }}"
+                        style="cursor:pointer">
+                        <td class="text-center">
+                            <i class="fas fa-chevron-down hire-chevron"
+                               style="font-size:11px;color:#888"></i>
+                        </td>
+                        <td class="fw-bold text-success">{{ master.TrnNo|default:"-" }}</td>
+                        <td>{{ master.Date|date:"d-m-Y" }}</td>
+                        <td>{{ master.Customer.ledger_name|default:"-" }}</td>
+                        <td>{{ master.Ledger.ledger_name }}</td>
+                        <td class="text-end fw-bold">{{ master.TotalAmount|floatformat:3 }}</td>
+                        <td class="text-center">
+                            {% if master.IsPDC %}
+                                <span class="badge bg-warning text-dark">PDC</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ master.ChequeNo|default:"-" }}</td>
+                        <td>{{ master.ChequeDate|date:"d-m-Y"|default:"-" }}</td>
+                        <td class="text-center">
+                            {% if master.ChequeStatus == 'cleared' %}
+                                <span class="badge bg-success cheque-badge">Cleared</span>
+                            {% elif master.ChequeStatus == 'pending' %}
+                                <span class="badge bg-warning text-dark cheque-badge">Pending</span>
+                            {% elif master.ChequeStatus == 'bounced' %}
+                                <span class="badge bg-danger cheque-badge">Bounced</span>
+                            {% elif master.ChequeStatus == 'cancelled' %}
+                                <span class="badge bg-secondary cheque-badge">Cancelled</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ master.Remark|default:"-"|truncatechars:30 }}</td>
+                    </tr>
+
+                    <!-- Detail: allocated invoices -->
+                    <tr id="r-detail-{{ master.pk }}" style="display:none;">
+                        <td colspan="11" class="p-0">
+                            <div class="px-4 py-3 detail-panel">
+                                {% with lines=master.receiptbilldetails_set.all %}
+                                {% if lines %}
+                                <p class="small text-muted mb-2">
+                                    <i class="fas fa-link me-1"></i>
+                                    Allocated to {{ lines|length }} invoice{{ lines|length|pluralize }}
+                                </p>
+                                <table class="table table-sm table-bordered mb-0"
+                                       style="font-size:13px">
+                                    <thead class="table-secondary">
+                                        <tr>
+                                            <th>Voucher Type</th>
+                                            <th>Voucher No</th>
+                                            <th class="text-end">Invoice Amount</th>
+                                            <th class="text-end">Allocated Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for line in lines %}
+                                        <tr>
+                                            <td>{{ line.voucherType }}</td>
+                                            <td class="fw-bold text-primary">
+                                                {{ line.VoucherNo }}
+                                            </td>
+                                            <td class="text-end">
+                                                {{ line.CurrentAmount|floatformat:3 }}
+                                            </td>
+                                            <td class="text-end fw-bold text-success">
+                                                {{ line.Amount|floatformat:3 }}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <td colspan="3" class="text-end fw-bold small">
+                                                Total Allocated
+                                            </td>
+                                            <td class="text-end fw-bold text-success">
+                                                {{ master.TotalAmount|floatformat:3 }}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                                {% else %}
+                                <p class="small text-muted mb-0">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    No bill allocations found.
+                                </p>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                        </td>
+                    </tr>
+
+                {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center text-muted py-4">
+                            No receipt bills found for the selected filters.
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+                {% if receipt_masters %}
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td colspan="5">
+                            Total ({{ receipt_masters|length }}
+                            record{{ receipt_masters|length|pluralize }})
+                        </td>
+                        <td class="text-end text-success">
+                            {{ totals.total_amount|floatformat:3 }}
+                        </td>
+                        <td colspan="5"></td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ═══════════════ PAYMENT TABLE ═══════════════ -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light py-2">
+            <span class="fw-bold text-danger">
+                <i class="fas fa-arrow-circle-up me-1"></i>Payment Bills
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:36px"></th>
+                        <th>Trn No</th>
+                        <th>Date</th>
+                        <th>Supplier</th>
+                        <th>Ledger</th>
+                        <th class="text-end">Total Amount</th>
+                        <th class="text-center">PDC</th>
+                        <th>Cheque No</th>
+                        <th>Cheque Date</th>
+                        <th class="text-center">Cheque Status</th>
+                        <th>Remark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for master in payment_masters %}
+
+                    <tr class="bill-parent"
+                        data-target="p-detail-{{ master.pk }}"
+                        style="cursor:pointer">
+                        <td class="text-center">
+                            <i class="fas fa-chevron-down hire-chevron"
+                               style="font-size:11px;color:#888"></i>
+                        </td>
+                        <td class="fw-bold text-danger">{{ master.TrnNo|default:"-" }}</td>
+                        <td>{{ master.Date|date:"d-m-Y" }}</td>
+                        <td>{{ master.Supplier.ledger_name|default:"-" }}</td>
+                        <td>{{ master.Ledger.ledger_name }}</td>
+                        <td class="text-end fw-bold">{{ master.TotalAmount|floatformat:3 }}</td>
+                        <td class="text-center">
+                            {% if master.IsPDC %}
+                                <span class="badge bg-warning text-dark">PDC</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ master.ChequeNo|default:"-" }}</td>
+                        <td>{{ master.ChequeDate|date:"d-m-Y"|default:"-" }}</td>
+                        <td class="text-center">
+                            {% if master.ChequeStatus == 'cleared' %}
+                                <span class="badge bg-success cheque-badge">Cleared</span>
+                            {% elif master.ChequeStatus == 'pending' %}
+                                <span class="badge bg-warning text-dark cheque-badge">Pending</span>
+                            {% elif master.ChequeStatus == 'bounced' %}
+                                <span class="badge bg-danger cheque-badge">Bounced</span>
+                            {% elif master.ChequeStatus == 'cancelled' %}
+                                <span class="badge bg-secondary cheque-badge">Cancelled</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ master.Remark|default:"-"|truncatechars:30 }}</td>
+                    </tr>
+
+                    <!-- Detail: allocated hire vouchers -->
+                    <tr id="p-detail-{{ master.pk }}" style="display:none;">
+                        <td colspan="11" class="p-0">
+                            <div class="px-4 py-3 detail-panel">
+                                {% with lines=master.paymentbilldetails_set.all %}
+                                {% if lines %}
+                                <p class="small text-muted mb-2">
+                                    <i class="fas fa-link me-1"></i>
+                                    Allocated to {{ lines|length }}
+                                    voucher{{ lines|length|pluralize }}
+                                </p>
+                                <table class="table table-sm table-bordered mb-0"
+                                       style="font-size:13px">
+                                    <thead class="table-secondary">
+                                        <tr>
+                                            <th>Voucher Type</th>
+                                            <th>Voucher No</th>
+                                            <th class="text-end">Hire Amount</th>
+                                            <th class="text-end">Allocated Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for line in lines %}
+                                        <tr>
+                                            <td>{{ line.voucherType }}</td>
+                                            <td class="fw-bold text-primary">
+                                                {{ line.VoucherNo }}
+                                            </td>
+                                            <td class="text-end">
+                                                {{ line.CurrentAmount|floatformat:3 }}
+                                            </td>
+                                            <td class="text-end fw-bold text-danger">
+                                                {{ line.Amount|floatformat:3 }}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <td colspan="3"
+                                                class="text-end fw-bold small">
+                                                Total Allocated
+                                            </td>
+                                            <td class="text-end fw-bold text-danger">
+                                                {{ master.TotalAmount|floatformat:3 }}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                                {% else %}
+                                <p class="small text-muted mb-0">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    No bill allocations found.
+                                </p>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                        </td>
+                    </tr>
+
+                {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center text-muted py-4">
+                            No payment bills found for the selected filters.
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+                {% if payment_masters %}
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td colspan="5">
+                            Total ({{ payment_masters|length }}
+                            record{{ payment_masters|length|pluralize }})
+                        </td>
+                        <td class="text-end text-danger">
+                            {{ totals.total_amount|floatformat:3 }}
+                        </td>
+                        <td colspan="5"></td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+// Switch bill type — preserves date filters
+function switchBillType(type) {
+    var params = new URLSearchParams(window.location.search);
+    params.set('bill_type', type);
+    params.delete('party_id');   // reset party on switch
+    window.location.href = '?' + params.toString();
+}
+
+// Expandable rows
+document.querySelectorAll('.bill-parent').forEach(function (row) {
+    row.addEventListener('click', function () {
+        var detailRow = document.getElementById(row.dataset.target);
+        var chevron   = row.querySelector('.hire-chevron');
+        var isHidden  = detailRow.style.display === 'none';
+        detailRow.style.display = isHidden ? 'table-row' : 'none';
+        chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+        row.classList.toggle('table-active', isHidden);
+    });
+});
+</script>
+
+{% endblock %}

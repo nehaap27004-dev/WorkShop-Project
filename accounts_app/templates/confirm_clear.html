@@ -1,0 +1,21 @@
+{% extends "fleet_base1.html" %}
+{% block content %}
+<div style="max-width:420px;margin:60px auto;padding:24px;border:1px solid #e5c2c2;border-radius:8px;">
+  <h3 style="color:#b42318;">{{ title }}</h3>
+  <p>{{ warning }}</p>
+
+  {% if messages %}
+    {% for m in messages %}<div class="alert alert-{{ m.tags }}">{{ m }}</div>{% endfor %}
+  {% endif %}
+
+  <form method="post" onsubmit="return confirm('Are you absolutely sure?');">
+    {% csrf_token %}
+    <label for="password">Enter password to confirm</label>
+    <input type="password" name="password" id="password" class="form-control" required autocomplete="off">
+    <div style="margin-top:16px;display:flex;gap:8px;">
+      <button type="submit" class="btn btn-danger">Clear Data</button>
+      <a href="{% url 'fleet_app:fleet_home' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

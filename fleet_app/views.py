@@ -1,8 +1,15 @@
+from accounts_app.views import build_supplier_outstanding_data
+from accounts_app.views import build_client_outstanding_data
+from typing import Optional
+from dataclasses import dataclass
+from datetime import time
+import traceback
+from item_master.models import PurchaseDetail
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
+
 from django.http import JsonResponse
 from accounts_app.common import check_admin_override, check_privilege
-from accounts_app.models import LedgerPosting, PaymentBillMaster, ReceiptBillMaster, Groups
+from accounts_app.models import *
 from audit_app.common import log_activity
 from fleet_app.common import  *
 from fleet_app.models import *
@@ -11,7 +18,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.http import HttpResponse
-from django.forms import modelformset_factory, modelform_factory
+from django.forms import modelformset_factory
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
@@ -36,58 +43,300 @@ from num2words import num2words
 from fleet_app.reports import *
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
-from datetime import timedelta
-from django.db.models import Sum
+from datetime import timedelta, date
+from django.db.models import Sum, Q, Count
 from datetime import datetime 
 from datetime import date
 from .accounting_utils import *
+from item_master.models import Item,Stock,PurchaseMaster
+from item_master.common import to_base_qty, upsert_stock
+from collections import OrderedDict
+from asset_app.models import AssetMaster
+from item_master.common import get_ledgers_by_group_ids
+import csv
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from .models import  FleetCustomer, VehicleCategory, LicensePlateCode, Staff
-
-
 # Create your views here.
+
+#MENU ID 
+
+#TRANSACTIONS
+
+TIMESHEET_MENU_ID = 1
+SIMPLE_QUOTATION_MENU_ID = 2
+REPAIR_MENU_ID = 3 
+DELIVERY_CONTRACT_MENU_ID = 4
+OFFHIRE_MENU_ID = 5
+INVOICE_MENU_ID = 6
+FLEET_HIRE_MENU_ID = 7
+REPLACEMENT_MENU_ID = 8
+RETURN_SPAREPARTS_MENU_ID = 9
+SERVICE_DEPARTMENT_MENU_ID = 10
+
+OPENING_VOUCHER_MENU_ID = 11
+RECEIPT_MENU_ID = 12
+EXPENSE_MENU_ID = 13
+PAYMENT_MENU_ID = 14 
+JOURNAL_MENU_ID = 15
+CONTRA_MENU_ID =16
+CHEQUE_CLEARANCE_MENU_ID = 17
+LOCAL_PAYMENT_MENU_ID = 18
+
+RECEIPT_BILL_CLEARANCE_MENU_ID = 19
+PAYMENT_BILL_CLEARANCE_MENU_ID = 20
+DEBITNOTE_MENU_ID = 21
+CREDITNOTE_MENU_ID = 22
+
+
+#REPORTS PAGE
+
+LEDGERREPORT_MENU_ID = 23
+LEDGERPOSTING_MENU_ID = 24
+TRIALBALANCE_MENU_ID = 25
+PROFITLOSS_MENU_ID = 26
+BALANCESHEET_MENU_ID = 27
+CLIENTOUTSTANDING_MENU_ID = 28
+SUPPLIEROUTSTANDING_MENU_ID = 29
+BILLBYBILL_MENU_ID = 30
+OPENINGBILLS_MENU_ID = 31
+AGING_MENU_ID = 32
+
+ASSETREPORT_MENU_ID = 33
+ASSETTRACK_MENU_ID = 34
+REPAIR_MENU_ID = 35
+HIREREPORT_MENU_ID = 36
+INVOICEREPORT_MENU_ID = 37
+ASSETSTOCK_MENU_ID = 38
+ASSETMOVEMENT_MENU_ID = 39
+EQUIPMENT_MENU_ID = 40
+SCRAP_MENU_ID = 41
+
+PURCHASEREPORT_MENU_ID = 42
+STOCKREPORT_MENU_ID = 43
+CURRENTSTOCK_MENU_ID = 44
+
+
+###### MENU ID CONFIGURATION END ##########
+
+SUNDRY_DEBTOR_GROUP_ID = 29
+SUNDRY_CREDITOR_GROUP_ID = 28
 
 @login_required(login_url='accounts_app:admin_login')
 def fleet_home(request):
 
     vehicles = Vehicle.objects.all()
 
-    from jobcard_app.models import Invoice as JobCardInvoice
-    total_invoices = sum(
-        inv.get_grand_total() for inv in JobCardInvoice.objects.filter(is_active=True)
-    )
-    client_outstanding = get_group_outstanding(29)
-    supplier_outstanding = get_group_outstanding(28)
+
 
     context = {
-        'total_invoices': total_invoices,
-        'total_client_outstanding': format_dr_cr(client_outstanding),
-        'total_supplier_outstanding': format_dr_cr(supplier_outstanding),
-        'total_expense': get_group_outstanding(16),
+        'total_client_outstanding': f"{get_client_outstanding():.3f}",
+        'total_supplier_outstanding': f"{get_supplier_outstanding():.3f}",
+
+        'current_month_invoice': get_current_month_invoice_count(),
+        'current_month_delivery_contract': get_current_month_delivery_contract_count(),
+        'current_month_off_hire': get_current_month_off_hire_count(),
+        'current_month_hire': get_current_month_hire_count(),
+        'current_month_purchase': get_current_month_purchase_count(),
+        'current_month_expense': get_current_month_expense(),
+
+        'current_month_reading': get_current_month_reading_count(),
+        'current_month_repair': get_current_month_repair_count(),
+        'current_month_service': get_current_month_service_count(),
+
+        'supplier_pending_pdc': get_supplier_pending_pdc_count(),
+        'client_pending_pdc': get_client_pending_pdc_count(),
+
+        'available_fleet': get_available_fleet_count(),
+        'on_rent_fleet': get_on_rent_fleet_count(),
+        'on_service_fleet': get_on_service_fleet_count(),
+
+        'active_customers': get_active_customer_count(),
     }
 
+    value = get_client_outstanding()
+    print('CLIENT OUTSTANDING:', value)
+    context['total_client_outstanding'] = value
+
     return render(request, 'fleet_home.html', context)
-    
-def get_group_outstanding(*group_ids):
-    """
-    Returns SUM(debit - credit) for given group ids (including subgroups)
-    """
 
-    ledgers = get_ledgers_by_group_ids(*group_ids)
 
-    totals = LedgerPosting.objects.filter(
-        ledger__in=ledgers,
-        IsDeleted=False
-    ).aggregate(
-        total_debit=Sum('debit'),
-        total_credit=Sum('credit')
+
+def get_client_outstanding():
+    _, totals = build_client_outstanding_data(
+        customer_id=None, from_date=None, to_date=None
     )
+    return totals['balance_due']
 
-    total_debit = totals['total_debit'] or Decimal('0.000')
-    total_credit = totals['total_credit'] or Decimal('0.000')
+def get_supplier_outstanding():
+    _, totals = build_supplier_outstanding_data(
+        supplier_id=None, from_date=None, to_date=None
+    )
+    return totals['balance_due']
+        
+def get_current_month_invoice_count():
+    """
+    Returns the number of invoices created in the current month.
+    """
 
-    return total_debit - total_credit
+    today = timezone.now().date()
+
+    return Invoice.objects.filter(
+        date__year=today.year,
+        date__month=today.month
+    ).count()        
+
+def get_current_month_delivery_contract_count():
+    today = timezone.localdate()
+    return DeliveryContract.objects.filter(
+        date__year=today.year,
+        date__month=today.month,
+    ).count()    
+
+def get_current_month_off_hire_count():
+    today = timezone.localdate()
+    return OffHire.objects.filter(
+        date__year=today.year,
+        date__month=today.month,
+    ).count()
+
+def get_current_month_reading_count():
+    today = timezone.localdate()
+    return RepairMaster.objects.filter(
+        category__iexact='Reading',
+        date__year=today.year,
+        date__month=today.month,
+    ).count()
+
+def get_current_month_repair_count():
+    today = timezone.localdate()
+    return RepairMaster.objects.filter(
+        category__iexact='Repair',
+        date__year=today.year,
+        date__month=today.month,
+    ).count()  
+
+def get_current_month_service_count():
+    today = timezone.localdate()
+    return RepairMaster.objects.filter(
+        category__iexact='Service',
+        date__year=today.year,
+        date__month=today.month,
+    ).count()      
+
+def get_current_month_hire_count():
+    """
+    Returns the number of Hire vouchers created in the current month.
+    """
+    today = timezone.now().date()
+
+    return FleetHire.objects.filter(
+        date__year=today.year,
+        date__month=today.month
+    ).count()
+
+def get_current_month_purchase_count():
+    """
+    Returns the number of Purchase vouchers .
+    """
+    today = timezone.now().date()
+
+    return PurchaseMaster.objects.all().count()
+
+# def get_current_month_expense():
+#     """
+#     Returns total expense .
+#     Expense = Sum of debit of all ledgers under Expense group (id=1)
+#     including all child groups.
+#     """
+
+#     today = timezone.now().date()
+
+#     expense_ledgers = get_ledgers_by_group_ids(1)
+
+#     total = LedgerPosting.objects.filter(
+#         ledger__in=expense_ledgers,
+#         IsDeleted=False
+#     ).aggregate(
+#         total=Sum("debit")
+#     )["total"] or Decimal("0.000")
+
+#     return total
+
+def get_supplier_pending_pdc_count(supplier_id=None):
+    """
+    Number of pending supplier PDCs — counted per payment voucher_no, so a
+    cheque split across multiple bills counts once (same as the report rows).
+    Pass supplier_id for a single supplier; omit it for all suppliers.
+    """
+    qs = (
+        PaymentBillMaster.objects
+        .filter(IsPDC=True, Supplier__groups_id=SUNDRY_CREDITOR_GROUP_ID)
+        .exclude(ChequeStatus__in=['cancelled', 'cleared'])
+    )
+    if supplier_id:
+        qs = qs.filter(Supplier_id=supplier_id)
+    return qs.values('voucher_no').distinct().count()
+ 
+
+def get_client_pending_pdc_count(customer_id=None):
+    qs = (
+        ReceiptBillMaster.objects
+        .filter(IsPDC=True, Customer__groups_id=SUNDRY_DEBTOR_GROUP_ID)
+        .exclude(ChequeStatus__in=['cancelled', 'cleared'])
+    )
+    if customer_id:
+        qs = qs.filter(Customer_id=customer_id)
+    return qs.values('voucher_no').distinct().count()
+
+  
+def get_available_fleet_count():
+    """
+    Returns count of available (Free) vehicles.
+    """
+    return Vehicle.objects.filter(status='1').count()
+
+def get_on_rent_fleet_count():
+    """
+    Returns count of hired vehicles.
+    """
+    return Vehicle.objects.filter(status='2').count()
+
+
+def get_on_service_fleet_count():
+    """
+    Returns count of vehicles under service.
+    """
+    return Vehicle.objects.filter(status='3').count()  
+
+def get_active_customer_count():
+    """
+    Returns the number of active customers.
+    Active customer = Customer having at least one Delivery Contract.
+    """
+
+    return (
+        DeliveryContract.objects
+        .filter(customer__isnull=False)
+        .values('customer')
+        .distinct()
+        .count()
+    )          
+
+def get_expense_total(date_from, date_to, sources=None):
+    """Total amount from the Expense Report for a date range."""
+    keys = sources or list(ROW_BUILDERS.keys())
+    total = ZERO
+    for key in keys:
+        for row in ROW_BUILDERS[key](date_from, date_to):
+            total += row['amount']
+    return total
+
+
+def get_current_month_expense():
+    today = timezone.localdate()
+    return get_expense_total(today.replace(day=1), today)    
+
 
 def format_dr_cr(amount):
     """
@@ -103,12 +352,17 @@ def format_dr_cr(amount):
     else:
         return "0.000"
 
-
 @login_required(login_url='accounts_app:admin_login')
 def manufacturer_list(request):
-    manufacturers = Manufacturer.objects.select_related('vehicle_type').order_by('manufacturer_name')
-    return render(request, 'manufacturer_list.html', {'manufacturers': manufacturers})
+    manufacturers = Manufacturer.objects.select_related(
+        'vehicle_type'
+    ).order_by('manufacturer_name')
 
+    return render(
+        request,
+        'manufacturer_list.html',
+        {'manufacturers': manufacturers}
+    )
 @login_required(login_url='accounts_app:admin_login')
 def manufacturer_create(request):
     if request.method == 'POST':
@@ -797,7 +1051,7 @@ def service_vendor_list(request):
     return render(request, 'vendor_list.html', {'vendors': vendors})  
 
     
-TIMESHEET_MENU_ID = 1
+
 
 def time_sheet_view(request, timesheet_id=None):
 
@@ -901,7 +1155,7 @@ def timesheet_pdf_view(request, timesheet_id):
 @require_http_methods(["POST"])
 def timesheet_delete(request, timesheet_id):
 
-    TIMESHEET_MENU_ID = 1
+   
 
     # 🔐 CHECK DELETE PRIVILEGE
     has_permission = check_privilege(
@@ -1280,7 +1534,7 @@ def staff_manage(request, pk=None):
     else:
         form = StaffForm(instance=instance)
 
-    staffs = Staff.objects.all().select_related('staff_category').prefetch_related('skills')
+    staffs = Staff.objects.all().select_related('staff_category')
     return render(request, 'staff_manage.html', {
         'form': form,
         'staffs': staffs,
@@ -1393,9 +1647,9 @@ def document_crud_view(request, pk=None):
                 screen_name="Document",
                 action_type="UPDATE" if is_edit else "CREATE",
                 remark=(
-                    f"Document '{title}' updated"
+                    f"Document '{doc_name}' updated"
                     if is_edit else
-                    f"Document '{title}' created"
+                    f"Document '{doc_name}' created"
                 )
             )
 
@@ -1412,7 +1666,7 @@ def document_crud_view(request, pk=None):
     })
 
 
-SIMPLE_QUOTATION_MENU_ID = 2
+
 def create_simple_quotation(request, quotation_id=None):
     """
     Unified view for creating and editing quotations
@@ -1545,11 +1799,29 @@ def simple_quotation_pdf(request, quotation_id):
 
 def simple_quotation_list(request):
 
+    # 🔐 DETERMINE ACTION
+    action = "can_read"
+
+    # 🔐 CHECK PRIVILEGE
+    has_permission = check_privilege(
+        request.user,
+        SIMPLE_QUOTATION_MENU_ID,
+        action
+    )
+
+    if not has_permission:
+        is_admin_ok, msg_or_admin = check_admin_override(request)
+        if not is_admin_ok:
+            return JsonResponse({
+                "admin_required": True,
+                "message": msg_or_admin
+                }, status=403)
+
     quotations = (
         SimpleQuotation.objects
         .select_related('customer')
         .prefetch_related('details')
-        .order_by('voucher_no')
+        .order_by('-date', '-id')
     )
 
     # 📅 Dynamic single date filter
@@ -1829,8 +2101,23 @@ def simplequotation_pdf_without_header(request, pk):
 #         'is_edit_mode': invoice_id is not None,
 #     })
 
-INVOICE_MENU_ID = 5
+
 def create_invoice(request, invoice_id=None):
+
+    # 🔐 CHECK READ PRIVILEGE (blocks opening the page by URL)
+    has_permission = check_privilege(
+        request.user,
+        INVOICE_MENU_ID,
+        "can_read"
+    )
+
+    if not has_permission:
+        is_admin_ok, msg_or_admin = check_admin_override(request)
+        if not is_admin_ok:
+            return JsonResponse({
+                "admin_required": True,
+                "message": msg_or_admin
+            }, status=403)
 
     vehicles = Vehicle.objects.all().order_by('vehicle_name')
 
@@ -1867,12 +2154,30 @@ def create_invoice(request, invoice_id=None):
                     "message": msg_or_admin
                 }, status=403)
 
-        invoice_form = InvoiceForm(request.POST, instance=invoice_instance)
+        post_data = request.POST.copy()
+
+        # 🔢 CREATE MODE: ignore the voucher no shown on screen, take a fresh one
+        if not invoice_id:
+            voucher_type_id = post_data.get('voucherType')
+            if voucher_type_id:
+                try:
+                    vt = Vouchers.objects.get(pk=voucher_type_id)
+                    post_data['voucher_no'] = vt.get_next_voucher_number()
+                except Vouchers.DoesNotExist:
+                    pass
+
+        invoice_form = InvoiceForm(post_data, instance=invoice_instance)
 
         if invoice_form.is_valid():
             try:
                 with transaction.atomic():
                     invoice = invoice_form.save(commit=False)
+
+                    # 🔒 CREATE MODE: lock the voucher type row and take the final number.
+                    # A second user saving at the same moment waits here until this commits.
+                    if not invoice_id and invoice.voucherType_id:
+                        locked_vt = Vouchers.objects.select_for_update().get(pk=invoice.voucherType_id)
+                        invoice.voucher_no = locked_vt.get_next_voucher_number()
 
                     grand_total = request.POST.get('grand_total')
                     invoice.grand_total = float(grand_total) if grand_total else 0.0
@@ -1881,11 +2186,7 @@ def create_invoice(request, invoice_id=None):
                     invoice_type = request.POST.get('invoice_type', 'simple')
                     invoice.invoice_type = invoice_type
 
-                    # ✅ FIX: update cleared status when payment mode changes
-                    if invoice.payment_mode == "Cash":
-                        invoice.IsCleared = True
-                    else:
-                        invoice.IsCleared = False
+                   
 
                     invoice.save()
 
@@ -2034,7 +2335,7 @@ def create_invoice(request, invoice_id=None):
 
                 return JsonResponse({
                     "success": True,
-                    "message": "Invoice updated successfully!" if invoice_id else "Invoice created successfully!",
+                    "message": "Invoice updated successfully!" if invoice_id else f"Invoice created successfully! Voucher No: {invoice.voucher_no}",
                     "pdf_url": reverse('fleet_app:invoice_pdf', args=[invoice.id])
                 })
             
@@ -2059,6 +2360,35 @@ def create_invoice(request, invoice_id=None):
         'existing_details': existing_details,
         'is_edit_mode': invoice_id is not None,
     })
+
+def invoice_pdf(request, invoice_id):
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    return create_invoice_pdf(invoice)
+
+
+def invoice_pdf_without_header(request, pk):
+    """
+    Generate invoice PDF without header image
+    Temporarily disables enable_header flag for this view only
+    """
+    invoice = get_object_or_404(Invoice, pk=pk)
+    
+    # Store original header setting
+    original_header_setting = invoice.enable_header
+    
+    # Temporarily disable header for this PDF generation
+    invoice.enable_header = False
+     # Temporarily disable footer for this PDF generation
+    invoice.enable_footer = False
+    # Generate PDF
+    response = create_invoice_pdf(invoice)
+    
+    # Restore original setting (important: don't save to database)
+    invoice.enable_header = original_header_setting
+    
+    return response
+
+
 
 # NEW: API endpoint to get vehicle rates
 def get_vehicle_rates(request):
@@ -2104,7 +2434,7 @@ def invoice_pdf(request, invoice_id):
 
 def invoice_list(request):
 
-    invoices = Invoice.objects.all().order_by('voucher_no')
+    invoices = Invoice.objects.all().order_by('-date', '-id')
 
     # 📅 Dynamic single date filter
     selected_date = request.GET.get('date')
@@ -2364,7 +2694,7 @@ def document_delete(request, doc_id):
     return redirect("fleet_app:document_list")
 
 
-FLEET_HIRE_MENU_ID = 6
+
 def fleet_hire_create(request, hire_id=None):
 
     vehicles = Vehicle.objects.filter(is_owned=False)
@@ -2408,11 +2738,7 @@ def fleet_hire_create(request, hire_id=None):
                 with transaction.atomic():
                     fleet_hire = form.save(commit=False)
 
-                    # Update cleared status
-                    if fleet_hire.payment_mode == "Cash":
-                        fleet_hire.IsCleared = True
-                    else:
-                        fleet_hire.IsCleared = False
+                    
 
                     fleet_hire.save()
 
@@ -2587,7 +2913,7 @@ def fleet_voucher_create_update(request, pk=None):
         form = VouchersForm(request.POST, instance=voucher)
         if form.is_valid():
             form.save()
-            return redirect('fleet_app:fleet_voucher_list')
+            return redirect('fleet_app:fleet_voucher_list')  # Make sure you define this view too
     else:
         form = VouchersForm(instance=voucher)
 
@@ -2627,8 +2953,6 @@ def get_next_voucher_number_fleet(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-
-CONTRACT_MENU_ID = 3
 
 def create_fleet_contract(request, pk=None):
 
@@ -2700,8 +3024,7 @@ def fleet_contract_list(request):
 @require_http_methods(["POST"])
 def fleet_contract_delete(request, pk):
 
-    CONTRACT_MENU_ID = 3
-
+    
     # 🔐 CHECK DELETE PRIVILEGE
     has_permission = check_privilege(
         request.user,
@@ -3330,7 +3653,7 @@ def vehicle_profit_loss_detail(request, vehicle_id):
     
     return render(request, 'vehicle_profit_loss_detail.html', context)
 
-DELIVERY_CONTRACT_MENU_ID = 12  # Update this based on your menu structure
+ 
 
 def create_delivery_contract(request, contract_id=None):
     """
@@ -3338,15 +3661,20 @@ def create_delivery_contract(request, contract_id=None):
     Similar to Invoice but without ledger posting
     """
     vehicles = Vehicle.objects.filter(status='1').order_by('vehicle_name')
+    item_groups = ItemGroup.objects.all().order_by('group_code')  
     
     contract_instance = None
     existing_details = []
+    existing_spare_parts = []  
     
     if contract_id:
         contract_instance = get_object_or_404(DeliveryContract, id=contract_id)
         existing_details = DeliveryContractDetails.objects.filter(
             delivery_contract=contract_instance
         ).select_related('vehicle')
+        existing_spare_parts = DeliveryContractSpareParts.objects.filter(   # NEW
+            delivery_contract=contract_instance
+        ).select_related('item_group', 'sparepart')
     
     if request.method == 'POST':
         action = "can_edit" if contract_id else "can_add"
@@ -3408,33 +3736,32 @@ def create_delivery_contract(request, contract_id=None):
                     for detail_str in details_data:
                         # Parse detail string based on contract type
                         if contract_type == 'complex':
-                            # Format: vehicle_id|location|period|quantity|unit_rate|tax|from_date|to_date|vehicle_model|description
+                            # Format: vehicle_id|period|quantity|unit_rate|tax|from_date|to_date|vehicle_model|description
                             parts = detail_str.split('|')
                             vehicle_id = parts[0]
-                            location = parts[1]
-                            period = parts[2]
-                            quantity = float(parts[3])
-                            unit_rate = float(parts[4])
-                            tax = float(parts[5])
+                            period = parts[1]
+                            quantity = float(parts[2])
+                            unit_rate = float(parts[3])
+                            tax = float(parts[4])
                             
                             # Handle optional dates
                             from_date = None
                             to_date = None
                             
-                            if len(parts) > 6 and parts[6] and parts[6].strip():
+                            if len(parts) > 5 and parts[5] and parts[5].strip():
                                 try:
-                                    from_date = parts[6]
+                                    from_date = parts[5]
                                 except:
                                     from_date = None
                             
-                            if len(parts) > 7 and parts[7] and parts[7].strip():
+                            if len(parts) > 6 and parts[6] and parts[6].strip():
                                 try:
-                                    to_date = parts[7]
+                                    to_date = parts[6]
                                 except:
                                     to_date = None
                             
-                            vehicle_model_val = parts[8] if len(parts) > 8 else ''
-                            description_val = parts[9] if len(parts) > 9 else ''
+                            vehicle_model_val = parts[7] if len(parts) > 7 else ''
+                            description_val = parts[8] if len(parts) > 8 else ''
                             
                             # Calculate amount from quantity × unit_rate
                             amount = quantity * unit_rate
@@ -3450,7 +3777,6 @@ def create_delivery_contract(request, contract_id=None):
                                 vehicle=vehicle,
                                 vehicle_model=vehicle_model_val,
                                 description=description_val,
-                                location=location,
                                 amount=amount,
                                 tax=tax,
                                 tax_amount=tax_amount,
@@ -3466,11 +3792,10 @@ def create_delivery_contract(request, contract_id=None):
                             # Simple contract format: vehicle_id|location|amount|tax|vehicle_model|description
                             parts = detail_str.split('|')
                             vehicle_id = parts[0]
-                            location = parts[1]
-                            amount = float(parts[2])
-                            tax = float(parts[3])
-                            vehicle_model_val = parts[4] if len(parts) > 4 else ''
-                            description_val = parts[5] if len(parts) > 5 else ''
+                            amount = float(parts[1])
+                            tax = float(parts[2])
+                            vehicle_model_val = parts[3] if len(parts) > 3 else ''
+                            description_val = parts[4] if len(parts) > 4 else ''
                             vehicle = Vehicle.objects.get(id=vehicle_id)
                             vehicles_to_hire.append(vehicle)
                             
@@ -3495,6 +3820,13 @@ def create_delivery_contract(request, contract_id=None):
                         vehicle.status = '2'  # '2' = Hired
                         vehicle.save()
                     
+                    # Spare parts — optional, doesn't affect the required-details check above
+                    spare_parts_data = request.POST.getlist('spareparts[]')
+                    save_delivery_contract_spare_parts(
+                        contract,
+                        spare_parts_data,
+                        is_edit=bool(contract_id)
+                    )
                    
                     
                    
@@ -3538,10 +3870,52 @@ def create_delivery_contract(request, contract_id=None):
     return render(request, 'create_delivery_contract.html', {
         'contract_form': contract_form,
         'vehicles': vehicles,
+        'item_groups': item_groups, 
         'contract_instance': contract_instance,
         'existing_details': existing_details,
+        'existing_spare_parts': existing_spare_parts,
         'is_edit_mode': contract_id is not None,
     })
+
+def save_delivery_contract_spare_parts(contract, spare_parts_data, is_edit=False):
+    """
+    Create DeliveryContractSpareParts rows for a contract.
+    Spare parts are optional — called with an empty list is a safe no-op,
+    so it never blocks contract creation/update.
+
+    Each entry in spare_parts_data is a pipe-delimited string:
+        item_group_id|sparepart_id|part_no|quantity|rate|warranty|condition
+    """
+    if is_edit:
+        DeliveryContractSpareParts.objects.filter(delivery_contract=contract).delete()
+
+    if not spare_parts_data:
+        return
+
+    for part_str in spare_parts_data:
+        parts = part_str.split('|')
+        if len(parts) < 7:
+            continue  # skip a malformed row rather than failing the whole save
+
+        item_group_id = parts[0] or None
+        sparepart_id = parts[1] or None
+        part_no = parts[2]
+        quantity = float(parts[3]) if parts[3] else 0
+        rate = float(parts[4]) if parts[4] else 0
+        warranty = parts[5].lower() == 'true'
+        condition = parts[6] if parts[6] in ('Good', 'Damage') else 'Good'
+
+        DeliveryContractSpareParts.objects.create(
+            delivery_contract=contract,
+            item_group_id=item_group_id,
+            sparepart_id=sparepart_id,
+            part_no=part_no,
+            quantity=quantity,
+            rate=rate,
+            amount=quantity * rate,
+            warranty=warranty,
+            condition=condition,
+        )    
 
 def delivery_contract_pdf(request, contract_id):
     """
@@ -3625,6 +3999,7 @@ def get_delivery_contract_details(request):
             # ✅ NEW: Contract header fields to auto-fill Invoice
             'supplier_ref':    contract.supplier_ref or '',
             'hire_contract_no': contract.voucher_no or '',
+            'lpo_date': contract.lpo_date.strftime('%Y-%m-%d') if contract.lpo_date else '',
             'location':        contract.location or '',
             'buyer_order_no':  contract.buyer_order_no or '',
             'other_ref':       contract.ref_no or '',
@@ -3678,6 +4053,7 @@ def get_customer_contracts(request):
                 'voucher_no': contract.voucher_no,
                 'date': contract.date.strftime('%d-%m-%Y'),
                 'hire_contract_no': contract.hire_contract_no or '',
+                'lpo_date':contract.lpo_date.strftime('%d/%m/%Y') if contract.lpo_date else '',
                 'uncleared_count': uncleared_count,
                 'total_count': total_count,
             })
@@ -3772,7 +4148,7 @@ def delete_delivery_contract(request, contract_id):
         "message": "Invalid request method"
     }, status=405)
 
-OFFHIRE_MENU_ID = 13  # Update this based on your menu structure
+  
 
 
 def create_offhire(request, offhire_id=None):
@@ -3890,7 +4266,7 @@ def create_offhire(request, offhire_id=None):
                     
                     # Update vehicle status to 'Free' for all offhired vehicles
                     for vehicle in vehicles_to_free:
-                        vehicle.status = '1'  # '1' = Free
+                        vehicle.status = '3'  # '3' = Service
                         vehicle.save()
                     
                 # ✅ AUDIT LOG
@@ -3908,7 +4284,7 @@ def create_offhire(request, offhire_id=None):
                 return JsonResponse({
                     "success": True,
                     "message": "OffHire updated successfully!" if offhire_id else "OffHire created successfully!",
-                    # "pdf_url": reverse('fleet_app:offhire_pdf', args=[offhire.id])  # Add if you have PDF generation
+                    "pdf_url": reverse('fleet_app:offhire_pdf', args=[offhire.id])
                 })
             
             except Exception as e:
@@ -3933,6 +4309,11 @@ def create_offhire(request, offhire_id=None):
         'is_edit_mode': offhire_id is not None,
     })
 
+def offhire_pdf(request, offhire_id):
+    offhire = get_object_or_404(OffHire, id=offhire_id)
+    return create_offhire_pdf(offhire)
+
+    
 def get_customer_delivery_contracts_offhire(request):
     """
     AJAX endpoint to get delivery contracts for a customer
@@ -4141,23 +4522,31 @@ def asset_report(request):
     in_service  = all_vehicles.filter(status='3').count()
     
     # ========== ACTIVE CONTRACT LOOKUP ==========
-    # For every vehicle currently on rent, grab the latest uncleared contract detail
-    # so we can show its location and customer.
+    # For every vehicle currently on rent (vehicle.status == '2'), grab its
+    # latest DeliveryContractDetails row so we can show location and customer.
+    #
+    # NOTE: We do NOT filter on IsCleared here. IsCleared (on both
+    # DeliveryContractDetails and DeliveryContract) tracks invoicing status,
+    # not whether the vehicle has been returned. A vehicle can be fully
+    # invoiced while still out on site. The only thing that actually frees
+    # a vehicle is create_offhire(), which sets vehicle.status = '1' and
+    # never touches IsCleared. So vehicle.status is the single source of
+    # truth for on-rent/available, and we just need each on-rent vehicle's
+    # most recent contract detail row for location/client display.
     active_details = (
         DeliveryContractDetails.objects
-        .filter(IsCleared=False, delivery_contract__IsCleared=False)
         .select_related('vehicle', 'delivery_contract', 'delivery_contract__customer')
         .order_by('vehicle_id', '-delivery_contract__date')   # latest contract first
     )
 
-    # Build a dict: vehicle_id → (location, customer_name)
+    # Build a dict: vehicle_id → {location, client}
     vehicle_contract_map = {}
     for d in active_details:
         vid = d.vehicle_id
-        if vid not in vehicle_contract_map:          # keep only the latest
+        if vid not in vehicle_contract_map:          # keep only the latest per vehicle
             customer = d.delivery_contract.customer
             vehicle_contract_map[vid] = {
-                'location': d.location or d.delivery_contract.location or '',
+                'location': d.delivery_contract.location or '',
                 'client':   str(customer) if customer else '',
             }
     
@@ -4360,6 +4749,9 @@ def get_ledgers_by_group(request):
     except ValueError:
         return JsonResponse({"ledgers": []})
         
+
+
+
 # Balance Sheet
 # ── Fixed sections in display order ───────────────────────────────────────────
 # side: 'asset' or 'liability' — determines which column the amount appears in
@@ -4379,20 +4771,66 @@ SECTIONS = [
 ]
 
 
+
 def _display_balance(net, is_asset, led_type):
-    """
-    Determine the display value for a ledger inside a balance-sheet section.
 
-    Asset sections        → always positive (abs)
-    Liability CR ledger   → positive  (increases the liability)
-    Liability DR ledger   → negative  (reduces  the liability, e.g. drawings/payments)
-    """
     if is_asset:
-        return abs(net)
-    if led_type == 'DR':
-        return -abs(net)
-    return net
+        if led_type == 'DR':
+            return net
+        else:
+            return -net
 
+    if led_type == 'CR':
+        return net
+    else:
+        return -net
+
+def build_group_tree(group, ledger_balance, is_asset, level=0):
+    total = Decimal("0")
+
+    ledgers = []
+    children = []
+
+    # Direct ledgers
+    for led in LedgerCreation.objects.filter(groups=group).order_by("ledger_name"):
+
+        net = calc_balance(led, ledger_balance)
+
+        if net != Decimal("0"):
+            bal = _display_balance(net, is_asset, led.types)
+
+            ledgers.append({
+                "ledger": led,
+                "balance": bal,
+            })
+
+            total += bal
+
+    # Child groups
+    for child in Groups.objects.filter(groupId=group).order_by("groupName"):
+
+        child_data = build_group_tree(
+            child,
+            ledger_balance,
+            is_asset,
+            level + 1,
+        )
+
+        if (  
+            child_data["ledgers"] or
+            child_data["children"]
+        ):
+            children.append(child_data)
+
+        total += child_data["total"]
+
+    return {
+        "group": group,
+        "ledgers": ledgers,
+        "children": children,
+        "total": total,
+        "level": level,
+    }
 
 def _build_bs_sections(ledger_balance):
     """
@@ -4413,39 +4851,92 @@ def _build_bs_sections(ledger_balance):
 
         # Direct ledgers under the parent group
         direct_ledgers = []
-        for led in LedgerCreation.objects.filter(groups=parent_group).order_by('ledger_name'):
-            net = calc_balance(led, ledger_balance)
-            if net != Decimal('0'):
-                display_bal = _display_balance(net, is_asset, led.types)
-                direct_ledgers.append({'ledger': led, 'balance': display_bal})
-                section_total += display_bal
+        asset_category_groups = OrderedDict()
+        if sec["group_id"] != 15:
 
-        # Child groups
-        for grp in Groups.objects.filter(groupId=parent_group).order_by('groupName'):
-            grp_total = Decimal('0')
-            ledgers   = []
-            for led in LedgerCreation.objects.filter(groups=grp).order_by('ledger_name'):
+            for led in LedgerCreation.objects.filter(groups=parent_group).order_by("ledger_name"):
+
                 net = calc_balance(led, ledger_balance)
-                if net != Decimal('0'):
-                    display_bal = _display_balance(net, is_asset, led.types)
-                    ledgers.append({'ledger': led, 'balance': display_bal})
-                    grp_total += display_bal
-            if grp_total != Decimal('0'):
-                groups_data.append({
-                    'group':   grp,
-                    'ledgers': ledgers,
-                    'total':   grp_total,
-                })
-                section_total += grp_total
 
-        if section_total != Decimal('0') or sec['name'] == CAPITAL_SECTION_NAME:
+                if net != Decimal("0"):
+                    display_bal = _display_balance(net, is_asset, led.types)
+
+                    direct_ledgers.append({
+                        "ledger": led,
+                        "balance": display_bal,
+                    })
+
+                    section_total += display_bal
+
+        else:
+
+            for led in LedgerCreation.objects.filter(groups=parent_group).order_by("ledger_name"):
+
+                net = calc_balance(led, ledger_balance)
+
+                if net == Decimal("0"):
+                    continue
+
+                display_bal = _display_balance(net, is_asset, led.types)
+
+                asset = AssetMaster.objects.filter(
+                    ledger=led
+                ).select_related("assetType__asset_category").first()
+
+                if asset and asset.assetType:
+                    asset_type = asset.assetType.name
+                    asset_category = (
+                        asset.assetType.asset_category.name
+                        if asset.assetType.asset_category else "Others"
+                    )
+                else:
+                    asset_type = "Others"
+                    asset_category = "Others"
+
+                cat_bucket = asset_category_groups.setdefault(
+                    asset_category, {"asset_types": OrderedDict(), "total": Decimal("0")}
+                )
+                type_bucket = cat_bucket["asset_types"].setdefault(
+                    asset_type, {"ledgers": [], "total": Decimal("0")}
+                )
+
+                type_bucket["ledgers"].append({
+                    "ledger": led,
+                    "balance": display_bal,
+                    "asset": asset,
+                })
+                type_bucket["total"] += display_bal
+                cat_bucket["total"]  += display_bal
+
+                section_total += display_bal         
+
+        
+        # Child groups (Recursive)
+        for grp in Groups.objects.filter(groupId=parent_group).order_by("groupName"):
+
+            node = build_group_tree(
+                grp,
+                ledger_balance,
+                is_asset,
+            )
+
+            if (
+                node["ledgers"] or
+                node["children"]
+            ):
+                groups_data.append(node)
+                section_total += node["total"]
+
+        has_data = bool(direct_ledgers) or bool(groups_data) or bool(asset_category_groups)
+
+        if has_data or sec['name'] == CAPITAL_SECTION_NAME:
             result.append({
                 'name':              sec['name'],
                 'side':              sec['side'],
                 'direct_ledgers':    direct_ledgers,
+                "asset_category_groups": asset_category_groups,
                 'groups':            groups_data,
                 'total':             section_total,
-                # P&L injection fields (populated below for Capital section only)
                 'has_pl':            False,
                 'pl_label':          '',
                 'pl_amount':         Decimal('0'),
@@ -4475,6 +4966,8 @@ def balance_sheet(request):
 
     # ── ONE shared DB query covers all ledger movements ───────────────────────
     ledger_balance = get_ledger_balances(from_date_obj, to_date_obj)
+
+
 
     # ── Build all balance-sheet sections ──────────────────────────────────────
     sections = _build_bs_sections(ledger_balance)
@@ -4745,7 +5238,7 @@ def po_edit(request, pk):
 
 
 # ─────────────────────────────────────────────
-# DELETE  (POST only, no separate page)
+# DELETE  
 # ─────────────────────────────────────────────
 def po_delete(request, pk):
     if request.method == 'POST':
@@ -4763,113 +5256,2723 @@ def po_pdf(request, pk):
     po = get_object_or_404(POMaster.objects.select_related('supplier'), pk=pk)
     return create_po_pdf(po)
 
+# ─────────────────────────────────────────────
+#  Create / Edit
+# ─────────────────────────────────────────────
+def repair_save(request, pk=None):
+    instance = get_object_or_404(RepairMaster, pk=pk) if pk else None
+    spare_rows, labour_rows = [], []
+ 
+    if request.method == 'POST':
+        form        = RepairMasterForm(request.POST, instance=instance)
+        spare_json  = request.POST.get('spare_parts_json', '[]')
+        labour_json = request.POST.get('labour_charges_json', '[]')
+ 
+        try:
+            spare_rows = json.loads(spare_json)
+        except (json.JSONDecodeError, ValueError):
+            spare_rows = []
+        try:
+            labour_rows = json.loads(labour_json)
+        except (json.JSONDecodeError, ValueError):
+            labour_rows = []
+ 
+        if form.is_valid():
+            is_edit = instance is not None
+            old_repair = instance
 
+            repair      = form.save(commit=False)
+            repair_type = repair.repair_type
+ 
+            if repair_type == 'In-House':
+                sp_total = sum(Decimal(str(r.get('amount', 0))) for r in spare_rows)
+                lc_total = sum(Decimal(str(r.get('amount', 0))) for r in labour_rows)
+                subtotal = sp_total + lc_total
+                discount = repair.discount or Decimal('0')
+                vat_amt = repair.vat or Decimal('0')
+                grand    = subtotal - discount + vat_amt
+ 
+                repair.spareparts_total   = sp_total
+                repair.labourcharge_total = lc_total
+                repair.subtotal           = subtotal
+                repair.vat                = vat_amt
+                repair.grand_total        = grand
+ 
+                # Clear outsourced-only fields
+                repair.supplier     = None
+                repair.payment_mode = None
+                repair.description  = None
+ 
+            repair.save()
 
-'''
-def vehicle_master_list(request):
-    vehicles  = VehicleMaster.objects.select_related('customer').all()
-    customers = FleetCustomer.objects.all()
-    selected_customer = request.GET.get('customer_id')
+            # ---------------------------------
+            # 🔁 1. REVERSE OLD STOCK (EDIT ONLY)
+            # ---------------------------------
+            if is_edit and old_repair.repair_type == 'In-House':
+                    old_parts = old_repair.spare_parts.all()
 
-    if selected_customer:
-        vehicles = vehicles.filter(customer_id=selected_customer)
+                    for sp in old_parts:
+                        item = Item.objects.get(id=sp.sparepart_id)
 
-    return render(request, 'fleet_app/vehicle_master_list.html', {
-        'vehicles':         vehicles,
-        'customers':        customers,
-        'selected_customer': selected_customer,
+                        base_qty = to_base_qty(item, None, sp.quantity) * Decimal(1)
+
+                        upsert_stock(
+                            item=item,
+                            batch_id=None,
+                            base_unit_id=item.item_unit_id,
+                            base_qty_delta=base_qty,
+                            rate=sp.rate,
+                            voucher_date=repair.date,
+                            voucher_type=repair.voucherType,
+                            voucher_id=repair.id,
+                            cost_center=repair.cost_center,
+                        )
+            # ---------------------------------
+            # 2. DELETE OLD ROWS
+            # ---------------------------------
+            repair.spare_parts.all().delete()
+            repair.labour_charges.all().delete()
+
+            # ---------------------------------
+            #   3. CREATE NEW ROWS
+            # ---------------------------------
+            new_parts = []
+
+            if repair_type == 'In-House':
+                for r in spare_rows:
+                    sp = SpareParts.objects.create(
+                        repair=repair,
+                        item_group_id=r['item_group_id'],  
+                        sparepart_id=r['sparepart_id'],
+                        part_no=r.get('part_no', ''),
+                        quantity=Decimal(str(r['quantity'])),
+                        rate=Decimal(str(r['rate'])),
+                        amount=Decimal(str(r['amount'])),
+                        warranty=bool(r.get('warranty', False)),
+                    )
+                    new_parts.append(sp)
+
+                for r in labour_rows:
+                    LabourCharge.objects.create(
+                        repair=repair,
+                        description=r['description'],
+                        hour=Decimal(str(r['hour'])),
+                        rate=Decimal(str(r['rate'])),
+                        amount=Decimal(str(r['amount'])),
+                    )
+            # ---------------------------------
+            #  APPLY NEW STOCK (IN-HOUSE)
+            # ---------------------------------    
+            if repair_type == 'In-House':
+                    for sp in new_parts:
+                        item = Item.objects.get(id=sp.sparepart_id)
+
+                        # OUT → reduce stock
+                        base_qty = to_base_qty(item, None, sp.quantity) * Decimal(-1)
+
+                        upsert_stock(
+                            item=item,
+                            batch_id=None,
+                            base_unit_id=item.item_unit_id,
+                            base_qty_delta=base_qty,
+                            rate=sp.rate,
+                            voucher_date=repair.date,
+                            voucher_type=repair.voucherType,
+                            voucher_id=repair.id,
+                            cost_center=repair.cost_center,
+                        )     
+ 
+            messages.success(request,
+                f"Repair voucher {'updated' if pk else 'created'} successfully.")
+            return redirect('fleet_app:repair_list')
+ 
+        # form.is_valid() failed — fall through to re-render with errors + JSON rows
+ 
+    else:  # GET
+        form = RepairMasterForm(instance=instance)
+ 
+        if instance:
+            for sp in instance.spare_parts.select_related('sparepart').all():
+                spare_rows.append({
+                    'item_group_id': sp.item_group_id,
+                    'item_group_name': str(sp.item_group),
+                    'sparepart_id':   sp.sparepart_id,
+                    'sparepart_name': str(sp.sparepart),
+                    'part_no':        sp.part_no or '',
+                    'quantity':       str(sp.quantity),
+                    'rate':           str(sp.rate),
+                    'amount':         str(sp.amount),
+                    'warranty':       sp.warranty,
+                })
+            for lc in instance.labour_charges.all():
+                labour_rows.append({
+                    'description': lc.description,
+                    'hour':        str(lc.hour),
+                    'rate':        str(lc.rate),
+                    'amount':      str(lc.amount),
+                })
+
+    status_counts, total_in_service = get_service_status_counts()            
+ 
+    return render(request, 'repair_form.html', {
+        'form':             form,
+        'spare_form':       SparePartsForm(),
+        'labour_form':      LabourChargeForm(),
+        'instance':         instance,
+        'is_edit_mode':     pk is not None,
+        'spare_rows_json':  json.dumps(spare_rows),
+        'labour_rows_json': json.dumps(labour_rows),
+        'page_title':       'Edit Repair Voucher' if pk else 'New Repair Voucher',
+        
+        'status_counts':    status_counts,      
+        'total_in_service': total_in_service,
     })
+ 
 
-
-def vehicle_master_create(request):
-    customers   = FleetCustomer.objects.all()
-    categories  = VehicleCategory.objects.all()
-    plate_codes = LicensePlateCode.objects.all()
+# ─────────────────────────────────────────────
+#  Delete
+# ─────────────────────────────────────────────
+def repair_delete(request, pk):
+    repair = get_object_or_404(RepairMaster, pk=pk)
 
     if request.method == 'POST':
-        customer_id          = request.POST.get('customer')
-        vehicle_name         = request.POST.get('vehicle_name')
-        license_plate_code   = request.POST.get('license_plate_code')
-        license_plate_number = request.POST.get('license_plate_number')
-        vehicle_driver       = request.POST.get('vehicle_driver', '')
-        vehicle_category     = request.POST.get('vehicle_category', '')
-        RC_number            = request.POST.get('RC_number', '')
-        contract_no          = request.POST.get('contract_no', '')
-        contract_start_date  = request.POST.get('contract_start_date', '')
-        contract_end_date    = request.POST.get('contract_end_date', '')
+        try:
+            with transaction.atomic():
 
-        customer = get_object_or_404(FleetCustomer, id=customer_id)
+                # ---------------------------------
+                # 🔁 REVERSE STOCK
+                # ---------------------------------
+                if repair.repair_type == 'In-House':
+                    parts = repair.spare_parts.all()
 
-        vehicle = VehicleMaster(
-            customer             = customer,
-            vehicle_name         = vehicle_name,
-            license_plate_code   = license_plate_code,
-            license_plate_number = license_plate_number,
-            vehicle_driver       = vehicle_driver,
-            vehicle_category     = vehicle_category,
-            RC_number            = RC_number,
-            contract_no          = contract_no,
-            contract_start_date  = contract_start_date,
-            contract_end_date    = contract_end_date,
-            customer_name        = customer.customer_name,
+                    for sp in parts:
+                        item = Item.objects.get(id=sp.sparepart_id)
+
+                        base_qty = to_base_qty(item, None, sp.quantity) * Decimal(1)
+
+                        upsert_stock(
+                            item=item,
+                            batch_id=None,
+                            base_unit_id=item.item_unit_id,
+                            base_qty_delta=base_qty,
+                            rate=sp.rate,
+                            voucher_date=repair.date,
+                            voucher_type=repair.voucherType,
+                            voucher_id=repair.id,
+                            cost_center=repair.cost_center,
+                        )
+
+                # ---------------------------------
+                # DELETE
+                # ---------------------------------
+                repair.delete()
+
+                messages.success(request, 'Repair voucher deleted successfully.')
+
+        except Exception as e:
+            messages.error(request, f"❌ Error: {str(e)}")
+
+    return redirect('fleet_app:repair_list')
+
+# ─────────────────────────────────────────────
+#  List
+# ─────────────────────────────────────────────
+def repair_list(request):
+    repairs = RepairMaster.objects.select_related(
+        'vehicle', 'voucherType'
+    ).order_by('-date', '-id')
+    return render(request, 'repair_list.html', {
+        'repairs':    repairs,
+        'page_title': 'Repair Vouchers',
+    })
+ 
+ 
+
+ 
+ 
+
+
+
+
+def repair_maintenance_report(request):
+    """
+    Repair & Maintenance Report – filterable list with per-bill drill-down.
+    """
+    # ── Filter params ──────────────────────────────────────────────────────
+    date_from   = request.GET.get('date_from', '')
+    date_to     = request.GET.get('date_to', '')
+    category    = request.GET.get('category', '')
+    repair_type = request.GET.get('repair_type', '')
+    vehicle_id  = request.GET.get('vehicle', '')
+    voucher_no  = request.GET.get('voucher_no', '')
+
+    qs = RepairMaster.objects.select_related(
+        'vehicle', 'supplier', 'client'
+    ).prefetch_related(
+        'spare_parts__sparepart',
+        'labour_charges'
+    ).order_by('-date', '-id')
+
+    if date_from:
+        qs = qs.filter(date__gte=date_from)
+    if date_to:
+        qs = qs.filter(date__lte=date_to)
+    if category:
+        qs = qs.filter(category=category)
+    if repair_type:
+        qs = qs.filter(repair_type=repair_type)
+    if vehicle_id:
+        qs = qs.filter(vehicle_id=vehicle_id)
+    if voucher_no:
+        qs = qs.filter(voucher_no__icontains=voucher_no)
+
+    # ── Summary totals ─────────────────────────────────────────────────────
+    totals = qs.aggregate(
+        total_spareparts   = Sum('spareparts_total'),
+        total_labour       = Sum('labourcharge_total'),
+        total_grand        = Sum('grand_total'),
+    )
+
+    # ── Force queryset evaluation ────────────────────────────────────────
+    repairs = list(qs)
+
+    # ── Compute service_interval_hr per equipment ──────────────────────────
+    # Rule: for each vehicle, sorted chronologically (oldest → newest),
+    # interval = this bill's current_hr − previous bill's current_hr.
+    # The oldest bill for that vehicle has no prior reference → interval 0.
+    from collections import defaultdict
+
+    vehicle_groups = defaultdict(list)
+    for repair in repairs:
+        vehicle_groups[repair.vehicle_id].append(repair)
+
+    for vid, group in vehicle_groups.items():
+        # oldest first; use id as tiebreaker for same-date bills
+        group_sorted = sorted(group, key=lambda r: (r.date, r.id))
+        prev_current_hr = None
+        for r in group_sorted:
+            if prev_current_hr is not None and r.current_hr is not None:
+                r.service_interval_hr = r.current_hr - prev_current_hr
+            else:
+                r.service_interval_hr = 0
+            if r.current_hr is not None:
+                prev_current_hr = r.current_hr
+
+    # NOTE: repairs list still holds the same objects, so it stays sorted
+    # by -date, -id for display (only the objects' service_interval_hr
+    # attribute was mutated above).
+
+    # ── Vehicle list for filter dropdown ──────────────────────────────────
+    from fleet_app.models import Vehicle
+    vehicles = Vehicle.objects.filter(is_active=True).order_by('vehicle_name') \
+                if hasattr(Vehicle, 'is_active') \
+                else Vehicle.objects.order_by('vehicle_name')
+
+    context = {
+        'repairs'      : repairs,   # now a list with service_interval_hr attached
+        'totals'       : totals,
+        'vehicles'     : vehicles,
+
+        # pass filter values back so form stays filled
+        'f_date_from'   : date_from,
+        'f_date_to'     : date_to,
+        'f_category'    : category,
+        'f_repair_type' : repair_type,
+        'f_vehicle'     : vehicle_id,
+        'f_voucher_no'  : voucher_no,
+
+        # choices for dropdowns
+        'category_choices'    : RepairMaster.CATEGORY_CHOICES,
+        'repair_type_choices' : RepairMaster.REPAIR_TYPE_CHOICES,
+    }
+    return render(request, 'repair_maintenance_report.html', context)
+     
+def repair_detail_ajax(request, pk):
+    """
+    Returns full detail of a single RepairMaster as JSON for the
+    inline drill-down row (called via fetch/AJAX on row-click).
+    """
+    try:
+        repair = RepairMaster.objects.select_related(
+            'vehicle', 'supplier', 'client', 'voucherType'
+        ).prefetch_related(
+            'spare_parts__sparepart',
+            'labour_charges'
+        ).get(pk=pk)
+    except RepairMaster.DoesNotExist:
+        return JsonResponse({'error': 'Not found'}, status=404)
+ 
+    spare_parts = [
+        {
+            'sparepart' : str(sp.sparepart),
+            'part_no'   : sp.part_no,
+            'quantity'  : float(sp.quantity),
+            'rate'      : float(sp.rate),
+            'amount'    : float(sp.amount),
+            'warranty'  : sp.warranty,
+        }
+        for sp in repair.spare_parts.all()
+    ]
+ 
+    labour_charges = [
+        {
+            'description' : lc.description,
+            'hour'        : float(lc.hour),
+            'rate'        : float(lc.rate),
+            'amount'      : float(lc.amount),
+        }
+        for lc in repair.labour_charges.all()
+    ]
+ 
+    data = {
+        'id'                : repair.pk,
+        'voucher_no'        : repair.voucher_no,
+        'date'              : repair.date.strftime('%d-%m-%Y'),
+        'vehicle'           : str(repair.vehicle),
+        'category'          : repair.category or '–',
+        'repair_type'       : repair.repair_type,
+        'payment_mode'      : repair.payment_mode or '–',
+        'supplier'          : str(repair.supplier) if repair.supplier else '–',
+        'client'            : str(repair.client)   if repair.client   else '–',
+        'mechanic'          : repair.mechanic      or '–',
+        'location'          : repair.location      or '–',
+        'description'       : repair.description   or '–',
+        'invoice_no'        : repair.invoice_no    or '–',
+        'invoice_date'      : repair.invoice_date.strftime('%d-%m-%Y') if repair.invoice_date else '–',
+        'current_km'        : float(repair.current_km),
+        'next_service_km'   : float(repair.next_service_km),
+        'current_hr'        : float(repair.current_hr),
+        'next_service_hr'   : float(repair.next_service_hr),
+        'staff'             : str(repair.staff),
+        'remark'            : repair.remark,
+        'spareparts_total'  : float(repair.spareparts_total),
+        'labourcharge_total': float(repair.labourcharge_total),
+        'subtotal'          : float(repair.subtotal),
+        'discount'          : float(repair.discount),
+        'vat'               : float(repair.vat),
+        'grand_total'       : float(repair.grand_total),
+        'spare_parts'       : spare_parts,
+        'labour_charges'    : labour_charges,
+    }
+    return JsonResponse(data)
+
+
+from django.db.models import Prefetch
+
+def asset_track_report(request):
+    vehicle_id = request.GET.get('vehicle_id', '')
+    date_from  = request.GET.get('date_from', '')
+    date_to    = request.GET.get('date_to', '')
+    sort_by    = request.GET.get('sort_by', 'date_desc')
+
+    rows = []
+
+    # ─────────────────────────────────────────────────
+    # 1. ASSET PURCHASE (Voucher Type 17) — Expense
+    # ─────────────────────────────────────────────────
+    purchases = AssetPurchase.objects.prefetch_related(
+        Prefetch('details', queryset=AssetPurchaseDetails.objects.select_related('asset'))
+    )
+    if date_from:
+        purchases = purchases.filter(date__gte=date_from)
+    if date_to:
+        purchases = purchases.filter(date__lte=date_to)
+
+    # Build a lookup: ledger_id → vehicle (via AssetMaster)
+    asset_master_map = {
+        am.ledger_id: am.vehicle
+        for am in AssetMaster.objects.select_related('vehicle').filter(vehicle__isnull=False)
+    }
+
+    for purchase in purchases:
+        for detail in purchase.details.all():
+            vehicle = asset_master_map.get(detail.asset_id)
+
+            if vehicle_id and (not vehicle or str(vehicle.id) != vehicle_id):
+                continue
+
+            rows.append({
+                'date'          : purchase.date,
+                'voucher_no'    : purchase.voucher_no,
+                'voucher_type'  : 'Asset Purchase',
+                'asset'         : vehicle.vehicle_name if vehicle else str(detail.asset),
+                'vehicle_id'    : vehicle.id if vehicle else None,
+                'quantity'      : detail.quantity,
+                'cost'          : detail.cost,
+                'rate'          : detail.rate,
+                'service_value' : detail.total_amount,
+                'invoice_amount': Decimal('0.000'),
+                'nature'        : 'Expense',
+            })
+
+    # ─────────────────────────────────────────────────
+    # 2. HIRE (Voucher Type 1) — Expense
+    # ─────────────────────────────────────────────────
+    hires = FleetHire.objects.prefetch_related(
+        Prefetch('details', queryset=FleetHireDetails.objects.select_related('vehicle'))
+    )
+    if date_from:
+        hires = hires.filter(date__gte=date_from)
+    if date_to:
+        hires = hires.filter(date__lte=date_to)
+
+    for hire in hires:
+        for detail in hire.details.all():
+            vehicle = detail.vehicle
+
+            if vehicle_id and str(vehicle.id) != vehicle_id:
+                continue
+
+            qty  = Decimal(detail.no_of_unit or 0)
+            rate = detail.rate_per_period or Decimal('0.000')
+
+            rows.append({
+                'date'          : hire.date,
+                'voucher_no'    : hire.voucher_no,
+                'voucher_type'  : 'Hire',
+                'asset'         : vehicle.vehicle_name,
+                'vehicle_id'    : vehicle.id,
+                'quantity'      : qty,
+                'cost'          : qty * rate,
+                'rate'          : rate,
+                'service_value' : Decimal('0.000'),
+                'invoice_amount': hire.grand_total,
+                'nature'        : 'Expense',
+            })
+
+    # ─────────────────────────────────────────────────
+    # 3. REPAIR (Voucher Type 10) — Expense
+    # ─────────────────────────────────────────────────
+    repairs = RepairMaster.objects.select_related('vehicle')
+    if date_from:
+        repairs = repairs.filter(date__gte=date_from)
+    if date_to:
+        repairs = repairs.filter(date__lte=date_to)
+
+    for repair in repairs:
+        vehicle = repair.vehicle
+
+        if vehicle_id and str(vehicle.id) != vehicle_id:
+            continue
+
+        rows.append({
+            'date'          : repair.date,
+            'voucher_no'    : repair.voucher_no,
+            'voucher_type'  : 'Repair',
+            'asset'         : vehicle.vehicle_name,
+            'vehicle_id'    : vehicle.id,
+            'quantity'      : Decimal('1.000'),
+            'cost'          : repair.spareparts_total,
+            'rate'          : Decimal('0.000'),
+            'service_value' : repair.grand_total,
+            'invoice_amount': Decimal('0.000'),
+            'nature'        : 'Expense',
+        })
+
+    # ─────────────────────────────────────────────────
+    # 4. INVOICE (Voucher Type 2) — Income
+    # ─────────────────────────────────────────────────
+    invoices = Invoice.objects.prefetch_related(
+        Prefetch('details', queryset=InvoiceDetails.objects.select_related('vehicle'))
+    )
+    if date_from:
+        invoices = invoices.filter(date__gte=date_from)
+    if date_to:
+        invoices = invoices.filter(date__lte=date_to)
+
+    for invoice in invoices:
+        for detail in invoice.details.all():
+            vehicle = detail.vehicle
+
+            if vehicle_id and str(vehicle.id) != vehicle_id:
+                continue
+
+            rows.append({
+                'date'          : invoice.date,
+                'voucher_no'    : invoice.voucher_no,
+                'voucher_type'  : 'Invoice',
+                'asset'         : vehicle.vehicle_name,
+                'vehicle_id'    : vehicle.id,
+                'quantity'      : detail.quantity or Decimal('0.000'),
+                'cost'          : detail.amount,
+                'rate'          : detail.unit_rate or Decimal('0.000'),
+                'service_value' : Decimal('0.000'),
+                'invoice_amount': detail.total_amount,
+                'nature'        : 'Income',
+            })
+
+        # ─────────────────────────────────────────────────
+    # 5. Asset Opening (Voucher Type 26) — Asset Opening
+    # ─────────────────────────────────────────────────
+    asset_openings = AssetOpeningMaster.objects.prefetch_related(
+        Prefetch('details', queryset=AssetOpeningDetail.objects.select_related('asset'))
+    )
+    if date_from:
+        asset_openings = asset_openings.filter(date__gte=date_from)
+    if date_to:
+        asset_openings = asset_openings.filter(date__lte=date_to)
+
+    # Build a lookup: ledger_id → vehicle (via AssetMaster)
+    asset_master_map = {
+        am.ledger_id: am.vehicle
+        for am in AssetMaster.objects.select_related('vehicle').filter(vehicle__isnull=False)
+    }
+    for opening in asset_openings:
+        for detail in opening.details.all():
+            vehicle = asset_master_map.get(detail.asset_id)
+
+            if vehicle_id and (not vehicle or str(vehicle.id) != vehicle_id):
+                continue
+
+            rows.append({
+                'date'          : opening.date,
+                'voucher_no'    : opening.voucher_no,
+                'voucher_type'  : 'Asset Opening',
+                'asset'         : vehicle.vehicle_name if vehicle else str(detail.asset),
+                'vehicle_id'    : vehicle.id if vehicle else None,
+                'quantity'      : detail.unit or Decimal('0.000'),
+                'cost'          : detail.cost,
+                'rate'          : detail.total_maintenance_amount or Decimal('0.000'),
+                'service_value' : detail.total_maintenance_amount,
+                'invoice_amount': detail.previous_inv_amount,
+                'nature'        : 'Asset Opening',
+            })
+
+        # ─────────────────────────────────────────────────
+    # Sorting
+    # ─────────────────────────────────────────────────
+    # Base order: latest date first (also tie-breaker for other sorts)
+    rows.sort(key=lambda x: x['date'], reverse=True)
+
+    if sort_by == 'income_desc':
+        # Highest Income (Invoice Amount column) on top
+        rows.sort(key=lambda x: x['invoice_amount'] or Decimal('0.000'), reverse=True)
+    elif sort_by == 'expense_desc':
+        # Highest Expense (Service Value column) on top
+        rows.sort(key=lambda x: x['service_value'] or Decimal('0.000'), reverse=True)
+
+    # ─────────────────────────────────────────────────
+    # Totals
+    # ─────────────────────────────────────────────────
+    total_expense = sum((r['service_value'] or Decimal('0.000')) for r in rows)
+    total_income  = sum((r['invoice_amount'] or Decimal('0.000')) for r in rows)
+    net_balance   = total_income - total_expense
+
+    vehicles = Vehicle.objects.all().order_by('vehicle_name')
+
+    context = {
+        'rows'            : rows,
+        'vehicles'        : vehicles,
+        'selected_vehicle': vehicle_id,
+        'date_from'       : date_from,
+        'date_to'         : date_to,
+        'sort_by'         : sort_by,
+        'total_expense'   : total_expense,
+        'total_income'    : total_income,
+        'net_balance'     : net_balance,
+    }
+    return render(request, 'asset_track_report.html', context)
+
+
+# ==================== 29/04/2026 for repair form for item avg cost ====================
+def get_item_avg_cost(request):
+    item_id = request.GET.get('item_id')
+
+    if not item_id:
+        return JsonResponse({'success': False, 'rate': 0})
+
+    stock = Stock.objects.filter(item_id=item_id)\
+                         .order_by('-voucherDate', '-id')\
+                         .first()
+    return JsonResponse({
+        'success': True,
+        'rate': float(stock.rate) if stock else 0
+    })
+
+@login_required
+def transaction_page(request):
+    return render(request, 'transaction_page.html')
+
+@login_required
+def reports_page(request):
+    return render(request, 'reports_page.html')   
+
+def tax_report_page(request):
+    return render(request, 'tax_report_page.html')   
+
+@login_required
+def item_master_page(request):
+    return render(request, 'item_master_page.html')   
+
+@login_required
+def master_page(request):
+    return render(request, 'master_page.html') 
+    
+@login_required
+def admin_master_page(request):
+    return render(request, 'admin_master_page.html')   
+
+@login_required
+def asset_master_page(request):
+    return render(request, 'asset_master_page.html')     
+
+def hire_report(request):
+    hires = FleetHire.objects.select_related('supplier', 'ledger', 'voucherType').prefetch_related('details__vehicle').order_by('-date')
+
+    voucher_no = request.GET.get('voucher_no', '').strip()
+    supplier_id = request.GET.get('supplier_id', '').strip()
+    from_date = request.GET.get('from_date', '').strip()
+    to_date = request.GET.get('to_date', '').strip()
+
+    if voucher_no:
+        hires = hires.filter(voucher_no__icontains=voucher_no)
+    if supplier_id:
+        hires = hires.filter(supplier_id=supplier_id)
+    if from_date:
+        hires = hires.filter(date__gte=from_date)
+    if to_date:
+        hires = hires.filter(date__lte=to_date)
+
+    # For supplier dropdown
+    from accounts_app.models import LedgerCreation
+    suppliers = LedgerCreation.objects.filter(fleet_hires__isnull=False).distinct().order_by('ledger_name')
+
+    total_subtotal = sum(h.subtotal for h in hires)
+    total_vat = sum(h.vat for h in hires)
+    total_other = sum(h.other_charges for h in hires)
+    total_grand = sum(h.grand_total for h in hires)
+
+    context = {
+        'hires': hires,
+        'suppliers': suppliers,
+        'filters': {
+            'voucher_no': voucher_no,
+            'supplier_id': supplier_id,
+            'from_date': from_date,
+            'to_date': to_date,
+        },
+        'totals': {
+            'subtotal': total_subtotal,
+            'vat': total_vat,
+            'other_charges': total_other,
+            'grand_total': total_grand,
+        }
+    }
+    return render(request, 'hire_report.html', context)    
+
+def invoice_report(request):
+    invoices = Invoice.objects.select_related(
+        'customer', 'ledger', 'voucherType'
+    ).prefetch_related(
+        'details__vehicle'
+    ).order_by('-date')
+
+    voucher_no  = request.GET.get('voucher_no', '').strip()
+    customer_id = request.GET.get('customer_id', '').strip()
+    from_date   = request.GET.get('from_date', '').strip()
+    to_date     = request.GET.get('to_date', '').strip()
+    no_vat      = request.GET.get('no_vat', '').strip()
+
+    if voucher_no:
+        invoices = invoices.filter(voucher_no__icontains=voucher_no)
+    if customer_id:
+        invoices = invoices.filter(customer_id=customer_id)
+    if from_date:
+        invoices = invoices.filter(date__gte=from_date)
+    if to_date:
+        invoices = invoices.filter(date__lte=to_date)
+
+    if no_vat:
+        # Compute this on a separate query — annotating the same
+        # queryset that already has prefetch_related('details__vehicle')
+        # would inflate the Sum() because of the join.
+        zero_tax_ids = (
+            Invoice.objects
+            .annotate(total_tax=Sum('details__tax_amount'))
+            .filter(Q(total_tax=0) | Q(total_tax__isnull=True))
+            .values_list('id', flat=True)
+        )
+        invoices = invoices.filter(id__in=zero_tax_ids)
+
+    # Evaluate once — keeps prefetch cache intact
+    invoices = list(invoices)
+
+    from accounts_app.models import LedgerCreation
+    customers = LedgerCreation.objects.filter(
+        invoice_customer__isnull=False
+    ).distinct().order_by('ledger_name')
+
+    ids = [inv.id for inv in invoices]
+    agg = Invoice.objects.filter(id__in=ids).aggregate(
+        total_grand=Sum('grand_total'),
+        total_count=Count('id'),
+    )
+
+    context = {
+        'invoices': invoices,
+        'customers': customers,
+        'filters': {
+            'voucher_no':  voucher_no,
+            'customer_id': customer_id,
+            'from_date':   from_date,
+            'to_date':     to_date,
+            'no_vat':      no_vat,
+        },
+        'totals': {
+            'grand_total': agg['total_grand'] or 0,
+            'count':       agg['total_count'] or 0,
+        }
+    }
+    return render(request, 'invoice_report.html', context)
+    
+
+# ─────────────────────────────────────────────
+#  CREATE / EDIT
+# ─────────────────────────────────────────────
+ 
+def create_replacement(request, replacement_id=None):
+ 
+    replacement_instance = None
+    existing_details = []
+ 
+    if replacement_id:
+        replacement_instance = get_object_or_404(ReplacementMaster, id=replacement_id)
+        existing_details = ReplacementDetail.objects.filter(
+            replacement_master=replacement_instance
+        ).select_related('old_vehicle', 'new_vehicle', 'delivery_contract_detail')
+ 
+    if request.method == 'POST':
+        action = "can_edit" if replacement_id else "can_add"
+ 
+        has_permission = check_privilege(request.user, REPLACEMENT_MENU_ID, action)
+ 
+        if not has_permission:
+            is_admin_ok, msg_or_admin = check_admin_override(request)
+            if not is_admin_ok:
+                return JsonResponse({
+                    "admin_required": True,
+                    "message": msg_or_admin
+                }, status=403)
+ 
+        form = ReplacementMasterForm(request.POST, instance=replacement_instance)
+ 
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    replacement = form.save(commit=False)
+                    replacement.save()
+ 
+                    details_data = request.POST.getlist('details[]')
+ 
+                    if not details_data:
+                        if not replacement_id:
+                            replacement.delete()
+                        return JsonResponse({
+                            "success": False,
+                            "message": "Please add at least one replacement detail."
+                        }, status=400)
+ 
+                    # ── EDIT: revert vehicle statuses AND contract detail before re-applying ──
+                    if replacement_id:
+                        for old_detail in existing_details:
+                            # new_vehicle goes back to Free
+                            old_detail.new_vehicle.status = '1'
+                            old_detail.new_vehicle.save()
+                            # old_vehicle goes back to Hired
+                            old_detail.old_vehicle.status = '2'
+                            old_detail.old_vehicle.save()
+                            # Revert DeliveryContractDetails back to old_vehicle
+                            if old_detail.delivery_contract_detail:
+                                old_detail.delivery_contract_detail.vehicle = old_detail.old_vehicle
+                                old_detail.delivery_contract_detail.save()
+ 
+                        ReplacementDetail.objects.filter(
+                            replacement_master=replacement
+                        ).delete()
+ 
+                    # ── PROCESS EACH DETAIL LINE ──
+                    # Format (pipe-separated):
+                    # contract_detail_id | old_vehicle_id | new_vehicle_id |
+                    # reason | old_meter | new_meter | old_fuel | old_condition |
+                    # replacement_datetime
+ 
+                    for detail_str in details_data:
+                        parts = detail_str.split('|')
+ 
+                        contract_detail_id      = parts[0]
+                        old_vehicle_id          = parts[1]
+                        new_vehicle_id          = parts[2]
+                        reason                  = parts[3] if parts[3] else ''
+                        old_meter               = float(parts[4]) if parts[4] else None
+                        new_meter               = float(parts[5]) if parts[5] else None
+                        old_fuel                = parts[6] if parts[6] else ''
+                        old_vehicle_condition   = parts[7] if parts[7] else ''
+                        replacement_datetime    = parts[8] if parts[8] else None
+ 
+                        old_vehicle = Vehicle.objects.get(id=old_vehicle_id)
+                        new_vehicle = Vehicle.objects.get(id=new_vehicle_id)
+                        contract_detail = DeliveryContractDetails.objects.get(id=contract_detail_id)
+ 
+                        ReplacementDetail.objects.create(
+                            replacement_master=replacement,
+                            delivery_contract_detail=contract_detail,
+                            old_vehicle=old_vehicle,
+                            new_vehicle=new_vehicle,
+                            reason=reason,
+                            old_meter_reading=old_meter,
+                            new_meter_reading=new_meter,
+                            old_fuel_level=old_fuel,
+                            old_vehicle_condition=old_vehicle_condition,
+                            replacement_date_time=(
+                                replacement_datetime
+                                if replacement_datetime
+                                else replacement.replacement_date_time
+                            ),
+                        )
+ 
+                        # ── UPDATE VEHICLE STATUSES ──
+                        old_vehicle.status = '1'   # Free
+                        old_vehicle.save()
+ 
+                        new_vehicle.status = '2'   # Hired
+                        new_vehicle.save()
+ 
+                        # ── UPDATE DELIVERY CONTRACT DETAIL: swap old → new vehicle ──
+                        # This keeps the contract current so invoicing/reports reflect
+                        # the active vehicle. The replacement note is the audit trail
+                        # for what was originally there.
+                        contract_detail.vehicle = new_vehicle
+                        contract_detail.save()
+ 
+                log_activity(
+                    user=request.user,
+                    screen_name="Replacement",
+                    action_type="UPDATE" if replacement_id else "CREATE",
+                    remark=(
+                        f"Replacement {replacement.voucher_no} updated "
+                        f"for contract {replacement.delivery_contract.voucher_no}"
+                        if replacement_id else
+                        f"Replacement {replacement.voucher_no} created "
+                        f"for contract {replacement.delivery_contract.voucher_no}"
+                    )
+                )
+ 
+                return JsonResponse({
+                    "success": True,
+                    "message": (
+                        "Replacement updated successfully!"
+                        if replacement_id else
+                        "Replacement created successfully!"
+                    ),
+                    "pdf_url": reverse('fleet_app:replacement_pdf', args=[replacement.id])
+                })
+ 
+            except Exception as e:
+                import traceback
+                print(f"REPLACEMENT ERROR: {e}")
+                print(traceback.format_exc())
+                return JsonResponse({
+                    "success": False,
+                    "message": f"Error: {str(e)}"
+                }, status=400)
+ 
+        return JsonResponse({
+            "success": False,
+            "message": "Please correct the errors in the form.",
+            "errors": form.errors
+        }, status=400)
+ 
+    # ── GET ──
+    form = ReplacementMasterForm(instance=replacement_instance)
+ 
+    return render(request, 'create_replacement.html', {
+        'form': form,
+        'replacement_instance': replacement_instance,
+        'existing_details': existing_details,
+        'is_edit_mode': replacement_id is not None,
+    })
+ 
+ 
+# ─────────────────────────────────────────────
+#  AJAX: contracts for a customer (hired vehicles only)
+# ─────────────────────────────────────────────
+ 
+def get_customer_contracts_replacement(request):
+    customer_id = request.GET.get('customer_id')
+ 
+    if not customer_id:
+        return JsonResponse({'success': False, 'message': 'Customer ID is required'}, status=400)
+ 
+    try:
+        contracts = DeliveryContract.objects.filter(
+            customer_id=customer_id
+        ).prefetch_related('details__vehicle')
+ 
+        contract_list = []
+        for contract in contracts:
+            hired_count = contract.details.filter(vehicle__status='2').count()
+            if hired_count > 0:
+                contract_list.append({
+                    'id': contract.id,
+                    'voucher_no': contract.voucher_no,
+                    'invoice_no': contract.invoice_no or '',
+                    'date': contract.date.strftime('%Y-%m-%d'),
+                    'hired_vehicles': hired_count,
+                })
+ 
+        return JsonResponse({'success': True, 'contracts': contract_list})
+ 
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+ 
+ 
+# ─────────────────────────────────────────────
+#  AJAX: hired vehicles in a contract
+# ─────────────────────────────────────────────
+ 
+def get_contract_hired_vehicles(request):
+    """
+    Returns only hired vehicles in the selected delivery contract.
+    Used to populate the 'old vehicle' dropdown in the replacement form.
+    """
+    contract_id = request.GET.get('contract_id')
+ 
+    if not contract_id:
+        return JsonResponse({'success': False, 'message': 'Contract ID is required'}, status=400)
+ 
+    try:
+        contract = DeliveryContract.objects.get(id=contract_id)
+ 
+        details = DeliveryContractDetails.objects.filter(
+            delivery_contract=contract,
+            vehicle__status='2'   # Only hired vehicles
+        ).select_related('vehicle')
+ 
+        vehicles = []
+        for detail in details:
+            vehicles.append({
+                'contract_detail_id': detail.id,
+                'vehicle_id': detail.vehicle.id,
+                'vehicle_name': detail.vehicle.vehicle_name,
+                'location': detail.location or '',
+                'period': detail.period or '',
+                'from_date': detail.from_date.strftime('%Y-%m-%d') if detail.from_date else '',
+                'to_date': detail.to_date.strftime('%Y-%m-%d') if detail.to_date else '',
+            })
+ 
+        return JsonResponse({
+            'success': True,
+            'vehicles': vehicles,
+            'customer_id': contract.customer.id if contract.customer else None,
+            'customer_name': contract.customer.ledger_name if contract.customer else '',
+        })
+ 
+    except DeliveryContract.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Contract not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+ 
+ 
+# ─────────────────────────────────────────────
+#  AJAX: free vehicles available for replacement
+# ─────────────────────────────────────────────
+ 
+def get_free_vehicles(request):
+    """
+    Returns vehicles with status Free ('1').
+    Excludes the old_vehicle_id if provided (so it can't replace itself).
+    """
+    exclude_id = request.GET.get('exclude_vehicle_id')
+ 
+    try:
+        qs = Vehicle.objects.filter(status='1').order_by('vehicle_name')
+        if exclude_id:
+            qs = qs.exclude(id=exclude_id)
+ 
+        vehicles = [
+            {
+                'id': v.id,
+                'vehicle_name': v.vehicle_name,
+                'vehicle_model': getattr(v, 'vehicle_model', '') or '',
+            }
+            for v in qs
+        ]
+ 
+        return JsonResponse({'success': True, 'vehicles': vehicles})
+ 
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+ 
+ 
+# ─────────────────────────────────────────────
+#  PDF
+# ─────────────────────────────────────────────
+ 
+def replacement_pdf(request, replacement_id):
+    replacement = get_object_or_404(ReplacementMaster, id=replacement_id)
+    return create_replacement_pdf(replacement)    
+
+
+def replacement_list(request):
+    replacements = ReplacementMaster.objects.select_related(
+        'customer', 'delivery_contract'
+    ).prefetch_related('details').order_by('-date', '-created_on')
+ 
+    return render(request, 'replacement_list.html', {
+        'replacements': replacements,
+    })
+ 
+ 
+def delete_replacement(request, replacement_id):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid method'}, status=405)
+ 
+    has_permission = check_privilege(request.user, REPLACEMENT_MENU_ID, 'can_delete')
+ 
+    if not has_permission:
+        is_admin_ok, msg_or_admin = check_admin_override(request)
+        if not is_admin_ok:
+            return JsonResponse({
+                'admin_required': True,
+                'message': msg_or_admin
+            }, status=403)
+ 
+    try:
+        with transaction.atomic():
+            replacement = get_object_or_404(ReplacementMaster, id=replacement_id)
+            details = ReplacementDetail.objects.filter(
+                replacement_master=replacement
+            ).select_related('old_vehicle', 'new_vehicle', 'delivery_contract_detail')
+ 
+            # Revert all vehicle statuses and contract details
+            for d in details:
+                # new_vehicle → Free
+                d.new_vehicle.status = '1'
+                d.new_vehicle.save()
+                # old_vehicle → Hired
+                d.old_vehicle.status = '2'
+                d.old_vehicle.save()
+                # Revert DeliveryContractDetails back to old_vehicle
+                if d.delivery_contract_detail:
+                    d.delivery_contract_detail.vehicle = d.old_vehicle
+                    d.delivery_contract_detail.save()
+ 
+            voucher_no   = replacement.voucher_no
+            contract_no  = replacement.delivery_contract.voucher_no
+            replacement.delete()
+ 
+        log_activity(
+            user=request.user,
+            screen_name="Replacement",
+            action_type="DELETE",
+            remark=f"Replacement {voucher_no} deleted, reverted contract {contract_no}"
+        )
+ 
+        return JsonResponse({'success': True, 'message': f'Replacement {voucher_no} deleted successfully.'})
+ 
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+def _get_rows_for_vehicle(vehicle, date_from='', date_to=''):
+    """Return sorted transaction rows for a single vehicle."""
+    rows = []
+ 
+    # ------------------------------------------------------------------ #
+    # 1.  INVOICE  –  Dr Amount per detail line                           #
+    # ------------------------------------------------------------------ #
+    invoice_details_qs = InvoiceDetails.objects.filter(
+        vehicle=vehicle
+    ).select_related('invoice', 'invoice__customer')
+ 
+    if date_from:
+        invoice_details_qs = invoice_details_qs.filter(invoice__date__gte=date_from)
+    if date_to:
+        invoice_details_qs = invoice_details_qs.filter(invoice__date__lte=date_to)
+ 
+    for detail in invoice_details_qs.order_by('invoice__date'):
+        inv = detail.invoice
+        party = inv.customer.ledger_name if inv.customer else ''
+        rows.append({
+            'date':       inv.date,
+            'voucher_no': inv.voucher_no,
+            'party':      party,
+            'cr_amount':  None,
+            'dr_amount':  detail.total_amount,
+            'source':     'Invoice',
+        })
+ 
+    # ------------------------------------------------------------------ #
+    # 2.  REPAIR  –  Cr Amount (spare parts + labour charges)             #
+    # ------------------------------------------------------------------ #
+    repairs_qs = RepairMaster.objects.filter(
+        vehicle=vehicle
+    ).select_related('client').prefetch_related('spare_parts', 'labour_charges')
+ 
+    if date_from:
+        repairs_qs = repairs_qs.filter(date__gte=date_from)
+    if date_to:
+        repairs_qs = repairs_qs.filter(date__lte=date_to)
+ 
+    for repair in repairs_qs.order_by('date'):
+        party = repair.client.ledger_name if repair.client else ''
+ 
+        for sp in repair.spare_parts.all():
+            rows.append({
+                'date':       repair.date,
+                'voucher_no': repair.voucher_no,
+                'party':      party,
+                'cr_amount':  sp.amount,
+                'dr_amount':  None,
+                'source':     'Repair – Spare Part',
+            })
+ 
+        for lc in repair.labour_charges.all():
+            rows.append({
+                'date':       repair.date,
+                'voucher_no': repair.voucher_no,
+                'party':      party,
+                'cr_amount':  lc.amount,
+                'dr_amount':  None,
+                'source':     'Repair – Labour',
+            })
+ 
+    # ------------------------------------------------------------------ #
+    # 3.  ASSET OPENING  –  via LedgerCreation.vehicle link               #
+    # ------------------------------------------------------------------ #
+    asset_ledgers = LedgerCreation.objects.filter(vehicle=vehicle)
+ 
+    asset_details_qs = AssetOpeningDetail.objects.filter(
+        asset__in=asset_ledgers
+    ).select_related('asset_opening')
+ 
+    if date_from:
+        asset_details_qs = asset_details_qs.filter(asset_opening__date__gte=date_from)
+    if date_to:
+        asset_details_qs = asset_details_qs.filter(asset_opening__date__lte=date_to)
+ 
+    for detail in asset_details_qs.order_by('asset_opening__date'):
+        master = detail.asset_opening
+        cr_amt = (detail.cost or 0) + (detail.total_maintenance_amount or 0)
+        dr_amt = detail.previous_inv_amount or 0
+ 
+        rows.append({
+            'date':       master.date,
+            'voucher_no': master.voucher_no,
+            'party':      '',
+            'cr_amount':  cr_amt if cr_amt else None,
+            'dr_amount':  dr_amt if dr_amt else None,
+            'source':     'Asset Opening',
+        })
+ 
+    rows.sort(key=lambda r: r['date'])
+    return rows
+ 
+ 
+def equipment_report(request):
+    all_vehicles = Vehicle.objects.select_related('model').all().order_by('vehicle_name')
+ 
+    vehicle_id = request.GET.get('vehicle_id', '')
+    date_from  = request.GET.get('date_from', '')
+    date_to    = request.GET.get('date_to', '')
+ 
+    # Determine which vehicles to show
+    if vehicle_id:
+        try:
+            selected_vehicle = Vehicle.objects.get(pk=vehicle_id)
+            vehicles_to_show = [selected_vehicle]
+        except Vehicle.DoesNotExist:
+            selected_vehicle = None
+            vehicles_to_show = list(all_vehicles)
+    else:
+        selected_vehicle = None
+        vehicles_to_show = list(all_vehicles)
+ 
+    # Build per-vehicle blocks
+    vehicle_blocks = []
+    grand_total_cr = Decimal('0')
+    grand_total_dr = Decimal('0')
+ 
+    for vehicle in vehicles_to_show:
+        rows = _get_rows_for_vehicle(vehicle, date_from, date_to)
+        if not rows:
+            continue  # skip vehicles with no transactions
+ 
+        total_cr = sum(r['cr_amount'] for r in rows if r['cr_amount'] is not None)
+        total_dr = sum(r['dr_amount'] for r in rows if r['dr_amount'] is not None)
+ 
+        grand_total_cr += total_cr
+        grand_total_dr += total_dr
+ 
+        vehicle_blocks.append({
+            'vehicle':   vehicle,
+            'rows':      rows,
+            'total_cr':  total_cr,
+            'total_dr':  total_dr,
+        })
+ 
+    context = {
+        'all_vehicles':      all_vehicles,
+        'selected_vehicle':  selected_vehicle,
+        'vehicle_id':        vehicle_id,
+        'date_from':         date_from,
+        'date_to':           date_to,
+        'vehicle_blocks':    vehicle_blocks,
+        'grand_total_cr':    grand_total_cr,
+        'grand_total_dr':    grand_total_dr,
+    }
+    return render(request, 'equipment_report.html', context)
+
+def get_invoice_tax_report(start_date=None, end_date=None, voucher_type=None):
+    qs = InvoiceDetails.objects.select_related(
+        'invoice', 'invoice__customer', 'invoice__ledger'
+    )
+
+    if start_date:
+        qs = qs.filter(invoice__date__gte=start_date)
+    if end_date:
+        qs = qs.filter(invoice__date__lte=end_date)
+    if voucher_type:
+        qs = qs.filter(invoice__voucherType_id=voucher_type)
+
+    grouped = (
+        qs.values(
+            'invoice_id',
+            'invoice__date',
+            'invoice__voucher_no',
+            'invoice__customer__ledger_name',
+            'invoice__ledger__ledger_name',
+            'invoice__supplier_ref',
+            'invoice__grand_total',
+            'tax',
+        )
+        .annotate(
+            taxable=Sum('amount'),
+            tax_amount=Sum('tax_amount'),
+        )
+        .order_by('invoice__date', 'invoice__voucher_no', 'tax')
+    )
+
+    rows = []
+    for r in grouped:
+        rate = r['tax']
+        taxable = r['taxable'] or Decimal('0.000')
+        tax_amt = r['tax_amount'] or Decimal('0.000')
+        rows.append({
+            'invoice_id': r['invoice_id'],
+            'invoice_date': r['invoice__date'],
+            'voucher_no': r['invoice__voucher_no'],
+            'taxable': taxable,
+            'tax_amount': tax_amt,
+            'grand_total': r['invoice__grand_total'] or Decimal('0.000'),
+            'party': r['invoice__customer__ledger_name'],
+            'remark': r['invoice__supplier_ref'] or '',
+            'ledger': r['invoice__ledger__ledger_name'],
+            'rate_5': tax_amt if rate == Decimal('5.000') else Decimal('0.000'),
+            'rate_0': tax_amt if rate == Decimal('0.000') else Decimal('0.000'),
+        })
+
+    return rows
+
+def invoice_tax_report(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    rows = get_invoice_tax_report(start_date=start_date, end_date=end_date)
+
+    context = {
+        'rows': rows,
+        'start_date': start_date or '',
+        'end_date': end_date or '',
+    }
+    return render(request, 'invoice_tax_report.html', context)    
+
+
+def invoice_tax_report_pdf(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    rows = get_invoice_tax_report(start_date=start_date, end_date=end_date)
+    return create_invoice_tax_report_pdf(rows, start_date, end_date)
+
+
+
+def invoice_tax_report_csv(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    rows = get_invoice_tax_report(start_date=start_date, end_date=end_date)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="invoice_tax_report.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Voucher No', 'Taxable', 'Tax Amount', 'Grand Total', 'Party', 'Remark', '5%', '0%'])
+
+    seen_invoice_ids = set()
+    total_taxable = Decimal('0.000')
+    total_tax_amount = Decimal('0.000')
+    total_grand_total = Decimal('0.000')
+    total_rate5 = Decimal('0.000')
+    total_rate0 = Decimal('0.000')
+
+    for row in rows:
+        writer.writerow([
+            row['invoice_date'].strftime("%d-%m-%Y") if row['invoice_date'] else "",
+            row['voucher_no'] or "",
+            f"{row['taxable']:.3f}",
+            f"{row['tax_amount']:.3f}",
+            f"{row['grand_total']:.3f}",
+            row['party'] or "",
+            row['remark'] or "",
+            f"{row['rate_5']:.3f}",
+            f"{row['rate_0']:.3f}",
+        ])
+
+        total_taxable += row['taxable']
+        total_tax_amount += row['tax_amount']
+        total_rate5 += row['rate_5']
+        total_rate0 += row['rate_0']
+
+        # Grand total counted once per invoice — matches PDF/template JS logic
+        if row['invoice_id'] not in seen_invoice_ids:
+            seen_invoice_ids.add(row['invoice_id'])
+            total_grand_total += row['grand_total']
+
+    writer.writerow([
+        'Total', '',
+        f"{total_taxable:.3f}",
+        f"{total_tax_amount:.3f}",
+        f"{total_grand_total:.3f}",
+        '', '',
+        f"{total_rate5:.3f}",
+        f"{total_rate0:.3f}",
+    ])
+
+    return response    
+
+
+# Helper used by purchase tax report views
+def _build_rows(grouped, source, taxable_field, tax_amount_field, rate_field,
+                 date_field, voucher_field, party_field, remark_field, grand_total_field):
+    rows = []
+    for r in grouped:
+        rate = r[rate_field]
+        taxable = r[taxable_field] or Decimal('0.000')
+        tax_amt = r[tax_amount_field] or Decimal('0.000')
+        rows.append({
+            'row_key': f"{source}-{r['purchase_id']}",
+            'source': source,
+            'invoice_date': r[date_field],
+            'voucher_no': r[voucher_field],
+            'taxable': taxable,
+            'tax_amount': tax_amt,
+            'grand_total': r[grand_total_field] or Decimal('0.000'),
+            'party': r[party_field],
+            'remark': (r[remark_field] or '') if remark_field else '',   # fixed
+            'rate_5': tax_amt if rate == Decimal('5.000') else Decimal('0.000'),
+            'rate_0': tax_amt if rate == Decimal('0.000') else Decimal('0.000'),
+        })
+    return rows
+def get_purchase_tax_report(start_date=None, end_date=None):
+    # ---- Item Master purchases ----
+    qs1 = PurchaseDetail.objects.select_related('purchase', 'purchase__ledger').filter(
+        purchase__isDeleted=False,
+        tax__isnull=False,
+    )
+    if start_date:
+        qs1 = qs1.filter(purchase__transaction_date__gte=start_date)
+    if end_date:
+        qs1 = qs1.filter(purchase__transaction_date__lte=end_date)
+
+    grouped1 = (
+        qs1.values(
+            'purchase_id',
+            'purchase__transaction_date',
+            'purchase__voucher_no',
+            'purchase__ledger__ledger_name',
+            'purchase__remarks',
+            'purchase__grand_total_amount',
+            'tax',
+        )
+        .annotate(
+            taxable=Sum('item_net_amount'),
+            tax_amount=Sum('item_tax_amount'),
+        )
+    )
+
+    rows1 = _build_rows(
+        grouped1, source='item',
+        taxable_field='taxable', tax_amount_field='tax_amount', rate_field='tax',
+        date_field='purchase__transaction_date', voucher_field='purchase__voucher_no',
+        party_field='purchase__ledger__ledger_name', remark_field='purchase__remarks',
+        grand_total_field='purchase__grand_total_amount',
+    )
+
+    # ---- Asset purchases ----
+    qs2 = AssetPurchaseDetails.objects.select_related('purchase', 'purchase__supplier').filter(
+        vat__isnull=False,
+    )
+    if start_date:
+        qs2 = qs2.filter(purchase__date__gte=start_date)
+    if end_date:
+        qs2 = qs2.filter(purchase__date__lte=end_date)
+
+    grouped2 = (
+        qs2.values(
+            'purchase_id',
+            'purchase__date',
+            'purchase__voucher_no',
+            'purchase__supplier__ledger_name',
+            'purchase__grand_total',
+            'vat',
+        )
+        .annotate(
+            taxable=Sum('taxable'),
+            tax_amount=Sum('tax_amount'),
+        )
+    )
+
+    rows2 = _build_rows(
+        grouped2, source='asset',
+        taxable_field='taxable', tax_amount_field='tax_amount', rate_field='vat',
+        date_field='purchase__date', voucher_field='purchase__voucher_no',
+        party_field='purchase__supplier__ledger_name', remark_field=None,
+        grand_total_field='purchase__grand_total',
+    )
+    
+
+    rows = rows1 + rows2
+    rows.sort(key=lambda r: (r['invoice_date'], r['voucher_no']))
+    return rows
+
+def purchase_tax_report(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    rows = get_purchase_tax_report(start_date=start_date, end_date=end_date)
+
+    context = {
+        'rows': rows,
+        'start_date': start_date or '',
+        'end_date': end_date or '',
+    }
+    return render(request, 'purchase_tax_report.html', context)    
+
+def purchase_tax_report_pdf(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    rows = get_purchase_tax_report(start_date=start_date, end_date=end_date)
+    return create_purchase_tax_report_pdf(rows, start_date, end_date)            
+
+def purchase_tax_report_csv(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    rows = get_purchase_tax_report(start_date=start_date, end_date=end_date)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="purchase_tax_report.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Voucher No', 'Taxable', 'Tax Amount', 'Grand Total', 'Party', 'Remark', '5%', '0%'])
+
+    seen_row_keys = set()
+    total_taxable = Decimal('0.000')
+    total_tax_amount = Decimal('0.000')
+    total_grand_total = Decimal('0.000')
+    total_rate5 = Decimal('0.000')
+    total_rate0 = Decimal('0.000')
+
+    for row in rows:
+        writer.writerow([
+            row['invoice_date'].strftime("%d-%m-%Y") if row['invoice_date'] else "",
+            row['voucher_no'] or "",
+            f"{row['taxable']:.3f}",
+            f"{row['tax_amount']:.3f}",
+            f"{row['grand_total']:.3f}",
+            row['party'] or "",
+            row['remark'] or "",
+            f"{row['rate_5']:.3f}",
+            f"{row['rate_0']:.3f}",
+        ])
+
+        total_taxable += row['taxable']
+        total_tax_amount += row['tax_amount']
+        total_rate5 += row['rate_5']
+        total_rate0 += row['rate_0']
+
+        if row['row_key'] not in seen_row_keys:
+            seen_row_keys.add(row['row_key'])
+            total_grand_total += row['grand_total']
+
+    writer.writerow([
+        'Total', '',
+        f"{total_taxable:.3f}",
+        f"{total_tax_amount:.3f}",
+        f"{total_grand_total:.3f}",
+        '', '',
+        f"{total_rate5:.3f}",
+        f"{total_rate0:.3f}",
+    ])
+
+    return response    
+
+def get_tax_summary_report(start_date=None, end_date=None):
+    qs = InvoiceDetails.objects.select_related('invoice')
+
+    if start_date:
+        qs = qs.filter(invoice__date__gte=start_date)
+    if end_date:
+        qs = qs.filter(invoice__date__lte=end_date)
+
+    # ---- Sales side (Invoice / InvoiceDetails) ----
+    standard = qs.filter(tax=Decimal('5.000')).aggregate(
+        sales=Sum('amount'),
+        vat=Sum('tax_amount'),
+    )
+    zero = qs.filter(tax=Decimal('0.000')).aggregate(
+        sales=Sum('total_amount'),
+    )
+
+    # ---- Purchase side (PurchaseMaster/PurchaseDetail + AssetPurchase/AssetPurchaseDetails) ----
+    pm_qs = PurchaseMaster.objects.filter(isDeleted=False)
+    ap_qs = AssetPurchase.objects.all()
+
+    if start_date:
+        pm_qs = pm_qs.filter(transaction_date__gte=start_date)
+        ap_qs = ap_qs.filter(date__gte=start_date)
+    if end_date:
+        pm_qs = pm_qs.filter(transaction_date__lte=end_date)
+        ap_qs = ap_qs.filter(date__lte=end_date)
+
+    # Purchases - Standard Rated: header total_net_value / total_taxable,
+    # for headers that have at least one detail line at that rate.
+    pm_standard = (
+        pm_qs.filter(items__tax=Decimal('5.000')).distinct()
+        .aggregate(total=Sum('total_net_value'))['total'] or Decimal('0.000')
+    )
+    ap_standard = (
+        ap_qs.filter(details__vat=Decimal('5.000')).distinct()
+        .aggregate(total=Sum('total_taxable'))['total'] or Decimal('0.000')
+    )
+    purchases_standard_rated = pm_standard + ap_standard
+
+    # Input VAT: header-level VAT totals, no rate filter.
+    pm_input_vat = pm_qs.aggregate(total=Sum('total_tax_amount'))['total'] or Decimal('0.000')
+    ap_input_vat = ap_qs.aggregate(total=Sum('total_vat_amount'))['total'] or Decimal('0.000')
+    input_vat = pm_input_vat + ap_input_vat
+
+    # Zero-rated Purchase: header grand_total, for headers with a zero-rated detail line.
+    pm_zero = (
+        pm_qs.filter(items__tax=Decimal('0.000')).distinct()
+        .aggregate(total=Sum('grand_total_amount'))['total'] or Decimal('0.000')
+    )
+    ap_zero = (
+        ap_qs.filter(details__vat=Decimal('0.000')).distinct()
+        .aggregate(total=Sum('grand_total'))['total'] or Decimal('0.000')
+    )
+    zero_rated_purchase = pm_zero + ap_zero
+
+    return {
+        'standard_rated_sales': standard['sales'] or Decimal('0.000'),
+        'output_vat_5': standard['vat'] or Decimal('0.000'),
+        'zero_rated_sales': zero['sales'] or Decimal('0.000'),
+        'exempted_sales': Decimal('0.000'),
+        'purchases_standard_rated': purchases_standard_rated,
+        'input_vat': input_vat,
+        'zero_rated_purchase': zero_rated_purchase,
+    }
+    
+def tax_summary_report(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    summary = get_tax_summary_report(start_date=start_date, end_date=end_date)
+
+    context = {
+        'summary': summary,
+        'start_date': start_date or '',
+        'end_date': end_date or '',
+    }
+    return render(request, 'tax_summary_report.html', context)    
+
+
+#RETURN SPARE PARTS
+
+def create_edit_return_spareparts(request, return_id=None):
+    """
+    Create or edit a Return Spare Parts voucher: one master row with
+    one or more ReturnSparePartsDetails rows managed via the inline formset.
+    """
+    item_groups = ItemGroup.objects.all().order_by('group_code')
+    voucher_types = Vouchers.objects.all().order_by('VoucherName')
+
+    return_instance = None
+    if return_id:
+        return_instance = get_object_or_404(ReturnSparePartsMaster, id=return_id)
+
+    if request.method == 'POST':
+        action = "can_edit" if return_id else "can_add"
+
+        has_permission = check_privilege(request.user, RETURN_SPAREPARTS_MENU_ID, action)
+        if not has_permission:
+            is_admin_ok, msg_or_admin = check_admin_override(request)
+            if not is_admin_ok:
+                return JsonResponse({
+                    "admin_required": True,
+                    "message": msg_or_admin
+                }, status=403)
+
+        return_form = ReturnSparePartsMasterForm(request.POST, instance=return_instance)
+
+        # Bind the formset against a not-yet-committed master so validation
+        # (item_group/sparepart/etc.) runs before anything is written.
+        formset = ReturnSparePartsDetailsFormSet(
+            request.POST,
+            instance=return_instance or ReturnSparePartsMaster()
         )
 
-        if request.FILES.get('vehicle_image'):
-            vehicle.vehicle_image = request.FILES['vehicle_image']
+        if return_form.is_valid() and formset.is_valid():
+            # Reject a save with zero real detail rows (all blank / all deleted)
+            has_data_row = False
+            for form in formset.forms:
+                if not form.cleaned_data:
+                    continue
+                if form.cleaned_data.get('DELETE'):
+                    continue
+                # A form with no sparepart selected is an unused extra row
+                if form.cleaned_data.get('sparepart'):
+                    has_data_row = True
 
-        vehicle.save()
-        messages.success(request, f"Vehicle '{vehicle_name}' created for {customer.customer_name}!")
-        return redirect('fleet_app:vehicle_master_list')
+            if not has_data_row:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Please add at least one spare part detail."
+                }, status=400)
 
-    return render(request, 'fleet_app/vehicle_master_form.html', {
-        'customers':   customers,
-        'categories':  categories,
-        'plate_codes': plate_codes,
+            try:
+                with transaction.atomic():
+                    return_master = return_form.save()
+
+                    # Re-bind formset to the now-saved master so new rows
+                    # get the correct FK, then save.
+                    formset.instance = return_master
+
+                    details = formset.save(commit=False)
+                    for detail in details:
+                        detail.return_spareparts = return_master
+                        detail.quantity = detail.quantity or 0
+                        detail.rate = detail.rate or 0
+                        detail.amount = detail.quantity * detail.rate
+                        detail.save()
+
+                    for obj in formset.deleted_objects:
+                        obj.delete()
+
+                log_activity(
+                    user=request.user,
+                    screen_name="Return Spare Parts",
+                    action_type="UPDATE" if return_id else "CREATE",
+                    remark=(
+                        f"Return Spare Parts {return_master.voucher_no} updated"
+                        if return_id else
+                        f"Return Spare Parts {return_master.voucher_no} created"
+                    )
+                )
+
+                return JsonResponse({
+                    "success": True,
+                    "message": "Return updated successfully!" if return_id else "Return created successfully!",
+                })
+            except Exception as e:
+                print(f"RETURN SPAREPARTS ERROR: {e}")
+                print(traceback.format_exc())
+                return JsonResponse({
+                    "success": False,
+                    "message": f"Error: {str(e)}"
+                }, status=400)
+
+        # Either form invalid — return combined errors
+        return JsonResponse({
+            "success": False,
+            "message": "Please correct the errors in the form.",
+            "errors": return_form.errors,
+            "formset_errors": formset.errors,
+            "formset_non_form_errors": formset.non_form_errors(),
+        }, status=400)
+
+    return_form = ReturnSparePartsMasterForm(instance=return_instance)
+    formset = ReturnSparePartsDetailsFormSet(instance=return_instance)
+
+    return render(request, 'create_edit_return_spareparts.html', {
+        'return_form': return_form,
+        'formset': formset,
+        'item_groups': item_groups,
+        'voucher_types': voucher_types,
+        'return_instance': return_instance,
+        'is_edit_mode': return_id is not None,
     })
 
 
-def vehicle_master_edit(request, pk):
-    vehicle     = get_object_or_404(VehicleMaster, pk=pk)
-    customers   = FleetCustomer.objects.all()
-    categories  = VehicleCategory.objects.all()
-    plate_codes = LicensePlateCode.objects.all()
+def list_return_spareparts(request):
+    """List all Return Spare Parts vouchers, with optional voucher-no search."""
+    has_permission = check_privilege(request.user, RETURN_SPAREPARTS_MENU_ID, "can_read")
+    if not has_permission:
+        is_admin_ok, msg_or_admin = check_admin_override(request)
+        if not is_admin_ok:
+            return JsonResponse({"admin_required": True, "message": msg_or_admin}, status=403)
 
-    if request.method == 'POST':
-        customer_id = request.POST.get('customer')
-        customer    = get_object_or_404(FleetCustomer, id=customer_id)
+    returns = ReturnSparePartsMaster.objects.all().order_by('-date', '-id').prefetch_related('details')
 
-        vehicle.customer             = customer
-        vehicle.customer_name        = customer.customer_name
-        vehicle.vehicle_name         = request.POST.get('vehicle_name')
-        vehicle.license_plate_code   = request.POST.get('license_plate_code')
-        vehicle.license_plate_number = request.POST.get('license_plate_number')
-        vehicle.vehicle_driver       = request.POST.get('vehicle_driver', '')
-        vehicle.vehicle_category     = request.POST.get('vehicle_category', '')
-        vehicle.RC_number            = request.POST.get('RC_number', '')
-        vehicle.contract_no          = request.POST.get('contract_no', '')
-        vehicle.contract_start_date  = request.POST.get('contract_start_date', '')
-        vehicle.contract_end_date    = request.POST.get('contract_end_date', '')
+    search = request.GET.get('search', '').strip()
+    if search:
+        returns = returns.filter(voucher_no__icontains=search)
 
-        if request.FILES.get('vehicle_image'):
-            vehicle.vehicle_image = request.FILES['vehicle_image']
-
-        vehicle.save()
-        messages.success(request, "Vehicle updated!")
-        return redirect('fleet_app:vehicle_master_list')
-
-    return render(request, 'fleet_app/vehicle_master_form.html', {
-        'customers':   customers,
-        'categories':  categories,
-        'plate_codes': plate_codes,
-        'vehicle':     vehicle,
+    return render(request, 'list_return_spareparts.html', {
+        'returns': returns,
+        'search': search,
     })
 
 
-def vehicle_master_delete(request, pk):
-    vehicle = get_object_or_404(VehicleMaster, pk=pk)
+def delete_return_spareparts(request, return_id):
+    """Delete a Return Spare Parts voucher; details cascade automatically."""
+    return_instance = get_object_or_404(ReturnSparePartsMaster, id=return_id)
+
+    if request.method != 'POST':
+        return JsonResponse({"success": False, "message": "Invalid request method."}, status=405)
+
+    has_permission = check_privilege(request.user, RETURN_SPAREPARTS_MENU_ID, "can_delete")
+    if not has_permission:
+        is_admin_ok, msg_or_admin = check_admin_override(request)
+        if not is_admin_ok:
+            return JsonResponse({"admin_required": True, "message": msg_or_admin}, status=403)
+
+    try:
+        voucher_no = return_instance.voucher_no
+        return_instance.delete()  # CASCADE removes ReturnSparePartsDetails automatically
+
+        log_activity(
+            user=request.user,
+            screen_name="Return Spare Parts",
+            action_type="DELETE",
+            remark=f"Return Spare Parts {voucher_no} deleted"
+        )
+        return JsonResponse({"success": True, "message": "Deleted successfully!"})
+    except Exception as e:
+        return JsonResponse({"success": False, "message": f"Error: {str(e)}"}, status=400)
+        
+def scrap_report(request):
+    from_date = request.GET.get('from_date')
+    to_date = request.GET.get('to_date')
+    item_group_id = request.GET.get('item_group')
+    sparepart_id = request.GET.get('sparepart')
+    equipment_id = request.GET.get('equipment')
+
+    spareparts = SpareParts.objects.filter(
+        sparepart__inventory_nature='Recoverable Scrap'
+    ).select_related(
+        'repair',
+        'repair__vehicle',
+        'repair__staff',
+        'repair__client',
+        'item_group',
+        'sparepart',
+    ).order_by('-repair__date')
+
+    if from_date:
+        spareparts = spareparts.filter(repair__date__gte=from_date)
+    if to_date:
+        spareparts = spareparts.filter(repair__date__lte=to_date)
+    if item_group_id:
+        spareparts = spareparts.filter(item_group_id=item_group_id)
+    if sparepart_id:
+        spareparts = spareparts.filter(sparepart_id=sparepart_id)
+    if equipment_id:
+        spareparts = spareparts.filter(repair__vehicle_id=equipment_id)
+
+    report_data = []
+    grand_total_qty = 0
+
+    for sp in spareparts:
+        report_data.append({
+            'item_group': sp.item_group,
+            'sparepart': sp.sparepart,
+            'quantity': sp.quantity,
+            'equipment': sp.repair.vehicle,
+            'date': sp.repair.date,
+            'staff': sp.repair.staff,
+            'client': sp.repair.client,
+        })
+        grand_total_qty += sp.quantity
+
+    # Filter dropdown options — only values that actually appear among scrap spare parts
+    item_group_options = ItemGroup.objects.filter(
+        group_repair_spare_parts__sparepart__inventory_nature='Recoverable Scrap'
+    ).distinct()
+
+    sparepart_options = Item.objects.filter(
+        inventory_nature='Recoverable Scrap'
+    ).distinct()
+
+    equipment_options = Vehicle.objects.filter(
+        repairs__spare_parts__sparepart__inventory_nature='Recoverable Scrap'
+    ).distinct()
+
+    context = {
+        'report_data': report_data,
+        'grand_total_qty': grand_total_qty,
+        'from_date': from_date,
+        'to_date': to_date,
+        'item_group_id': item_group_id,
+        'sparepart_id': sparepart_id,
+        'equipment_id': equipment_id,
+        'item_group_options': item_group_options,
+        'sparepart_options': sparepart_options,
+        'equipment_options': equipment_options,
+    }
+    return render(request, 'scrap_report.html', context)            
+
+
+# ===========================================================================
+# Service Department: create + edit + list in one template
+# ===========================================================================
+
+# Vehicle.status values
+VEHICLE_FREE = '1'
+
+# ServiceDepartment.status values
+AWAITING_INSPECTION = 'Awaiting Inspection'
+MOVE_TO_YARD = 'Move To Yard'
+ 
+def service_department(request, service_id=None):
+    instance = get_object_or_404(ServiceDepartment, pk=service_id) if service_id else None
+
     if request.method == 'POST':
-        vehicle.delete()
-        messages.success(request, "Vehicle deleted.")
-        return redirect('fleet_app:vehicle_master_list')
-    return render(request, 'fleet_app/vehicle_master_confirm_delete.html', {'vehicle': vehicle})
-    '''
+        action = "can_edit" if instance else "can_add"
+        if SERVICE_DEPARTMENT_MENU_ID:
+            if not check_privilege(request.user, SERVICE_DEPARTMENT_MENU_ID, action):
+                is_admin_ok, msg_or_admin = check_admin_override(request)
+                if not is_admin_ok:
+                    return JsonResponse({"admin_required": True, "message": msg_or_admin}, status=403)
+
+        # CHANGED: read the old status BEFORE the form is created
+        old_status = instance.status if instance else None
+
+        # CHANGED: a job already moved to the yard is closed - block any edit
+        if old_status == MOVE_TO_YARD:
+            return JsonResponse({
+                "success": False,
+                "message": "This vehicle is already moved to the yard. The job is closed.",
+            }, status=400)
+
+        form = ServiceDepartmentForm(request.POST, instance=instance)
+        if instance:
+            form.fields['vehicle'].disabled = True   # vehicle can't change on edit
+
+        if not form.is_valid():
+            return JsonResponse({
+                "success": False,
+                "message": "Please correct the errors in the form.",
+                "errors": form.errors,
+            }, status=400)
+
+        vehicle = form.cleaned_data['vehicle']
+        # CHANGED: removed new_status (not needed any more)
+
+        # A vehicle can have only one open job
+        if not instance and ServiceDepartment.objects.filter(
+            vehicle=vehicle
+        ).exclude(status=MOVE_TO_YARD).exists():
+            return JsonResponse({
+                "success": False,
+                "message": "This vehicle already has an open service job.",
+            }, status=400)
+
+        # CHANGED: removed the old "can't be re-opened" check (it's handled above)
+
+        try:
+            with transaction.atomic():
+                job = form.save(commit=False)
+                if instance:
+                    job.updated_by = request.user.id
+                else:
+                    job.created_by = request.user.id
+                job.save()
+
+                # Move To Yard -> Vehicle Free
+                if job.status == MOVE_TO_YARD:
+                    Vehicle.objects.filter(pk=job.vehicle_id).update(status=VEHICLE_FREE)
+
+        except Exception as e:
+            return JsonResponse({"success": False, "message": f"Error: {str(e)}"}, status=400)
+
+        log_activity(
+            user=request.user,
+            screen_name="Service Department",
+            action_type="UPDATE" if instance else "CREATE",
+            remark=f"Service job #{job.pk} for {job.vehicle} - {job.status}",
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": "Vehicle moved to yard and is now Free." if job.status == MOVE_TO_YARD
+                       else ("Service job updated." if instance else "Service job created."),
+            "redirect_url": reverse('fleet_app:service_department'),
+        })
+
+    # ---- GET: form + list ----
+    form = ServiceDepartmentForm(instance=instance)
+    if instance:
+        form.fields['vehicle'].disabled = True
+
+    service_jobs = ServiceDepartment.objects.select_related(
+        'vehicle', 'customer', 'staff', 'offhire'
+    ).order_by('-created_on')
+
+    # ---- Status counts (number of vehicles in each status) ----
+    counts = dict(
+        ServiceDepartment.objects.order_by()
+        .values_list('status')
+        .annotate(total=Count('vehicle', distinct=True))
+    )
+    status_counts = [
+        (value, label, counts.get(value, 0))
+        for value, label in ServiceDepartment.STATUS_CHOICES
+    ]
+    total_in_service = sum(
+        count for value, label, count in status_counts if value != MOVE_TO_YARD
+    )
+
+
+    return render(request, 'service_department.html', {
+        'form': form,
+        'instance': instance,
+        'is_edit_mode': instance is not None,
+        'service_jobs': service_jobs,
+        'status_counts': status_counts,       
+        'total_in_service': total_in_service,
+    })
+
+def vehicle_offhire_info(request):
+    vehicle_id = request.GET.get('vehicle_id')
+    if not vehicle_id:
+        return JsonResponse({"found": False})
+ 
+    detail = (
+        OffHireDetails.objects
+        .filter(vehicle_id=vehicle_id)
+        .select_related('offhire', 'offhire__customer')
+        .order_by('-offhire_date_time', '-id')
+        .first()
+    )
+    if not detail:
+        return JsonResponse({"found": False})
+ 
+    offhire = detail.offhire
+    offhire_dt = detail.offhire_date_time or offhire.offhire_date_time
+    if timezone.is_aware(offhire_dt):
+        offhire_dt = timezone.localtime(offhire_dt)
+ 
+    return JsonResponse({
+        "found": True,
+        "offhire_id": offhire.id,
+        "voucher_no": offhire.voucher_no,
+        "offhire_date": offhire_dt.date().isoformat(),   # YYYY-MM-DD for <input type="date">
+        "customer_id": offhire.customer_id or "",
+        "customer_name": offhire.customer.ledger_name if offhire.customer else "",
+    })  
+
+def get_service_status_counts():
+    counts = dict(
+        ServiceDepartment.objects.order_by()
+        .values_list('status')
+        .annotate(total=Count('vehicle', distinct=True))
+    )
+    status_counts = [
+        (value, label, counts.get(value, 0))
+        for value, label in ServiceDepartment.STATUS_CHOICES
+    ]
+    total_in_service = sum(
+        count for value, label, count in status_counts if value != MOVE_TO_YARD
+    )
+    return status_counts, total_in_service
+
+
+#TAX On Purchase & Expenses
+
+def _expense_payment_split(amount, vat_amount, vat_type):
+    amount = amount or Decimal('0.000')
+    vat_amount = vat_amount or Decimal('0.000')
+
+    if vat_type == 1:          # No VAT
+        return amount, Decimal('0.000'), amount
+    elif vat_type == 2:        # Inclusive VAT - Amount already includes tax
+        net = amount - vat_amount
+        return net, vat_amount, amount
+    else:                      # Exclusive VAT (vat_type == 3)
+        total = amount + vat_amount
+        return amount, vat_amount, total
+
+
+def get_purchase_expense_tax_report(start_date=None, end_date=None):
+    rows = []
+
+    # ---- Purchases ----
+    pm_qs = PurchaseMaster.objects.select_related('ledger').filter(isDeleted=False)
+    if start_date:
+        pm_qs = pm_qs.filter(transaction_date__gte=start_date)
+    if end_date:
+        pm_qs = pm_qs.filter(transaction_date__lte=end_date)
+
+    for pm in pm_qs:
+        rows.append({
+            'row_key': f'purchase-{pm.id}',
+            'source': 'purchase',
+            'date': pm.transaction_date,
+            'voucher_no': pm.voucher_no,
+            'supplier': pm.ledger.ledger_name if pm.ledger else '',
+            'description': pm.remarks or '',
+            'inv_no': pm.VendorInvNo or '',
+            'amount': pm.total_net_value or Decimal('0.000'),
+            'tax_amount': pm.total_tax_amount or Decimal('0.000'),
+            'total_amount': pm.grand_total_amount or Decimal('0.000'),
+        })
+
+    # ---- Expenses ----
+    ed_qs = ExpenseDetails.objects.select_related('Expense', 'Ledger')
+    if start_date:
+        ed_qs = ed_qs.filter(Expense__Date__gte=start_date)
+    if end_date:
+        ed_qs = ed_qs.filter(Expense__Date__lte=end_date)
+
+    for ed in ed_qs:
+        amount, tax_amt, total = _expense_payment_split(ed.Amount, ed.vat_amount, ed.vat_type)
+        rows.append({
+            'row_key': f'expense-{ed.id}',
+            'source': 'expense',
+            'date': ed.Expense.Date,
+            'voucher_no': ed.Expense.voucher_no,
+            'supplier': ed.PaidTo or (ed.Ledger.ledger_name if ed.Ledger else ''),
+            'description': ed.Desc or '',
+            'inv_no': ed.invoice_no or '',
+            'amount': amount,
+            'tax_amount': tax_amt,
+            'total_amount': total,
+        })
+
+    # ---- Payments (standalone only — excludes payments already tied to an Expense) ----
+    pd_qs = PaymentDetails.objects.select_related('Payment', 'Ledger').filter(expense__isnull=True)
+    if start_date:
+        pd_qs = pd_qs.filter(Payment__Date__gte=start_date)
+    if end_date:
+        pd_qs = pd_qs.filter(Payment__Date__lte=end_date)
+
+    for pd in pd_qs:
+        amount, tax_amt, total = _expense_payment_split(pd.Amount, pd.vat_amount, pd.vat_type)
+        rows.append({
+            'row_key': f'payment-{pd.id}',
+            'source': 'payment',
+            'date': pd.Payment.Date,
+            'voucher_no': pd.Payment.voucher_no,
+            'supplier': pd.PaidTo or (pd.Ledger.ledger_name if pd.Ledger else ''),
+            'description': pd.Desc or '',
+            'inv_no': pd.invoice_no or '',
+            'amount': amount,
+            'tax_amount': tax_amt,
+            'total_amount': total,
+        })
+
+    rows.sort(key=lambda r: (r['date'], r['voucher_no']))
+    return rows
+
+def purchase_expense_tax_report(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    rows = get_purchase_expense_tax_report(start_date=start_date, end_date=end_date)
+
+    context = {
+        'rows': rows,
+        'start_date': start_date or '',
+        'end_date': end_date or '',
+    }
+    return render(request, 'purchase_expense_tax_report.html', context)
+
+
+VEHICLE_STATUS_FREE = "1"
+ 
+ 
+# --------------------------------------------------------------------------- #
+# Helpers (work with USE_TZ True or False)
+# --------------------------------------------------------------------------- #
+def _norm(dt):
+    if settings.USE_TZ:
+        return timezone.localtime(dt) if timezone.is_aware(dt) else timezone.make_aware(dt)
+    return timezone.make_naive(dt) if timezone.is_aware(dt) else dt
+ 
+ 
+def _combine(d):
+    dt = datetime.combine(d, time.min)
+    return timezone.make_aware(dt) if settings.USE_TZ else dt
+ 
+ 
+def _party(ledger):
+    if not ledger:
+        return ""
+    for attr in ("name", "ledger_name"):
+        value = getattr(ledger, attr, None)
+        if value:
+            return value
+    return str(ledger)
+ 
+ 
+# --------------------------------------------------------------------------- #
+# Hire = one delivery contract line + its off hire (if done)
+# --------------------------------------------------------------------------- #
+@dataclass
+class Hire:
+    customer: str
+    location: str
+    contract_no: str
+    start: datetime
+    end: Optional[datetime]
+    offhire_no: str = ""
+ 
+ 
+def collect_hires(vehicle):
+    details = (
+        DeliveryContractDetails.objects.filter(vehicle=vehicle)
+        .select_related("delivery_contract", "delivery_contract__customer")
+        .prefetch_related(Prefetch(
+            "offhire_details",
+            queryset=OffHireDetails.objects.select_related("offhire", "offhire__customer")
+                                           .order_by("offhire_date_time"),
+        ))
+    )
+    hires = []
+    for d in details:
+        c = d.delivery_contract
+        if c.onhire_date_time and (not d.from_date or _norm(c.onhire_date_time).date() == d.from_date):
+            start = _norm(c.onhire_date_time)
+        else:
+            start = _combine(d.from_date or c.date)
+ 
+        offhires = list(d.offhire_details.all())
+        off = offhires[0] if offhires else None
+ 
+        hires.append(Hire(
+            customer=_party((off.offhire.customer if off else None) or c.customer) or "-",
+            location=d.location or c.location or "-",
+            contract_no=c.voucher_no,
+            start=start,
+            end=_norm(off.offhire_date_time) if off else None,
+            offhire_no=off.offhire.voucher_no if off else "",
+        ))
+    return hires
+ 
+ 
+def build_movement_rows(vehicle):
+    hires = collect_hires(vehicle)
+    rows = []
+    for h in hires:
+        rows.append({
+            "type": "delivery", "css": "st-hire",
+            "date": h.start, "client": h.customer,
+            "delivery_date": h.start, "offhire_date": None,
+            "location": h.location, "doc_no": h.contract_no,
+        })
+        if h.end:
+            rows.append({
+                "type": "offhire", "css": "st-offhire",
+                "date": h.end, "client": h.customer,
+                "delivery_date": h.start, "offhire_date": h.end,
+                "location": "Service", "doc_no": h.offhire_no,
+            })
+ 
+    # chronological; off hire before a new delivery at the same moment
+    rows.sort(key=lambda r: (r["date"], 0 if r["type"] == "offhire" else 1))
+ 
+    yard_row = {
+        "type": "yard", "css": "st-yard",
+        "date": None, "client": "Yard",
+        "delivery_date": None, "offhire_date": None,
+        "location": "Yard", "doc_no": "",
+    }
+    has_open_hire = any(h.end is None for h in hires)
+    if not rows or (vehicle.status == VEHICLE_STATUS_FREE and not has_open_hire):
+        rows.append(yard_row)
+ 
+    # latest first (current position at the top)
+    rows.reverse()
+    return rows
+ 
+ 
+# --------------------------------------------------------------------------- #
+# View
+# --------------------------------------------------------------------------- #
+@login_required
+def equipment_movement_report(request):
+    vehicle_id = request.GET.get("vehicle") or ""
+    vehicle, rows, error = None, [], None
+ 
+    if vehicle_id:
+        vehicle = Vehicle.objects.filter(pk=vehicle_id).first()
+        if vehicle:
+            rows = build_movement_rows(vehicle)
+        else:
+            error = "Vehicle not found."
+ 
+    context = {
+        "vehicle": vehicle,
+        "rows": rows,
+        "vehicle_id": vehicle_id,
+        "error": error,
+        "vehicle_options": Vehicle.objects.select_related("license_plate_code", "model").order_by("vehicle_name"),
+    }
+    return render(request, "equipment_movement_report.html", context)
+ 
+
+def _parse_date(value):
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date() if value else None
+    except ValueError:
+        return None
+        
+@login_required
+def delivery_contract_report(request):
+    # --- privilege check (same inline pattern as your other views) ---------
+    # if not check_privilege(request, '<module>', 'can_read') and not check_admin_override(request):
+    #     return redirect(...)
+ 
+    g = request.GET
+    from_date   = _parse_date(g.get("from_date"))
+    to_date     = _parse_date(g.get("to_date"))
+    customer_id = g.get("customer") or ""
+    vehicle_id  = g.get("vehicle") or ""
+    salesman_id = g.get("salesman") or ""
+    hire_status = g.get("hire_status") or ""      # '', 'onhire', 'offhire'
+    inv_status  = g.get("inv_status") or ""       # '', 'pending', 'cleared'
+    search      = (g.get("q") or "").strip()
+ 
+    qs = (
+        DeliveryContract.objects
+        .select_related("customer", "salesman", "voucherType")
+        .prefetch_related(
+            Prefetch(
+                "details",
+                queryset=DeliveryContractDetails.objects.select_related("vehicle").order_by("id"),
+            ),
+            Prefetch(
+                "spare_parts",
+                queryset=DeliveryContractSpareParts.objects.select_related("item_group", "sparepart").order_by("id"),
+            ),
+        )
+    )
+ 
+    if from_date:
+        qs = qs.filter(date__gte=from_date)
+    if to_date:
+        qs = qs.filter(date__lte=to_date)
+    if customer_id:
+        qs = qs.filter(customer_id=customer_id)
+    if salesman_id:
+        qs = qs.filter(salesman_id=salesman_id)
+    if vehicle_id:
+        qs = qs.filter(details__vehicle_id=vehicle_id)
+    if hire_status == "onhire":
+        qs = qs.filter(offhire_date_time__isnull=True)
+    elif hire_status == "offhire":
+        qs = qs.filter(offhire_date_time__isnull=False)
+    if inv_status == "pending":
+        qs = qs.filter(IsCleared=False)
+    elif inv_status == "cleared":
+        qs = qs.filter(IsCleared=True)
+    if search:
+        qs = qs.filter(
+            Q(voucher_no__icontains=search)
+            | Q(hire_contract_no__icontains=search)
+            | Q(buyer_order_no__icontains=search)
+            | Q(ref_no__icontains=search)
+            | Q(location__icontains=search)
+            | Q(site_contact_person__icontains=search)
+        )
+ 
+    qs = qs.distinct().order_by("-date", "-id")
+ 
+    contracts = []
+    total_amount = total_tax = total_grand = total_spares = Decimal("0")
+    onhire_count = offhire_count = pending_count = cleared_count = 0
+ 
+    for c in qs:
+        details = list(c.details.all())
+        spares = list(c.spare_parts.all())
+ 
+        amt = sum((d.amount or 0 for d in details), Decimal("0"))
+        tax = sum((d.tax_amount or 0 for d in details), Decimal("0"))
+        tot = sum((d.total_amount or 0 for d in details), Decimal("0"))
+        spare_amt = sum((s.amount or 0 for s in spares), Decimal("0"))
+        cleared_lines = sum(1 for d in details if d.IsCleared)
+ 
+        contracts.append({
+            "obj": c,
+            "details": details,
+            "spares": spares,
+            "amount": amt,
+            "tax": tax,
+            "total": tot,
+            "spare_amount": spare_amt,
+            "line_count": len(details),
+            "cleared_lines": cleared_lines,
+            "is_onhire": c.offhire_date_time is None,
+        })
+ 
+        total_amount += amt
+        total_tax += tax
+        total_grand += tot
+        total_spares += spare_amt
+        if c.offhire_date_time is None:
+            onhire_count += 1
+        else:
+            offhire_count += 1
+        if c.IsCleared:
+            cleared_count += 1
+        else:
+            pending_count += 1
+ 
+    context = {
+        "contracts": contracts,
+        "customers": LedgerCreation.objects.filter(delivery_contracts__isnull=False).distinct().order_by("ledger_name"),
+        "vehicles": Vehicle.objects.all(),
+        "salesmen": Staff.objects.all(),
+        "filters": {
+            "from_date": g.get("from_date", ""),
+            "to_date": g.get("to_date", ""),
+            "customer": customer_id,
+            "vehicle": vehicle_id,
+            "salesman": salesman_id,
+            "hire_status": hire_status,
+            "inv_status": inv_status,
+            "q": search,
+        },
+        "summary": {
+            "count": len(contracts),
+            "onhire": onhire_count,
+            "offhire": offhire_count,
+            "pending": pending_count,
+            "cleared": cleared_count,
+            "amount": total_amount,
+            "tax": total_tax,
+            "grand": total_grand,
+            "spares": total_spares,
+        },
+    }
+    return render(request, "delivery_contract_report.html", context)
+
+REPORT_SOURCES = [
+    ('expense', 'Expense'),
+    ('payment', 'Payment'),
+    ('purchase', 'Purchase'),
+    ('asset', 'Asset Purchase'),
+]
+ 
+# Which payments count as an expense.
+# If IsExpense=True means "this payment settles an Expense voucher", those
+# amounts are already in the Expense section — switch to {'IsExpense': False, ...}
+ 
+ZERO = Decimal('0')
+ 
+ 
+def _unique_names(objs, attr):
+    """Comma-joined unique ledger names from detail rows."""
+    names = []
+    for obj in objs:
+        value = getattr(obj, attr, None)
+        if value is not None:
+            name = str(value)
+            if name not in names:
+                names.append(name)
+    return ', '.join(names)
+ 
+ 
+def _expense_rows(date_from, date_to):
+    qs = (
+        ExpenseMaster.objects
+        .filter(Date__range=(date_from, date_to))
+        .select_related('ledger', 'staff')
+        .prefetch_related(
+            Prefetch('details', queryset=ExpenseDetails.objects.select_related('Ledger'))
+        )
+    )
+    for e in qs:
+        details = list(e.details.all())
+        yield {
+            'date': e.Date,
+            'voucher_no': e.voucher_no,
+            'source': 'expense',
+            'source_label': 'Expense',
+            'party': str(e.staff) if e.staff else str(e.ledger),
+            'particulars': _unique_names(details, 'Ledger') or (e.narration or ''),
+            'mode': e.expense_source,
+            'ref': e.ref_no or '',
+            'vat': sum((d.vat_amount or ZERO for d in details), ZERO),
+            'amount': e.TotalAmount or ZERO,
+        }
+ 
+ 
+def _payment_rows(date_from, date_to):
+    qs = (
+        PaymentMaster.objects
+        .filter(Date__range=(date_from, date_to))
+        .select_related('Ledger')
+        .prefetch_related(
+            Prefetch('details', queryset=PaymentDetails.objects.select_related('Ledger'))
+        )
+    )
+    for p in qs:
+        details = list(p.details.all())
+        yield {
+            'date': p.Date,
+            'voucher_no': p.voucher_no,
+            'source': 'payment',
+            'source_label': 'Payment',
+            'party': p.PaidTo or str(p.Ledger),
+            'particulars': _unique_names(details, 'Ledger'),
+            'mode': 'PDC' if p.IsPDC else str(p.Ledger),
+            'ref': p.ChequeNo or '',
+            'vat': sum((d.vat_amount or ZERO for d in details), ZERO),
+            'amount': p.TotalAmount or ZERO,
+        }
+ 
+ 
+def _purchase_rows(date_from, date_to):
+    qs = (
+        PurchaseMaster.objects
+        .filter(transaction_date__range=(date_from, date_to), isDeleted=False)
+        .select_related('ledger')
+    )
+    for p in qs:
+        yield {
+            'date': p.transaction_date,
+            'voucher_no': p.voucher_no,
+            'source': 'purchase',
+            'source_label': 'Purchase',
+            'party': str(p.ledger),
+            'particulars': p.remarks or '',
+            'mode': p.payment_mode,
+            'ref': p.VendorInvNo or '',
+            'vat': p.total_tax_amount or ZERO,
+            'amount': p.grand_total_amount or ZERO,
+        }
+'''
+ 
+def _asset_rows(date_from, date_to):
+    qs = (
+        AssetPurchase.objects
+        .filter(date__range=(date_from, date_to))
+        .select_related('supplier')
+        .prefetch_related('details__asset')
+    )
+    for a in qs:
+        yield {
+            'date': a.date,
+            'voucher_no': a.voucher_no,
+            'source': 'asset',
+            'source_label': 'Asset Purchase',
+            'party': str(a.supplier),
+            'particulars': _unique_names(a.details.all(), 'asset'),
+            'mode': a.payment_mode,
+            'ref': a.invoice_no or '',
+            'vat': a.total_vat_amount or ZERO,
+            'amount': a.grand_total or ZERO,
+        }
+ 
+  '''
+ 
+ROW_BUILDERS = {
+    'expense': _expense_rows,
+    'payment': _payment_rows,
+    'purchase': _purchase_rows,
+}
+
+def _export_csv(rows, totals, date_from, date_to):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = (
+        f'attachment; filename="expense_report_{date_from}_{date_to}.csv"'
+    )
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Voucher No', 'Type', 'Party', 'Particulars',
+                     'Mode', 'Ref No', 'VAT', 'Amount'])
+    for r in rows:
+        writer.writerow([
+            r['date'].strftime('%d-%m-%Y'), r['voucher_no'], r['source_label'],
+            r['party'], r['particulars'], r['mode'], r['ref'],
+            f"{r['vat']:.3f}", f"{r['amount']:.3f}",
+        ])
+    writer.writerow([])
+    writer.writerow(['', '', '', '', '', '', 'Total',
+                     f"{totals['vat']:.3f}", f"{totals['amount']:.3f}"])
+    return response
+ 
+ 
+@login_required
+def expense_report(request):
+    today = timezone.localdate()
+    date_from = parse_date(request.GET.get('from_date') or '') or today.replace(day=1)
+    date_to = parse_date(request.GET.get('to_date') or '') or today
+    if date_from > date_to:
+        date_from, date_to = date_to, date_from
+ 
+    valid_keys = [key for key, _ in REPORT_SOURCES]
+    selected = [s for s in request.GET.getlist('source') if s in valid_keys] or valid_keys
+    search = (request.GET.get('q') or '').strip()
+ 
+    rows = []
+    for key in selected:
+        rows.extend(ROW_BUILDERS[key](date_from, date_to))
+ 
+    if search:
+        needle = search.lower()
+        rows = [
+            r for r in rows
+            if needle in r['voucher_no'].lower()
+            or needle in r['party'].lower()
+            or needle in r['particulars'].lower()
+            or needle in r['ref'].lower()
+        ]
+ 
+    rows.sort(key=lambda r: (r['date'], r['voucher_no']))
+ 
+    # Per-source summary
+    summary = []
+    for key, label in REPORT_SOURCES:
+        src_rows = [r for r in rows if r['source'] == key]
+        summary.append({
+            'key': key,
+            'label': label,
+            'count': len(src_rows),
+            'amount': sum((r['amount'] for r in src_rows), ZERO),
+            'active': key in selected,
+        })
+ 
+    totals = {
+        'count': len(rows),
+        'vat': sum((r['vat'] for r in rows), ZERO),
+        'amount': sum((r['amount'] for r in rows), ZERO),
+    }
+ 
+    if request.GET.get('export') == 'csv':
+        return _export_csv(rows, totals, date_from, date_to)
+ 
+    context = {
+        'rows': rows,
+        'summary': summary,
+        'totals': totals,
+        'sources': REPORT_SOURCES,
+        'selected_sources': selected,
+        'from_date': date_from,
+        'to_date': date_to,
+        'search': search,
+    }
+    return render(request, 'expense_report.html', context)    
+
+
+@login_required
+def offhire_report(request):
+    from_date = request.GET.get('from_date') or ''
+    to_date = request.GET.get('to_date') or ''
+    customer_id = request.GET.get('customer') or ''
+ 
+    details = OffHireDetails.objects.select_related(
+        'offhire', 'offhire__delivery_contract', 'offhire__customer', 'vehicle'
+    )
+ 
+    if from_date:
+        details = details.filter(offhire__date__gte=from_date)
+    if to_date:
+        details = details.filter(offhire__date__lte=to_date)
+    if customer_id:
+        details = details.filter(offhire__customer_id=customer_id)
+ 
+    details = details.order_by('offhire__date', 'offhire__voucher_no')
+ 
+    total_amount = sum((d.total_amount or Decimal('0') for d in details), Decimal('0'))
+ 
+    customers = LedgerCreation.objects.filter(
+        id__in=OffHire.objects.values('customer_id')
+    )
+ 
+    return render(request, 'offhire_report.html', {
+        'details': details,
+        'total_amount': total_amount,
+        'customers': customers,
+        'from_date': from_date,
+        'to_date': to_date,
+        'customer_id': customer_id,
+    })    
+
+
+
+
+# Vehicle.status values -> report labels
+EQUIPMENT_STATUS = [
+    ('1', 'Available', 'success'),
+    ('2', 'On Rent', 'primary'),
+    ('3', 'On Service', 'warning'),
+]
+ 
+def equipment_status_report(request):
+    # Privilege check — same inline pattern as other report views:
+    # if not (check_privilege(request, 'equipment_status_report', 'can_read')
+    #         or check_admin_override(request)):
+    #     return redirect('no_permission')
+ 
+    valid = [code for code, _, _ in EQUIPMENT_STATUS]
+    selected = [s for s in request.GET.getlist('status') if s in valid]
+    if not selected:            # first load, or nothing ticked -> show all
+        selected = valid
+ 
+    today = date.today()
+ 
+    # Active equipment only (skip cancelled registrations)
+    active = Vehicle.objects.filter(
+        Q(vehicle_cancellation_date__isnull=True) | Q(vehicle_cancellation_date__gt=today)
+    )
+ 
+    vehicles = (
+        active
+        .filter(status__in=selected)
+        .select_related('vehicle_category', 'model', 'license_plate_code', 'supplier')
+        .order_by('status', 'vehicle_category_id', 'vehicle_name')
+    )
+ 
+    label_map = {code: (label, css) for code, label, css in EQUIPMENT_STATUS}
+    rows = []
+    for i, v in enumerate(vehicles, start=1):
+        label, css = label_map.get(v.status, ('-', 'secondary'))
+        rows.append({
+            'sl_no': i,
+            'vehicle': v,
+            'status_label': label,
+            'status_class': css,
+        })
+ 
+    # Counts for the summary cards (all active equipment, not just the filtered set)
+    counts = dict(
+        active.values_list('status').annotate(n=Count('id')).values_list('status', 'n')
+    )
+    status_cards = [
+        {'code': code, 'label': label, 'css': css,
+         'count': counts.get(code, 0), 'checked': code in selected}
+        for code, label, css in EQUIPMENT_STATUS
+    ]
+ 
+    context = {
+        'rows': rows,
+        'status_cards': status_cards,
+        'total_count': len(rows),
+        'today': today,
+    }
+    return render(request, 'equipment_status_report.html', context)    

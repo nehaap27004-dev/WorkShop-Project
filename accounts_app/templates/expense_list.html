@@ -1,0 +1,109 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Expense Voucher List</h4>
+            <a href="{% url 'accounts_app:create_expense' %}" class="btn btn-primary btn-sm">Create New Voucher</a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Voucher No</th>
+                            <th>Date</th>
+                            <th>Ledger</th>
+                            <th>Expense Source</th>
+                            <th>Total Amount</th>
+                            <th>Reference No</th>
+                            <th class="text-center" style="width: 180px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expense in expenses %}
+                            <tr>
+                                <td class="font-weight-bold">{{ expense.voucher_no }}</td>
+                                <td>{{ expense.Date|date:"Y-m-d" }}</td>
+                                <td>{{ expense.ledger }}</td>
+                                <td><span class="badge badge-secondary">{{ expense.expense_source }}</span></td>
+                                <td class="font-weight-bold text-primary">{{ expense.TotalAmount }}</td>
+                                <td>{{ expense.ref_no|default:"-" }}</td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'accounts_app:edit_expense' expense.pk %}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                        <a href="{% url 'accounts_app:expense_pdf' expense.pk %}" target="_blank" class="btn btn-outline-info btn-sm">PDF</a>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal" data-target="#deleteModal{{ expense.pk }}">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">No expense vouchers found. Click "Create New Voucher" to add one.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals rendered outside of the table to avoid Bootstrap/HTML nesting issues -->
+{% for expense in expenses %}
+<div class="modal fade" id="deleteModal{{ expense.pk }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel{{ expense.pk }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel{{ expense.pk }}">Confirm Deletion</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-left">
+                <p>Are you sure you want to delete Expense Voucher <strong>"{{ expense.voucher_no }}"</strong>?</p>
+                <p class="text-muted small mb-0">This action will delete all corresponding expense detail records.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form action="{% url 'accounts_app:delete_expense' expense.pk %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+(function () {
+    const params = new URLSearchParams(window.location.search);
+    const pdfId = params.get('pdf');
+
+    if (pdfId) {
+        const pdfUrl = "{% url 'accounts_app:expense_pdf' 0 %}".replace('/0/', `/${pdfId}/`);
+        window.open(pdfUrl, '_blank');
+
+        params.delete('pdf');
+        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    }
+})();
+</script>
+
+{% endblock content %}

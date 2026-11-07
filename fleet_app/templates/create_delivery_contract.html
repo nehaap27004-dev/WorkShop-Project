@@ -121,6 +121,26 @@
     .complex-column {
         display: none;
     }
+
+#sparePartsSection select.form-control,
+#sparePartsSection input.form-control {
+    min-width: 100%;
+}
+
+#sparePartsSection input.sp-plain-checkbox {
+    -webkit-appearance: checkbox !important;
+    -moz-appearance: checkbox !important;
+    appearance: checkbox !important;
+    width: 20px !important;
+    height: 20px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: static !important;
+    display: inline-block !important;
+    float: none !important;
+    margin: 8px auto 0 !important;
+}
+
 </style>
 
 <div class="container mt-4 mb-5">
@@ -349,9 +369,9 @@
                 <div class="row g-3 align-items-end mb-3">
                     <!-- Vehicle - Always visible -->
                     <div class="col-md-2">
-                        <label class="form-label">{% trans "Vehicle" %}</label>
+                        <label class="form-label">{% trans "Equipment" %}</label>
                         <select id="vehicle" class="form-control" onchange="onVehicleChange()">
-                            <option value="" disabled selected>{% trans "Select vehicle" %}</option>
+                            <option value="" disabled selected>{% trans "Select Equipment" %}</option>
                             {% for vehicle in vehicles %}
                             <option value="{{ vehicle.id }}">{{ vehicle.vehicle_name }}</option>
                             {% endfor %}
@@ -360,7 +380,7 @@
 
                     <!-- Vehicle Model (auto-populated, read-only) -->
                     <div class="col-md-2">
-                        <label class="form-label">{% trans "Vehicle Model" %}</label>
+                        <label class="form-label">{% trans "Equipment Model" %}</label>
                         <input type="text" id="vehicle_model" class="form-control"
                             placeholder="{% trans 'Auto-filled' %}" readonly>
                     </div>
@@ -373,7 +393,7 @@
                     </div>
 
                     <!-- Details - Always visible -->
-                    <div class="col-md-2">
+                    <div class="col-md-2" style="display:none;">
                         <label class="form-label">{% trans "Details" %}</label>
                         <input type="text" id="location" class="form-control" placeholder="{% trans 'Details' %}">
                     </div>
@@ -429,12 +449,14 @@
                             value="5">
                     </div>
 
-                    <!-- Add Button -->
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-success w-100" onclick="addDetail()">
-                            {% trans "Add" %}
-                        </button>
-                    </div>
+                    <!-- Add / Update Button -->
+<div class="col-md-2 d-flex" style="gap:6px;">
+    <button type="button" id="addDetailBtn" class="btn btn-success w-100" onclick="addDetail()">
+        {% trans "Add" %}
+    </button>
+    <button type="button" id="cancelEditBtn" class="btn btn-secondary" onclick="clearDetailInputs()"
+        style="display:none;" title="{% trans 'Cancel Edit' %}">✕</button>
+</div>
                 </div>
 
                 <!-- Details Table -->
@@ -446,7 +468,6 @@
                                 <th style="width: 12%">{% trans "Vehicle" %}</th>
                                 <th style="width: 10%">{% trans "Model" %}</th>
                                 <th style="width: 12%">{% trans "Description" %}</th>
-                                <th style="width: 10%">{% trans "Details" %}</th>
 
                                 <!-- Complex columns -->
                                 <th style="width: 7%" class="complex-column">{% trans "Period" %}</th>
@@ -481,6 +502,90 @@
             </div>
         </div>
 
+        <!-- Accessories / Spare Parts -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="enable_accessories" onchange="toggleSparePartsSection()"
+                        {% if existing_spare_parts %}checked{% endif %}>
+                    <label class="form-check-label fw-bold" for="enable_accessories">
+                        {% trans "Accessories / Spare Parts" %}
+                    </label>
+                </div>
+            </div>
+            <div class="card-body" id="sparePartsSection" style="display:none;">
+<div class="d-flex flex-wrap align-items-end mb-3" style="gap: 14px;">
+    <div style="min-width:160px;">
+        <label class="form-label">{% trans "Item Group" %}</label>
+        <select id="sp_item_group" class="form-control" onchange="onSparePartGroupChange()">
+            <option value="" disabled selected>{% trans "Select Group" %}</option>
+            {% for group in item_groups %}
+            <option value="{{ group.id }}">{{ group.group_code }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div style="min-width:180px;">
+        <label class="form-label">{% trans "Spare Part" %}</label>
+        <select id="sp_sparepart" class="form-control">
+            <option value="" disabled selected>{% trans "Select group first" %}</option>
+        </select>
+    </div>
+    <div style="min-width:140px;">
+        <label class="form-label">{% trans "Part No" %}</label>
+        <input type="text" id="sp_part_no" class="form-control" placeholder="{% trans 'Part No' %}">
+    </div>
+    <div style="width:90px;">
+        <label class="form-label">{% trans "Qty" %}</label>
+        <input type="number" id="sp_quantity" class="form-control" step="0.001" value="1">
+    </div>
+    <div style="min-width:120px;">
+        <label class="form-label">{% trans "Rate" %}</label>
+        <input type="number" id="sp_rate" class="form-control" step="0.001">
+    </div>
+    <div style="min-width:110px;">
+        <label class="form-label">{% trans "Condition" %}</label>
+        <select id="sp_condition" class="form-control">
+            <option value="Good">{% trans "Good" %}</option>
+            <option value="Damage">{% trans "Damage" %}</option>
+        </select>
+    </div>
+    <div style="width:90px;" class="text-center">
+        <label class="form-label d-block">{% trans "Warranty" %}</label>
+        <input type="checkbox" id="sp_warranty" class="sp-plain-checkbox">
+    </div>
+    <div style="min-width:100px;">
+        <label class="form-label d-block">&nbsp;</label>
+        <button type="button" class="btn btn-success w-100" onclick="addSparePart()">{% trans "Add" %}</button>
+    </div>
+</div>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center" id="sparePartsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:4%">#</th>
+                                <th>{% trans "Item Group" %}</th>
+                                <th>{% trans "Spare Part" %}</th>
+                                <th>{% trans "Part No" %}</th>
+                                <th>{% trans "Qty" %}</th>
+                                <th>{% trans "Rate" %}</th>
+                                <th>{% trans "Amount" %}</th>
+                                <th>{% trans "Warranty" %}</th>
+                                <th>{% trans "Condition" %}</th>
+                                <th>{% trans "Action" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr id="noSparePartRow">
+                                <td colspan="10" class="text-center text-muted">{% trans "No spare parts added" %}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="hiddenSpareParts"></div>
+
         <!-- Hidden Details Input Array -->
         <div id="hiddenDetails"></div>
         <!-- Hidden Grand Total Field -->
@@ -508,7 +613,6 @@
     // Translation strings for JavaScript
     const translations = {
         selectVehicle: "{% trans 'Please select a vehicle.' %}",
-        enterLocation: "{% trans 'Please enter Details.' %}",
         validAmount: "{% trans 'Please enter a valid amount.' %}",
         validTax: "{% trans 'Please enter a valid tax percentage.' %}",
         addDetail: "{% trans 'Please add at least one contract detail before saving.' %}",
@@ -525,6 +629,7 @@
     let grandTotalAmount = 0;
     let isTaxable = true;
     let isComplexContract = false;
+    let editingIndex = null;   // index of the row being edited, null = adding new
 
     // Toggle between Simple and Complex contract
     function toggleContractType() {
@@ -664,202 +769,207 @@
     }
 
     function addDetail() {
-        const vehicleSelect = document.getElementById('vehicle');
-        const vehicleId = vehicleSelect.value;
-        const vehicleName = vehicleSelect.options[vehicleSelect.selectedIndex].text;
-        const location = document.getElementById('location').value.trim();
-        const vehicleModel = document.getElementById('vehicle_model').value.trim();
-        const detailDescription = document.getElementById('detail_description').value.trim();
+    const vehicleSelect = document.getElementById('vehicle');
+    const vehicleId = vehicleSelect.value;
+    const vehicleName = vehicleSelect.options[vehicleSelect.selectedIndex].text;
+    const vehicleModel = document.getElementById('vehicle_model').value.trim();
+    const detailDescription = document.getElementById('detail_description').value.trim();
 
-        let amount, tax, period, quantity, unitRate, fromDate, toDate;
+    let amount, tax, period, quantity, unitRate, fromDate, toDate;
 
-        // Validation
-        if (!vehicleId) {
-            alert(translations.selectVehicle);
-            vehicleSelect.focus();
+    if (!vehicleId) {
+        alert(translations.selectVehicle);
+        vehicleSelect.focus();
+        return;
+    }
+
+    // Duplicate check (skip the row currently being edited)
+    const isDuplicate = details.some((d, i) => i !== editingIndex && d.value.split('|')[0] === vehicleId);
+    if (isDuplicate) {
+        alert(`⚠️ Vehicle "${vehicleName}" is already added to this contract. Please select a different vehicle.`);
+        vehicleSelect.focus();
+        return;
+    }
+
+    if (isComplexContract) {
+        period = document.getElementById('period').value;
+        quantity = parseFloat(document.getElementById('quantity').value);
+        unitRate = parseFloat(document.getElementById('unit_rate').value);
+        fromDate = document.getElementById('from_date').value || '';
+        toDate = document.getElementById('to_date').value || '';
+
+        if (isNaN(quantity) || quantity <= 0) {
+            alert(translations.validQuantity);
+            document.getElementById('quantity').focus();
             return;
         }
-        // ✅ CHECK FOR DUPLICATE VEHICLE
-        const isDuplicate = details.some(detail => {
-            const detailValue = detail.value;
-            const parts = detailValue.split('|');
-            const existingVehicleId = parts[0];
-            return existingVehicleId === vehicleId;
-        });
-
-        if (isDuplicate) {
-            alert(`⚠️ Vehicle "${vehicleName}" is already added to this contract. Please select a different vehicle.`);
-            vehicleSelect.focus();
+        if (isNaN(unitRate) || unitRate < 0) {
+            alert(translations.validRate);
+            document.getElementById('unit_rate').focus();
             return;
         }
-        if (!location) {
-            alert(translations.enterLocation);
-            document.getElementById('location').focus();
+        amount = quantity * unitRate;
+    } else {
+        amount = parseFloat(document.getElementById('amount').value);
+        if (isNaN(amount) || amount <= 0) {
+            alert(translations.validAmount);
+            document.getElementById('amount').focus();
             return;
         }
+    }
 
-        if (isComplexContract) {
-            // Complex contract validation
-            period = document.getElementById('period').value;
-            quantity = parseFloat(document.getElementById('quantity').value);
-            unitRate = parseFloat(document.getElementById('unit_rate').value);
-            fromDate = document.getElementById('from_date').value || '';
-            toDate = document.getElementById('to_date').value || '';
-
-
-            if (isNaN(quantity) || quantity <= 0) {
-                alert(translations.validQuantity);
-                document.getElementById('quantity').focus();
-                return;
-            }
-            if (isNaN(quantity) || quantity <= 0) {
-                alert(translations.validQuantity);
-                document.getElementById('quantity').focus();
-                return;
-            }
-
-
-            // Calculate amount
-            amount = quantity * unitRate;
-
-            tax = 0;
-            if (isTaxable) {
-                tax = parseFloat(document.getElementById('tax').value);
-                if (isNaN(tax) || tax < 0) {
-                    alert(translations.validTax);
-                    document.getElementById('tax').focus();
-                    return;
-                }
-            }
-        } else {
-            // Simple contract validation
-            amount = parseFloat(document.getElementById('amount').value);
-
-            if (isNaN(amount) || amount <= 0) {
-                alert(translations.validAmount);
-                document.getElementById('amount').focus();
-                return;
-            }
-
-            tax = 0;
-            if (isTaxable) {
-                tax = parseFloat(document.getElementById('tax').value);
-                if (isNaN(tax) || tax < 0) {
-                    alert(translations.validTax);
-                    document.getElementById('tax').focus();
-                    return;
-                }
-            }
+    tax = 0;
+    if (isTaxable) {
+        tax = parseFloat(document.getElementById('tax').value);
+        if (isNaN(tax) || tax < 0) {
+            alert(translations.validTax);
+            document.getElementById('tax').focus();
+            return;
         }
+    }
 
-        const taxAmount = isTaxable ? (amount * tax / 100) : 0;
-        const total = amount + taxAmount;
-        const index = details.length + 1;
+    const taxAmount = isTaxable ? (amount * tax / 100) : 0;
+    const total = amount + taxAmount;
+    const isEditing = editingIndex !== null;
+    const index = isEditing ? editingIndex + 1 : details.length + 1;
 
-        // Hide "no data" row if it exists
-        const noDataRow = document.getElementById('noDataRow');
-        if (noDataRow) {
-            noDataRow.style.display = 'none';
-        }
+    const noDataRow = document.getElementById('noDataRow');
+    if (noDataRow) noDataRow.style.display = 'none';
 
-        // Build row HTML
-        let row = `
-            <tr data-index="${index - 1}">
-                <td>${index}</td>
-                <td>${vehicleName}</td>
-                <td>${vehicleModel}</td>
-                <td>${detailDescription}</td>
-                <td>${location}</td>`;
+    // Build row HTML
+    let row = `
+        <tr data-index="${index - 1}">
+            <td>${index}</td>
+            <td>${vehicleName}</td>
+            <td>${vehicleModel}</td>
+            <td>${detailDescription}</td>`;
 
-        // Complex contract columns
-        if (isComplexContract) {
-            const periodDisplay = period.charAt(0).toUpperCase() + period.slice(1);
-            let fromDateDisplay = '-';
-            let toDateDisplay = '-';
-
-            if (fromDate) {
-                const fromDateObj = new Date(fromDate);
-                fromDateDisplay = fromDateObj.toLocaleDateString('en-GB');
-            }
-
-            if (toDate) {
-                const toDateObj = new Date(toDate);
-                toDateDisplay = toDateObj.toLocaleDateString('en-GB');
-            }
-
-            row += `
-                <td class="complex-column" style="display: table-cell;">${periodDisplay}</td>
-                <td class="text-end complex-column" style="display: table-cell;">${quantity.toFixed(2)}</td>
-                <td class="text-end complex-column" style="display: table-cell;">${unitRate.toFixed(3)}</td>
-                <td class="complex-column" style="display: table-cell;">${fromDateDisplay}</td>
-                <td class="complex-column" style="display: table-cell;">${toDateDisplay}</td>`;
-        } else {
-            // Add hidden cells for simple contract
-            row += `
-                <td class="complex-column" style="display: none;"></td>
-                <td class="complex-column" style="display: none;"></td>
-                <td class="complex-column" style="display: none;"></td>
-                <td class="complex-column" style="display: none;"></td>
-                <td class="complex-column" style="display: none;"></td>`;
-        }
-
-        row += `<td class="text-end">${amount.toFixed(3)}</td>`;
-
-        if (isTaxable) {
-            row += `
-                <td class="text-center tax-column" style="display: table-cell;">${tax.toFixed(2)}%</td>
-                <td class="text-end tax-column" style="display: table-cell;">${taxAmount.toFixed(3)}</td>`;
-        } else {
-            row += `
-                <td class="tax-column" style="display: none;"></td>
-                <td class="tax-column" style="display: none;"></td>`;
-        }
-
+    if (isComplexContract) {
+        const periodDisplay = period ? period.charAt(0).toUpperCase() + period.slice(1) : '-';
+        const fromDateDisplay = fromDate ? new Date(fromDate).toLocaleDateString('en-GB') : '-';
+        const toDateDisplay = toDate ? new Date(toDate).toLocaleDateString('en-GB') : '-';
         row += `
-                <td class="text-end">${total.toFixed(3)}</td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-danger" onclick="removeDetail(this)" title="Remove">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>`;
+            <td class="complex-column" style="display: table-cell;">${periodDisplay}</td>
+            <td class="text-end complex-column" style="display: table-cell;">${quantity.toFixed(2)}</td>
+            <td class="text-end complex-column" style="display: table-cell;">${unitRate.toFixed(3)}</td>
+            <td class="complex-column" style="display: table-cell;">${fromDateDisplay}</td>
+            <td class="complex-column" style="display: table-cell;">${toDateDisplay}</td>`;
+    } else {
+        row += `
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>
+            <td class="complex-column" style="display: none;"></td>`;
+    }
 
+    row += `<td class="text-end">${amount.toFixed(3)}</td>`;
+
+    if (isTaxable) {
+        row += `
+            <td class="text-center tax-column" style="display: table-cell;">${tax.toFixed(2)}%</td>
+            <td class="text-end tax-column" style="display: table-cell;">${taxAmount.toFixed(3)}</td>`;
+    } else {
+        row += `
+            <td class="tax-column" style="display: none;"></td>
+            <td class="tax-column" style="display: none;"></td>`;
+    }
+
+    row += `
+            <td class="text-end row-total">${total.toFixed(3)}</td>
+            <td class="text-center text-nowrap">
+                <button type="button" class="btn btn-sm btn-primary me-1" onclick="editDetail(this)" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeDetail(this)" title="Remove">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+
+    const hiddenValue = isComplexContract
+        ? `${vehicleId}|${period}|${quantity}|${unitRate}|${tax}|${fromDate}|${toDate}|${vehicleModel}|${detailDescription}`
+        : `${vehicleId}|${amount}|${tax}|${vehicleModel}|${detailDescription}`;
+
+    if (isEditing) {
+        // Replace existing row in place
+        const oldRow = document.querySelector(`#detailsTable tbody tr[data-index="${editingIndex}"]`);
+        grandTotalAmount -= parseFloat(oldRow.querySelector('.row-total').textContent) || 0;
+        oldRow.insertAdjacentHTML('afterend', row);
+        oldRow.remove();
+        details[editingIndex].value = hiddenValue;
+    } else {
         document.querySelector('#detailsTable tbody').insertAdjacentHTML('beforeend', row);
 
-        // Add to hidden inputs
-        const hiddenDiv = document.getElementById("hiddenDetails");
         const input = document.createElement("input");
         input.type = "hidden";
         input.name = "details[]";
-
-        if (isComplexContract) {
-            input.value = `${vehicleId}|${location}|${period}|${quantity}|${unitRate}|${tax}|${fromDate}|${toDate}|${vehicleModel}|${detailDescription}`;
-        } else {
-            input.value = `${vehicleId}|${location}|${amount}|${tax}|${vehicleModel}|${detailDescription}`;
-        }
-
+        input.value = hiddenValue;
         input.setAttribute('data-index', index - 1);
-        hiddenDiv.appendChild(input);
-
-        // Push to array for tracking
+        document.getElementById("hiddenDetails").appendChild(input);
         details.push(input);
-
-        // Update grand total
-        grandTotalAmount += total;
-        updateGrandTotal();
-
-        // Clear fields
-        clearDetailInputs();
-
-        // Focus on vehicle select for next entry
-        vehicleSelect.focus();
     }
+
+    grandTotalAmount += total;
+    updateGrandTotal();
+    clearDetailInputs();
+    vehicleSelect.focus();
+}
+
+function editDetail(button) {
+    const row = button.closest('tr');
+    const idx = parseInt(row.getAttribute('data-index'));
+    const input = details[idx];
+    if (!input) return;
+
+    clearDetailInputs();
+
+    const parts = input.value.split('|');
+    document.getElementById('vehicle').value = parts[0];
+
+    if (parts.length >= 9) {
+        // Complex: vehicleId|period|qty|rate|tax|from|to|model|description
+        document.getElementById('period').value = parts[1];
+        document.getElementById('quantity').value = parts[2];
+        document.getElementById('unit_rate').value = parts[3];
+        document.getElementById('tax').value = parts[4];
+        document.getElementById('from_date').value = parts[5];
+        document.getElementById('to_date').value = parts[6];
+        document.getElementById('vehicle_model').value = parts[7];
+        document.getElementById('detail_description').value = parts.slice(8).join('|');
+    } else {
+        // Simple: vehicleId|amount|tax|model|description
+        document.getElementById('amount').value = parts[1];
+        document.getElementById('tax').value = parts[2];
+        document.getElementById('vehicle_model').value = parts[3];
+        document.getElementById('detail_description').value = parts.slice(4).join('|');
+    }
+
+    editingIndex = idx;
+    row.classList.add('table-warning');
+    document.getElementById('addDetailBtn').textContent = translations.btnUpdate;
+    document.getElementById('addDetailBtn').classList.replace('btn-success', 'btn-warning');
+    document.getElementById('cancelEditBtn').style.display = '';
+    document.getElementById('vehicle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Reset edit state
+    editingIndex = null;
+    document.querySelectorAll('#detailsTable tbody tr.table-warning')
+        .forEach(r => r.classList.remove('table-warning'));
+    const addBtn = document.getElementById('addDetailBtn');
+    if (addBtn) {
+        addBtn.textContent = translations.btnAdd;
+        addBtn.classList.replace('btn-warning', 'btn-success');
+    }
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    if (cancelBtn) cancelBtn.style.display = 'none';
+
+}
 
     function clearDetailInputs() {
         document.getElementById('vehicle').selectedIndex = 0;
         document.getElementById('vehicle_model').value = '';
         document.getElementById('detail_description').value = '';
-        document.getElementById('location').value = "";
 
         if (isComplexContract) {
             const periodEl = document.getElementById('period');
@@ -884,21 +994,12 @@
     }
 
     function removeDetail(button) {
-        const row = button.closest("tr");
-        const rowIndex = parseInt(row.getAttribute('data-index'));
+    if (editingIndex !== null) clearDetailInputs();   // cancel any edit in progress
 
-        // Get the total amount from the row to subtract from grand total
-        const cells = row.cells;
-        let totalCellIndex;
+    const row = button.closest("tr");
+    const rowIndex = parseInt(row.getAttribute('data-index'));
 
-        if (isComplexContract) {
-            totalCellIndex = isTaxable ? 11 : 9;
-        } else {
-            totalCellIndex = isTaxable ? 6 : 4;
-        }
-
-        const totalAmount = parseFloat(cells[totalCellIndex].textContent);
-        grandTotalAmount -= totalAmount;
+    grandTotalAmount -= parseFloat(row.querySelector('.row-total').textContent) || 0;
 
         row.remove();
 
@@ -985,6 +1086,122 @@
 
         console.log('✅ Initialization complete');
     });
+
+
+
+    
+
+
+
+
+let spareParts = [];
+
+function toggleSparePartsSection() {
+    document.getElementById('sparePartsSection').style.display =
+        document.getElementById('enable_accessories').checked ? 'block' : 'none';
+}
+
+function onSparePartGroupChange() {
+    const groupId = document.getElementById('sp_item_group').value;
+    const sparepartSelect = document.getElementById('sp_sparepart');
+    sparepartSelect.innerHTML = `<option value="" disabled selected>${translations.loading}</option>`;
+    if (!groupId) return;
+
+    fetch(`/ajax/get-items-by-group/?group_id=${groupId}`)
+        .then(r => r.json())
+        .then(data => {
+            sparepartSelect.innerHTML = `<option value="" disabled selected>{% trans "Select Spare Part" %}</option>`;
+            (data.items || []).forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = item.item_name;
+                sparepartSelect.appendChild(opt);
+            });
+        })
+        .catch(err => console.error('Error fetching items:', err));
+}
+function onSparePartItemChange() {
+    const sel = document.getElementById('sp_sparepart');
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.dataset.rate) {
+        document.getElementById('sp_rate').value = opt.dataset.rate;
+    }
+}
+
+function addSparePart() {
+    const groupSelect = document.getElementById('sp_item_group');
+    const sparepartSelect = document.getElementById('sp_sparepart');
+    const groupId = groupSelect.value;
+    const sparepartId = sparepartSelect.value;
+    const groupName = groupSelect.options[groupSelect.selectedIndex]?.text || '';
+    const sparepartName = sparepartSelect.options[sparepartSelect.selectedIndex]?.text || '';
+    const partNo = document.getElementById('sp_part_no').value.trim();
+    const quantity = parseFloat(document.getElementById('sp_quantity').value);
+    const rate = parseFloat(document.getElementById('sp_rate').value);
+    const warranty = document.getElementById('sp_warranty').checked;
+    const condition = document.getElementById('sp_condition').value;
+
+    if (!groupId) { alert("{% trans 'Please select an item group.' %}"); groupSelect.focus(); return; }
+    if (!sparepartId) { alert("{% trans 'Please select a spare part.' %}"); sparepartSelect.focus(); return; }
+    if (isNaN(quantity) || quantity <= 0) { alert(translations.validQuantity); document.getElementById('sp_quantity').focus(); return; }
+    if (isNaN(rate) || rate < 0) { alert(translations.validRate); document.getElementById('sp_rate').focus(); return; }
+
+    const amount = quantity * rate;
+    const index = spareParts.length + 1;
+    document.getElementById('noSparePartRow').style.display = 'none';
+
+    const row = `
+        <tr data-index="${index - 1}">
+            <td>${index}</td>
+            <td>${groupName}</td>
+            <td>${sparepartName}</td>
+            <td>${partNo}</td>
+            <td>${quantity.toFixed(2)}</td>
+            <td>${rate.toFixed(3)}</td>
+            <td>${amount.toFixed(3)}</td>
+            <td>${warranty ? "{% trans 'Yes' %}" : "{% trans 'No' %}"}</td>
+            <td>${condition}</td>
+            <td><button type="button" class="btn btn-sm btn-danger" onclick="removeSparePart(this)"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+    document.querySelector('#sparePartsTable tbody').insertAdjacentHTML('beforeend', row);
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'spareparts[]';
+    input.value = `${groupId}|${sparepartId}|${partNo}|${quantity}|${rate}|${warranty}|${condition}`;
+    input.setAttribute('data-index', index - 1);
+    document.getElementById('hiddenSpareParts').appendChild(input);
+    spareParts.push(input);
+
+    document.getElementById('sp_part_no').value = '';
+    document.getElementById('sp_quantity').value = '1';
+    document.getElementById('sp_rate').value = '';
+    document.getElementById('sp_warranty').checked = false;
+    document.getElementById('sp_condition').selectedIndex = 0;
+}
+
+function removeSparePart(button) {
+    const row = button.closest('tr');
+    const rowIndex = parseInt(row.getAttribute('data-index'));
+    row.remove();
+
+    if (spareParts[rowIndex]) {
+        spareParts[rowIndex].remove();
+        spareParts.splice(rowIndex, 1);
+    }
+
+    const rows = document.querySelectorAll('#sparePartsTable tbody tr:not(#noSparePartRow)');
+    if (rows.length === 0) {
+        document.getElementById('noSparePartRow').style.display = '';
+    } else {
+        rows.forEach((r, i) => { r.querySelector('td').textContent = i + 1; r.setAttribute('data-index', i); });
+    }
+}
+
+
+
+
+
 </script>
 
 <!-- Pre-populate Contract Details for EDIT Mode -->
@@ -994,7 +1211,6 @@
         {% if existing_details %}
         console.log("📝 Edit mode detected - loading existing details...");
 
-        // Check if contract is taxable and set checkbox
         {% if contract_instance.is_taxable %}
         document.getElementById('is_taxable').checked = true;
         isTaxable = true;
@@ -1003,7 +1219,6 @@
         isTaxable = false;
         {% endif %}
 
-        // Set contract type
         {% if contract_instance.invoice_type == 'complex' %}
         document.getElementById('contractTypeComplex').checked = true;
         isComplexContract = true;
@@ -1012,78 +1227,62 @@
         isComplexContract = false;
         {% endif %}
 
-        // Toggle visibility
         toggleContractType();
         toggleTaxFields();
 
-        // Load each existing detail
         {% for detail in existing_details %}
         preloadDetail(
             {{ detail.vehicle.id }},
-        "{{ detail.vehicle.vehicle_name|escapejs }}",
-        "{{ detail.location|escapejs }}",
-        {{ detail.amount }},
-        {{ detail.tax }},
-        {{ detail.tax_amount }},
-        {{ detail.total_amount }},
-        "{{ detail.period|default:'' }}",
-        {{ detail.quantity|default:'0' }},
-        {{ detail.unit_rate|default:'0' }},
-        "{% if detail.from_date %}{{ detail.from_date|date:'Y-m-d' }}{% endif %}",
-        "{% if detail.to_date %}{{ detail.to_date|date:'Y-m-d' }}{% endif %}",
-        "{{ detail.vehicle_model|default:''|escapejs }}",
-        "{{ detail.description|default:''|escapejs }}"
-    );
-    {% endfor %}
+            "{{ detail.vehicle.vehicle_name|escapejs }}",
+            {{ detail.amount }},
+            {{ detail.tax }},
+            {{ detail.tax_amount }},
+            {{ detail.total_amount }},
+            "{{ detail.period|default:''|escapejs }}",
+            {{ detail.quantity|default:'0' }},
+            {{ detail.unit_rate|default:'0' }},
+            "{% if detail.from_date %}{{ detail.from_date|date:'Y-m-d' }}{% endif %}",
+            "{% if detail.to_date %}{{ detail.to_date|date:'Y-m-d' }}{% endif %}",
+            "{{ detail.vehicle_model|default:''|escapejs }}",
+            "{{ detail.description|default:''|escapejs }}"
+        );
+        {% endfor %}
 
-    console.log("✅ Loaded {{ existing_details|length }} contract details");
-    {% endif %}
-});
+        console.log("✅ Loaded {{ existing_details|length }} contract details");
+        {% endif %}
+    });
 
-    function preloadDetail(vehicleId, vehicleName, location, amount, tax, taxAmount, totalAmount, period, quantity, unitRate, fromDate, toDate, vehicleModel, description) {
+    function preloadDetail(vehicleId, vehicleName, amount, tax, taxAmount, totalAmount, period, quantity, unitRate, fromDate, toDate, vehicleModel, description) {
         vehicleModel = vehicleModel || '';
         description = description || '';
         const index = details.length + 1;
 
         const noDataRow = document.getElementById('noDataRow');
-        if (noDataRow) {
-            noDataRow.style.display = 'none';
-        }
+        if (noDataRow) noDataRow.style.display = 'none';
 
         let row = `
         <tr data-index="${index - 1}">
             <td>${index}</td>
             <td>${vehicleName}</td>
             <td>${vehicleModel}</td>
-            <td>${description}</td>
-            <td>${location}</td>`;
+            <td>${description}</td>`;
 
         if (isComplexContract && period) {
             const periodDisplay = period.charAt(0).toUpperCase() + period.slice(1);
-
             let fromDateDisplay = '-';
             let toDateDisplay = '-';
 
             if (fromDate && fromDate.trim() !== '') {
                 try {
-                    const fromDateObj = new Date(fromDate);
-                    if (!isNaN(fromDateObj.getTime())) {
-                        fromDateDisplay = fromDateObj.toLocaleDateString('en-GB');
-                    }
-                } catch (e) {
-                    console.error('Error parsing from_date:', e);
-                }
+                    const d = new Date(fromDate);
+                    if (!isNaN(d.getTime())) fromDateDisplay = d.toLocaleDateString('en-GB');
+                } catch (e) {}
             }
-
             if (toDate && toDate.trim() !== '') {
                 try {
-                    const toDateObj = new Date(toDate);
-                    if (!isNaN(toDateObj.getTime())) {
-                        toDateDisplay = toDateObj.toLocaleDateString('en-GB');
-                    }
-                } catch (e) {
-                    console.error('Error parsing to_date:', e);
-                }
+                    const d = new Date(toDate);
+                    if (!isNaN(d.getTime())) toDateDisplay = d.toLocaleDateString('en-GB');
+                } catch (e) {}
             }
 
             row += `
@@ -1113,9 +1312,12 @@
             <td class="tax-column" style="display: none;"></td>`;
         }
 
-        row += `
-            <td class="text-end">${parseFloat(totalAmount).toFixed(3)}</td>
-            <td class="text-center">
+                row += `
+            <td class="text-end row-total">${parseFloat(totalAmount).toFixed(3)}</td>
+            <td class="text-center text-nowrap">
+                <button type="button" class="btn btn-sm btn-primary me-1" onclick="editDetail(this)" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
                 <button type="button" class="btn btn-sm btn-danger" onclick="removeDetail(this)" title="Remove">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -1132,19 +1334,70 @@
         if (isComplexContract && period && period.trim() !== '') {
             const fromDateValue = (fromDate && fromDate.trim() !== '') ? fromDate : '';
             const toDateValue = (toDate && toDate.trim() !== '') ? toDate : '';
-            input.value = `${vehicleId}|${location}|${period}|${quantity}|${unitRate}|${tax}|${fromDateValue}|${toDateValue}|${vehicleModel}|${description}`;
+            input.value = `${vehicleId}|${period}|${quantity}|${unitRate}|${tax}|${fromDateValue}|${toDateValue}|${vehicleModel}|${description}`;
         } else {
-            input.value = `${vehicleId}|${location}|${amount}|${tax}|${vehicleModel}|${description}`;
+            input.value = `${vehicleId}|${amount}|${tax}|${vehicleModel}|${description}`;
         }
 
         input.setAttribute('data-index', index - 1);
         hiddenDiv.appendChild(input);
-
         details.push(input);
 
         grandTotalAmount += parseFloat(totalAmount);
         updateGrandTotal();
     }
+</script>
+{% endif %}
+
+{% if existing_spare_parts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('enable_accessories').checked = true;
+    toggleSparePartsSection();
+
+    {% for sp in existing_spare_parts %}
+    preloadSparePart(
+        {{ sp.item_group.id|default:'null' }},
+        "{{ sp.item_group.group_code|default:''|escapejs }}",
+        {{ sp.sparepart.id|default:'null' }},
+        "{{ sp.sparepart.item_code|default:''|escapejs }}",
+        "{{ sp.part_no|default:''|escapejs }}",
+        {{ sp.quantity|default:'0' }},
+        {{ sp.rate|default:'0' }},
+        {{ sp.amount|default:'0' }},
+        {{ sp.warranty|yesno:"true,false" }},
+        "{{ sp.condition|default:'Good' }}"
+    );
+    {% endfor %}
+});
+
+function preloadSparePart(groupId, groupName, sparepartId, sparepartName, partNo, quantity, rate, amount, warranty, condition) {
+    const index = spareParts.length + 1;
+    document.getElementById('noSparePartRow').style.display = 'none';
+
+    const row = `
+        <tr data-index="${index - 1}">
+            <td>${index}</td>
+            <td>${groupName}</td>
+            <td>${sparepartName}</td>
+            <td>${partNo}</td>
+            <td>${parseFloat(quantity).toFixed(2)}</td>
+            <td>${parseFloat(rate).toFixed(3)}</td>
+            <td>${parseFloat(amount).toFixed(3)}</td>
+            <td>${warranty ? "{% trans 'Yes' %}" : "{% trans 'No' %}"}</td>
+            <td>${condition}</td>
+            <td><button type="button" class="btn btn-sm btn-danger" onclick="removeSparePart(this)"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+    document.querySelector('#sparePartsTable tbody').insertAdjacentHTML('beforeend', row);
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'spareparts[]';
+    input.value = `${groupId}|${sparepartId}|${partNo}|${quantity}|${rate}|${warranty}|${condition}`;
+    input.setAttribute('data-index', index - 1);
+    document.getElementById('hiddenSpareParts').appendChild(input);
+    spareParts.push(input);
+}
 </script>
 {% endif %}
 

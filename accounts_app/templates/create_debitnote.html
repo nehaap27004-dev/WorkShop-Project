@@ -1,0 +1,706 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load i18n %}
+{% load privilege_tags %}
+{% block content %}
+<!-- Custom CSS -->
+<style>
+    h2,
+    h3,
+    h4,
+    h5 {
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    form label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100% !important;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.95rem;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        border-color: #5A8DEE;
+        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        outline: none;
+    }
+
+    .btn-success {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transition: 0.2s ease-in-out;
+    }
+
+    .alert {
+        border-radius: 8px;
+    }
+
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .form-check-inline {
+        margin-right: 20px;
+    }
+
+    .form-check-input {
+        width: auto !important;
+        margin-right: 5px;
+    }
+
+    .badge-invoice {
+        background-color: #007bff;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+    .badge-opening {
+        background-color: #28a745;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary mb-0">
+            {% if edit_mode %}{% trans "Edit" %}{% else %}{% trans "Create" %}{% endif %} {% trans "Debit Note" %}
+        </h2>
+        {% has_priv request.user 11 "can_read" as can_view_receiptbill %}
+        {% if can_view_receiptbill %}
+        <a href="{% url 'accounts_app:list_debitnote' %}" class="btn btn-primary">
+            <i class="bi bi-list-ul"></i> {% trans "View List" %}
+        </a>
+        {% endif %}
+    </div>
+
+
+
+    <form method="POST" id="debitNoteForm" class="needs-validation">
+        {% csrf_token %}
+
+        <!-- Receipt Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">
+                    {% trans "Debit Note Information" %}
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-3">
+
+                    <!-- Row 1 -->
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Voucher No" %}</label>
+                        {{ master_form.voucher_no }}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans " Voucher Type" %}</label><span class="text-danger">*</span>
+                        {{ master_form.voucherType }}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Date" %}</label>
+                        {{ master_form.date }}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Supplier" %}</label><span class="text-danger">*</span>
+                        {{ master_form.supplier }}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Ledger" %}</label><span class="text-danger">*</span>
+                        {{ master_form.ledger }}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Reference No" %}</label><span class="text-danger">*</span>
+                        {{ master_form.ref_no }}
+                    </div>
+
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Remark" %}</label>
+                        {{ master_form.remark }}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section" id="filterSection" style="display: none;">
+    <label class="form-label fw-bold">{% trans "Filter by Type:" %}</label>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="showHires" checked>
+        <label class="form-check-label" for="showHires">
+            <span class="badge bg-primary text-white px-2 py-1 rounded">{% trans "Hires" %}</span>
+        </label>
+    </div>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="showOpenings" checked>
+        <label class="form-check-label" for="showOpenings">
+            <span class="badge-opening">{% trans "Openings" %}</span>
+        </label>
+    </div>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="showPurchases" checked>
+        <label class="form-check-label" for="showPurchases">
+            <span class="badge bg-warning text-dark px-2 py-1 rounded">{% trans "Purchases" %}</span>
+        </label>
+    </div>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="showAssets" checked>
+        <label class="form-check-label" for="showAssets">
+            <span class="badge bg-info text-dark px-2 py-1 rounded">{% trans "Asset Purchases" %}</span>
+        </label>
+    </div>
+</div>
+
+        <!-- Pending Bills & Openings -->
+        <div class="card shadow-sm mb-4" id="invoiceTableContainer" style="display: none;">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Pending Bills & Openings" %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center" id="invoiceTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{% trans "Type" %}</th>
+                                <th>{% trans "Supplier" %}</th>
+                                <th>{% trans "Date" %}</th>
+                                <th>{% trans "Voucher #" %}</th>
+                                <th>{% trans "Current Amount" %}</th>
+                                <th>{% trans "Amount Cleared" %}</th>
+                                <th>{% trans "Payable Balance" %}</th>
+                                <th>{% trans "Debit Amount" %}</th>
+                                <th>{% trans "Balance" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoiceTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formset Management Form -->
+        <div id="formsetManagement"></div>
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn btn-success px-4 py-2">
+                {% if edit_mode %}
+                <i class="bi bi-check-circle"></i> {% trans "Update" %}
+                {% else %}
+                <i class="bi bi-save"></i> {% trans "Save" %}
+                {% endif %}
+            </button>
+            <a href="{% url 'accounts_app:list_debitnote' %}" class="btn btn-secondary px-4 py-2">
+                <i class="bi bi-x-circle"></i> {% trans "Cancel" %}
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Translation strings for JavaScript
+    const translations = {
+        errorLoadingBills: "{% trans 'Error loading bills. Please try again.' %}",
+        amountExceedBalance: "{% trans 'Amount cannot exceed payable balance!' %}",
+        enterAmount: "{% trans 'Please enter at least one amount to clear.' %}"
+    };
+
+    $(document).ready(function () {
+
+        let allData = [];
+
+        console.log("Document ready - Debit Note");
+
+        {% if edit_mode and instance %}
+
+var editMode = true;
+
+var existingDetails = [
+    {% for detail in instance.debitnotedetail_set.all %}
+    {
+        voucher_no: {{ detail.VoucherNo }},
+        voucher_type: {{ detail.voucherType.id }},
+        current_amount: parseFloat("{{ detail.CurrentAmount }}"),
+        amount: parseFloat("{{ detail.Amount }}")
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+console.log("Existing Details:", existingDetails);
+
+if (existingDetails.length > 0) {
+
+    var supplierId = {{ instance.supplier.id }};
+
+    $.ajax({
+        url: "{% url 'accounts_app:get_supplier_hires_and_openings' %}",
+        data: {
+            supplier_id: supplierId,
+            debit_note_id: {{ instance.id }}   // ✅ FIXED: was missing
+        },
+
+        success: function (response) {
+
+            console.log("AJAX Response:", response);
+
+            allData = [
+                ...response.hires,
+                ...response.openings,
+                ...response.purchases,
+                ...response.asset_purchases
+            ];
+
+            allData.forEach(function (item) {
+
+                var existingDetail = existingDetails.find(function (detail) {
+
+                    if (item.type === 'hire') {
+                        return detail.voucher_no === item.hire_id
+                            && detail.voucher_type === 1;
+
+                    } else if (item.type === 'opening') {
+                        return detail.voucher_no === item.opening_id
+                            && detail.voucher_type === 17;
+
+                    } else if (item.type === 'purchase') {
+                        return detail.voucher_no === item.purchase_id
+                            && detail.voucher_type === 13;
+
+                    } else if (item.type === 'asset_purchase') {
+                        return detail.voucher_no === item.asset_purchase_id
+                            && detail.voucher_type === 17;
+                    }
+                });
+
+                // ✅ FIXED: use null check instead of falsy check
+                // so amount=0 doesn't fall through to null
+                if (existingDetail != null) {
+                    item.existing_amount = existingDetail.amount;
+                } else {
+                    item.existing_amount = null;
+                }
+            });
+
+            renderData();
+
+            $("#invoiceTableContainer").show();
+            $("#filterSection").show();
+        },
+
+        error: function () {
+            alert(translations.errorLoadingBills);
+        }
+    });
+}
+
+{% else %}
+
+var editMode = false;
+
+{% endif %}
+
+        // Supplier Change
+
+        var supplierField = $("#id_supplier");
+
+        supplierField.change(function () {
+
+            var supplier_id = $(this).val();
+
+            if (!supplier_id) {
+
+                $("#invoiceTableContainer").hide();
+                $("#filterSection").hide();
+
+                return;
+            }
+
+            if (editMode && allData.length > 0) {
+
+                return;
+            }
+
+            $.ajax({
+
+                url: "{% url 'accounts_app:get_supplier_hires_and_openings' %}",
+
+                data: {
+                    supplier_id: supplier_id
+                },
+
+                success: function (response) {
+
+                    allData = [
+                        ...response.hires,
+                        ...response.openings,
+                        ...response.purchases,
+                        ...response.asset_purchases
+                    ];
+
+                    if (allData.length === 0) {
+
+                        alert("No pending bills or openings found for this supplier.");
+
+                        $("#invoiceTableContainer").hide();
+                        $("#filterSection").hide();
+
+                    } else {
+
+                        renderData();
+
+                        $("#invoiceTableContainer").show();
+                        $("#filterSection").show();
+                    }
+                },
+
+                error: function () {
+
+                    alert(translations.errorLoadingBills);
+                }
+            });
+        });
+
+        // Filters
+
+        $("#showHires, #showOpenings, #showPurchases, #showAssets").change(function () {
+
+            renderData();
+        });
+
+        function renderData() {
+
+            var tbody = $("#invoiceTableBody");
+
+            var formsetDiv = $("#formsetManagement");
+
+            tbody.empty();
+
+            formsetDiv.empty();
+
+            var showHires = $("#showHires").is(":checked");
+
+            var showOpenings = $("#showOpenings").is(":checked");
+
+            var showPurchases = $("#showPurchases").is(":checked");
+
+            var showAssets = $("#showAssets").is(":checked");
+
+            var filteredData = allData.filter(function (item) {
+
+                if (item.type === 'hire' && !showHires)
+                    return false;
+
+                if (item.type === 'opening' && !showOpenings)
+                    return false;
+
+                if (item.type === 'purchase' && !showPurchases)
+                    return false;
+
+                if (item.type === 'asset_purchase' && !showAssets)
+                    return false;
+
+                return true;
+            });
+
+            formsetDiv.append(`
+                <input type="hidden" name="form-TOTAL_FORMS" value="${filteredData.length}">
+                <input type="hidden" name="form-INITIAL_FORMS" value="0">
+                <input type="hidden" name="form-MIN_NUM_FORMS" value="0">
+                <input type="hidden" name="form-MAX_NUM_FORMS" value="1000">
+            `);
+
+            filteredData.forEach(function (item, index) {
+
+                var voucherTypeId = 0;
+
+                var voucherNo = 0;
+
+                var typeBadge = '';
+
+                if (item.type === 'hire') {
+
+                    voucherTypeId = 1;
+
+                    voucherNo = item.hire_id;
+
+                    typeBadge = '<span class="badge bg-primary">Hire</span>';
+
+                } else if (item.type === 'opening') {
+
+                    voucherTypeId = 17;
+
+                    voucherNo = item.opening_id;
+
+                    typeBadge = '<span class="badge bg-success">Opening</span>';
+
+                } else if (item.type === 'purchase') {
+
+                    voucherTypeId = 13;
+
+                    voucherNo = item.purchase_id;
+
+                    typeBadge = '<span class="badge bg-warning text-dark">Purchase</span>';
+
+                } else if (item.type === 'asset_purchase') {
+
+                    voucherTypeId = 17;
+
+                    voucherNo = item.asset_purchase_id;
+
+                    typeBadge = '<span class="badge bg-info text-dark">Asset Purchase</span>';
+                }
+
+                // ✅ null = no saved detail → show 0.000
+                // ✅ 0 = saved detail with zero amount → still show 0.000 correctly
+                var amountValue = (item.existing_amount !== null && item.existing_amount !== undefined)
+                    ? parseFloat(item.existing_amount).toFixed(3)
+                    : "0.000";
+
+                // payable_balance from backend already excludes this debit note's amounts
+                // so just subtract what we're pre-filling
+                var balanceValue = parseFloat(item.payable_balance)
+                    - (item.existing_amount || 0);
+
+                var row = `
+                    <tr data-type="${item.type}">
+                        <td>${typeBadge}</td>
+                        <td>${item.supplier}</td>
+                        <td>${item.date}</td>
+                        <td>${item.voucher_no}</td>
+
+                        <td class="text-end">
+                            ${parseFloat(item.grand_total).toFixed(3)}
+                        </td>
+
+                        <td class="text-end">
+                            ${parseFloat(item.amount_cleared).toFixed(3)}
+                        </td>
+
+                        <td class="text-end payable">
+                            ${parseFloat(item.payable_balance).toFixed(3)}
+                        </td>
+
+                        <td>
+
+                            <input type="hidden"
+                                   name="form-${index}-voucherType"
+                                   value="${voucherTypeId}">
+
+                            <input type="hidden"
+                                   name="form-${index}-VoucherNo"
+                                   value="${voucherNo}">
+
+                            <input type="hidden"
+                                   name="form-${index}-CurrentAmount"
+                                   value="${parseFloat(item.payable_balance).toFixed(3)}">
+
+                            <input type="number"
+                                   step="0.001"
+                                   name="form-${index}-Amount"
+                                   class="form-control form-control-sm amount-input"
+                                   min="0"
+                                   max="${item.payable_balance}"
+                                   data-max="${item.payable_balance}"
+                                   value="${amountValue}">
+
+                        </td>
+
+                        <td class="text-end balance">
+                            ${balanceValue.toFixed(3)}
+                        </td>
+                    </tr>
+                `;
+
+                tbody.append(row);
+            });
+        }
+
+        // Dynamic Balance
+
+        $(document).on("input", ".amount-input", function () {
+
+            var row = $(this).closest("tr");
+
+            var payable = parseFloat($(this).attr('data-max'));
+
+            var entered = parseFloat($(this).val()) || 0;
+
+            if (entered > payable) {
+
+                alert(translations.amountExceedBalance);
+
+                $(this).val(payable.toFixed(3));
+
+                entered = payable;
+            }
+
+            var balance = payable - entered;
+
+            row.find(".balance").text(balance.toFixed(3));
+        });
+
+        // Validation
+
+        $("#debitNoteForm").submit(function (e) {
+
+            var hasAmount = false;
+
+            $(".amount-input").each(function () {
+
+                if (parseFloat($(this).val()) > 0) {
+
+                    hasAmount = true;
+
+                    return false;
+                }
+            });
+
+            if (!hasAmount) {
+
+                e.preventDefault();
+
+                alert(translations.enterAmount);
+
+                return false;
+            }
+        });
+
+    });
+</script>
+
+<!-- Admin Override -->
+<script>
+    $(document).on("submit", "#debitNoteForm", function (e) {
+        e.preventDefault();
+
+        console.log("DEBIT NOTE FORM SUBMIT");
+
+        window.pendingFormId = "debitNoteForm";
+        window.pendingFormAction = this.action;
+        window.afterSuccessRedirect = "{% url 'accounts_app:list_debitnote' %}";
+
+        let formData = new FormData(this);
+
+        $.ajax({
+            url: window.pendingFormAction,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+
+            success: function (response) {
+                console.log("DEBIT NOTE SUCCESS:", response);
+
+                if (response.admin_required) {
+                    console.log("Admin required - showing modal");
+                    $("#admin_error").text(response.message || "");
+                    $("#adminOverrideModal").modal("show");
+                    return;
+                }
+
+                if (response.success) {
+                    alert(response.message);
+                    window.location.href = window.afterSuccessRedirect;
+                } else {
+                    alert(response.message || "Operation failed");
+                }
+            },
+
+            error: function (xhr) {
+                console.log("DEBIT NOTE ERROR:", xhr.status, xhr.responseJSON);
+                console.log("Response Text:", xhr.responseText);
+
+                if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
+                    console.log("403 with admin_required - showing modal");
+                    $("#admin_error").text(xhr.responseJSON.message || "");
+                    $("#adminOverrideModal").modal("show");
+                    return;
+                }
+
+                if (xhr.status === 400 && xhr.responseJSON) {
+                    console.log("400 validation error");
+                    alert(xhr.responseJSON?.message || "Validation error");
+                    return;
+                }
+
+                if (xhr.status === 500) {
+                    console.log("500 server error");
+                    alert(xhr.responseJSON?.message || "Server error - check console");
+                    return;
+                }
+
+                alert(xhr.responseJSON?.message || "Something went wrong");
+            }
+        });
+    });
+</script>
+<!-- Get Next Voucher_no -->
+{% if not edit_mode %}
+<script>
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input = document.getElementById('id_voucher_no');
+        if (select && input && select.value) {
+            input.value = "Loading...";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(r => r.json())
+                .then(data => { input.value = data.success ? data.voucher_number : "Error"; })
+                .catch(() => { input.value = "Error"; });
+        } else if (input) { input.value = ''; }
+    }
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+
+
+{% endblock %}

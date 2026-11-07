@@ -1,0 +1,175 @@
+{% extends 'fleet_base1.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Admin Master" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex align-items-center mb-4">
+        <h4 class="mb-0 font-weight-bold">
+            <i class="ti-shield mr-2 text-primary"></i>{% trans "Admin Master" %}
+        </h4>
+    </div>
+
+    <!-- Access Control -->
+    <h6 class="text-muted text-uppercase font-weight-bold mb-3" style="letter-spacing: 1px; font-size: 11px;">
+        <i class="ti-lock mr-1"></i> {% trans "Access Control" %}
+    </h6>
+    <div class="row mb-4">
+
+        <div class="col-xl-2-4 col-md-4 col-6 mb-3">
+            <a href="{% url 'accounts_app:role_management' %}" class="txn-card text-decoration-none">
+                <div class="card txn-box h-100 border-0 shadow-sm text-center p-3">
+                    <div class="txn-icon mb-2">
+                        <i class="ti-crown"></i>
+                    </div>
+                    <p class="txn-label mb-0">{% trans "Role" %}</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-2-4 col-md-4 col-6 mb-3">
+            <a href="{% url 'accounts_app:user_management' %}" class="txn-card text-decoration-none">
+                <div class="card txn-box h-100 border-0 shadow-sm text-center p-3">
+                    <div class="txn-icon mb-2">
+                        <i class="ti-user"></i>
+                    </div>
+                    <p class="txn-label mb-0">{% trans "User" %}</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-2-4 col-md-4 col-6 mb-3">
+            <a href="{% url 'accounts_app:menu_list_create' %}" class="txn-card text-decoration-none">
+                <div class="card txn-box h-100 border-0 shadow-sm text-center p-3">
+                    <div class="txn-icon mb-2">
+                        <i class="ti-menu"></i>
+                    </div>
+                    <p class="txn-label mb-0">{% trans "Menu" %}</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-2-4 col-md-4 col-6 mb-3">
+            <a href="{% url 'accounts_app:manage_privileges' %}" class="txn-card text-decoration-none">
+                <div class="card txn-box h-100 border-0 shadow-sm text-center p-3">
+                    <div class="txn-icon mb-2">
+                        <i class="ti-key"></i>
+                    </div>
+                    <p class="txn-label mb-0">{% trans "Manage Privileges" %}</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-2-4 col-md-4 col-6 mb-3">
+            <a href="{% url 'accounts_app:group_management' %}" class="txn-card text-decoration-none">
+                <div class="card txn-box h-100 border-0 shadow-sm text-center p-3">
+                    <div class="txn-icon mb-2">
+                        <i class="ti-panel"></i>
+                    </div>
+                    <p class="txn-label mb-0">{% trans "Group" %}</p>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Accounts & Audit -->
+    <h6 class="text-muted text-uppercase font-weight-bold mb-3" style="letter-spacing: 1px; font-size: 11px;">
+        <i class="ti-clipboard mr-1"></i> {% trans "Accounts & Audit" %}
+    </h6>
+    <div class="row mb-4">
+
+        <div class="col-xl-2-4 col-md-4 col-6 mb-3">
+            <a href="{% url 'accounts_app:ledger_view' %}" class="txn-card text-decoration-none">
+                <div class="card txn-box h-100 border-0 shadow-sm text-center p-3">
+                    <div class="txn-icon mb-2">
+                        <i class="ti-book"></i>
+                    </div>
+                    <p class="txn-label mb-0">{% trans "Ledger" %}</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-2-4 col-md-4 col-6 mb-3">
+            <a href="{% url 'fleet_app:fleet_voucher_list' %}" class="txn-card text-decoration-none">
+                <div class="card txn-box h-100 border-0 shadow-sm text-center p-3">
+                    <div class="txn-icon mb-2">
+                        <i class="ti-receipt"></i>
+                    </div>
+                    <p class="txn-label mb-0">{% trans "Voucher" %}</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-2-4 col-md-4 col-6 mb-3">
+            <a href="{% url 'audit_app:activity_log_list' %}" class="txn-card text-decoration-none">
+                <div class="card txn-box h-100 border-0 shadow-sm text-center p-3">
+                    <div class="txn-icon mb-2">
+                        <i class="ti-eye"></i>
+                    </div>
+                    <p class="txn-label mb-0">{% trans "Activity Logs" %}</p>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    /* 5-column grid for xl+ */
+    @media (min-width: 1200px) {
+        .col-xl-2-4 {
+            flex: 0 0 20%;
+            max-width: 20%;
+        }
+    }
+
+    .txn-box {
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        background: #fff;
+    }
+
+    .txn-box:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+        background: #f0f4ff;
+    }
+
+    .txn-icon {
+        font-size: 2rem;
+        color: #111;
+        line-height: 1;
+    }
+
+    .txn-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #111;
+        line-height: 1.3;
+    }
+
+    .txn-card:hover .txn-icon,
+    .txn-card:hover .txn-label {
+        color: #4361ee;
+    }
+
+    /* Dark mode support */
+    body.dark-mode .txn-box {
+        background: #1e2a3a;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    }
+
+    body.dark-mode .txn-box:hover {
+        background: #263348;
+    }
+
+    body.dark-mode .txn-label {
+        color: #cdd5e0;
+    }
+</style>
+{% endblock %}

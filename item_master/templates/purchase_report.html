@@ -1,0 +1,189 @@
+{% extends 'fleet_base1.html' %}
+{% load humanize %}
+
+{% block title %}Purchase Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white d-flex align-items-center">
+            <i class="fas fa-file-invoice mr-2"></i>
+            <h5 class="mb-0">Purchase Report</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label">From Date</label>
+                    <input type="date" name="from_date" class="form-control" value="{{ filters.from_date }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">To Date</label>
+                    <input type="date" name="to_date" class="form-control" value="{{ filters.to_date }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Ledger</label>
+                    <select name="ledger" class="form-control">
+                        <option value="">All</option>
+                        {% for ledger in ledgers %}
+                        <option value="{{ ledger.id }}" {% if filters.ledger|stringformat:"s" == ledger.id|stringformat:"s" %}selected{% endif %}>
+                            {{ ledger }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Item Group</label>
+                    <select name="item_group" class="form-control">
+                        <option value="">All</option>
+                        {% for group in item_groups %}
+                        <option value="{{ group.id }}" {% if filters.item_group|stringformat:"s" == group.id|stringformat:"s" %}selected{% endif %}>
+                            {{ group }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Item</label>
+                    <select name="item" class="form-control">
+                        <option value="">All</option>
+                        {% for it in items_list %}
+                        <option value="{{ it.id }}" {% if filters.item|stringformat:"s" == it.id|stringformat:"s" %}selected{% endif %}>
+                            {{ it }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Payment Mode</label>
+                    <select name="payment_mode" class="form-control">
+                        <option value="">All</option>
+                        {% for code, label in payment_modes %}
+                        <option value="{{ code }}" {% if filters.payment_mode == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Voucher No</label>
+                    <input type="text" name="voucher_no" class="form-control" placeholder="Search..." value="{{ filters.voucher_no }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search mr-1"></i>Filter</button>
+                    <a href="{% url 'item_master:purchase_report' %}" class="btn btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary stat cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Net Value</div>
+                    <div class="h5 mb-0 font-weight-bold">{{ grand_total_net|floatformat:3|intcomma }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-info shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tax Amount</div>
+                    <div class="h5 mb-0 font-weight-bold">{{ grand_total_tax|floatformat:3|intcomma }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-warning shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Discount</div>
+                    <div class="h5 mb-0 font-weight-bold">{{ grand_total_discount|floatformat:3|intcomma }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-success shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Grand Total</div>
+                    <div class="h5 mb-0 font-weight-bold">{{ grand_total_amount|floatformat:3|intcomma }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report table -->
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive p-0">
+            <table class="table table-bordered table-hover table-sm mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Voucher No</th>
+                        <th>Date</th>
+                        <th>Ledger</th>
+                        <th>Payment Mode</th>
+                        <th>Item Group</th>
+                        <th>Item Name</th>
+                        <th>Unit</th>
+                        <th class="text-end">Purchase Rate</th>
+                        <th class="text-end">Item Net Amt</th>
+                        <th class="text-end">Tax %</th>
+                        <th class="text-end">Item Tax Amt</th>
+                        <th class="text-end">Net Value</th>
+                        <th class="text-end">Tax Amt</th>
+                        <th class="text-end">Discount</th>
+                        <th class="text-end">Grand Total</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report_data %}
+                        {% with purchase=row.purchase items=row.items count=row.item_count %}
+                        {% for item in items %}
+                        <tr>
+                            {% if forloop.first %}
+                            <td rowspan="{{ count }}">{{ purchase.voucher_no }}</td>
+                            <td rowspan="{{ count }}">{{ purchase.transaction_date|date:"d-m-Y" }}</td>
+                            <td rowspan="{{ count }}">{{ purchase.ledger }}</td>
+                            <td rowspan="{{ count }}">{{ purchase.payment_mode }}</td>
+                            {% endif %}
+                            <td>{{ item.item_group|default:"-" }}</td>
+                            <td>{{ item.item_name|default:"-" }}</td>
+                            <td>{{ item.unit|default:"-" }}</td>
+                            <td class="text-end">{{ item.purchase_rate|default_if_none:"-"|floatformat:3 }}</td>
+                            <td class="text-end">{{ item.item_net_amount|default_if_none:"-"|floatformat:3 }}</td>
+                            <td class="text-end">{{ item.tax|default_if_none:"-"|floatformat:3 }}</td>
+                            <td class="text-end">{{ item.item_tax_amount|default_if_none:"-"|floatformat:3 }}</td>
+                            {% if forloop.first %}
+                            <td class="text-end" rowspan="{{ count }}">{{ purchase.total_net_value|floatformat:3 }}</td>
+                            <td class="text-end" rowspan="{{ count }}">{{ purchase.total_tax_amount|floatformat:3 }}</td>
+                            <td class="text-end" rowspan="{{ count }}">{{ purchase.discount|floatformat:3 }}</td>
+                            <td class="text-end" rowspan="{{ count }}">{{ purchase.grand_total_amount|floatformat:3 }}</td>
+                            <td rowspan="{{ count }}">{{ purchase.remarks|default:"-" }}</td>
+                            {% endif %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td>{{ purchase.voucher_no }}</td>
+                            <td>{{ purchase.transaction_date|date:"d-m-Y" }}</td>
+                            <td>{{ purchase.ledger }}</td>
+                            <td>{{ purchase.payment_mode }}</td>
+                            <td colspan="7" class="text-center text-muted">No line items</td>
+                            <td class="text-end">{{ purchase.total_net_value|floatformat:3 }}</td>
+                            <td class="text-end">{{ purchase.total_tax_amount|floatformat:3 }}</td>
+                            <td class="text-end">{{ purchase.discount|floatformat:3 }}</td>
+                            <td class="text-end">{{ purchase.grand_total_amount|floatformat:3 }}</td>
+                            <td>{{ purchase.remarks|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% endwith %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="16" class="text-center text-muted py-4">No purchase records found for the selected filters.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

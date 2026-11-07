@@ -86,12 +86,26 @@
         border-radius: 4px;
         font-size: 0.75rem;
     }
+    .badge-purchase {
+        background-color: #cec32b;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+    .badge-asset-purchase {
+        background-color: #dc3545;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
 </style>
 
 <div class="container mt-4 mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary mb-0">
-            {% if edit_mode %}{% trans "Edit" %}{% else %}{% trans "Create" %}{% endif %} {% trans "Payment Bill Clearance" %}
+            {% trans "Create Payment Bill Clearance" %}
         </h2>
         {% has_priv request.user 12 "can_read" as can_read_paymentbill %}
         {% if can_read_paymentbill %}
@@ -113,8 +127,16 @@
             </div>
 
             <div class="card-body">
-                <div class="row g-3">
+                <div class="row g-2">
                     <!-- Row 1 -->
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Voucher No" %}</label>
+                        {{ master_form.voucher_no }}
+                    </div>
+                    <div class="col-md-2" style="display: none;">
+                        <label class="form-label">{% trans "Voucher Type" %}</label>
+                        {{ master_form.voucherType }}
+                    </div>
                     <div class="col-md-2">
                         <label class="form-label">{% trans "Date" %}</label>
                         {{ master_form.Date }}
@@ -164,6 +186,12 @@
                         <label class="form-label">{% trans "Cheque Status" %}</label>
                         {{ master_form.ChequeStatus }}
                     </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">{% trans "Max Amount" %}</label>
+                        <input type="number" step="0.001" min="0" id="maxAmountField"
+                               class="form-control" placeholder="0.000" autocomplete="off">
+                    </div>
                 </div>
             </div>
         </div>
@@ -183,12 +211,24 @@
                     <span class="badge-opening">{% trans "Openings" %}</span>
                 </label>
             </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showPurchase" checked>
+                <label class="form-check-label" for="showPurchase">
+                    <span class="badge-purchase">{% trans "Purchase" %}</span>
+                </label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showAssetPurchase" checked>
+                <label class="form-check-label" for="showAssetPurchase">
+                    <span class="badge-asset-purchase">{% trans "Asset Purchase" %}</span>
+                </label>
+            </div>
         </div>
 
         <!-- Pending Purchase Bills & Openings -->
         <div class="card shadow-sm mb-4" id="hireTableContainer" style="display: none;">
             <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">{% trans "Pending Purchase Bills & Openings" %}</h5>
+                <h5 class="mb-0 fw-bold text-secondary">{% trans "Pending Hire , Purchase Bills , Asset Purchase & Openings" %}</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -217,11 +257,9 @@
 
         <div class="text-end mt-4">
             <button type="submit" class="btn btn-success px-4 py-2">
-                {% if edit_mode %}
-                    <i class="bi bi-check-circle"></i> {% trans "Update" %}
-                {% else %}
+                
                     <i class="bi bi-save"></i> {% trans "Save" %}
-                {% endif %}
+                
             </button>
             <a href="{% url 'accounts_app:list_paymentbill' %}" class="btn btn-secondary px-4 py-2">
                 <i class="bi bi-x-circle"></i> {% trans "Cancel" %}
@@ -235,7 +273,9 @@
 const translations = {
     errorLoadingBills: "{% trans 'Error loading bills. Please try again.' %}",
     amountExceedBalance: "{% trans 'Amount cannot exceed payable balance!' %}",
-    enterAmount: "{% trans 'Please enter at least one amount to clear.' %}"
+    enterAmount: "{% trans 'Please enter at least one amount to clear.' %}",
+    amountExceedMax: "{% trans 'Amount cannot exceed the Max Amount you entered!' %}",
+    maxAmountNotCleared: "{% trans 'Please entre the full amount.' %}"
 };
 
 $(document).ready(function() {
@@ -243,59 +283,7 @@ $(document).ready(function() {
 
     console.log("Document ready - Payment Bill Clearance");
 
-    {% if edit_mode and payment_bill_instance %}
-    // ✅ If in edit mode, load existing payment bill details
-    var editMode = true;
-    var existingDetails = [
-        {% for detail in payment_bill_instance.paymentbilldetails_set.all %}
-        {
-            voucher_no: {{ detail.VoucherNo }},
-            voucher_type: {{ detail.voucherType.id }},
-            current_amount: {{ detail.CurrentAmount }},
-            amount: {{ detail.Amount }}
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ];
-
-    // Fetch full data for existing details
-    if (existingDetails.length > 0) {
-        var supplierId = {{ payment_bill_instance.Supplier.id }};
-        $.ajax({
-            url: "{% url 'accounts_app:get_supplier_hires_and_openings' %}",
-            data: { supplier_id: supplierId },
-            success: function(response) {
-                // Combine hires and openings
-                allData = [...response.hires, ...response.openings];
-
-                // Merge existing amounts into data
-                allData.forEach(function(item) {
-                    var existingDetail = existingDetails.find(function(detail) {
-                        if (item.type === 'hire') {
-                            return detail.voucher_no === item.hire_id && detail.voucher_type === 1;
-                        } else {
-                            return detail.voucher_no === item.opening_id && detail.voucher_type === 12;
-                        }
-                    });
-                    if (existingDetail) {
-                        item.existing_amount = existingDetail.amount;
-                    } else {
-                        item.existing_amount = 0;
-                    }
-                });
-
-                renderData();
-                $("#hireTableContainer").show();
-                $("#filterSection").show();
-            },
-            error: function(xhr, status, error) {
-                console.error("Error fetching data:", error);
-                alert(translations.errorLoadingBills);
-            }
-        });
-    }
-    {% else %}
-    var editMode = false;
-    {% endif %}
+var editMode = false;
 
     // Log what Supplier field ID we're looking for
     console.log("Looking for Supplier field...");
@@ -305,6 +293,48 @@ $(document).ready(function() {
     // Try both variations of the field name
     var supplierField = $("#id_Supplier").length > 0 ? $("#id_Supplier") : $("#id_supplier");
     console.log("Using field:", supplierField.attr('id'));
+
+    // ---- Max Amount pool (client-side aid only — does not affect saved data) ----
+    // maxAmountOriginal holds the total pool the user typed in; the visible
+    // field is continuously updated to show what's left of that pool.
+    var maxAmountOriginal = null;
+
+    function sumEnteredAmounts() {
+        var total = 0;
+        $(".amount-input").each(function () {
+            total += parseFloat($(this).val()) || 0;
+        });
+        return total;
+    }
+
+    function recalcMaxAmount() {
+        if (maxAmountOriginal === null) return;
+        var remaining = maxAmountOriginal - sumEnteredAmounts();
+        $("#maxAmountField").val(remaining.toFixed(3));
+    }
+
+    function clearAllAmounts() {
+        $(".amount-input").each(function () {
+            $(this).val((0).toFixed(3));
+            var payable = parseFloat($(this).attr('data-max')) || 0;
+            $(this).closest("tr").find(".balance").text(payable.toFixed(3));
+        });
+    }
+
+    $("#maxAmountField").on("change", function () {
+        // Any change to Max Amount resets all entered bill amounts to zero,
+        // so allocation always starts fresh against the new pool.
+        clearAllAmounts();
+
+        var val = parseFloat($(this).val());
+        if (isNaN(val) || val < 0) {
+            maxAmountOriginal = null;
+            return;
+        }
+        maxAmountOriginal = val;
+        recalcMaxAmount();
+    });
+    // ---- end Max Amount pool ----
 
     supplierField.change(function() {
         var supplier_id = $(this).val();
@@ -331,13 +361,15 @@ $(document).ready(function() {
                 console.log("AJAX Response:", response);
                 console.log("Hires:", response.hires);
                 console.log("Openings:", response.openings);
+                console.log("Purchases:", response.purchases);
+                console.log("Asset Purchases:", response.asset_purchases);
                 
                 // Combine hires and openings
-                allData = [...response.hires, ...response.openings];
+                allData = [...response.hires, ...response.openings, ...response.purchases, ...response.asset_purchases];
                 console.log("Combined data:", allData);
                 
                 if (allData.length === 0) {
-                    alert("No pending hires or openings found for this supplier.");
+                    alert("No pending bills found for this supplier.");
                     $("#hireTableContainer").hide();
                     $("#filterSection").hide();
                 } else {
@@ -356,7 +388,7 @@ $(document).ready(function() {
     });
 
     // Filter checkboxes
-    $("#showHires, #showOpenings").change(function() {
+    $("#showHires, #showOpenings, #showPurchase, #showAssetPurchase").change(function() {
         renderData();
     });
 
@@ -370,10 +402,14 @@ $(document).ready(function() {
         // Apply filters
         var showHires = $("#showHires").is(":checked");
         var showOpenings = $("#showOpenings").is(":checked");
+        var showPurchase = $("#showPurchase").is(":checked");
+        var showAssetPurchase = $("#showAssetPurchase").is(":checked");
         
         var filteredData = allData.filter(function(item) {
             if (item.type === 'hire' && !showHires) return false;
             if (item.type === 'opening' && !showOpenings) return false;
+            if (item.type === 'purchase' && !showPurchase) return false;
+            if (item.type === 'asset_purchase' && !showAssetPurchase) return false;
             return true;
         });
 
@@ -387,15 +423,34 @@ $(document).ready(function() {
 
         filteredData.forEach(function(item, index) {
             var isHire = item.type === 'hire';
-            var voucherTypeId = isHire ? 1 : 12;  // 1=Hire, 12=BillWiseOpening
-            var voucherNo = isHire ? item.hire_id : item.opening_id;
+            var isOpening = item.type === 'opening';
+            var isPurchase = item.type === 'purchase';
+            var isAssetPurchase = item.type === 'asset_purchase';
+            var voucherTypeId = isHire ? 1 : isOpening ? 17 : isPurchase ? 13 : 17;
+            var voucherNo = isHire ? item.hire_id : isOpening ? item.opening_id : isPurchase ? item.purchase_id : item.asset_purchase_id;
             var typeBadge = isHire 
                 ? '<span class="badge-hire">Hire</span>' 
-                : '<span class="badge-opening">Opening</span>';
+                : isOpening 
+                ? '<span class="badge-opening">Opening</span>' 
+                : isPurchase 
+                ? '<span class="badge-purchase">Purchase</span>' 
+                : '<span class="badge-asset-purchase">Asset Purchase</span>';
             
-            // Use existing amount if available (edit mode), otherwise 0
-            var amountValue = item.existing_amount ? parseFloat(item.existing_amount).toFixed(2) : "0";
-            var balanceValue = parseFloat(item.payable_balance) - (item.existing_amount || 0);
+            // Existing clearance must be added back when editing,
+            // because item.payable_balance already excludes it.
+            var existingAmount = parseFloat(item.existing_amount) || 0;
+            var payableBalance = parseFloat(item.payable_balance) || 0;
+
+            // Maximum amount available for this bill while editing
+            var availablePayable = payableBalance + existingAmount;
+
+            // Current amount already entered in this Payment Bill
+            var amountValue = existingAmount > 0
+                ? existingAmount.toFixed(3)
+                : "0";
+
+            // Balance after current clearance
+            var balanceValue = availablePayable - existingAmount;
 
             var row = `
                 <tr data-type="${item.type}">
@@ -403,24 +458,28 @@ $(document).ready(function() {
                     <td>${item.supplier}</td>
                     <td>${item.date}</td>
                     <td>${item.voucher_no}</td>
-                    <td class="text-end">${parseFloat(item.grand_total).toFixed(2)}</td>
-                    <td class="text-end">${parseFloat(item.amount_cleared).toFixed(2)}</td>
-                    <td class="text-end payable">${parseFloat(item.payable_balance).toFixed(2)}</td>
+                    <td class="text-end">${parseFloat(item.grand_total).toFixed(3)}</td>
+                    <td class="text-end">${parseFloat(item.amount_cleared).toFixed(3)}</td>
+                    <td class="text-end payable">${parseFloat(item.payable_balance).toFixed(3)}</td>
                     <td>
                         <input type="hidden" name="form-${index}-voucherType" value="${voucherTypeId}">
                         <input type="hidden" name="form-${index}-VoucherNo" value="${voucherNo}">
-                        <input type="hidden" name="form-${index}-CurrentAmount" value="${parseFloat(item.grand_total).toFixed(2)}">
-                        <input type="number" step="0.01" name="form-${index}-Amount"
+                        <input type="hidden" name="form-${index}-CurrentAmount" value="${parseFloat(item.grand_total).toFixed(3)}">
+                        <input type="number" step="0.001" name="form-${index}-Amount"
                                class="form-control form-control-sm amount-input"
                                min="0"
-                               max="${item.payable_balance}"
-                               data-max="${item.payable_balance}"
+                               max="${availablePayable}"
+                               data-max="${availablePayable}"
                                value="${amountValue}">
                     </td>
-                    <td class="text-end balance">${balanceValue.toFixed(2)}</td>
+                    <td class="text-end balance">${balanceValue.toFixed(3)}</td>
                 </tr>`;
             tbody.append(row);
         });
+
+        // Keep the Max Amount pool in sync with whatever is now on screen
+        // (e.g. pre-filled amounts in edit mode, or rows changing via filter).
+        recalcMaxAmount();
     }
 
     // Dynamic Balance calculation
@@ -431,12 +490,24 @@ $(document).ready(function() {
         
         if (entered > payable) {
             alert(translations.amountExceedBalance);
-            $(this).val(payable.toFixed(2));
+            $(this).val(payable.toFixed(3));
             entered = payable;
+        }
+
+        // Enforce the Max Amount pool across all bills for this supplier, if set.
+        if (maxAmountOriginal !== null) {
+            var othersTotal = sumEnteredAmounts() - entered;
+            var allowedForThisRow = maxAmountOriginal - othersTotal;
+            if (entered > allowedForThisRow) {
+                alert(translations.amountExceedMax);
+                entered = allowedForThisRow > 0 ? allowedForThisRow : 0;
+                $(this).val(entered.toFixed(3));
+            }
         }
         
         var balance = payable - entered;
-        row.find(".balance").text(balance.toFixed(2));
+        row.find(".balance").text(balance.toFixed(3));
+        recalcMaxAmount();
     });
 
     // Form validation before submit
@@ -453,6 +524,16 @@ $(document).ready(function() {
             e.preventDefault();
             alert(translations.enterAmount);
             return false;
+        }
+
+        // Max Amount must be fully allocated (i.e. driven down to 0) before saving.
+        if (maxAmountOriginal !== null) {
+            var remainingMax = parseFloat($("#maxAmountField").val()) || 0;
+            if (remainingMax > 0) {
+                e.preventDefault();
+                alert(translations.maxAmountNotCleared);
+                return false;
+            }
         }
     });
 });
@@ -491,6 +572,11 @@ $(document).on("submit", "#paymentForm", function (e) {
             }
 
             if (response.success) {
+
+                if (response.pdf_url) {
+            window.open(response.pdf_url, '_blank');
+        }
+        
                 alert(response.message);
                 window.location.href = window.afterSuccessRedirect;
             } else {
@@ -526,4 +612,36 @@ $(document).on("submit", "#paymentForm", function (e) {
     });
 });
 </script>
+
+<!-- Get Next Voucher_no (only in create mode) -->
+
+<script>
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input  = document.getElementById('id_voucher_no');
+
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) { input.value = data.voucher_number; }
+                    else              { input.value = "{% trans 'Error' %}"; }
+                })
+                .catch(() => { input.value = "{% trans 'Error' %}"; });
+        } else if (input) {
+            input.value = '';
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+
+
 {% endblock %}

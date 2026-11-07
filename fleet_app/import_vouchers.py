@@ -5,7 +5,7 @@ import datetime
 # Database connection details
 DB_NAME = "erp_db"
 DB_USER = "postgres"
-DB_PASS = "Admin"
+DB_PASS = "Pass@@Azur26%"
 DB_HOST = "localhost"
 DB_PORT = "5432"
 

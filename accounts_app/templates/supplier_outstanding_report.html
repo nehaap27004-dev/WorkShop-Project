@@ -46,12 +46,17 @@ font-weight:700
 .stat-card.stat-hire{border-left-color:#8b5cf6}
 .stat-card.stat-hire .stat-value{color:#7c3aed}
 
+.stat-card.stat-purchase{border-left-color:#0ea5e9}
+.stat-card.stat-purchase .stat-value{color:#0284c7}
+
+.stat-card.stat-asset{border-left-color:#f43f5e}
+.stat-card.stat-asset .stat-value{color:#e11d48}
+
 .stat-card.stat-paid{border-left-color:#22c55e}
 .stat-card.stat-paid .stat-value{color:#16a34a}
 
 .stat-card.stat-balance{border-left-color:#f59e0b}
 .stat-card.stat-balance .stat-value{color:#d97706}
-
 
 /* report card */
 
@@ -61,7 +66,6 @@ border:1px solid #e2e8f0;
 border-radius:8px;
 overflow:hidden
 }
-
 
 /* column header */
 
@@ -83,9 +87,8 @@ color:#64748b
 
 .col-header .ch-num{width:36px}
 .col-header .ch-name{flex:1}
-.col-header .ch-amt{width:150px;text-align:right}
+.col-header .ch-amt{width:130px;text-align:right}
 .col-header .ch-arrow{width:32px}
-
 
 /* supplier row */
 
@@ -116,7 +119,7 @@ flex:1
 }
 
 .supplier-summary-row .col-amt{
-width:150px;
+width:130px;
 text-align:right;
 font-size:.95rem
 }
@@ -128,10 +131,11 @@ color:#1e293b
 }
 
 .text-hire{color:#7c3aed;font-weight:600}
+.text-purchase{color:#0284c7;font-weight:600}
+.text-asset{color:#e11d48;font-weight:600}
 .text-paid{color:#16a34a;font-weight:600}
 .text-balance{color:#d97706;font-weight:700}
 .text-zero{color:#94a3b8}
-
 
 /* arrow */
 
@@ -151,7 +155,6 @@ background:#7c3aed;
 color:#fff
 }
 
-
 /* detail panel */
 
 .detail-panel{
@@ -169,7 +172,6 @@ display:block
 padding:18px 16px 20px 52px
 }
 
-
 /* section title */
 
 .section-title{
@@ -178,18 +180,23 @@ font-weight:700;
 text-transform:uppercase;
 letter-spacing:.6px;
 color:#64748b;
-margin-bottom:10px
+margin-bottom:10px;
+display:flex;
+align-items:center;
+gap:8px
 }
 
 .dot{
 width:8px;
 height:8px;
-border-radius:50%
+border-radius:50%;
+display:inline-block
 }
 
 .dot-hire{background:#7c3aed}
+.dot-purchase{background:#0284c7}
+.dot-asset{background:#e11d48}
 .dot-payment{background:#16a34a}
-
 
 /* inner table */
 
@@ -243,6 +250,27 @@ padding:3px 8px;
 border-radius:4px
 }
 
+.v-no-purchase{
+display:inline-block;
+background:#e0f2fe;
+color:#0284c7;
+font-family:monospace;
+font-size:.85rem;
+font-weight:700;
+padding:3px 8px;
+border-radius:4px
+}
+
+.v-no-asset{
+display:inline-block;
+background:#ffe4e6;
+color:#e11d48;
+font-family:monospace;
+font-size:.85rem;
+font-weight:700;
+padding:3px 8px;
+border-radius:4px
+}
 
 /* status */
 
@@ -264,7 +292,6 @@ background:#fff7ed;
 color:#c2410c
 }
 
-
 /* grand row */
 
 .grand-row{
@@ -284,7 +311,7 @@ font-size:.95rem
 }
 
 .grand-row .col-amt{
-width:150px;
+width:130px;
 text-align:right;
 font-weight:700;
 font-size:.95rem
@@ -299,7 +326,6 @@ border-radius:20px;
 margin-left:6px
 }
 
-
 /* empty */
 
 .empty-state{
@@ -307,7 +333,10 @@ text-align:center;
 padding:3rem;
 color:#94a3b8
 }
+.stat-card.stat-opening{border-left-color:#f97316}
+.stat-card.stat-opening .stat-value{color:#ea580c}
 
+.text-opening{color:#ea580c;font-weight:600}
 </style>
 
 
@@ -321,7 +350,7 @@ color:#94a3b8
 Supplier Outstanding Report
 </h5>
 
-<p>Credit fleet hire entries — click a supplier to see hires & payments</p>
+<p>Credit fleet hire, purchases & asset purchases — click a supplier to see details</p>
 </div>
 
 <div class="no-print">
@@ -375,7 +404,6 @@ Print
 
 </div>
 
-
 <div class="col-md-2 mb-2">
 
 <label class="small font-weight-bold">From Date</label>
@@ -387,7 +415,6 @@ value="{{ from_date }}">
 
 </div>
 
-
 <div class="col-md-2 mb-2">
 
 <label class="small font-weight-bold">To Date</label>
@@ -398,7 +425,6 @@ class="form-control form-control-sm"
 value="{{ to_date }}">
 
 </div>
-
 
 <div class="col-md-3 mb-2">
 
@@ -420,28 +446,56 @@ Reset
 </div>
 
 
-<!-- summary -->
+<!-- STAT CARDS -->
 
 <div class="row mb-3">
 
-<div class="col-md-4 mb-2">
+<div class="col-md-2 col-sm-4 mb-2">
 <div class="stat-card stat-hire">
-<div class="stat-label">Total Hire Amount</div>
-<div class="stat-value">{{ grand_hire|floatformat:3 }}</div>
+<div class="stat-label">Fleet Hire</div>
+<div class="stat-value" style="font-size:1.2rem">{{ grand_hire|floatformat:3 }}</div>
 </div>
 </div>
 
-<div class="col-md-4 mb-2">
+<div class="col-md-2 col-sm-4 mb-2">
+<div class="stat-card stat-purchase">
+<div class="stat-label">Purchases</div>
+<div class="stat-value" style="font-size:1.2rem">{{ grand_purchase|floatformat:3 }}</div>
+</div>
+</div>
+
+<div class="col-md-2 col-sm-4 mb-2">
+<div class="stat-card stat-asset">
+<div class="stat-label">Asset Purchases</div>
+<div class="stat-value" style="font-size:1.2rem">{{ grand_asset|floatformat:3 }}</div>
+</div>
+</div>
+
+<div class="col-md-2 col-sm-4 mb-2">
+<div class="stat-card stat-opening">
+<div class="stat-label">Asset Opening</div>
+<div class="stat-value" style="font-size:1.2rem">{{ grand_asset_billwise_opening|floatformat:3 }}</div>
+</div>
+</div>
+
+<div class="col-md-2 col-sm-4 mb-2">
+<div class="stat-card" style="border-left-color:#334155">
+<div class="stat-label">Total Amount</div>
+<div class="stat-value" style="font-size:1.2rem;color:#1e293b">{{ grand_total|floatformat:3 }}</div>
+</div>
+</div>
+
+<div class="col-md-2 col-sm-4 mb-2">
 <div class="stat-card stat-paid">
-<div class="stat-label">Total Paid Amount</div>
-<div class="stat-value">{{ grand_paid|floatformat:3 }}</div>
+<div class="stat-label">Total Paid</div>
+<div class="stat-value" style="font-size:1.2rem">{{ grand_paid|floatformat:3 }}</div>
 </div>
 </div>
 
-<div class="col-md-4">
+<div class="col-md-2 col-sm-4 mb-2">
 <div class="stat-card stat-balance">
-<div class="stat-label">Total Balance Due</div>
-<div class="stat-value">{{ grand_balance|floatformat:3 }}</div>
+<div class="stat-label">Balance Due</div>
+<div class="stat-value" style="font-size:1.2rem">{{ grand_balance|floatformat:3 }}</div>
 </div>
 </div>
 
@@ -452,18 +506,23 @@ Reset
 
 {% if report %}
 
-<div class="col-header">
+<!-- COLUMN HEADERS -->
 
+<div class="col-header">
 <span class="ch ch-num">#</span>
 <span class="ch ch-name">Supplier</span>
-<span class="ch ch-amt">Hire</span>
-<span class="ch ch-amt">Paid</span>
-<span class="ch ch-amt">Balance</span>
-
+<span class="ch ch-amt" style="color:#7c3aed">Hire Amt</span>
+<span class="ch ch-amt" style="color:#0284c7">Purchase Amt</span>
+<span class="ch ch-amt" style="color:#e11d48">Asset Purchases</span>
+<span class="ch ch-amt" style="color:#ea580c">Asset Bill Opening</span>
+<span class="ch ch-amt" style="color:#16a34a">Paid Amt</span>
+<span class="ch ch-amt" style="color:#d97706">Balance Amt</span>
 </div>
 
 
 {% for row in report %}
+
+<!-- SUPPLIER SUMMARY ROW -->
 
 <div class="supplier-summary-row"
 id="cr-{{ forloop.counter }}"
@@ -472,13 +531,22 @@ onclick="toggleRow({{ forloop.counter }})">
 <div class="col-num">{{ forloop.counter }}</div>
 
 <div class="col-name">
-<div class="supplier-name">
-{{ row.supplier.ledger_name }}
-</div>
+<div class="supplier-name">{{ row.supplier.ledger_name }}</div>
 </div>
 
 <div class="col-amt text-hire">
 {{ row.total_hire|floatformat:3 }}
+</div>
+
+<div class="col-amt text-purchase">
+{{ row.total_purchase|default:0|floatformat:3 }}
+</div>
+
+<div class="col-amt text-asset">
+{{ row.total_asset|default:0|floatformat:3 }}
+</div>
+<div class="col-amt text-opening">
+{{ row.total_asset_billwise_opening|default:0|floatformat:3 }}
 </div>
 
 <div class="col-amt text-paid">
@@ -492,122 +560,278 @@ onclick="toggleRow({{ forloop.counter }})">
 </div>
 
 
-<div class="detail-panel" id="dp-{{ forloop.counter }}">
+<!-- DETAIL PANEL -->
 
+<div class="detail-panel" id="dp-{{ forloop.counter }}">
 <div class="detail-inner">
 
 
-<div class="section-title">Fleet Hires</div>
+    <!-- FLEET HIRES SECTION -->
 
-<table class="inner-table">
+    {% if row.hire_rows %}
+    <div class="section-title">
+        <span class="dot dot-hire"></span> Fleet Hires
+    </div>
 
-<thead>
-<tr>
-<th>#</th>
-<th>Voucher</th>
-<th>Date</th>
-<th>Hire Contract</th>
-<th class="r">Amount</th>
-<th>Status</th>
-</tr>
-</thead>
-
-<tbody>
-
-{% for hire in row.hire_rows %}
-
-<tr>
-
-<td>{{ forloop.counter }}</td>
-
-<td>
-<span class="v-no">{{ hire.voucher_no }}</span>
-</td>
-
-<td>{{ hire.date|date:"d M Y" }}</td>
-
-<td>{{ hire.hire_contract|default:"-" }}</td>
-
-<td class="r text-hire">
-{{ hire.grand_total|floatformat:3 }}
-</td>
-
-<td>
-
-{% if hire.IsCleared %}
-<span class="status-badge badge-cleared">Cleared</span>
-{% else %}
-<span class="status-badge badge-pending">Pending</span>
-{% endif %}
-
-</td>
-
-</tr>
-
-{% endfor %}
-
-</tbody>
-
-</table>
+    <table class="inner-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Voucher</th>
+                <th>Date</th>
+                <th>Hire Contract</th>
+                <th class="r">Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for hire in row.hire_rows %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><span class="v-no">{{ hire.voucher_no }}</span></td>
+                <td>{{ hire.date|date:"d M Y" }}</td>
+                <td>{{ hire.hire_contract|default:"-" }}</td>
+                <td class="r text-hire">{{ hire.grand_total|floatformat:3 }}</td>
+                <td>
+                    {% if hire.IsCleared %}
+                    <span class="status-badge badge-cleared">Cleared</span>
+                    {% else %}
+                    <span class="status-badge badge-pending">Pending</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4">Hire Total</td>
+                <td class="r text-hire">{{ row.total_hire|floatformat:3 }}</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+    {% endif %}
 
 
-<div class="section-title">Payments</div>
+    <!-- PURCHASES SECTION -->
 
-{% if row.payment_rows %}
+    {% if row.purchase_rows %}
+    <div class="section-title">
+        <span class="dot dot-purchase"></span> Purchases
+    </div>
 
-<table class="inner-table">
+    <table class="inner-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Voucher</th>
+                <th>Date</th>
+                <th>Remarks</th>
+                <th class="r">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for purchase in row.purchase_rows %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><span class="v-no-purchase">{{ purchase.voucher_no }}</span></td>
+                <td>{{ purchase.date|date:"d M Y" }}</td>
+                <td>{{ purchase.remarks|default:"-"|truncatechars:40 }}</td>
+                <td class="r text-purchase">{{ purchase.grand_total|floatformat:3 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4">Purchase Total</td>
+                <td class="r text-purchase">{{ row.total_purchase|floatformat:3 }}</td>
+            </tr>
+        </tfoot>
+    </table>
+    {% endif %}
 
-<thead>
-<tr>
-<th>#</th>
-<th>Date</th>
-<th>Ledger</th>
-<th>Cheque</th>
-<th>Remark</th>
-<th class="r">Amount</th>
-</tr>
-</thead>
 
-<tbody>
+    <!-- ASSET PURCHASES SECTION -->
 
-{% for payment in row.payment_rows %}
+    {% if row.asset_rows %}
+    <div class="section-title">
+        <span class="dot dot-asset"></span> Asset Purchases
+    </div>
 
-<tr>
+    <table class="inner-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Voucher</th>
+                <th>Date</th>
+                <th>Asset</th>
+                <th class="r">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in row.asset_rows %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><span class="v-no-asset">{{ asset.voucher_no }}</span></td>
+                <td>{{ asset.date|date:"d M Y" }}</td>
+                <td>{{ asset.asset_name|default:"-" }}</td>
+                <td class="r text-asset">{{ asset.grand_total|floatformat:3 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4">Asset Total</td>
+                <td class="r text-asset">{{ row.total_asset|floatformat:3 }}</td>
+            </tr>
+        </tfoot>
+    </table>
+    {% endif %}
 
-<td>{{ forloop.counter }}</td>
-
-<td>{{ payment.Date|date:"d M Y" }}</td>
-
-<td>{{ payment.Ledger.ledger_name }}</td>
-
-<td>{{ payment.ChequeNo|default:"-" }}</td>
-
-<td>{{ payment.Remark|default:"-"|truncatechars:30 }}</td>
-
-<td class="r text-paid">
-{{ payment.TotalAmount|floatformat:3 }}
-</td>
-
-</tr>
-
-{% endfor %}
-
-</tbody>
-
-</table>
-
-{% else %}
-
-<p class="text-muted">No payments recorded.</p>
-
-{% endif %}
-
+    <!-- ASSET BILLWISE OPENING -->
+    {% if row.asset_billwise_opening_rows %}
+<div class="section-title">
+    <span class="dot dot-asset"></span>
+    Asset Billwise Opening
 </div>
 
+<table class="inner-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Invoice No</th>
+            <th>Date</th>
+            <th class="r">Opening Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for opening in row.asset_billwise_opening_rows %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>
+                <span class="v-no-asset">{{ opening.InvNo }}</span>
+            </td>
+            <td>{{ opening.InvDate|date:"d M Y" }}</td>
+            <td class="r text-asset">
+                {{ opening.InvBalance|floatformat:3 }}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3">Asset Opening Total</td>
+            <td class="r text-asset">
+                {{ row.total_asset_billwise_opening|floatformat:3 }}
+            </td>
+        </tr>
+    </tfoot>
+</table>
+{% endif %}
+
+
+    <!-- PAYMENTS SECTION -->
+
+    <div class="section-title">
+        <span class="dot dot-payment"></span> Payments
+    </div>
+
+    {% if row.payment_rows %}
+
+    <table class="inner-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Ledger</th>
+                <th>Cheque</th>
+                <th>Remark</th>
+                <th class="r">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in row.payment_rows %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ payment.Date|date:"d M Y" }}</td>
+                <td>{{ payment.Ledger.ledger_name }}</td>
+                <td>{{ payment.ChequeNo|default:"-" }}</td>
+                <td>{{ payment.Remark|default:"-"|truncatechars:30 }}</td>
+                <td class="r text-paid">{{ payment.TotalAmount|floatformat:3 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5">Total Paid</td>
+                <td class="r text-paid">{{ row.total_paid|floatformat:3 }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    {% else %}
+
+    <p class="text-muted small">No payments recorded.</p>
+
+    {% endif %}
+
+
+    <!-- BALANCE SUMMARY -->
+
+    <div class="d-flex justify-content-end">
+        <table style="font-size:.9rem;border-collapse:collapse;min-width:320px">
+            <tr style="border-top:2px solid #e2e8f0">
+                <td style="padding:8px 12px;color:#64748b;font-weight:600">Hire</td>
+                <td style="padding:8px 12px;text-align:right" class="text-hire">{{ row.total_hire|floatformat:3 }}</td>
+            </tr>
+            {% if row.total_purchase %}
+            <tr style="border-top:1px solid #f1f5f9">
+                <td style="padding:8px 12px;color:#64748b;font-weight:600">Purchase</td>
+                <td style="padding:8px 12px;text-align:right" class="text-purchase">{{ row.total_purchase|floatformat:3 }}</td>
+            </tr>
+            {% endif %}
+            {% if row.total_asset %}
+            <tr style="border-top:1px solid #f1f5f9">
+                <td style="padding:8px 12px;color:#64748b;font-weight:600">Asset Purchase</td>
+                <td style="padding:8px 12px;text-align:right" class="text-asset">{{ row.total_asset|floatformat:3 }}</td>
+            </tr>
+            {% endif %}
+            {% if row.total_asset_billwise_opening %}
+<tr style="border-top:1px solid #f1f5f9">
+    <td style="padding:8px 12px;color:#64748b;font-weight:600">
+        Asset Opening
+    </td>
+    <td style="padding:8px 12px;text-align:right"
+        class="text-asset">
+        {{ row.total_asset_billwise_opening|floatformat:3 }}
+    </td>
+</tr>
+{% endif %}
+            <tr style="border-top:1px solid #e2e8f0">
+                <td style="padding:8px 12px;color:#1e293b;font-weight:700">Total Amount</td>
+                <td style="padding:8px 12px;text-align:right;font-weight:700;color:#1e293b">{{ row.total_amount|floatformat:3 }}</td>
+            </tr>
+            <tr style="border-top:1px solid #e2e8f0">
+                <td style="padding:8px 12px;color:#64748b;font-weight:600">(-) Paid</td>
+                <td style="padding:8px 12px;text-align:right" class="text-paid">{{ row.total_paid|floatformat:3 }}</td>
+            </tr>
+            <tr style="border-top:2px solid #d97706;background:#fffbeb">
+                <td style="padding:10px 12px;color:#92400e;font-weight:700">Balance Due</td>
+                <td style="padding:10px 12px;text-align:right;font-weight:700" class="{% if row.balance > 0 %}text-balance{% else %}text-zero{% endif %}">
+                    {{ row.balance|floatformat:3 }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+
+</div>
 </div>
 
 {% endfor %}
 
+
+<!-- GRAND ROW -->
 
 <div class="grand-row">
 
@@ -615,13 +839,23 @@ onclick="toggleRow({{ forloop.counter }})">
 
 <div class="col-name">
 Grand Total
-<span class="count-pill">
-{{ report|length }} suppliers
-</span>
+<span class="count-pill">{{ report|length }} suppliers</span>
 </div>
 
 <div class="col-amt text-hire">
 {{ grand_hire|floatformat:3 }}
+</div>
+
+<div class="col-amt text-purchase">
+{{ grand_purchase|floatformat:3 }}
+</div>
+
+<div class="col-amt text-asset">
+{{ grand_asset|floatformat:3 }}
+</div>
+
+<div class="col-amt text-opening">
+{{ grand_asset_billwise_opening|floatformat:3 }}
 </div>
 
 <div class="col-amt text-paid">
@@ -633,7 +867,6 @@ Grand Total
 </div>
 
 </div>
-
 {% else %}
 
 <div class="empty-state">
@@ -650,36 +883,25 @@ No outstanding records found
 <script>
 
 function toggleRow(n){
-
 var cr=document.getElementById('cr-'+n)
 var dp=document.getElementById('dp-'+n)
-
 var open=dp.classList.contains('open')
-
 document.querySelectorAll('.detail-panel.open').forEach(p=>p.classList.remove('open'))
 document.querySelectorAll('.supplier-summary-row.active').forEach(r=>r.classList.remove('active'))
-
 if(!open){
-
 dp.classList.add('open')
 cr.classList.add('active')
-
 }
-
 }
 
 function expandAll(){
-
 document.querySelectorAll('.detail-panel').forEach(p=>p.classList.add('open'))
 document.querySelectorAll('.supplier-summary-row').forEach(r=>r.classList.add('active'))
-
 }
 
 function collapseAll(){
-
 document.querySelectorAll('.detail-panel.open').forEach(p=>p.classList.remove('open'))
 document.querySelectorAll('.supplier-summary-row.active').forEach(r=>r.classList.remove('active'))
-
 }
 
 </script>

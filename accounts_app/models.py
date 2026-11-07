@@ -5,6 +5,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 import fleet_app
 from item_master.models import CostCenter
+from dateutil.relativedelta import relativedelta
+
 
 class UserRole(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -196,6 +198,10 @@ class LedgerCreation(models.Model):
         ('DR', 'Dr'),
         ('CR', 'Cr'),
     ]
+    SUPPLIER_CHOICES = [
+        ('General', 'General'),
+        ('Rental', 'Rental'),
+    ]
     ledger_name = models.CharField(max_length=255)
     groups = models.ForeignKey(Groups, on_delete=models.PROTECT, related_name='ledgers',blank=True, null=True)
     sub_group = models.ForeignKey(Subgroup, on_delete=models.PROTECT, related_name='ledgers', blank=True, null=True,)
@@ -205,6 +211,7 @@ class LedgerCreation(models.Model):
     trn_number = models.CharField(max_length=50, blank=True, null=True)
     cr_no = models.CharField(max_length=50, blank=True, null=True)
 
+    supplier_type = models.CharField(max_length=10, choices=SUPPLIER_CHOICES, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     mobile = models.CharField(max_length=15, blank=True, null=True)
     phone_no = models.CharField(max_length=15, blank=True, null=True)
@@ -214,8 +221,10 @@ class LedgerCreation(models.Model):
     city = models.CharField(max_length=100, blank=True, null=True)
     zipcode = models.CharField(max_length=10, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    payment_terms = models.CharField(max_length=255, blank=True, null=True)
     isDefault = models.BooleanField(default=False)
     
+    vehicle = models.ForeignKey('fleet_app.Vehicle', on_delete=models.PROTECT, related_name='vehicle', null=True, blank=True)
 
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -452,7 +461,7 @@ class Journal(models.Model):
     def __str__(self):
         return f"{self.voucher_no} - {self.date}"
 
-        
+  
         
 class LedgerPosting(models.Model):
     date = models.DateField()
@@ -461,6 +470,7 @@ class LedgerPosting(models.Model):
     ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT)
     debit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     credit = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    IsOpening = models.BooleanField(default=False)
     RefVoucherNo = models.BigIntegerField(null=True, blank=True)
     RefVoucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, null=True, blank=True, related_name='RefVoucherType')
     CostCenter = models.ForeignKey('item_master.CostCenter', on_delete=models.PROTECT, blank=True, null=True) # not need now
@@ -472,24 +482,7 @@ class LedgerPosting(models.Model):
     updated_on = models.DateTimeField(auto_now=True)
     created_by = models.IntegerField(null=True, blank=True)   
     updated_by = models.IntegerField(null=True, blank=True)          
-class InvoicePostingConfig(models.Model):
-    """Which ledgers an Invoice voucher type posts to. Chosen in admin, never hard-coded."""
-    voucher_type    = models.OneToOneField('fleet_app.Vouchers', on_delete=models.PROTECT,
-                                           related_name='invoice_posting_config')
-    sales_ledger    = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, null=True, blank=True,
-                                        related_name='+', help_text='Blank = use Vouchers.ledger')
-    tax_ledger      = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, null=True, blank=True,
-                                        related_name='+', help_text='Output VAT / tax payable')
-    discount_ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, null=True, blank=True,
-                                        related_name='+', help_text='Discount allowed. Blank = netted from Sales')
-    cash_ledger     = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, null=True, blank=True,
-                                        related_name='+', help_text='Used when payment mode = Cash')
-    bank_ledger     = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, null=True, blank=True,
-                                        related_name='+', help_text='Used when payment mode = Bank')
-
-    def __str__(self):
-        return f'Invoice posting config - {self.voucher_type}'
-    
+      
 class BillClearance(models.Model):
     PAYMENT_MODE_CHOICES = [
         ('cash', 'Cash'),
@@ -539,6 +532,8 @@ class ReceiptBillMaster(models.Model):
         ('bounced', 'Bounced'),
         ('cancelled', 'Cancelled'),
     ]
+    voucher_no = models.CharField(max_length=100, unique=True)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=4, related_name="receiptbill_master_voucher_type")
     Date = models.DateField( default=timezone.now )
     Customer = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name='receipt_party', blank=True, null=True)
     Ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name='cash_bank')
@@ -551,6 +546,10 @@ class ReceiptBillMaster(models.Model):
     ChequeNo = models.CharField(max_length=50, blank=True, null=True)
     ChequeDate = models.DateField(blank=True, null=True)
     ChequeStatus = models.CharField(max_length=10, choices=CHEQUE_STATUS_CHOICES, blank=True, null=True)
+
+    enable_header = models.BooleanField(default=True)
+    enable_footer = models.BooleanField(default=True)
+    enable_signature = models.BooleanField(default=True)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -567,7 +566,8 @@ class ReceiptBillDetails(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
     created_by = models.IntegerField(null=True, blank=True)
-    updated_by = models.IntegerField(null=True, blank=True)    
+    updated_by = models.IntegerField(null=True, blank=True)  
+
     
 class PaymentBillMaster(models.Model):    
     CHEQUE_STATUS_CHOICES = [
@@ -576,6 +576,8 @@ class PaymentBillMaster(models.Model):
         ('bounced', 'Bounced'),
         ('cancelled', 'Cancelled'),
     ]
+    voucher_no = models.CharField(max_length=100, unique=True)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=6, related_name="paymentbill_master_voucher_type")
     Date = models.DateField( default=timezone.now )
     Supplier = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name='Payment_party', blank=True, null=True)
     Ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name='Payment_cash_bank')
@@ -588,6 +590,10 @@ class PaymentBillMaster(models.Model):
     ChequeNo = models.CharField(max_length=50, blank=True, null=True)
     ChequeDate = models.DateField(blank=True, null=True)
     ChequeStatus = models.CharField(max_length=10, choices=CHEQUE_STATUS_CHOICES, blank=True, null=True)
+
+    enable_header = models.BooleanField(default=True)
+    enable_footer = models.BooleanField(default=True)
+    enable_signature = models.BooleanField(default=True)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -606,20 +612,89 @@ class PaymentBillDetails(models.Model):
     created_by = models.IntegerField(null=True, blank=True)
     updated_by = models.IntegerField(null=True, blank=True)        
     
+class ExpenseMaster(models.Model):      
+    EXPENSE_SOURCE = (
+        ('Company', 'Company'),
+        ('Employee', 'Employee'),
+        ('Supplier', 'Supplier'),
+    )
+
+    voucher_no = models.CharField(max_length=100, unique=True)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, related_name='expense_voucher_type', default=11)
+    ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name='expense_ledger')
+    Date = models.DateField( default=timezone.now )
+    ref_no = models.CharField(max_length=100, null=True, blank=True)
+    expense_source = models.CharField(max_length=20, choices=EXPENSE_SOURCE, default='Company')
+    narration = models.CharField(max_length=250, null=True, blank=True)
+    attachment = models.ImageField(upload_to='expensevoucher_attachments/', null=True, blank=True)
+    TotalAmount = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+
+    staff = models.ForeignKey('fleet_app.Staff', on_delete=models.CASCADE, blank=True, null=True)
+
+    is_detailed_expense = models.BooleanField(default=True)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)    
+
+    def __str__(self):
+        return f"Expense Voucher {self.voucher_no}"
+
+class ExpenseDetails(models.Model):
+    VAT_TYPES = [
+        (1, 'No VAT'),
+        (2, 'Inclusive VAT (5%)'),
+        (3, 'Exclusive VAT (5%)')
+    ]
+    
+    Expense = models.ForeignKey(ExpenseMaster, on_delete=models.CASCADE, related_name="details")
+    Ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name="expense_detail_ledger")
+    Amount = models.DecimalField(max_digits=12, decimal_places=3)
+    PaidTo = models.CharField(max_length=255, null=True, blank=True)
+    party_VAT_no = models.CharField(max_length=50, null=True, blank=True)
+    Desc = models.TextField(null=True, blank=True)
+    Vehicle = models.ForeignKey('fleet_app.Vehicle', on_delete=models.SET_NULL, null=True, blank=True, related_name="expense_details")
+    invoice_date = models.DateField(default=timezone.now)
+    invoice_no = models.CharField(max_length=50, null=True, blank=True)
+    vat_type = models.IntegerField(choices=VAT_TYPES, default=1)
+    vat_amount = models.DecimalField(max_digits=15, decimal_places=3, default=0) 
+    IsCleared = models.BooleanField(default=False)
+
+
+
+    FyId = models.IntegerField( null=True, blank=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)
+    updated_by = models.IntegerField(null=True, blank=True)     
+
+    def __str__(self):
+        return f"Detail for Voucher {self.Expense.voucher_no}"
 
 class PaymentMaster(models.Model):
-    voucher_no = models.CharField(max_length=100)
+    voucher_no = models.CharField(max_length=100, unique=True)
     voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=3, related_name="payment_master_voucher_type")
     Date = models.DateField( default=timezone.now )
     Ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name="payment_master_ledger")
-    PaidTo = models.CharField(max_length=255)
+    PaidTo = models.CharField(max_length=255, null=True, blank=True)
     IsPDC = models.BooleanField(default=False)
     Cleared = models.CharField(max_length=100)
     BounceCharge = models.DecimalField(max_digits=15, decimal_places=3, default=0)
     ChequeDate = models.DateField(null=True, blank=True)
     ChequeNo = models.CharField(max_length=100, null=True, blank=True)
     TotalAmount = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+
+    enable_header = models.BooleanField(default=True)
+    enable_footer = models.BooleanField(default=True)
+    enable_signature = models.BooleanField(default=True)
+
+    is_detailed = models.BooleanField(default=False)
     FyId = models.IntegerField( null=True, blank=True)
+    IsExpense = models.BooleanField(default=False)
+    
+    IsAdvance = models.BooleanField(default=False)
+    AdvanceCleared = models.BooleanField(default=False)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -631,13 +706,29 @@ class PaymentMaster(models.Model):
 
 
 class PaymentDetails(models.Model):
+    VAT_TYPES = [
+        (1, 'No VAT'),
+        (2, 'Inclusive VAT (5%)'),
+        (3, 'Exclusive VAT (5%)')
+    ]
+    
     Payment = models.ForeignKey(PaymentMaster, on_delete=models.CASCADE, related_name="details")
+    expense = models.ForeignKey(ExpenseDetails, on_delete=models.CASCADE, null=True, blank=True, related_name="payment_details")
     Ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name="payment_detail_ledger")
     Amount = models.DecimalField(max_digits=12, decimal_places=3)
+    PaidTo = models.CharField(max_length=255, null=True, blank=True)
+    party_VAT_no = models.CharField(max_length=50, null=True, blank=True)
     Desc = models.TextField(null=True, blank=True)
     Vehicle = models.ForeignKey('fleet_app.Vehicle', on_delete=models.SET_NULL, null=True, blank=True, related_name="payment_details")
-    FyId = models.IntegerField( null=True, blank=True)
+    invoice_date = models.DateField(default=timezone.now)
+    invoice_no = models.CharField(max_length=50, null=True, blank=True)
+    vat_type = models.IntegerField(choices=VAT_TYPES, default=1)
+    vat_amount = models.DecimalField(max_digits=15, decimal_places=3, default=0) 
     
+
+
+
+    FyId = models.IntegerField( null=True, blank=True)
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
     created_by = models.IntegerField(null=True, blank=True)
@@ -647,11 +738,11 @@ class PaymentDetails(models.Model):
         return f"Detail for Voucher {self.Payment.voucher_no}"    
     
 class ReceiptMaster(models.Model):
-    voucher_no = models.CharField(max_length=100)
+    voucher_no = models.CharField(max_length=100, unique=True)
     voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=4, related_name="receipt_master_voucher_type")
     Date = models.DateField( default=timezone.now )
     Ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name="receipt_master_ledger")
-    ReceivedFrom = models.CharField(max_length=255)
+    ReceivedFrom = models.CharField(max_length=255, null=True, blank=True)
     IsPDC = models.BooleanField(default=False)
     Cleared = models.CharField(max_length=100)
     BounceCharge = models.DecimalField(max_digits=15, decimal_places=3, default=0)
@@ -659,6 +750,13 @@ class ReceiptMaster(models.Model):
     ChequeNo = models.CharField(max_length=100, null=True, blank=True)
     TotalAmount = models.DecimalField(max_digits=15, decimal_places=3, default=0)
     FyId = models.IntegerField( null=True, blank=True)
+
+    enable_header = models.BooleanField(default=True)
+    enable_footer = models.BooleanField(default=True)
+    enable_signature = models.BooleanField(default=True)
+
+    IsAdvance = models.BooleanField(default=False)
+    AdvanceCleared = models.BooleanField(default=False)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -674,6 +772,7 @@ class ReceiptDetails(models.Model):
     Ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name="receipt_detail_ledger")
     Amount = models.DecimalField(max_digits=12, decimal_places=3)
     Desc = models.TextField(null=True, blank=True)
+
     FyId = models.IntegerField( null=True, blank=True)
     
     created_on = models.DateTimeField(auto_now_add=True)
@@ -690,6 +789,7 @@ class BillWiseOpening(models.Model):
     voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT)
     InvNo = models.CharField(max_length=100)
     InvDate = models.DateField(default=timezone.now)
+    po_no = models.CharField(max_length=100, null=True, blank=True)
     InvAmount = models.DecimalField(max_digits=12, decimal_places=3)
     InvBalance = models.DecimalField(max_digits=12, decimal_places=3)
     dr_cr = models.CharField(max_length=2, choices=DR_CR_CHOICES)
@@ -704,3 +804,171 @@ class BillWiseOpening(models.Model):
 
     def __str__(self):
         return f"{self.ledger.ledger_name} - {self.InvNo}"    
+
+class JournalMaster(models.Model):
+    VOUCHER_TYPES = (
+        ('Journal', 'Journal'),
+        ('Contra', 'Contra'),
+        ('Adjustment', 'Adjustment'),
+    )
+
+    voucher_no = models.CharField(max_length=50, unique=True)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT)
+    date = models.DateField( default=timezone.now)
+    cost_center = models.ForeignKey('item_master.CostCenter',on_delete=models.PROTECT,null=True,blank=True)
+    staff = models.ForeignKey('fleet_app.Staff', on_delete=models.CASCADE, null=True, blank=True)
+
+    enable_header = models.BooleanField(default=True)
+    enable_footer = models.BooleanField(default=True)
+    enable_signature = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.voucher_no} - {self.voucher_type}"
+
+
+class JournalDetail(models.Model):
+    journal = models.ForeignKey(JournalMaster, on_delete=models.CASCADE, related_name='details')
+
+    debit = models.ForeignKey(
+        LedgerCreation,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='journal_debits'
+    )
+
+    credit = models.ForeignKey(
+        LedgerCreation,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='journal_credits'
+    )
+
+    amount = models.DecimalField(max_digits=12, decimal_places=3)
+
+    narration = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.journal.voucher_no} - {self.amount}"        
+
+class ContraMaster(models.Model):
+    voucher_no = models.CharField(max_length=50, unique=True)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=21)
+    date = models.DateField( default=timezone.now)
+    cost_center = models.ForeignKey('item_master.CostCenter', on_delete=models.PROTECT, default=1)
+    transfer_from = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, related_name='contra_transfer_from')
+    transfer_to = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, related_name='contra_transfer_to')
+    amount = models.DecimalField(max_digits=15, decimal_places=3)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Contra {self.voucher_no} - {self.amount}"   
+
+
+class DebitNoteMaster(models.Model):
+
+    
+    voucher_no = models.CharField(max_length=50, unique=True)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT)
+    date = models.DateField(default=timezone.now)
+    ref_no = models.CharField(max_length=100, blank=True, null=True)
+    
+    supplier = models.ForeignKey(LedgerCreation,on_delete=models.PROTECT,related_name='debitnote_supplier')
+
+    ledger = models.ForeignKey(LedgerCreation,on_delete=models.PROTECT,related_name='debitnote_ledger')
+    total_amount = models.DecimalField(max_digits=15,decimal_places=3,default=0)
+    remark = models.TextField(blank=True, null=True)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    created_by = models.IntegerField(null=True, blank=True)
+    updated_by = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.voucher_no}"     
+
+class DebitNoteDetail(models.Model):
+
+    DebitMaster = models.ForeignKey(DebitNoteMaster,on_delete=models.CASCADE)
+    voucherType = models.ForeignKey('fleet_app.Vouchers',on_delete=models.PROTECT)
+    VoucherNo = models.PositiveIntegerField()
+    CurrentAmount = models.DecimalField(max_digits=15,decimal_places=3,default=0)
+    Amount = models.DecimalField(max_digits=15,decimal_places=3,default=0)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    created_by = models.IntegerField(null=True, blank=True)
+    updated_by = models.IntegerField(null=True, blank=True)     
+
+
+class CreditNoteMaster(models.Model):
+
+    voucher_no = models.CharField(max_length=50, unique=True)
+
+    voucherType = models.ForeignKey('fleet_app.Vouchers',on_delete=models.PROTECT)
+    date = models.DateField(default=timezone.now)
+    ref_no = models.CharField(max_length=100,blank=True,null=True)
+
+    client = models.ForeignKey(LedgerCreation,on_delete=models.PROTECT,related_name='creditnote_client')
+    ledger = models.ForeignKey(LedgerCreation,on_delete=models.PROTECT,related_name='creditnote_ledger')
+    total_amount = models.DecimalField(max_digits=15,decimal_places=3,default=0)
+
+    remark = models.TextField(blank=True, null=True)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    created_by = models.IntegerField(null=True, blank=True)
+    updated_by = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return self.voucher_no
+
+class CreditNoteDetail(models.Model):
+
+    CreditMaster = models.ForeignKey(CreditNoteMaster,on_delete=models.CASCADE)
+    voucherType = models.ForeignKey('fleet_app.Vouchers',on_delete=models.PROTECT)
+    VoucherNo = models.PositiveIntegerField()
+
+    CurrentAmount = models.DecimalField(max_digits=15,decimal_places=3,default=0)
+    Amount = models.DecimalField(max_digits=15,decimal_places=3,default=0)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    created_by = models.IntegerField(null=True, blank=True)
+    updated_by = models.IntegerField(null=True, blank=True)     
+
+
+class OpeningVoucherMaster(models.Model):
+    voucher_no = models.CharField(max_length=100, unique=True)
+    date = models.DateField(default=timezone.now)
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.CASCADE, default=30)
+    cost_conter = models.ForeignKey('item_master.CostCenter', on_delete=models.CASCADE, blank=True, null=True, default=1)
+    sales_person = models.ForeignKey('fleet_app.Staff', on_delete=models.CASCADE, blank=True, null=True)
+    remark = models.CharField(max_length=255, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.voucher_no
+
+
+class OpeningVoucherDetails(models.Model):
+    opening_voucher = models.ForeignKey(OpeningVoucherMaster, on_delete=models.CASCADE, related_name='details')
+    ledger = models.ForeignKey(LedgerCreation, on_delete=models.CASCADE)
+    debit_amount = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    credit_amount = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.opening_voucher.voucher_no} - {self.ledger}"         

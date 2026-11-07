@@ -1,0 +1,615 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="mb-0">Bill Wise Opening List</h5>
+            <div class="d-flex gap-2 flex-wrap align-items-center">
+                <button
+                    type="button"
+                    class="btn btn-success"
+                    onclick="openCreateBillWiseOpening()">
+                    <i class="fas fa-plus"></i> Create New
+                </button>
+                <!-- Search by ID -->
+                <div style="position:relative; max-width:200px;">
+                    <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#5A8DEE;pointer-events:none;">
+                        <i class="bi bi-hash"></i>
+                    </span>
+                    <input
+                        type="number"
+                        id="idSearch"
+                        class="form-control"
+                        placeholder="Search by ID…"
+                        min="1"
+                        autocomplete="off"
+                        style="padding-left:30px;border:2px solid #5A8DEE;border-radius:8px;"
+                    >
+                    <button
+                        id="clearIdSearch"
+                        title="Clear"
+                        style="position:absolute;right:7px;top:50%;transform:translateY(-50%);background:none;border:none;color:#aaa;font-size:1rem;cursor:pointer;display:none;padding:0;line-height:1;"
+                    >&#x2715;</button>
+                </div>
+                <!-- Search by Ledger -->
+                <div class="input-group" style="max-width: 260px;">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input
+                        type="text"
+                        id="ledgerSearch"
+                        class="form-control"
+                        placeholder="Search ledger..."
+                        autocomplete="off"
+                    >
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body table-responsive">
+
+            <table class="table table-bordered table-sm" id="billwiseTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>ID</th>
+                        <th>Voucher Type</th>
+                        <th>Inv No</th>
+                        <th>Date</th>
+                        <th>Ledger</th>
+                        <th>PO No</th>
+                        <th>Amount</th>
+                        <th>Balance</th>
+                        <th>Dr/Cr</th>
+                        <th>Cleared</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="billwiseTbody">
+                    {% for i in openings %}
+                    <tr id="billwise-row-{{ i.id }}">
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ i.id }}</td>
+                        <td class="cell-voucherType">{{ i.voucherType }}</td>
+                        <td class="cell-InvNo">{{ i.InvNo }}</td>
+                        <td class="cell-InvDate">{{ i.InvDate }}</td>
+                        <td class="cell-ledger">{{ i.ledger }}</td>
+                        <td class="cell-po_no">{{ i.po_no }}</td>
+                        <td class="cell-InvAmount">{{ i.InvAmount }}</td>
+                        <td class="cell-InvBalance">{{ i.InvBalance }}</td>
+                        <td class="cell-dr_cr">{{ i.get_dr_cr_display }}</td>
+                        <td class="cell-IsCleared">{{ i.IsCleared|yesno:"Yes,No" }}</td>
+                        <td>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-primary me-1"
+                                onclick="openEditBillWiseOpening({{ i.id }})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-danger"
+                                onclick="deleteBillWiseOpening({{ i.id }})">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr id="noRecordsRow">
+                        <td colspan="12" class="text-center">
+                            No Records Found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+
+            <p id="noMatchMsg" class="text-center text-muted mt-2" style="display:none;">
+                <i class="bi bi-search me-1"></i>No records match your search.
+            </p>
+
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editBillWiseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editBillWiseForm">
+                {% csrf_token %}
+                <input type="hidden" id="edit_id" name="id">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Bill Wise Opening</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div id="editFormError" class="alert alert-danger d-none"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Ledger <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_ledger" name="ledger" required>
+                                <option value="">-- Select Ledger --</option>
+                                {% for l in ledgers %}
+                                <option value="{{ l.id }}">{{ l.ledger_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Voucher Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_voucherType" name="voucherType" required>
+                                <option value="">-- Select Voucher Type --</option>
+                                {% for v in voucher_types %}
+                                <option value="{{ v.id }}">{{ v }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Invoice No <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_InvNo" name="InvNo" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Invoice Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="edit_InvDate" name="InvDate" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">PO No</label>
+                            <input type="text" class="form-control" id="edit_po_no" name="po_no">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Amount <span class="text-danger">*</span></label>
+                            <input type="number" step="0.001" class="form-control" id="edit_InvAmount" name="InvAmount" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Balance <span class="text-danger">*</span></label>
+                            <input type="number" step="0.001" class="form-control" id="edit_InvBalance" name="InvBalance" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Dr / Cr <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_dr_cr" name="dr_cr" required>
+                                <option value="">-- Select --</option>
+                                <option value="DR">Dr</option>
+                                <option value="CR">Cr</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="edit_IsCleared" name="IsCleared">
+                                <label class="form-check-label" for="edit_IsCleared">Cleared</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveEditBtn">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal fade" id="createBillWiseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="createBillWiseForm">
+                {% csrf_token %}
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Bill Wise Opening</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div id="createFormError" class="alert alert-danger d-none"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Ledger <span class="text-danger">*</span></label>
+                            <select class="form-select" id="create_ledger" name="ledger" required>
+                                <option value="">-- Select Ledger --</option>
+                                {% for l in ledgers %}
+                                <option value="{{ l.id }}">{{ l.ledger_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Voucher Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="create_voucherType" name="voucherType" required>
+                                <option value="">-- Select Voucher Type --</option>
+                                {% for v in voucher_types %}
+                                <option value="{{ v.id }}">{{ v }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Invoice No <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="create_InvNo" name="InvNo" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Invoice Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="create_InvDate" name="InvDate" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">PO No</label>
+                            <input type="text" class="form-control" id="create_po_no" name="po_no">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Amount <span class="text-danger">*</span></label>
+                            <input type="number" step="0.001" class="form-control" id="create_InvAmount" name="InvAmount" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Balance <span class="text-danger">*</span></label>
+                            <input type="number" step="0.001" class="form-control" id="create_InvBalance" name="InvBalance" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Dr / Cr <span class="text-danger">*</span></label>
+                            <select class="form-select" id="create_dr_cr" name="dr_cr" required>
+                                <option value="">-- Select --</option>
+                                <option value="DR">Dr</option>
+                                <option value="CR">Cr</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="create_IsCleared" name="IsCleared">
+                                <label class="form-check-label" for="create_IsCleared">Cleared</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="saveCreateBtn">
+                        <i class="fas fa-plus"></i> Create
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    tr.id-highlight td { background-color: #eef3ff !important; transition: background-color 0.3s; }
+    #idSearch:focus { box-shadow: 0 0 0 3px rgba(90,141,238,0.25) !important; border-color: #3a6fd8 !important; outline: none; }
+</style>
+
+<script>
+(function () {
+    const ledgerInput = document.getElementById('ledgerSearch');
+    const idInput     = document.getElementById('idSearch');
+    const clearIdBtn  = document.getElementById('clearIdSearch');
+    const tbody       = document.getElementById('billwiseTbody');
+    const noMatchMsg  = document.getElementById('noMatchMsg');
+
+    // Column indices (0-based)
+    // #0=counter, #1=ID, #2=VoucherType, #3=InvNo, #4=Date, #5=Ledger
+    const ID_COL     = 1;
+    const LEDGER_COL = 5;
+
+    function applyFilters() {
+        const idQuery     = idInput.value.trim();
+        const ledgerQuery = ledgerInput.value.trim().toLowerCase();
+
+        clearIdBtn.style.display = idQuery ? 'block' : 'none';
+
+        const rows = tbody.querySelectorAll('tr:not(#noRecordsRow)');
+        let visibleCount = 0;
+
+        rows.forEach(function (row) {
+            const idCell     = row.cells[ID_COL];
+            const ledgerCell = row.cells[LEDGER_COL];
+            if (!idCell || !ledgerCell) return;
+
+            const idText     = idCell.textContent.trim();
+            const ledgerText = ledgerCell.textContent.trim().toLowerCase();
+
+            const idMatch     = (idQuery === '' || idText === idQuery);
+            const ledgerMatch = (ledgerQuery === '' || ledgerText.includes(ledgerQuery));
+
+            if (idMatch && ledgerMatch) {
+                row.style.display = '';
+                row.classList.toggle('id-highlight', idQuery !== '' && idMatch);
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+                row.classList.remove('id-highlight');
+            }
+        });
+
+        noMatchMsg.style.display = (rows.length > 0 && visibleCount === 0) ? 'block' : 'none';
+    }
+
+    idInput.addEventListener('input', applyFilters);
+    ledgerInput.addEventListener('input', applyFilters);
+
+    clearIdBtn.addEventListener('click', function () {
+        idInput.value = '';
+        idInput.focus();
+        applyFilters();
+    });
+})();
+</script>
+
+<script>
+
+function deleteBillWiseOpening(id) {
+
+    if (!confirm(
+        "Are you sure you want to delete this Bill Wise Opening?\n\n" +
+        "The related opening ledger posting will also be deleted."
+    )) {
+        return;
+    }
+
+    const csrfToken = document.querySelector(
+        '[name=csrfmiddlewaretoken]'
+    )?.value;
+
+    fetch(`/billwise-opening/delete/${id}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+
+        if (data.success) {
+
+            // Remove row from table
+            const row = document.getElementById(
+                `billwise-row-${id}`
+            );
+
+            if (row) {
+                row.remove();
+            }
+
+            // Check if table is now empty
+            const tbody = document.getElementById('billwiseTbody');
+
+            if (tbody.querySelectorAll('tr').length === 0) {
+                tbody.innerHTML = `
+                    <tr id="noRecordsRow">
+                        <td colspan="12" class="text-center">
+                            No Records Found
+                        </td>
+                    </tr>
+                `;
+            }
+
+            alert(data.message);
+
+        } else {
+            alert(data.message || 'Unable to delete record.');
+        }
+
+    })
+    .catch(error => {
+        console.error(error);
+        alert('An error occurred while deleting the record.');
+    });
+}
+
+</script>
+
+<script>
+(function () {
+    const editModalEl   = document.getElementById('editBillWiseModal');
+    const editModal     = new bootstrap.Modal(editModalEl);
+    const editForm      = document.getElementById('editBillWiseForm');
+    const editFormError = document.getElementById('editFormError');
+    const saveBtn       = document.getElementById('saveEditBtn');
+    const csrfToken      = document.querySelector('#editBillWiseForm [name=csrfmiddlewaretoken]')?.value;
+
+    window.openEditBillWiseOpening = function (id) {
+        editFormError.classList.add('d-none');
+        editForm.reset();
+
+        fetch(`/billwise-opening/detail/${id}/`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (!res.success) {
+                alert(res.message || 'Unable to load record.');
+                return;
+            }
+
+            const d = res.data;
+            document.getElementById('edit_id').value           = d.id;
+            document.getElementById('edit_ledger').value        = d.ledger_id;
+            document.getElementById('edit_voucherType').value   = d.voucherType_id;
+            document.getElementById('edit_InvNo').value         = d.InvNo;
+            document.getElementById('edit_InvDate').value       = d.InvDate;
+            document.getElementById('edit_po_no').value         = d.po_no;
+            document.getElementById('edit_InvAmount').value     = d.InvAmount;
+            document.getElementById('edit_InvBalance').value    = d.InvBalance;
+            document.getElementById('edit_dr_cr').value         = d.dr_cr;
+            document.getElementById('edit_IsCleared').checked   = d.IsCleared;
+
+            editModal.show();
+        })
+        .catch(error => {
+            console.error(error);
+            alert('An error occurred while loading the record.');
+        });
+    };
+
+    editForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const id = document.getElementById('edit_id').value;
+        editFormError.classList.add('d-none');
+
+        const formData = new FormData(editForm);
+        // checkbox sends nothing when unchecked — force explicit true/false
+        formData.set('IsCleared', document.getElementById('edit_IsCleared').checked ? 'true' : 'false');
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        fetch(`/billwise-opening/edit/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                const row = document.getElementById(`billwise-row-${id}`);
+                if (row) {
+                    const d = res.data;
+                    row.querySelector('.cell-voucherType').textContent = d.voucherType;
+                    row.querySelector('.cell-InvNo').textContent       = d.InvNo;
+                    row.querySelector('.cell-InvDate').textContent     = d.InvDate;
+                    row.querySelector('.cell-ledger').textContent      = d.ledger;
+                    row.querySelector('.cell-po_no').textContent       = d.po_no;
+                    row.querySelector('.cell-InvAmount').textContent   = d.InvAmount;
+                    row.querySelector('.cell-InvBalance').textContent  = d.InvBalance;
+                    row.querySelector('.cell-dr_cr').textContent       = d.dr_cr;
+                    row.querySelector('.cell-IsCleared').textContent   = d.IsCleared ? 'Yes' : 'No';
+                }
+                editModal.hide();
+                alert(res.message);
+            } else {
+                editFormError.textContent = res.message || 'Unable to update record.';
+                editFormError.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            editFormError.textContent = 'An error occurred while saving the record.';
+            editFormError.classList.remove('d-none');
+        })
+        .finally(() => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+        });
+    });
+})();
+</script>
+
+<script>
+(function () {
+    const createModalEl   = document.getElementById('createBillWiseModal');
+    const createModal     = new bootstrap.Modal(createModalEl);
+    const createForm      = document.getElementById('createBillWiseForm');
+    const createFormError = document.getElementById('createFormError');
+    const saveCreateBtn   = document.getElementById('saveCreateBtn');
+    const csrfToken       = document.querySelector('#createBillWiseForm [name=csrfmiddlewaretoken]')?.value;
+
+    window.openCreateBillWiseOpening = function () {
+        createFormError.classList.add('d-none');
+        createForm.reset();
+        createModal.show();
+    };
+
+    createForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        createFormError.classList.add('d-none');
+
+        const formData = new FormData(createForm);
+        formData.set('IsCleared', document.getElementById('create_IsCleared').checked ? 'true' : 'false');
+
+        saveCreateBtn.disabled = true;
+        saveCreateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        fetch(`/billwise-opening/create/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                const d = res.data;
+
+                // Remove "No Records Found" row if present
+                const noRecordsRow = document.getElementById('noRecordsRow');
+                if (noRecordsRow) {
+                    noRecordsRow.remove();
+                }
+
+                const tbody = document.getElementById('billwiseTbody');
+                const newRow = document.createElement('tr');
+                newRow.id = `billwise-row-${d.id}`;
+                newRow.innerHTML = `
+                    <td>${tbody.querySelectorAll('tr').length + 1}</td>
+                    <td>${d.id}</td>
+                    <td class="cell-voucherType">${d.voucherType}</td>
+                    <td class="cell-InvNo">${d.InvNo}</td>
+                    <td class="cell-InvDate">${d.InvDate}</td>
+                    <td class="cell-ledger">${d.ledger}</td>
+                    <td class="cell-po_no">${d.po_no}</td>
+                    <td class="cell-InvAmount">${d.InvAmount}</td>
+                    <td class="cell-InvBalance">${d.InvBalance}</td>
+                    <td class="cell-dr_cr">${d.dr_cr}</td>
+                    <td class="cell-IsCleared">${d.IsCleared ? 'Yes' : 'No'}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-primary me-1" onclick="openEditBillWiseOpening(${d.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteBillWiseOpening(${d.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </td>
+                `;
+                tbody.prepend(newRow);
+
+                createModal.hide();
+                alert(res.message);
+            } else {
+                createFormError.textContent = res.message || 'Unable to create record.';
+                createFormError.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            createFormError.textContent = 'An error occurred while creating the record.';
+            createFormError.classList.remove('d-none');
+        })
+        .finally(() => {
+            saveCreateBtn.disabled = false;
+            saveCreateBtn.innerHTML = '<i class="fas fa-plus"></i> Create';
+        });
+    });
+})();
+</script>
+
+{% endblock %}

@@ -1,112 +1,254 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
-
 <style>
+    /* ── Azur Burgundy Module Standards ── */
+    :root {
+        --field-h: 42px;
+        --field-radius: 6px;
+        --field-border: #ced4da;
+    }
+    .text-burgundy { color: #9f1045 !important; }
+    .bg-burgundy { background-color: #9f1045 !important; color: #fff !important; }
 
-
-    h2 {
-        color: #555;
-        border-bottom: 1px solid #ddd;
-        padding-bottom: 10px;
-        margin-bottom: 20px;
+    .btn-custom-primary {
+        background-color: #9f1045 !important;
+        border-color: #9f1045 !important;
+        color: #fff !important;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-custom-primary:hover {
+        background-color: #830d38 !important;
+        border-color: #830d38 !important;
+        color: #fff !important;
     }
 
-    form {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 5px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        max-width: 400px;
-        margin: 0 auto;
+    /* KPI Cards */
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+    }
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .kpi-content {
+        min-width: 0;
+    }
+    .kpi-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.2;
     }
 
-    form input[type="text"] {
-        width: 100%;
-        padding: 10px;
-        margin: 10px 0;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+    /* Card Banner Header */
+    .card-banner-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.9rem 1.25rem;
+    }
+    .card-banner-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #2d3748;
+        display: inline-flex;
+        align-items: center;
     }
 
-    form button {
-        background-color: #4CAF50;
-        color: white;
-        padding: 10px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        width: 100%;
+    label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.82rem;
+        margin-bottom: 0.35rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    form button:hover {
-        background-color: #45a049;
+    input[type="text"], input[type="number"], select, .form-control {
+        width: 100% !important;
+        padding: 8px 12px;
+        border: 1px solid var(--field-border);
+        border-radius: var(--field-radius);
+        box-sizing: border-box;
+        background-color: #ffffff;
+        color: #333;
+        font-size: 0.95rem;
+        height: var(--field-h);
     }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
+    input:focus, select:focus, .form-control:focus {
+        border-color: #9f1045 !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
     }
 
-    table th, table td {
-        padding: 10px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
+    /* Table styling */
+    .table thead th {
+        background-color: #fafbfc;
+        color: #4a5568;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
     }
-
-    table th {
-        background-color: #f2f2f2;
+    .table tbody td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+        vertical-align: middle;
     }
-
-    table tr:hover {
-        background-color: #f1f1f1;
-    }
-
-    .actions a {
-        color: #007BFF;
-        text-decoration: none;
-    }
-
-    .actions a:hover {
-        text-decoration: underline;
+    .table-hover tbody tr:hover {
+        background-color: #fdfafb;
     }
 </style>
 
+<div class="container-fluid p-0 mb-5">
 
+    <!-- Top Header Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-1">
+                <i class="bi bi-percent text-burgundy mr-2"></i>{% trans "VAT & Tax Configurations" %}
+            </h2>
+            <div class="text-muted small">{% trans "Set up VAT percentage rates, tax classifications, and billing tax structures" %}</div>
+        </div>
+        {% if unit_id %}
+        <a href="{% url 'item_master:VAT_manage' %}" class="btn btn-secondary shadow-sm">
+            <i class="bi bi-plus-lg mr-1"></i>{% trans "New VAT Rate" %}
+        </a>
+        {% endif %}
+    </div>
 
-<h2>{% if unit_id %}Update VAT{% else %}Create VAT{% endif %}</h2>
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">{% if unit_id %}Update{% else %}Create{% endif %}</button>
-</form>
+    
 
-<h2>List of VAT</h2>
-<table>
-    <thead>
-        <tr>
-            <th>TAX%</th>
-            <th>TAX Name</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for VTA in VATs %}
-        <tr>
-            <td>{{ VTA.TAX_percent }}</td>
-            <td>{{ VTA.TAX_name }}</td>
-            <td class="actions">
-                <a href="{% url 'item_master:VAT_manage_edit' VTA.id %}">Edit</a>
+    <!-- Create / Update VAT Form Card -->
+    <div class="card shadow-sm border-0 mb-4" style="border-radius:10px;">
+        <div class="card-header card-banner-header">
+            <span class="card-banner-title">
+                <i class="bi bi-{% if unit_id %}pencil-square{% else %}plus-circle{% endif %} text-burgundy mr-2"></i>
+                {% if unit_id %}{% trans "Update VAT Rate" %}{% else %}{% trans "Create New VAT Rate" %}{% endif %}
+            </span>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST" novalidate>
+                {% csrf_token %}
+                <div class="form-row align-items-end">
+                    <div class="col-md-5 mb-3 mb-md-0">
+                        <label for="{{ form.TAX_percent.id_for_label }}">{% trans "TAX Percentage (%)" %} <span class="text-danger">*</span></label>
+                        {{ form.TAX_percent }}
+                        {% if form.TAX_percent.errors %}
+                            <div class="text-danger small mt-1">{{ form.TAX_percent.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-5 mb-3 mb-md-0">
+                        <label for="{{ form.TAX_name.id_for_label }}">{% trans "TAX Name / Label" %}</label>
+                        {{ form.TAX_name }}
+                        {% if form.TAX_name.errors %}
+                            <div class="text-danger small mt-1">{{ form.TAX_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        {% if unit_id %}
+                        <a href="{% url 'item_master:VAT_manage' %}" class="btn btn-outline-secondary px-3 mr-2">
+                            {% trans "Cancel" %}
+                        </a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-custom-primary w-100 shadow-sm">
+                            <i class="bi bi-check2-circle mr-1"></i>{% if unit_id %}{% trans "Update" %}{% else %}{% trans "Save" %}{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="3">No VAT available.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-    </table>
+    <!-- VAT Directory Table Card -->
+    <div class="card shadow-sm border-0" style="border-radius:10px;">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="card-banner-title">
+                <i class="bi bi-list-task text-burgundy mr-2"></i>{% trans "Configured Tax & VAT Rates" %}
+            </span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold" style="border-radius:6px;">
+                {% trans "Total Rates" %}: {{ VATs|length }}
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">#</th>
+                            <th>{% trans "Tax Rate (%)" %}</th>
+                            <th>{% trans "Tax Name" %}</th>
+                            <th style="width: 160px;" class="text-center">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for VTA in VATs %}
+                        <tr>
+                            <td class="align-middle text-muted">{{ forloop.counter }}</td>
+                            <td class="align-middle">
+                                <span class="badge badge-light border text-burgundy font-weight-bold px-2 py-1" style="font-size: 13px;">
+                                    {{ VTA.TAX_percent }}%
+                                </span>
+                            </td>
+                            <td class="align-middle font-weight-600 text-dark">{{ VTA.TAX_name|default:"—" }}</td>
+                            <td class="align-middle text-center text-nowrap">
+                                <a href="{% url 'item_master:VAT_manage_edit' VTA.id %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit' %}">
+                                    <i class="bi bi-pencil mr-1"></i>{% trans "Edit" %}
+                                </a>
+                                <a href="{% url 'item_master:vat_delete' VTA.id %}" class="btn btn-sm btn-outline-danger" 
+                                   onclick="return confirm('{% trans "Are you sure you want to delete this VAT configuration?" %}')"
+                                   title="{% trans 'Delete' %}">
+                                    <i class="bi bi-trash mr-1"></i>{% trans "Delete" %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="bi bi-percent display-4 d-block mb-2 text-secondary"></i>
+                                {% trans "No VAT rates configured yet." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
 {% endblock %}

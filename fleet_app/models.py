@@ -24,36 +24,22 @@ class Company(models.Model):
     
 
 class Manufacturer(models.Model):
-    manufacturer_name = models.CharField(max_length=100)
-    manufacturer_logo = models.ImageField(upload_to='manufacturer_logos/', null=True, blank=True)
-
-    # single Vehicle Type per manufacturer
-    vehicle_type = models.ForeignKey(
-        'VehicleCategory',
-        on_delete=models.PROTECT,
-        related_name='manufacturers',
-        null=True,
-        blank=True,
-        verbose_name="Vehicle Type"
-    )
-
+    manufacturer_name = models.CharField(max_length=100, unique=True)
+    manufacturer_logo = models.ImageField(upload_to='manufacturer_logos/', null=True, blank=True)   
+    vehicle_type = models.ForeignKey('VehicleCategory', on_delete=models.PROTECT, null=True, blank=True,related_name='manufacturers')  
+      
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
-    created_by = models.IntegerField(null=True, blank=True)
+    created_by = models.IntegerField(null=True, blank=True)   
     updated_by = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return self.manufacturer_name
 
-    class Meta:                 
-        constraints = [
-            models.UniqueConstraint(
-                fields=['manufacturer_name', 'vehicle_type'],
-                name='unique_manufacturer_vehicle_type'
-            )
-        ]
-
- 
+    class Meta:
+        verbose_name = "manufacturer_name"
+        verbose_name_plural = "manufacturer_name"
+        ordering = ['manufacturer_name']
         
 class VehicleCategory(models.Model):
     category_name = models.CharField(max_length=100, unique=True)
@@ -117,58 +103,9 @@ class VehicleModel(models.Model):
     
     class Meta:
         verbose_name = "Vehicle Model"
-        verbose_name_plural = "Vehicle Models" 
-        ordering = ['model_name']
-        constraints = [
-            models.UniqueConstraint(fields=['manufacturer', 'model_name'], name='unique_model_per_manufacturer')
-        ]
-
-
-class VehicleVariant(models.Model):
-    variant_name = models.CharField(max_length=255)
-    vehicle_model = models.ForeignKey(VehicleModel, on_delete=models.PROTECT, related_name='variants')
-    engine_code = models.CharField(max_length=100, blank=True, null=True)
-    trim = models.CharField(max_length=100, blank=True, null=True)
-
-    created_on = models.DateTimeField(auto_now_add=True)
-    updated_on = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.vehicle_model.manufacturer.manufacturer_name} {self.vehicle_model.model_name} {self.variant_name}"
-
-    class Meta:
-        verbose_name = "Vehicle Variant"
-        verbose_name_plural = "Vehicle Variants"
-        ordering = ['variant_name']
-        constraints = [
-            models.UniqueConstraint(fields=['vehicle_model', 'variant_name'], name='unique_variant_per_model')
-        ]
-
-
-class VehicleRegistration(models.Model):
-    variant = models.ForeignKey(VehicleVariant, on_delete=models.PROTECT, related_name='registrations')
-    registration_number = models.CharField(max_length=30, unique=True)
-    registration_date = models.DateField(blank=True, null=True)
-    expiry_date = models.DateField(blank=True, null=True)
-    chassis_number = models.CharField(max_length=50, blank=True, null=True)
-    engine_number = models.CharField(max_length=50, blank=True, null=True)
-    document = models.FileField(upload_to='vehicle_docs/registrations/', blank=True, null=True)
-
-    created_on = models.DateTimeField(auto_now_add=True)
-    updated_on = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.registration_number
-
-    class Meta:
-        verbose_name = "Vehicle Registration"
-        verbose_name_plural = "Vehicle Registrations"
-        ordering = ['registration_number']
-        constraints = [
-            models.UniqueConstraint(fields=['variant', 'registration_number'], name='unique_registration_per_variant')
-        ]
-
-
+        verbose_name_plural = "Vehicle Model" 
+        ordering = ['model_name']  
+        
 class FleetCustomer(models.Model):
     customer_name = models.CharField(max_length=255, help_text="Name of the customer")
     customer_mobile = models.CharField(max_length=20, help_text="Primary contact person")
@@ -327,7 +264,6 @@ class Staff(models.Model):
     license_number = models.CharField(max_length=50, null=True, blank=True)
     license_expiry_date = models.DateField(null=True, blank=True)
     staff_image = models.ImageField(upload_to='staff_images/', null=True, blank=True)
-    skills = models.ManyToManyField('jobcard_app.SkillTag', through='jobcard_app.TechnicianSkill', related_name='staff_members', blank=True)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -359,52 +295,14 @@ class LicensePlateCode(models.Model):
         ordering = ['code']
 
 class Vehicle(models.Model):
-
-    customer = models.ForeignKey(
-        'accounts_app.LedgerCreation',
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='vehicles',
-        verbose_name="Customer / Owner"
-    )
-    manufacturer = models.ForeignKey(
-        Manufacturer,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='vehicles',
-        verbose_name='Manufacturer'
-    )
-    variant = models.ForeignKey(
-        'VehicleVariant',
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='vehicles',
-        verbose_name='Vehicle Variant'
-    )
-    registration = models.ForeignKey(
-        'VehicleRegistration',
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='vehicles',
-        verbose_name='Vehicle Registration'
-    )
-    FUEL_CHOICES = [
-        ('petrol',   'Petrol'),
-        ('diesel',   'Diesel'),
-        ('electric', 'Electric'),
-        ('hybrid',   'Hybrid'),
-        ('cng',      'CNG'),
-    ]
-
-    fuel_type = models.CharField(max_length=20, choices=FUEL_CHOICES,blank=True, null=True)
     model = models.ForeignKey(VehicleModel, on_delete=models.PROTECT)  # Foreign key to VehicleModel
     vehicle_name = models.CharField(max_length=255, null=True, blank=True)  
     license_plate_code = models.ForeignKey(LicensePlateCode, on_delete=models.PROTECT, null=True, blank=True)  # ForeignKey to LicensePlateCode
     license_plate_number = models.CharField(max_length=50, null=True, blank=True)
     vehicle_image = models.ImageField(upload_to='vehicle_image/', null=True, blank=True)
+    vehicle_driver = models.ForeignKey(Staff, on_delete=models.PROTECT, null=True, blank=True, related_name='vehicle_first_driver')  # Driver assigned to the vehicle
+    vehicle_second_driver = models.ForeignKey(Staff, on_delete=models.PROTECT, null=True, blank=True, related_name='vehicle_second_driver')
+    driver_assignment_date = models.DateField(null=True, blank=True)  # Date driver was assigned
     vehicle_registration_date = models.DateField(null=True, blank=True)  # Vehicle registration date
     vehicle_cancellation_date = models.DateField(null=True, blank=True)  # Optional cancellation date
     RC_number = models.CharField(max_length=50, unique=True, null=True, blank=True)  # Registration Certificate number (unique)
@@ -412,44 +310,49 @@ class Vehicle(models.Model):
     RC_expiry_date = models.DateField(null=True, blank=True)  # Registration Certificate expiry date
     chassis_number = models.CharField(max_length=50, unique=True, null=True, blank=True)  # Chassis number (unique)
     last_odometer = models.PositiveIntegerField(validators=[MinValueValidator(0)], null=True, blank=True)  # Odometer reading (cannot be negative)
+    rate_per_hr = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)  # Rate per hour
+    rate_per_day = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)  # Rate per day
+    rate_per_week = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)  # Rate per week
+    rate_per_month = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)  # Rate per month
+    rate_per_year = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)  # Rate per year
     #we use vehicle_category as vehicle type in templates
     vehicle_category = models.ForeignKey(VehicleCategory, on_delete=models.PROTECT)  # Foreign key to VehicleCategory
     engine_number = models.CharField(max_length=50, unique=True, null=True, blank=True)  # Engine number (unique)
     
+    RAS_inspection_date = models.DateField(null=True, blank=True)  # RAS inspection date
+    RAS_inspection_expiry_date = models.DateField(null=True, blank=True)  # RAS inspection expiry date
+    RAS_inspection_certificate = models.FileField(upload_to='RAS_inspection_certificate/', null=True, blank=True)
     
-    insurance_policy_number = models.CharField(max_length=100,
-                                   blank=True, null=True)
-    insurance_expiry_date   = models.DateField(blank=True, null=True)
-    insurance_certificate   = models.FileField(
-                                   upload_to='vehicle_docs/insurance/',
-                                   blank=True, null=True)
- 
-    registration_renewed_date = models.DateField(blank=True, null=True)
-    registration_expiry_date  = models.DateField(blank=True, null=True)
-    registration_document     = models.FileField(
-                                     upload_to='vehicle_docs/registration/',
-                                     blank=True, null=True)
- 
-    fitness_test_date          = models.DateField(blank=True, null=True)
-    fitness_test_expiry_date   = models.DateField(blank=True, null=True)
-    fitness_test_certificate   = models.FileField(
-                                      upload_to='vehicle_docs/fitness/',
-                                      blank=True, null=True)
- 
-    last_service_date     = models.DateField(blank=True, null=True)
-    service_due_date       = models.DateField(blank=True, null=True)
-    service_interval_km    = models.PositiveIntegerField(
-                                  blank=True, null=True,
-                                  help_text="e.g. 5000 (service every 5000 km)")
- 
+    hook_inspection_date = models.DateField(null=True, blank=True)  # Hook inspection date
+    hook_inspection_expiry_date = models.DateField(null=True, blank=True)  # Hook inspection expiry date
+    hook_inspection_certificate = models.FileField(upload_to='hook_inspection_certificate/', null=True, blank=True)
+    
+    wire_rope_inspection_date =  models.DateField(null=True, blank=True)  # Wire rope inspection date
+    wire_rope_inspection_expiry_date = models.DateField(null=True, blank=True)  # Wire rope inspection expiry date
+    wire_rope_inspection_certificate = models.FileField(upload_to='wire_rope_inspection_certificate/', null=True, blank=True)
+    
+    winch_inspection_date = models.DateField(null=True, blank=True)  # Winch inspection date
+    winch_inspection_expiry_date = models.DateField(null=True, blank=True)  # Winch inspection expiry date
+    winch_inspection_certificate = models.FileField(upload_to='winch_inspection_certificate/', null=True, blank=True)
+    
+    lifting_wire_rope_inspection_date = models.DateField(null=True, blank=True)  # Lifting wire rope inspection date
+    lifting_wire_rope_inspection_expiry_date = models.DateField(null=True, blank=True)  # Lifting wire rope inspection expiry date
+    lifting_wire_rope_inspection_certificate = models.FileField(upload_to='lifting_wire_rope_inspection_certificate/', null=True, blank=True)
+    
+    lifting_belt_inspection_date = models.DateField(null=True, blank=True)  # Lifting belt inspection date  
+    lifting_belt_inspection_expiry_date = models.DateField(null=True, blank=True)  # Lifting belt inspection expiry date
+    lifting_belt_inspection_certificate = models.FileField(upload_to='lifting_belt_inspection_certificate/', null=True, blank=True)
+    
     model_year = models.IntegerField(null=True, blank=True)  # Manufacturing year
-    capacity = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)  # Capacity (e.g. tonnage)
+    capacity = models.CharField(max_length=50, null=True, blank=True)  # Capacity (e.g. tonnage)
     purchase_value = models.DecimalField(max_digits=20, decimal_places=3, null=True, blank=True)  # Purchase value
     vat = models.BooleanField(default=False)  # VAT applicable
     description = models.TextField(null=True, blank=True)  # Additional description
 
+    item = models.ForeignKey('item_master.item', on_delete=models.CASCADE, null=True, blank=True)
+
     is_owned = models.BooleanField(default=True)
-    supplier = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.SET_NULL, null=True, blank=True)
+    supplier = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, related_name='supplier_vehicles', null=True, blank=True)
 
     STATUS_CHOICES = [
         ('1', 'Free'),
@@ -582,36 +485,27 @@ class Vouchers(models.Model):
     updated_on = models.DateTimeField(auto_now=True)
     
     
-    def get_next_voucher_number(self, model_cls=None, number_field=None):
+    def get_next_voucher_number(self):
         """Generate the next voucher number for this voucher type"""
-        if model_cls and number_field:
-            from jobcard_app.utils import generate_voucher_number
-            default_pfx = self.Prefix or ""
-
-            return generate_voucher_number(self,model_cls,number_field,default_prefix=default_pfx)
         from django.apps import apps
         from django.db.models import ForeignKey
-        from django.db.models.deletion import PROTECT, SET_NULL
+        from django.db.models.deletion import PROTECT, PROTECT, SET_NULL
         
         all_voucher_numbers = []
 
         # Loop through all installed models
         for model in apps.get_models():
-            # Check if model has voucher_no or voucher_number and voucherType
-            field_name = None
-            if hasattr(model, 'voucher_number'):
-                field_name = 'voucher_number'
-            elif hasattr(model, 'voucher_no'):
-                field_name = 'voucher_no'
-
-            if field_name and hasattr(model, 'voucherType'):
+            # Check if model has both fields
+            if hasattr(model, 'voucher_no') and hasattr(model, 'voucherType'):
                 try:
+                    # Ensure voucherType is a ForeignKey to THIS model
                     field = model._meta.get_field('voucherType')
                     if isinstance(field, ForeignKey) and field.remote_field.model == type(self):
-                        vouchers = model.objects.filter(voucherType=self).values_list(field_name, flat=True)
+                        # Only then try to query
+                        vouchers = model.objects.filter(voucherType=self).values_list('voucher_no', flat=True)
                         all_voucher_numbers.extend(vouchers)
                 except Exception:
-                    continue
+                    continue  # skip any models that don't match cleanly
 
         # If no existing vouchers found
         if not all_voucher_numbers:
@@ -834,16 +728,7 @@ class FleetContract(models.Model):
     
     
     
-# '''
 class VehicleMaster(models.Model):
-
-    customer = models.ForeignKey(
-        'fleet_app.FleetCustomer',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='vehicles'
-    )
     vehicle_name = models.CharField(max_length=255)
     license_plate_code = models.CharField(max_length=50)
     license_plate_number = models.CharField(max_length=50)
@@ -867,7 +752,6 @@ class VehicleMaster(models.Model):
         verbose_name_plural = "Vehicle Masters"
         ordering = ['vehicle_name']    
         
-# '''
 class Document(models.Model):
     STATUS_CHOICES = [
         ('active', 'Active'),
@@ -892,7 +776,7 @@ class Document(models.Model):
 
     def __str__(self):
         return self.title        
-#         
+        
         
 class SimpleQuotation(models.Model):
     voucher_no = models.CharField(max_length=50, unique=True)
@@ -963,6 +847,7 @@ class SimpleQuotationDetails(models.Model):
         ('Day', 'Day'),
         ('Week', 'Week'),
         ('Month', 'Month'),
+        ('Lumpsum', 'Lumpsum')
     ]
     quotation = models.ForeignKey(SimpleQuotation, on_delete=models.CASCADE, related_name='details')
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, null=True, blank=True, related_name='simple_quotation_details')
@@ -971,7 +856,7 @@ class SimpleQuotationDetails(models.Model):
     rent = models.DecimalField(max_digits=20, decimal_places=3)  
     tax_amount = models.DecimalField(max_digits=20, decimal_places=3, blank=True, null=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=3)
-    period = models.CharField(max_length=10, choices=PERIOD_CHOICES, default='Hour', blank=True, null=True)
+    period = models.CharField(max_length=10, choices=PERIOD_CHOICES, default='Month', blank=True, null=True)
     
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
@@ -1002,7 +887,7 @@ class DeliveryContract(models.Model):
     customer = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, related_name='delivery_contracts', blank=True, null=True)
     is_taxable = models.BooleanField(default=True)
     
-    payment_mode = models.CharField(max_length=10, choices=VOUCHER_PAYMENT_MODE_CHOICES, default='cash')
+    payment_mode = models.CharField(max_length=10, choices=VOUCHER_PAYMENT_MODE_CHOICES, default='Credit')
     supplier_ref = models.CharField(max_length=255, blank=True, null=True)
     other_ref = models.CharField(max_length=255, blank=True, null=True)
     buyer_order_no = models.CharField(max_length=255, blank=True, null=True)
@@ -1027,7 +912,7 @@ class DeliveryContract(models.Model):
 
     terms_and_condition = models.TextField(blank=True, null=True, default=(
         "Terms & Conditions:\n\n"
-        "&nbsp;\n"
+        "\n"
         "1. Hire starts from the departure of the equipment from our yard and continues until its return in good condition and working order\n\n"
         "2. Loading and offloading of the equipment at the site under hirer & also all civil works related to this hire are the responsibility of the hirer and must be completed prior the delivery\n\n"
         "3. Gate pass/permissions required from any authority for delivering the equipment is responsible by the hirer\n\n"
@@ -1080,7 +965,7 @@ class DeliveryContractDetails(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT)
     vehicle_model = models.CharField(max_length=255, null=True, blank=True)  # Stores model name + year
     description = models.TextField(null=True, blank=True)  # Editable description per line
-    location = models.CharField(max_length=255)
+    location = models.CharField(max_length=255, null=True, blank=True)
     amount = models.DecimalField(max_digits=20, decimal_places=3)
     tax = models.DecimalField(max_digits=20, decimal_places=3)
     tax_amount = models.DecimalField(max_digits=10, decimal_places=3)
@@ -1104,7 +989,121 @@ class DeliveryContractDetails(models.Model):
     def __str__(self):
         return f"{self.vehicle} - {self.location} - {self.total_amount}"
 
+class DeliveryContractSpareParts(models.Model):
+    CONDITION_CHOICES = [
+        ('Good', 'Good'),
+        ('Damage', 'Damage'),
+    ]
+    delivery_contract = models.ForeignKey(DeliveryContract, on_delete=models.CASCADE, related_name='spare_parts', blank=True, null=True)
+    item_group = models.ForeignKey('item_master.ItemGroup', on_delete=models.CASCADE, related_name='group_delivery_contract_spare_parts', blank=True, null=True)
+    sparepart = models.ForeignKey('item_master.Item', on_delete=models.CASCADE, related_name='spare_delivery_contract_spare_parts', blank=True, null=True)
+    part_no   = models.CharField(max_length=100, blank=True, null=True)
+    quantity  = models.DecimalField(max_digits=15, decimal_places=3, default=0, blank=True, null=True)
+    rate      = models.DecimalField(max_digits=15, decimal_places=3, default=0, blank=True, null=True)
+    amount    = models.DecimalField(max_digits=15, decimal_places=3, default=0, blank=True, null=True)
+    warranty  = models.BooleanField(default=False)
+    condition = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='Good', blank=True, null=True) 
+
+    def __str__(self):
+        if self.delivery_contract:
+            return f"{self.sparepart} – {self.delivery_contract.voucher_no}"        
+        else:
+            return f"{self.sparepart}"
+            
+
     
+class Invoice(models.Model):
+    VOUCHER_PAYMENT_MODE_CHOICES = [
+        ('cash', 'Cash'),
+        ('bank', 'Bank'),
+        ('Credit', 'Credit'),
+    ]
+    voucher_no = models.CharField(max_length=100, unique=True)
+    invoice_no = models.CharField(max_length=100, blank=True, null=True)
+    date = models.DateField(default=timezone.now)
+    voucherType = models.ForeignKey(Vouchers, on_delete=models.PROTECT, related_name='fleet_invoices', default=2)
+    customer = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, related_name='invoice_customer', blank=True, null=True)
+    ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, related_name='fleet_invoice_ledger', blank=True, null=True)
+    is_taxable = models.BooleanField(default=True)
+    due_date = models.DateField(null=True, blank=True)
+
+    payment_mode = models.CharField(max_length=10, choices=VOUCHER_PAYMENT_MODE_CHOICES, default='Credit')
+    supplier_ref = models.CharField(max_length=255, blank=True, null=True)
+    other_ref = models.CharField(max_length=255, blank=True, null=True)
+    buyer_order_no = models.CharField(max_length=255, blank=True, null=True)
+    dated = models.CharField(max_length=100, blank=True, null=True)  # Free text date entry if needed
+    grand_total = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    IsCleared = models.BooleanField(default=False)
+
+    invoice_type = models.CharField(max_length=10, choices=[('simple', 'Simple'), ('complex', 'Complex')], default='simple')
+    lpo_date = models.DateField(null=True, blank=True)
+    hire_contract_no = models.CharField(max_length=255, null=True, blank=True)
+    location = models.CharField(max_length=255, null=True, blank=True)
+    staff = models.ForeignKey('Staff', on_delete=models.CASCADE, related_name='invoice_staff', blank=True, null=True)
+    
+    enable_header = models.BooleanField(default=False)
+    enable_footer = models.BooleanField(default=False)
+    enable_signature = models.BooleanField(default=True)
+    
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.voucher_no and self.voucherType:
+            self.voucher_no = self.voucherType.get_next_voucher_number()
+            
+        if self.payment_mode == 'Credit':
+            self.IsCleared = False
+        else:
+            self.IsCleared = True
+
+        super().save(*args, **kwargs)
+
+    def is_locked(self):
+        if self.payment_mode != "Credit":
+            return False
+
+        return ReceiptBillDetails.objects.filter(
+            voucherType=self.voucherType,
+            VoucherNo=self.pk,   # or self.id
+        ).exists()
+
+    def __str__(self):
+        return f"Invoice #{self.voucher_no}"
+
+
+class InvoiceDetails(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='details')
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT)
+    vehicle_model = models.CharField(max_length=255, null=True, blank=True)  # Stores model name + year
+    description = models.TextField(null=True, blank=True)  # Editable description per line
+    location = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=20, decimal_places=3)
+    tax = models.DecimalField(max_digits=20, decimal_places=3)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=3)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=3)
+
+    PERIOD_CHOICES = [
+    ('hourly', 'Hourly'),
+    ('daily', 'Daily'),
+    ('Weekly', 'Weekly'),
+    ('monthly', 'Monthly'),
+    ]
+    period = models.CharField(max_length=10, choices=PERIOD_CHOICES, null=True, blank=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    unit_rate = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+    from_date = models.DateField(null=True, blank=True)
+    to_date = models.DateField(null=True, blank=True)
+    
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)   
+    updated_by = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.vehicle} - {self.location} - {self.total_amount}"    
 
 
 
@@ -1139,7 +1138,7 @@ class FleetHire(models.Model):
     ledger = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT, related_name="fleet_hires_ledger", blank=True, null=True)
     invoice_no = models.CharField(max_length=100, blank=True, null=True)
     invoice_date = models.DateField(default=timezone.now)
-    payment_mode = models.CharField(max_length=10, choices=VOUCHER_PAYMENT_MODE_CHOICES, default='cash')
+    payment_mode = models.CharField(max_length=10, choices=VOUCHER_PAYMENT_MODE_CHOICES, default='Credit')
     IsCleared = models.BooleanField(default=False)
     hire_contract = models.CharField(max_length=255, blank=True, null=True)
 
@@ -1154,13 +1153,11 @@ class FleetHire(models.Model):
     def save(self, *args, **kwargs):
         if not self.voucher_no and self.voucherType:
             self.voucher_no = self.voucherType.get_next_voucher_number()
-        # Only auto-set IsCleared for NEW invoices (not existing ones)
-        # This allows receipt processing to update IsCleared for existing invoices
-        if self.pk is None:  # New invoice
-            if self.payment_mode == 'Credit':
-                self.IsCleared = False
-            else:
-                self.IsCleared = True
+        # Always update cleared status
+        if self.payment_mode == 'Credit':
+            self.IsCleared = False
+        else:
+            self.IsCleared = True
 
         super().save(*args, **kwargs)
 
@@ -1172,6 +1169,8 @@ class FleetHire(models.Model):
             voucherType=self.voucherType,
             VoucherNo=self.voucher_no
         ).exists()     
+
+        
 
         
 
@@ -1475,6 +1474,9 @@ class OffHireDetails(models.Model):
 
 class POMaster(models.Model):
 
+    voucher_no = models.CharField(max_length=50, unique=True)
+    voucherType = models.ForeignKey(Vouchers, on_delete=models.PROTECT, default=27)
+
     PO_no = models.CharField(max_length=50)
     PO_date = models.DateField(default=timezone.now)
 
@@ -1523,3 +1525,217 @@ class PODetails(models.Model):
     def __str__(self):
         return self.description        
 
+
+class RepairMaster(models.Model):
+   
+    REPAIR_TYPE_CHOICES = [
+        ('In-House',   'In-House'),
+        ('Outsourced', 'Outsourced'),
+    ]
+
+    
+    PAYMENT_MODE_CHOICES = [
+        ('Cash',   'Cash'),
+        ('Bank',   'Bank'),
+        ('Credit', 'Credit'),
+    ]
+
+    CATEGORY_CHOICES = [
+        ('Repair',   'Repair'),
+        ('Service',  'Service'),
+        ('Reading',  'Reading'),
+        ('Certificates',  'Certificates'),
+        ('Accessories',  'Accessories'),
+        
+    ]
+
+    voucher_no         = models.CharField(max_length=50, unique=True)
+    voucherType       = models.ForeignKey(Vouchers, on_delete=models.PROTECT, default=10)
+    date               = models.DateField(default=timezone.now)
+    vehicle            = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name='repairs')
+    repair_type        = models.CharField(max_length=20, choices=REPAIR_TYPE_CHOICES)
+    spareparts_total   = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    labourcharge_total = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    subtotal           = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    discount           = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    vat                = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    supplier           = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT,
+                                            null=True, blank=True, related_name='repair_supplier')
+
+    category           = models.CharField(max_length=50, choices=CATEGORY_CHOICES, null=True, blank=True)
+    location           = models.CharField(max_length=255, null=True, blank=True)
+    client             = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT,null=True, blank=True, related_name='repair_client')
+    cost_center        = models.ForeignKey('item_master.CostCenter', on_delete=models.PROTECT, related_name='repair_cost_center', default='1')  
+    ref_voucher_no     = models.CharField(max_length=50, null=True, blank=True)
+    staff              = models.ForeignKey(Staff, on_delete=models.PROTECT,null=True, blank=True, related_name='repair_staff')     
+
+    mechanic           = models.CharField(max_length=255, null=True, blank=True)
+    current_km         = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    next_service_km    = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    current_hr         = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    next_service_hr    = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    next_service_date   = models.DateField(null=True, blank=True)
+
+    remark             = models.TextField(null=True, blank=True)
+    
+    payment_mode       = models.CharField(max_length=10, choices=PAYMENT_MODE_CHOICES, null=True, blank=True)
+    description        = models.TextField(null=True, blank=True)
+    grand_total        = models.DecimalField(max_digits=15, decimal_places=3, default=0)
+    invoice_no         = models.CharField(max_length=50, null=True, blank=True)
+    invoice_date       = models.DateField(null=True, blank=True)
+    created_at         = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.voucher_no} – {self.vehicle}"
+
+
+class SpareParts(models.Model):
+    repair    = models.ForeignKey(RepairMaster, on_delete=models.CASCADE, related_name='spare_parts')
+    item_group = models.ForeignKey('item_master.ItemGroup', on_delete=models.CASCADE, related_name='group_repair_spare_parts')
+    sparepart = models.ForeignKey('item_master.Item', on_delete=models.CASCADE, related_name='spare_repair_spare_parts')
+    part_no   = models.CharField(max_length=100, blank=True)
+    quantity  = models.DecimalField(max_digits=15, decimal_places=3)
+    rate      = models.DecimalField(max_digits=15, decimal_places=3)
+    amount    = models.DecimalField(max_digits=15, decimal_places=3)
+    warranty  = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.sparepart} – {self.repair.voucher_no}"
+
+
+class LabourCharge(models.Model):
+    repair      = models.ForeignKey(RepairMaster, on_delete=models.CASCADE, related_name='labour_charges')
+    description = models.CharField(max_length=255)
+    hour        = models.DecimalField(max_digits=10, decimal_places=3)
+    rate        = models.DecimalField(max_digits=15, decimal_places=3)
+    amount      = models.DecimalField(max_digits=15, decimal_places=3)
+
+    def __str__(self):
+        return f"{self.description} – {self.repair.voucher_no}"        
+
+class ReplacementMaster(models.Model):
+
+    voucher_no = models.CharField(max_length=100, unique=True)
+    date = models.DateField(default=timezone.now)
+    voucherType = models.ForeignKey(Vouchers, on_delete=models.PROTECT, default=16)
+    delivery_contract = models.ForeignKey(DeliveryContract,on_delete=models.PROTECT,related_name='replacements')
+    customer = models.ForeignKey('accounts_app.LedgerCreation',on_delete=models.PROTECT,related_name='replacements',null=True,blank=True)
+    replacement_date_time = models.DateTimeField(default=timezone.now)
+    remarks = models.TextField(blank=True, null=True)
+    delivery_person = models.CharField(max_length=100, blank=True, null=True)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)
+    updated_by = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Replacement #{self.voucher_no}"
+
+
+class ReplacementDetail(models.Model):
+
+    replacement_master = models.ForeignKey(ReplacementMaster, on_delete=models.CASCADE, related_name='details')
+
+    # Which detail line in the contract is being replaced
+    delivery_contract_detail = models.ForeignKey(
+        DeliveryContractDetails,
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='replacements'
+    )
+
+    old_vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name='replacement_old_vehicles')
+    new_vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name='replacement_new_vehicles')
+
+    reason = models.TextField(blank=True, null=True)
+
+    old_meter_reading = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    new_meter_reading = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    # ✅ ADD: old vehicle condition at time of replacement
+    old_vehicle_condition = models.TextField(null=True, blank=True)
+
+    # ✅ ADD: fuel level of old vehicle when replaced
+    old_fuel_level = models.CharField(max_length=50, null=True, blank=True)
+
+    replacement_date_time = models.DateTimeField(default=timezone.now)
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)
+    updated_by = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.old_vehicle} → {self.new_vehicle}"
+
+
+class ReturnSparePartsMaster(models.Model):
+    voucher_no = models.CharField(max_length=100, unique=True)
+    date = models.DateField(default=timezone.now)
+    voucherType = models.ForeignKey(Vouchers, on_delete=models.PROTECT, default=31)
+    ledger = models.ForeignKey(
+        'accounts_app.LedgerCreation',
+        on_delete=models.PROTECT,
+        related_name='return_spareparts',
+        blank=True,
+        null=True,
+    )
+
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)
+    updated_by = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Return Spare Parts #{self.voucher_no}"
+
+
+class ReturnSparePartsDetails(models.Model):
+    CONDITION_CHOICES = [
+        ('Good', 'Good'),
+        ('Damage', 'Damage'),
+        ('Missing', 'Missing'),
+    ]
+    return_spareparts = models.ForeignKey(ReturnSparePartsMaster, on_delete=models.CASCADE, related_name='details')
+    item_group = models.ForeignKey('item_master.ItemGroup', on_delete=models.CASCADE, related_name='group_return_spareparts_details', blank=True, null=True)
+    sparepart = models.ForeignKey('item_master.Item', on_delete=models.CASCADE, related_name='spare_return_spareparts_details', blank=True, null=True)
+    part_no   = models.CharField(max_length=100, blank=True, null=True)
+    quantity  = models.DecimalField(max_digits=15, decimal_places=3, default=0, blank=True, null=True)
+    rate      = models.DecimalField(max_digits=15, decimal_places=3, default=0, blank=True, null=True)
+    amount    = models.DecimalField(max_digits=15, decimal_places=3, default=0, blank=True, null=True)
+    condition = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='Good', blank=True, null=True)
+
+    def __str__(self):
+        if self.return_spareparts:
+            return f"{self.sparepart} – {self.return_spareparts.voucher_no}"
+        return f"{self.sparepart}"
+
+
+class ServiceDepartment(models.Model):
+  
+    STATUS_CHOICES = [
+        ('Awaiting Inspection', 'Awaiting Inspection'),
+        ('Under Inspection', 'Under Inspection'),
+        ('Under Service', 'Under Service'),
+        ('Under Repair', 'Under Repair'),
+        ('Awaiting Parts', 'Awaiting Parts'),
+        ('Final Inspection', 'Final Inspection'),
+        ('Ready for Yard', 'Ready for Yard'),
+        ('Move To Yard', 'Move To Yard'),
+    ]
+ 
+    vehicle = models.ForeignKey(Vehicle,on_delete=models.PROTECT,related_name='service_jobs',)
+    offhire = models.ForeignKey(OffHire,on_delete=models.SET_NULL,null=True,blank=True,related_name='service_jobs',) 
+    offhire_date = models.DateField(null=True, blank=True)
+    customer = models.ForeignKey('accounts_app.LedgerCreation',on_delete=models.PROTECT,null=True,blank=True,related_name='service_jobs',) 
+    status = models.CharField(max_length=30,choices=STATUS_CHOICES,default='Awaiting Inspection',)
+    staff = models.ForeignKey(Staff,on_delete=models.PROTECT,null=True,blank=True,related_name='service_jobs',)
+    
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+    created_by = models.IntegerField(null=True, blank=True)
+    updated_by = models.IntegerField(null=True, blank=True)
+ 
+    
+ 

@@ -48,7 +48,7 @@
 
           {% for section in sections %}
 
-            <!-- ── Section heading row: total in the CORRECT column ── -->
+            <!-- ── Section heading row ── -->
             <tr class="section-heading" style="background:#eef0f8; cursor:pointer;"
                 onclick="toggleSection('sec_{{ forloop.counter }}')">
 
@@ -75,8 +75,14 @@
 
               <!-- Assets column -->
               <td style="text-align:right; padding:8px 12px; font-weight:bold;
-                         font-family:monospace; font-size:13px; color:#0f3460;">
-                {% if section.side == 'asset' %}{{ section.total|floatformat:3 }}{% endif %}
+                         font-family:monospace; font-size:13px;">
+                {% if section.side == 'asset' %}
+                  {% if section.total < 0 %}
+                    <span style="color:#c0392b;">{{ section.total|floatformat:3 }}</span>
+                  {% else %}
+                    <span style="color:#0f3460;">{{ section.total|floatformat:3 }}</span>
+                  {% endif %}
+                {% endif %}
               </td>
 
             </tr>
@@ -89,12 +95,15 @@
                   <!-- Direct ledgers under section parent group -->
                   {% for item in section.direct_ledgers %}
                   <tr class="ledger-row">
-                    <td style="width:55%; padding:4px 12px 4px 36px; color:#888; font-size:12.5px; border-top:1px dashed #eee;">
-                      {{ item.ledger.ledger_name }}
-                      {% if item.balance < 0 and section.side == 'liability' %}
+                    <td style="width:55%; padding:4px 12px 4px 36px; font-size:12.5px; border-top:1px dashed #eee;">
+                      {% if item.balance < 0 %}
+                        <span style="color:#c0392b;">{{ item.ledger.ledger_name }}</span>
+                        <small style="color:#c0392b; font-size:10px; margin-left:4px;">(deduction)</small>
+                      {% else %}
+                        <span style="color:#888;">{{ item.ledger.ledger_name }}</span>
                       {% endif %}
                     </td>
-                    <!-- Liability column: negative = red deduction -->
+                    <!-- Liability column -->
                     <td style="width:22.5%; text-align:right; padding:4px 12px; font-family:monospace; font-size:12.5px; border-top:1px dashed #eee;">
                       {% if section.side == 'liability' %}
                         {% if item.balance < 0 %}
@@ -105,77 +114,98 @@
                       {% endif %}
                     </td>
                     <!-- Asset column -->
-                    <td style="width:22.5%; text-align:right; padding:4px 12px; font-family:monospace; font-size:12.5px; color:#888; border-top:1px dashed #eee;">
-                      {% if section.side == 'asset' %}{{ item.balance|floatformat:3 }}{% endif %}
+                    <td style="width:22.5%; text-align:right; padding:4px 12px; font-family:monospace; font-size:12.5px; border-top:1px dashed #eee;">
+                      {% if section.side == 'asset' %}
+                        {% if item.balance < 0 %}
+                          <span style="color:#c0392b;">{{ item.balance|floatformat:3 }}</span>
+                        {% else %}
+                          <span style="color:#888;">{{ item.balance|floatformat:3 }}</span>
+                        {% endif %}
+                      {% endif %}
                     </td>
                   </tr>
                   {% endfor %}
+                  <!-- /direct_ledgers -->
 
-                  <!-- Child groups -->
-                  {% for grp_data in section.groups %}
+                  <!-- Asset Category → Asset Type grouped ledgers (Fixed Assets only) -->
+                  {% for category, cat_data in section.asset_category_groups.items %}
 
-                    <!-- Group header row -->
-                    <tr class="group-row" style="background:#f8f9fd; cursor:pointer;"
-                        onclick="toggleGroup('grp_{{ forloop.parentloop.counter }}_{{ forloop.counter }}', this)">
-                      <td style="width:55%; padding:6px 12px 6px 24px; font-weight:bold; font-size:13px; border-top:1px solid #dee2e6;">
-                        <i class="fas fa-chevron-right mr-2 grp-icon" style="font-size:10px; color:#6c757d;"></i>
-                        {{ grp_data.group.groupName }}
+                    <!-- Asset Category subheading -->
+                    <tr class="group-row" style="background:#eceef8; cursor:pointer;"
+                        onclick="toggleGroupRow('acat_{{ forloop.parentloop.counter }}_{{ forloop.counter }}', this)">
+                      <td colspan="1" style="padding:6px 12px 6px 20px; font-size:12.5px; font-weight:700; color:#0f3460;">
+                        <i class="fas fa-chevron-down grp-icon mr-2" style="font-size:10px;"></i>{{ category }}
                       </td>
-                      <!-- Liability column: negative group total = red -->
-                      <td style="width:22.5%; text-align:right; padding:6px 12px; font-weight:bold; font-family:monospace; font-size:13px; border-top:1px solid #dee2e6;">
+                      <td style="text-align:right; padding:6px 12px; font-family:monospace; font-size:12.5px; font-weight:700;">
                         {% if section.side == 'liability' %}
-                          {% if grp_data.total < 0 %}
-                            <span style="color:#c0392b;">{{ grp_data.total|floatformat:3 }}</span>
-                          {% else %}
-                            {{ grp_data.total|floatformat:3 }}
-                          {% endif %}
+                          {% if cat_data.total < 0 %}<span style="color:#c0392b;">{{ cat_data.total|floatformat:3 }}</span>{% else %}{{ cat_data.total|floatformat:3 }}{% endif %}
                         {% endif %}
                       </td>
-                      <!-- Asset column -->
-                      <td style="width:22.5%; text-align:right; padding:6px 12px; font-weight:bold; font-family:monospace; font-size:13px; border-top:1px solid #dee2e6;">
-                        {% if section.side == 'asset' %}{{ grp_data.total|floatformat:3 }}{% endif %}
+                      <td style="text-align:right; padding:6px 12px; font-family:monospace; font-size:12.5px; font-weight:700;">
+                        {% if section.side == 'asset' %}
+                          {% if cat_data.total < 0 %}<span style="color:#c0392b;">{{ cat_data.total|floatformat:3 }}</span>{% else %}{{ cat_data.total|floatformat:3 }}{% endif %}
+                        {% endif %}
                       </td>
                     </tr>
 
-                    <!-- Ledger rows under group (collapsed by default) -->
-                    <tr id="grp_{{ forloop.parentloop.counter }}_{{ forloop.counter }}" style="display:none;">
-                      <td colspan="3" style="padding:0; border:none;">
-                        <table class="table table-sm mb-0" style="border:none;">
-                          {% for item in grp_data.ledgers %}
-                          <tr>
-                            <td style="width:55%; padding:4px 12px 4px 48px; font-size:12.5px; border-top:1px dashed #eee;">
-                              {% if item.balance < 0 and section.side == 'liability' %}
-                                <span style="color:#c0392b;">{{ item.ledger.ledger_name }}</span>
-                                <small style="color:#c0392b; font-size:10px; margin-left:4px;">(deduction)</small>
-                              {% else %}
-                                <span style="color:#888;">{{ item.ledger.ledger_name }}</span>
-                              {% endif %}
-                            </td>
-                            <!-- Liability column -->
-                            <td style="width:22.5%; text-align:right; padding:4px 12px; font-family:monospace; font-size:12.5px; border-top:1px dashed #eee;">
-                              {% if section.side == 'liability' %}
-                                {% if item.balance < 0 %}
-                                  <span style="color:#c0392b;">{{ item.balance|floatformat:3 }}</span>
-                                {% else %}
-                                  <span style="color:#888;">{{ item.balance|floatformat:3 }}</span>
-                                {% endif %}
-                              {% endif %}
-                            </td>
-                            <!-- Asset column -->
-                            <td style="width:22.5%; text-align:right; padding:4px 12px; font-family:monospace; font-size:12.5px; color:#888; border-top:1px dashed #eee;">
-                              {% if section.side == 'asset' %}{{ item.balance|floatformat:3 }}{% endif %}
-                            </td>
-                          </tr>
-                          {% empty %}
-                          <tr>
-                            <td colspan="3" style="padding:4px 48px; color:#aaa; font-size:12px;">No ledgers.</td>
-                          </tr>
-                          {% endfor %}
-                        </table>
+                    <!-- Asset Types under this category -->
+                    {% for asset_type, data in cat_data.asset_types.items %}
+
+                    <tr class="group-row" data-parent="acat_{{ forloop.parentloop.parentloop.counter }}_{{ forloop.parentloop.counter }}"
+                    onclick="toggleGroupRow('atype_{{ forloop.parentloop.parentloop.counter }}_{{ forloop.parentloop.counter }}_{{ forloop.counter }}', this)"
+                    style="background:#f5f6fb; cursor:pointer; display:none;">
+
+                      <td colspan="1" style="padding:6px 12px 6px 36px; font-size:12.5px; font-weight:600; color:#0f3460;">
+                        <i class="fas fa-chevron-down grp-icon mr-2" style="font-size:10px;"></i>{{ asset_type }}
                       </td>
+
+                      <td style="text-align:right; padding:6px 12px; font-family:monospace; font-size:12.5px; font-weight:600;">
+                        {% if section.side == 'liability' %}
+                          {% if data.total < 0 %}<span style="color:#c0392b;">{{ data.total|floatformat:3 }}</span>{% else %}{{ data.total|floatformat:3 }}{% endif %}
+                        {% endif %}
+                      </td>
+
+                      <td style="text-align:right; padding:6px 12px; font-family:monospace; font-size:12.5px; font-weight:600;">
+                        {% if section.side == 'asset' %}
+                          {% if data.total < 0 %}<span style="color:#c0392b;">{{ data.total|floatformat:3 }}</span>{% else %}{{ data.total|floatformat:3 }}{% endif %}
+                        {% endif %}
+                      </td>
+
                     </tr>
 
-                  {% endfor %}<!-- /groups -->
+                    <!-- Ledgers under this asset type -->
+                    {% for item in data.ledgers %}
+                    <tr class="ledger-row" data-parent="atype_{{ forloop.parentloop.parentloop.parentloop.counter }}_{{ forloop.parentloop.parentloop.counter }}_{{ forloop.parentloop.counter }}" style="display:none;">
+                      <td style="padding:4px 12px 4px 56px; font-size:12px; border-top:1px dashed #eee;">
+                        {% if item.balance < 0 %}
+                          <span style="color:#c0392b;">{{ item.ledger.ledger_name }}</span>
+                        {% else %}
+                          <span style="color:#888;">{{ item.ledger.ledger_name }}</span>
+                        {% endif %}
+                      </td>
+                      <td style="text-align:right; padding:4px 12px; font-family:monospace; font-size:12px; border-top:1px dashed #eee;">
+                        {% if section.side == 'liability' %}{{ item.balance|floatformat:3 }}{% endif %}
+                      </td>
+                      <td style="text-align:right; padding:4px 12px; font-family:monospace; font-size:12px; border-top:1px dashed #eee;">
+                        {% if section.side == 'asset' %}{{ item.balance|floatformat:3 }}{% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                    <!-- /ledgers -->
+
+                    {% endfor %}
+                    <!-- /asset_types -->
+
+                  {% endfor %}
+                  <!-- /asset_category_groups -->
+
+                  <!-- Child groups -->
+                   {% for grp_data in section.groups %}
+
+                      {% include "group_tree.html" with node=grp_data section=section indent=24 parent_id="" section_id=forloop.parentloop.counter %}
+
+                  {% endfor %}
+                  <!-- /groups -->
 
                   <!-- ── P&L injection (Capital Accounts only) ── -->
                   {% if section.has_pl %}
@@ -185,11 +215,23 @@
                       <td style="width:55%; padding:6px 12px 6px 24px; font-size:12.5px; color:#555; border-top:1px solid #dee2e6; font-style:italic;">
                         Capital Balance
                       </td>
-                      <td style="width:22.5%; text-align:right; padding:6px 12px; font-family:monospace; font-size:12.5px; color:#555; border-top:1px solid #dee2e6;">
-                        {% if section.side == 'liability' %}{{ section.capital_before_pl|floatformat:3 }}{% endif %}
+                      <td style="width:22.5%; text-align:right; padding:6px 12px; font-family:monospace; font-size:12.5px; border-top:1px solid #dee2e6;">
+                        {% if section.side == 'liability' %}
+                          {% if section.capital_before_pl < 0 %}
+                            <span style="color:#c0392b;">{{ section.capital_before_pl|floatformat:3 }}</span>
+                          {% else %}
+                            <span style="color:#555;">{{ section.capital_before_pl|floatformat:3 }}</span>
+                          {% endif %}
+                        {% endif %}
                       </td>
-                      <td style="width:22.5%; text-align:right; padding:6px 12px; font-family:monospace; font-size:12.5px; color:#555; border-top:1px solid #dee2e6;">
-                        {% if section.side == 'asset' %}{{ section.capital_before_pl|floatformat:3 }}{% endif %}
+                      <td style="width:22.5%; text-align:right; padding:6px 12px; font-family:monospace; font-size:12.5px; border-top:1px solid #dee2e6;">
+                        {% if section.side == 'asset' %}
+                          {% if section.capital_before_pl < 0 %}
+                            <span style="color:#c0392b;">{{ section.capital_before_pl|floatformat:3 }}</span>
+                          {% else %}
+                            <span style="color:#555;">{{ section.capital_before_pl|floatformat:3 }}</span>
+                          {% endif %}
+                        {% endif %}
                       </td>
                     </tr>
 
@@ -234,11 +276,23 @@
                           (Capital {% if section.pl_is_profit %}+{% else %}-{% endif %} P&amp;L)
                         </small>
                       </td>
-                      <td style="width:22.5%; text-align:right; padding:7px 12px; font-family:monospace; font-size:13px; font-weight:700; color:#0f3460; border-top:2px solid #c8cde8;">
-                        {% if section.side == 'liability' %}{{ section.total|floatformat:3 }}{% endif %}
+                      <td style="width:22.5%; text-align:right; padding:7px 12px; font-family:monospace; font-size:13px; font-weight:700; border-top:2px solid #c8cde8;">
+                        {% if section.side == 'liability' %}
+                          {% if section.total < 0 %}
+                            <span style="color:#c0392b;">{{ section.total|floatformat:3 }}</span>
+                          {% else %}
+                            <span style="color:#0f3460;">{{ section.total|floatformat:3 }}</span>
+                          {% endif %}
+                        {% endif %}
                       </td>
-                      <td style="width:22.5%; text-align:right; padding:7px 12px; font-family:monospace; font-size:13px; font-weight:700; color:#0f3460; border-top:2px solid #c8cde8;">
-                        {% if section.side == 'asset' %}{{ section.total|floatformat:3 }}{% endif %}
+                      <td style="width:22.5%; text-align:right; padding:7px 12px; font-family:monospace; font-size:13px; font-weight:700; border-top:2px solid #c8cde8;">
+                        {% if section.side == 'asset' %}
+                          {% if section.total < 0 %}
+                            <span style="color:#c0392b;">{{ section.total|floatformat:3 }}</span>
+                          {% else %}
+                            <span style="color:#0f3460;">{{ section.total|floatformat:3 }}</span>
+                          {% endif %}
+                        {% endif %}
                       </td>
                     </tr>
 
@@ -250,7 +304,7 @@
 
           {% endfor %}<!-- /sections -->
 
-          <!-- Difference row: shown only when non-zero, no black bg, no minus sign -->
+          <!-- Difference row -->
           {% if difference != 0 %}
           <tr style="background:#f8f9fa; border-top:1px solid #dee2e6;">
             <td style="padding:6px 12px; font-size:12px; color:#888;">
@@ -264,14 +318,22 @@
           </tr>
           {% endif %}
 
-          <!-- Total row: black background -->
+          <!-- Total row: dark background -->
           <tr style="background:#1a1a2e; border-top:2px solid #c8cde8;">
             <td style="padding:10px 12px; font-weight:bold; font-size:13.5px; color:#fff;">Total</td>
             <td style="text-align:right; padding:10px 12px; font-weight:bold; font-family:monospace; font-size:14px; color:#fff;">
-              {{ total_liabilities|floatformat:3 }}
+              {% if total_liabilities < 0 %}
+                <span style="color:#ff6b6b;">{{ total_liabilities|floatformat:3 }}</span>
+              {% else %}
+                {{ total_liabilities|floatformat:3 }}
+              {% endif %}
             </td>
             <td style="text-align:right; padding:10px 12px; font-weight:bold; font-family:monospace; font-size:14px; color:#fff;">
-              {{ total_assets|floatformat:3 }}
+              {% if total_assets < 0 %}
+                <span style="color:#ff6b6b;">{{ total_assets|floatformat:3 }}</span>
+              {% else %}
+                {{ total_assets|floatformat:3 }}
+              {% endif %}
             </td>
           </tr>
 
@@ -293,49 +355,98 @@
     icon.classList.toggle('fa-chevron-right', !isHidden);
   }
 
-  function toggleGroup(id, row) {
-    const body = document.getElementById(id);
-    if (!body) return;
-    const isHidden = body.style.display === 'none';
-    body.style.display = isHidden ? 'table-row' : 'none';
+  function toggleGroupRow(groupId, cell) {
+    const row = cell.closest('tr');
+    const table = cell.closest('table');
     const icon = row.querySelector('.grp-icon');
-    if (icon) {
-      icon.classList.toggle('fa-chevron-down',  isHidden);
-      icon.classList.toggle('fa-chevron-right', !isHidden);
+    if (!icon) return;
+
+    const isExpanded = icon.classList.contains('fa-chevron-down');
+
+    if (isExpanded) {
+      collapseDescendants(table, groupId);
+      icon.classList.remove('fa-chevron-down');
+      icon.classList.add('fa-chevron-right');
+    } else {
+      expandImmediateChildren(table, groupId);
+      icon.classList.remove('fa-chevron-right');
+      icon.classList.add('fa-chevron-down');
     }
   }
 
+  function collapseDescendants(table, parentId) {
+    const children = table.querySelectorAll(`[data-parent="${parentId}"]`);
+    children.forEach(child => {
+      child.style.display = 'none';
+      const childId = child.getAttribute('data-id');
+      if (childId) {
+        collapseDescendants(table, childId);
+        const childIcon = child.querySelector('.grp-icon');
+        if (childIcon) {
+          childIcon.classList.remove('fa-chevron-down');
+          childIcon.classList.add('fa-chevron-right');
+        }
+      }
+    });
+  }
+
+  function expandImmediateChildren(table, parentId) {
+    const children = table.querySelectorAll(`[data-parent="${parentId}"]`);
+    children.forEach(child => {
+      child.style.display = 'table-row';
+    });
+  }
+
   function expandAll() {
+    // Show all top-level sections
     document.querySelectorAll('.section-body').forEach(el => el.style.display = 'table-row');
     document.querySelectorAll('[id^="icon_sec_"]').forEach(el => {
-      el.classList.remove('fa-chevron-right'); el.classList.add('fa-chevron-down');
+      el.classList.remove('fa-chevron-right');
+      el.classList.add('fa-chevron-down');
     });
-    document.querySelectorAll('[id^="grp_"]').forEach(el => el.style.display = 'table-row');
+
+    // Show all group rows and ledger rows inside sections
+    document.querySelectorAll('.group-row, .ledger-row').forEach(el => {
+      el.style.display = 'table-row';
+    });
+
+    // Turn all carets down
     document.querySelectorAll('.grp-icon').forEach(el => {
-      el.classList.remove('fa-chevron-right'); el.classList.add('fa-chevron-down');
+      el.classList.remove('fa-chevron-right');
+      el.classList.add('fa-chevron-down');
     });
   }
 
   function collapseAll() {
+    // Hide all top-level sections
     document.querySelectorAll('.section-body').forEach(el => el.style.display = 'none');
     document.querySelectorAll('[id^="icon_sec_"]').forEach(el => {
-      el.classList.remove('fa-chevron-down'); el.classList.add('fa-chevron-right');
+      el.classList.remove('fa-chevron-down');
+      el.classList.add('fa-chevron-right');
     });
-    document.querySelectorAll('[id^="grp_"]').forEach(el => el.style.display = 'none');
+
+    // Hide all nested group/ledger records
+    document.querySelectorAll('[data-parent^="grp-"]').forEach(el => {
+      el.style.display = 'none';
+    });
+
+    // Reset caret icons
     document.querySelectorAll('.grp-icon').forEach(el => {
-      el.classList.remove('fa-chevron-down'); el.classList.add('fa-chevron-right');
+      el.classList.remove('fa-chevron-down');
+      el.classList.add('fa-chevron-right');
     });
   }
 </script>
 
 <style>
   .group-row:hover       { background:#f0f3ff !important; }
+  .ledger-row:hover      { background:#f8f9fa !important; }
   .section-heading:hover { background:#e4e8f5 !important; }
   @media print {
     .btn, form          { display: none !important; }
     .card               { box-shadow: none !important; }
     .section-body       { display: table-row !important; }
-    [id^="grp_"]        { display: table-row !important; }
+    .group-row, .ledger-row { display: table-row !important; }
   }
 </style>
 

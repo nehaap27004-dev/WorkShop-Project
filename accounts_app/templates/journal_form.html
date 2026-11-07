@@ -1,35 +1,344 @@
-{% extends 'base.html' %}
+{% extends 'fleet_base1.html' %}
+{% block title %}{% if is_edit %}Edit Journal{% else %}Create Journal{% endif %}{% endblock %}
 
 {% block content %}
-<style>
-    
-    .form-container {
-        max-width: 600px;
-        margin: 50px auto;
-        background: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-    }
-    .form-container h2 {
-        text-align: center;
-        margin-bottom: 20px;
-        color: #343a40;
-    }
-    .btn-primary {
-        width: 100%;
-    }
-</style>
-</head>
-<body>
+<div class="container-fluid py-4">
 
-<div class="form-container">
-<h2>Journal Entry Form</h2>
-<form method="post">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+      <i class="fas fa-book mr-2"></i>
+      {% if is_edit %}Edit Journal — {{ instance.voucher_no }}{% else %}New Journal Entry{% endif %}
+    </h4>
+    <a href="{% url 'accounts_app:journal_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-list mr-1"></i> View List
+    </a>
+  </div>
+
+  <!-- Messages -->
+  {% for msg in messages %}
+  <div
+    class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show">
+    {{ msg }} <button type="button" class="close" data-dismiss="alert">&times;</button>
+  </div>
+  {% endfor %}
+
+  <form method="post" id="journalForm">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Submit</button>
-</form>
+
+    <!-- ── Master Fields ── -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-primary text-white py-2">
+        <strong><i class="fas fa-file-alt mr-1"></i> Voucher Details</strong>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 form-group">
+            <label>Voucher No <span class="text-danger">*</span></label>
+            {{ form.voucher_no }}
+            {% if form.voucher_no.errors %}
+            <small class="text-danger">{{ form.voucher_no.errors.0 }}</small>
+            {% endif %}
+          </div>
+          <div class="col-md-3 form-group">
+            <label>Voucher Type <span class="text-danger">*</span></label>
+            {{ form.voucherType }}
+            {% if form.voucherType.errors %}
+            <small class="text-danger">{{ form.voucherType.errors.0 }}</small>
+            {% endif %}
+          </div>
+          <div class="col-md-2 form-group">
+            <label>Date <span class="text-danger">*</span></label>
+            {{ form.date }}
+            {% if form.date.errors %}
+            <small class="text-danger">{{ form.date.errors.0 }}</small>
+            {% endif %}
+          </div>
+          <div class="col-md-2 form-group">
+            <label>Cost Center <span class="text-danger">*</span></label>
+            {{ form.cost_center }}
+            {% if form.cost_center.errors %}
+            <small class="text-danger">{{ form.cost_center.errors.0 }}</small>
+            {% endif %}
+          </div>
+          <div class="col-md-2 form-group">
+            <label>Staff</label>
+            {{ form.staff }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Detail Entry Row ── -->
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-secondary text-white py-2">
+        <strong><i class="fas fa-plus-circle mr-1"></i> Add Detail Line</strong>
+      </div>
+      <div class="card-body">
+        <div class="row align-items-end">
+          <div class="col-md-3 form-group mb-0">
+            <label class="small">Debit Ledger</label>
+            <select id="inp_debit" class="form-control form-control-sm">
+              <option value="">— Select Debit —</option>
+              {% for l in ledgers %}
+              <option value="{{ l.pk }}">{{ l }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3 form-group mb-0">
+            <label class="small">Credit Ledger</label>
+            <select id="inp_credit" class="form-control form-control-sm">
+              <option value="">— Select Credit —</option>
+              {% for l in ledgers %}
+              <option value="{{ l.pk }}">{{ l }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2 form-group mb-0">
+            <label class="small">Amount <span class="text-danger">*</span></label>
+            <input type="number" id="inp_amount" class="form-control form-control-sm" step="0.001" min="0"
+              placeholder="0.000">
+          </div>
+          <div class="col-md-3 form-group mb-0">
+            <label class="small">Narration</label>
+            <input type="text" id="inp_narration" class="form-control form-control-sm" placeholder="Optional note">
+          </div>
+          <div class="col-md-1 form-group mb-0">
+            <label class="small d-block">&nbsp;</label>
+            <button type="button" class="btn btn-success btn-sm btn-block" id="btnAdd">
+              <i class="fas fa-plus"></i> Add
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Detail Table ── -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header py-2 d-flex justify-content-between align-items-center">
+        <strong><i class="fas fa-table mr-1"></i> Detail Lines</strong>
+        <span class="badge badge-primary" id="rowCount">0 row(s)</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover table-sm mb-0" id="detailTable">
+            <thead class="thead-dark">
+              <tr>
+                <th style="width:40px;">#</th>
+                <th>Debit Ledger</th>
+                <th>Credit Ledger</th>
+                <th style="width:130px;">Amount</th>
+                <th>Narration</th>
+                <th style="width:110px;" class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="detailBody">
+              <tr id="emptyRow">
+                <td colspan="6" class="text-center text-muted py-3">
+                  <i class="fas fa-inbox mr-1"></i> No detail lines added yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden inputs container -->
+    <div id="hiddenInputs"></div>
+
+    <!-- Save / Cancel -->
+    <div class="d-flex justify-content-end">
+      <a href="{% url 'accounts_app:journal_list' %}" class="btn btn-secondary mr-2">
+        <i class="fas fa-times mr-1"></i> Cancel
+      </a>
+      <button type="submit" class="btn btn-primary" id="btnSave">
+        <i class="fas fa-save mr-1"></i> Save Journal
+      </button>
+    </div>
+
+  </form>
 </div>
+
+<!-- Get Next Voucher_no -->
+{% if not is_edit_mode %}
+<script>
+  function updateVoucherNumber() {
+    const select = document.getElementById('id_voucherType');
+    const input = document.getElementById('id_voucher_no');
+    if (select && input && select.value) {
+      input.value = "Loading...";
+      fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+        .then(r => r.json())
+        .then(data => { input.value = data.success ? data.voucher_number : "Error"; })
+        .catch(() => { input.value = "Error"; });
+    } else if (input) { input.value = ''; }
+  }
+  window.addEventListener('DOMContentLoaded', function () {
+    const voucherSelect = document.getElementById('id_voucherType');
+    if (voucherSelect) {
+      voucherSelect.addEventListener('change', updateVoucherNumber);
+      updateVoucherNumber();
+    }
+  });
+</script>
+{% endif %}
+
+
+<script>
+  (function () {
+    // ── State ──────────────────────────────────────────────────────
+    let rows = [];        // [{id, debit_id, debit_name, credit_id, credit_name, amount, narration}]
+    let editingIdx = null;
+
+    // Pre-load existing details on edit
+    const existing = {{ existing_details| safe
+  }};
+  existing.forEach(d => rows.push({
+    id: d.id,
+    debit_id: d.debit_id,
+    debit_name: d.debit_name,
+    credit_id: d.credit_id,
+    credit_name: d.credit_name,
+    amount: d.amount,
+    narration: d.narration,
+  }));
+
+  // ── Helpers ────────────────────────────────────────────────────
+  function selectedText(selectEl) {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    return opt ? opt.text : '—';
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('detailBody');
+    const counter = document.getElementById('rowCount');
+    tbody.innerHTML = '';
+
+    if (rows.length === 0) {
+      tbody.innerHTML = `<tr id="emptyRow"><td colspan="6" class="text-center text-muted py-3">
+        <i class="fas fa-inbox mr-1"></i> No detail lines added yet.</td></tr>`;
+      counter.textContent = '0 row(s)';
+      return;
+    }
+
+    counter.textContent = rows.length + ' row(s)';
+    rows.forEach((r, idx) => {
+      const isEditing = (editingIdx === idx);
+      const tr = document.createElement('tr');
+      if (isEditing) tr.classList.add('table-warning');
+      tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td>${r.debit_name || '<span class="text-muted">—</span>'}</td>
+        <td>${r.credit_name || '<span class="text-muted">—</span>'}</td>
+        <td class="text-right">${parseFloat(r.amount).toFixed(3)}</td>
+        <td>${r.narration || ''}</td>
+        <td class="text-center">
+          <button type="button" class="btn btn-xs btn-warning mr-1" onclick="startEdit(${idx})"
+                  title="Edit"><i class="fas fa-edit"></i></button>
+          <button type="button" class="btn btn-xs btn-danger" onclick="removeRow(${idx})"
+                  title="Remove"><i class="fas fa-trash"></i></button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function buildHiddenInputs() {
+    const container = document.getElementById('hiddenInputs');
+    container.innerHTML = '';
+    rows.forEach(r => {
+      const add = (name, val) => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = name;
+        inp.value = val ?? '';
+        container.appendChild(inp);
+      };
+      add('detail_id[]', r.id || '');
+      add('detail_debit[]', r.debit_id || '');
+      add('detail_credit[]', r.credit_id || '');
+      add('detail_amount[]', r.amount);
+      add('detail_narration[]', r.narration || '');
+    });
+  }
+
+  function clearInputRow() {
+    document.getElementById('inp_debit').value = '';
+    document.getElementById('inp_credit').value = '';
+    document.getElementById('inp_amount').value = '';
+    document.getElementById('inp_narration').value = '';
+    document.getElementById('btnAdd').innerHTML = '<i class="fas fa-plus"></i> Add';
+    document.getElementById('btnAdd').className = 'btn btn-success btn-sm btn-block';
+    editingIdx = null;
+  }
+
+  // ── Exposed globals ────────────────────────────────────────────
+  window.removeRow = function (idx) {
+    rows.splice(idx, 1);
+    if (editingIdx === idx) clearInputRow();
+    renderTable();
+  };
+
+  window.startEdit = function (idx) {
+    const r = rows[idx];
+    editingIdx = idx;
+    document.getElementById('inp_debit').value = r.debit_id || '';
+    document.getElementById('inp_credit').value = r.credit_id || '';
+    document.getElementById('inp_amount').value = r.amount;
+    document.getElementById('inp_narration').value = r.narration || '';
+    document.getElementById('btnAdd').innerHTML = '<i class="fas fa-check"></i> Update';
+    document.getElementById('btnAdd').className = 'btn btn-primary btn-sm btn-block';
+    renderTable();
+    document.getElementById('inp_amount').focus();
+  };
+
+  // ── Add / Update ───────────────────────────────────────────────
+  document.getElementById('btnAdd').addEventListener('click', function () {
+    const debitSel = document.getElementById('inp_debit');
+    const creditSel = document.getElementById('inp_credit');
+    const amount = document.getElementById('inp_amount').value.trim();
+    const narration = document.getElementById('inp_narration').value.trim();
+
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+      document.getElementById('inp_amount').focus();
+      alert('Please enter a valid amount.');
+      return;
+    }
+
+    const rowData = {
+      id: (editingIdx !== null) ? rows[editingIdx].id : '',
+      debit_id: debitSel.value,
+      debit_name: debitSel.value ? selectedText(debitSel) : '—',
+      credit_id: creditSel.value,
+      credit_name: creditSel.value ? selectedText(creditSel) : '—',
+      amount: parseFloat(amount).toFixed(3),
+      narration: narration,
+    };
+
+    if (editingIdx !== null) {
+      rows[editingIdx] = rowData;
+    } else {
+      rows.push(rowData);
+    }
+
+    clearInputRow();
+    renderTable();
+  });
+
+  // ── Submit ─────────────────────────────────────────────────────
+  document.getElementById('journalForm').addEventListener('submit', function (e) {
+    if (rows.length === 0) {
+      e.preventDefault();
+      alert('Please add at least one detail line before saving.');
+      return;
+    }
+    buildHiddenInputs();
+  });
+
+  // ── Init ───────────────────────────────────────────────────────
+  renderTable();
+}) ();
+</script>
+
+
 {% endblock %}

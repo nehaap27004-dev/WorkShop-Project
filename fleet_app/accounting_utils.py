@@ -28,14 +28,13 @@ def get_ledger_balances(from_date, to_date):
     """
     qs = (
         LedgerPosting.objects
-        .filter(date__gte=from_date, date__lte=to_date, IsDeleted=False)
+        .filter(date__gte=from_date, date__lte=to_date)
         .values('ledger_id')
         .annotate(
             total_debit=Sum('debit'),
             total_credit=Sum('credit'),
         )
     )
-
     return {
         row['ledger_id']: _net(row['total_debit'], row['total_credit'])
         for row in qs
@@ -67,11 +66,11 @@ def calc_balance(led, ledger_balance):
         Decimal
     """
     net_movement = ledger_balance.get(led.id, Decimal('0'))
-    opening      = Decimal(str(led.opening_balance or 0))
+
     if led.types == 'DR':
-        return opening + net_movement
+        return net_movement
     else:
-        return opening - net_movement
+        return -net_movement
 
 
 # ─────────────────────────────────────────────────────────────────────────────

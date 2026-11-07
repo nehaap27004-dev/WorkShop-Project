@@ -3,270 +3,270 @@
 {% load i18n %}
 
 {% block content %}
-<!-- Custom CSS -->
 <style>
-    h2, h3, h4, h5 {
-        font-family: 'Segoe UI', sans-serif;
+    /* ── Azur Burgundy Module Standards ── */
+    .text-burgundy { color: #9f1045 !important; }
+    .bg-burgundy { background-color: #9f1045 !important; color: #fff !important; }
+
+    .btn-custom-primary {
+        background-color: #9f1045 !important;
+        border-color: #9f1045 !important;
+        color: #fff !important;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-custom-primary:hover {
+        background-color: #830d38 !important;
+        border-color: #830d38 !important;
+        color: #fff !important;
     }
 
-    .btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
+    /* KPI Cards */
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+    }
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .kpi-content {
+        min-width: 0;
+    }
+    .kpi-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.2;
     }
 
-    .btn-danger {
-        background-color: #dc3545 !important;
-        border-color: #dc3545 !important;
+    /* Card Banner Header */
+    .card-banner-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.9rem 1.25rem;
+    }
+    .card-banner-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #2d3748;
+        display: inline-flex;
+        align-items: center;
     }
 
-    .btn:hover {
-        opacity: 0.9;
-        transition: 0.2s ease-in-out;
-    }
-
-    .card {
-        border-radius: 12px;
-        border: 2px solid #e9ecef;
-        transition: all 0.3s ease;
-        min-height: 220px;
-    }
-
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 12px rgba(90, 141, 238, 0.3) !important;
-        border-color: #5A8DEE;
-    }
-
-    .card-body {
-        padding: 1.25rem;
+    /* Manufacturer Card */
+    .mfr-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.25rem 1rem;
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
+        min-height: 220px;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        text-align: center;
+    }
+    .mfr-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 14px rgba(159, 16, 69, 0.08);
+        border-color: #f9c9d5;
     }
 
     .manufacturer-logo {
         width: 80px;
-        height: 50px;
+        height: 52px;
         object-fit: contain;
-        margin-bottom: 12px;
+        margin: 0 auto 12px;
+        border-radius: 6px;
+        background-color: #fafbfc;
+        padding: 4px;
+        border: 1px solid #edf2f7;
     }
 
     .no-logo-placeholder {
         width: 80px;
-        height: 50px;
-        border-radius: 5px;
-        border: 2px dashed #dee2e6;
+        height: 52px;
+        border-radius: 6px;
+        border: 1px dashed #d1d5db;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #6c757d;
-        font-size: 1.25rem;
-        margin-bottom: 12px;
+        color: #9ca3af;
+        font-size: 1.35rem;
+        margin: 0 auto 12px;
+        background-color: #f9fafb;
     }
 
     .manufacturer-name {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 1rem;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        hyphens: auto;
-        line-height: 1.4;
-        min-height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-    }
-    .vehicle-type-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    justify-content: center;
-    margin-bottom: 12px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
     }
 
     .vehicle-type-badge {
-        background-color: #eaf1fd;
-        color: #5A8DEE;
-        font-size: 0.7rem;
+        background-color: #fdf2f5;
+        color: #9f1045;
+        border: 1px solid #f9c9d5;
+        font-size: 0.72rem;
         font-weight: 600;
         padding: 3px 8px;
-        border-radius: 10px;
+        border-radius: 12px;
         white-space: nowrap;
+        display: inline-block;
+        margin-bottom: 12px;
     }
 
     .no-type-text {
         font-size: 0.75rem;
-        color: #adb5bd;
+        color: #9ca3af;
         font-style: italic;
         margin-bottom: 12px;
     }
-
-    .action-buttons {
-        margin-top: auto;
-        display: flex;
-        gap: 8px;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .action-buttons .btn {
-        flex: 1;
-        padding: 0.4rem 0.75rem;
-        font-size: 0.875rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        white-space: nowrap;
-    }
-
-    .action-buttons form {
-        flex: 1;
-        margin: 0;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .col-md-2 {
-            flex: 0 0 50%;
-            max-width: 50%;
-        }
-        
-        .manufacturer-name {
-            font-size: 0.9rem;
-            min-height: 40px;
-        }
-        
-        .action-buttons .btn {
-            font-size: 0.8rem;
-            padding: 0.35rem 0.5rem;
-        }
-
-        .manufacturer-logo,
-        .no-logo-placeholder {
-            width: 60px;
-            height: 40px;
-        }
-    }
-
-    @media (min-width: 769px) and (max-width: 1200px) {
-        .col-md-2 {
-            flex: 0 0 25%;
-            max-width: 25%;
-        }
-    }
-    .alert-success {
-        background-color: #d1e7dd !important;
-        border: 1px solid #a3cfbb !important;
-        color: #0f5132 !important;
-    }
-
-    .alert-danger {
-        background-color: #f8d7da !important;
-        border: 1px solid #f1aeb5 !important;
-        color: #842029 !important;
-    }
-
-    .alert-warning {
-        background-color: #fff3cd !important;
-        border: 1px solid #ffe69c !important;
-        color: #664d03 !important;
-    }
-
-    .alert-info {
-        background-color: #cff4fc !important;
-        border: 1px solid #9eeaf9 !important;
-        color: #055160 !important;
-    }
-
-    .alert {
-        border-radius: 8px;
-        padding: 12px 16px;
-        font-weight: 500;
-    }
 </style>
 
-<div class="container mt-4 mb-5">
+<div class="container-fluid p-0 mb-5">
+
     <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-primary mb-0">{% trans "Manufacturers" %}</h2>
-        <a href="{% url 'fleet_app:manufacturer_create' %}" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-            <i class="bi bi-plus-circle me-2"></i>{% trans "New" %}
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-1">
+                <i class="bi bi-building text-burgundy mr-2"></i>{% trans "Manufacturers" %}
+            </h2>
+            <div class="text-muted small">{% trans "Manage automotive brands, manufacturing companies and associated vehicle types" %}</div>
+        </div>
+        <a href="{% url 'fleet_app:manufacturer_create' %}" class="btn btn-custom-primary shadow-sm">
+            <i class="bi bi-plus-lg mr-1"></i>{% trans "New Manufacturer" %}
         </a>
     </div>
+
+    <!-- Alert Messages -->
     {% if messages %}
     <div class="mb-4">
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <div class="alert {% if 'error' in message.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show shadow-sm" style="border-radius:8px;" role="alert">
             {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
-    <!-- Manufacturer List -->
-    <div class="row justify-content-start">
-        {% for manufacturer in manufacturers %}
-            <div class="col-12 col-md-2 mb-4">
-                <div class="card text-center shadow-sm h-100">
-                    <div class="card-body">
-                        <!-- Logo -->
-                        {% if manufacturer.manufacturer_logo %}
-                            <img 
-                                src="{{ manufacturer.manufacturer_logo.url }}" 
-                                alt="{{ manufacturer.manufacturer_name }} logo" 
-                                class="manufacturer-logo rounded">
-                        {% else %}
-                            <div class="no-logo-placeholder">
-                                <i class="bi bi-image"></i>
+    <!-- KPI Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background:#fdf2f5 !important; color:#9f1045 !important;">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">{% trans "TOTAL MANUFACTURERS" %}</div>
+                    <div class="kpi-value text-burgundy">{{ manufacturers|length }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manufacturer List Directory -->
+    <div class="card shadow-sm border-0" style="border-radius:10px;">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="card-banner-title">
+                <i class="bi bi-grid text-burgundy mr-2"></i>{% trans "Manufacturers Directory" %}
+            </span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold" style="border-radius:6px;">
+                {% trans "Total Brands" %}: {{ manufacturers|length }}
+            </span>
+        </div>
+        <div class="card-body p-4">
+            <div class="row">
+                {% for manufacturer in manufacturers %}
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
+                        <div class="mfr-card">
+                            <div>
+                                <!-- Logo -->
+                                {% if manufacturer.manufacturer_logo %}
+                                    <img 
+                                        src="{{ manufacturer.manufacturer_logo.url }}" 
+                                        alt="{{ manufacturer.manufacturer_name }}" 
+                                        class="manufacturer-logo">
+                                {% else %}
+                                    <div class="no-logo-placeholder">
+                                        <i class="bi bi-image"></i>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Manufacturer Name -->
+                                <div class="manufacturer-name">
+                                    {{ manufacturer.manufacturer_name }}
+                                </div>
+
+                                {% if manufacturer.vehicle_type %}
+                                <div>
+                                    <span class="vehicle-type-badge"><i class="bi bi-tag mr-1"></i>{{ manufacturer.vehicle_type.category_name }}</span>
+                                </div>
+                                {% else %}
+                                <div class="no-type-text">{% trans "General Fleet" %}</div>
+                                {% endif %}
                             </div>
-                        {% endif %}
 
-                        <!-- Manufacturer Name -->
-                        <div class="manufacturer-name">
-                            {{ manufacturer.manufacturer_name }}
-                        </div>
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-center align-items-center gap-2 pt-2 border-top mt-2">
+                                <a href="{% url 'fleet_app:manufacturer_edit' manufacturer.pk %}"
+                                   class="btn btn-sm btn-outline-secondary px-2 mr-1"
+                                   title="{% trans 'Edit' %}">
+                                    <i class="bi bi-pencil mr-1"></i>{% trans "Edit" %}
+                                </a>
 
-                        {% if manufacturer.vehicle_type %}
-                        <div class="vehicle-type-badges">
-                            <span class="vehicle-type-badge">{{ manufacturer.vehicle_type.category_name }}</span>
-                        </div>
-                        {% else %}
-                        <div class="no-type-text">{% trans "No vehicle type assigned" %}</div>
-                        {% endif %}
-
-                        <!-- Action Buttons -->
-                        <div class="action-buttons">
-                            <a href="{% url 'fleet_app:manufacturer_edit' manufacturer.pk %}"
-                               class="btn btn-primary">
-                                <i class="bi bi-pencil-square"></i>
-                                <span>{% trans "Edit" %}</span>
-                            </a>
-
-                            <form method="post"
-                                  action="{% url 'fleet_app:manufacturer_delete' manufacturer.pk %}"
-                                  onsubmit="return confirm('{% trans "Are you sure you want to delete" %} {{ manufacturer.manufacturer_name }}?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger">
-                                    <i class="bi bi-trash"></i>
-                                    <span>{% trans "Delete" %}</span>
-                                </button>
-                            </form>
+                                <form method="post"
+                                      action="{% url 'fleet_app:manufacturer_delete' manufacturer.pk %}"
+                                      onsubmit="return confirm('{% trans "Are you sure you want to delete" %} {{ manufacturer.manufacturer_name }}?');"
+                                      style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger px-2" title="{% trans 'Delete' %}">
+                                        <i class="bi bi-trash mr-1"></i>{% trans "Delete" %}
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
+                {% empty %}
+                    <div class="col-12 py-5 text-center text-muted">
+                        <i class="bi bi-building display-4 d-block mb-2 text-secondary"></i>
+                        {% trans 'No manufacturers found. Create your first manufacturer by clicking "New Manufacturer" above.' %}
+                    </div>
+                {% endfor %}
             </div>
-        {% empty %}
-            <!-- Empty State -->
-            <div class="col-12">
-                <div class="alert alert-info text-center">
-                    <i class="bi bi-info-circle me-2"></i>{% trans 'No manufacturers found. Create your first manufacturer by clicking the "New" button above.' %}
-                </div>
-            </div>
-        {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock %}

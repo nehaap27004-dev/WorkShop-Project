@@ -3,175 +3,272 @@
 {% load i18n %}
 
 {% block content %}
-<!-- Custom CSS -->
 <style>
-    h2, h3, h4, h5 {
-        font-family: 'Segoe UI', sans-serif;
+    /* ── Azur Burgundy Module Standards ── */
+    :root {
+        --field-h: 40px;
+        --field-radius: 6px;
+        --field-border: #ced4da;
+    }
+    .text-burgundy { color: #9f1045 !important; }
+    .bg-burgundy { background-color: #9f1045 !important; color: #fff !important; }
+
+    .btn-custom-primary {
+        background-color: #9f1045 !important;
+        border-color: #9f1045 !important;
+        color: #fff !important;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-custom-primary:hover {
+        background-color: #830d38 !important;
+        border-color: #830d38 !important;
+        color: #fff !important;
     }
 
-    form label {
-        font-weight: 500;
-        color: #444;
+    .btn-outline-burgundy {
+        color: #9f1045 !important;
+        border-color: #ced4da !important;
+        background-color: #ffffff !important;
+    }
+    .btn-outline-burgundy:hover {
+        border-color: #9f1045 !important;
+        background-color: #fdf2f5 !important;
+        color: #9f1045 !important;
+    }
+
+    label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.82rem;
+        margin-bottom: 0.35rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     input, select, textarea {
         width: 100% !important;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
+        border: 1px solid var(--field-border);
+        border-radius: var(--field-radius);
         padding: 6px 10px;
         font-size: 0.95rem;
+        height: var(--field-h);
+        background-color: #ffffff;
     }
 
     input:focus, select:focus, textarea:focus {
-        border-color: #5A8DEE;
-        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        border-color: #9f1045 !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
         outline: none;
     }
 
-    .btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
+    .card-banner-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.9rem 1.25rem;
     }
-
-    .btn-secondary {
-        background-color: #6c757d !important;
-        border-color: #6c757d !important;
-    }
-
-    .card {
-        border-radius: 12px;
-    }
-
-    .card-header {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .btn:hover {
-        opacity: 0.9;
-        transition: 0.2s ease-in-out;
+    .card-banner-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #2d3748;
+        display: inline-flex;
+        align-items: center;
     }
 
     .input-group select {
         border-top-right-radius: 0 !important;
         border-bottom-right-radius: 0 !important;
     }
+    .input-group-text {
+        font-size: 0.85rem;
+        font-weight: 600;
+        background-color: #f8f9fa;
+        color: #6c757d;
+        border-color: var(--field-border);
+    }
+
+    .action-bar {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
 </style>
 
-<div class="container mt-4 mb-5">
-    <h2 class="mb-4 text-center fw-bold text-primary">{% trans "Create Vehicle Model" %}</h2>
+<div class="container-fluid p-0 mb-5">
 
-    <form method="POST" class="needs-validation">
+    <!-- Breadcrumb & Top Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <div class="small text-muted mb-1">
+                <a href="{% url 'fleet_app:vehicle_model_list' %}" class="text-burgundy text-decoration-none font-weight-bold">{% trans "Vehicle Models" %}</a>
+                <span class="mx-1">/</span>
+                <span class="text-dark font-weight-bold">{% trans "New Model" %}</span>
+            </div>
+            <h2 class="module-title mb-0">
+                <i class="bi bi-car-front text-burgundy mr-2"></i>{% trans "Create Vehicle Model" %}
+            </h2>
+        </div>
+        <a href="{% url 'fleet_app:vehicle_model_list' %}" class="btn btn-secondary shadow-sm">
+            <i class="bi bi-arrow-left mr-1"></i>{% trans "Back to Models" %}
+        </a>
+    </div>
+
+    <!-- Alert Messages -->
+    {% if messages %}
+        {% for m in messages %}
+            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm" style="border-radius:8px;" role="alert">
+                {{ m }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST" class="needs-validation" novalidate>
         {% csrf_token %}
 
         <!-- Vehicle Model Information -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">{% trans "Vehicle Model Information" %}</h5>
+        <div class="card shadow-sm border-0 mb-4" style="border-radius:10px;">
+            <div class="card-header card-banner-header">
+                <span class="card-banner-title">
+                    <i class="bi bi-info-circle text-burgundy mr-2"></i>{% trans "Vehicle Model Information & Specifications" %}
+                </span>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <div class="row g-3">
                     <!-- Row 1 -->
-                    <div class="col-md-2">
-                        {{ form.model_name.label_tag }}
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.model_name.label }} <span class="text-danger">*</span></label>
                         {{ form.model_name }}
+                        {% if form.model_name.errors %}<div class="text-danger small mt-1">{{ form.model_name.errors.0 }}</div>{% endif %}
                     </div>
 
                     <!-- Vehicle Type FIRST -->
-                    <div class="col-md-2">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            {{ form.vehicle_category.label_tag }}
+                    <div class="col-md-3 mb-3">
+                        <label>{% trans "Vehicle Type / Category" %}: <span class="text-danger">*</span></label>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1" style="min-width:0;">
+                                {{ form.vehicle_category }}
+                            </div>
                             <button type="button"
-                                class="btn btn-primary btn-sm rounded-circle d-flex align-items-center justify-content-center"
-                                id="addVehicleCategoryBtn" style="width: 24px; height: 24px; padding: 0;"
-                                title="{% trans 'Add New Vehicle Type' %}">
-                                <i class="fas fa-plus" style="font-size: 12px;"></i>
+                                    id="addVehicleCategoryBtn"
+                                    class="btn btn-outline-burgundy ml-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width:40px; height:40px; border-radius:6px;"
+                                    title="{% trans 'Add New Category' %}">
+                                <i class="bi bi-plus-lg text-burgundy font-weight-bold"></i>
                             </button>
                         </div>
-                        {{ form.vehicle_category }}
+                        {% if form.vehicle_category.errors %}<div class="text-danger small mt-1">{{ form.vehicle_category.errors.0 }}</div>{% endif %}
                     </div>
 
                     <!-- Manufacturer SECOND, filtered by Vehicle Type -->
-                    <div class="col-md-2">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            {{ form.manufacturer.label_tag }}
+                    <div class="col-md-3 mb-3">
+                        <label>{% trans "Manufacturer" %}: <span class="text-danger">*</span></label>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1" style="min-width:0;">
+                                {{ form.manufacturer }}
+                            </div>
                             <button type="button"
-                                class="btn btn-primary btn-sm rounded-circle d-flex align-items-center justify-content-center"
-                                id="addManufacturerBtn" style="width: 24px; height: 24px; padding: 0;"
-                                title="{% trans 'Add New Manufacturer' %}">
-                                <i class="fas fa-plus" style="font-size: 12px;"></i>
+                                    id="addManufacturerBtn"
+                                    class="btn btn-outline-burgundy ml-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width:40px; height:40px; border-radius:6px;"
+                                    title="{% trans 'Add New Manufacturer' %}">
+                                <i class="bi bi-plus-lg text-burgundy font-weight-bold"></i>
                             </button>
                         </div>
-                        {{ form.manufacturer }}
+                        {% if form.manufacturer.errors %}<div class="text-danger small mt-1">{{ form.manufacturer.errors.0 }}</div>{% endif %}
                     </div>
 
-                    <div class="col-md-2">
-                        {{ form.model_colour.label_tag }}
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.model_colour.label }}</label>
                         {{ form.model_colour }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.seat_number.label_tag }}
+
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.seat_number.label }}</label>
                         {{ form.seat_number }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.door_number.label_tag }}
+
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.door_number.label }}</label>
                         {{ form.door_number }}
                     </div>
 
                     <!-- Row 2 -->
-                    <div class="col-md-2">
-                        {{ form.model_year.label_tag }}
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.model_year.label }}</label>
                         {{ form.model_year }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.fuel_type.label_tag }}
+
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.fuel_type.label }}</label>
                         {{ form.fuel_type }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.model_range.label_tag }}
+
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.model_range.label }}</label>
                         {{ form.model_range }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.CO2_standard.label_tag }}
+
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.CO2_standard.label }}</label>
                         {{ form.CO2_standard }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.CO2_emission.label_tag }}
+
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.CO2_emission.label }}</label>
                         <div class="input-group">
                             {{ form.CO2_emission }}
-                            <span class="input-group-text">g/km</span>
+                            <div class="input-group-append">
+                                <span class="input-group-text">g/km</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-2">
-                        {{ form.model_transmission.label_tag }}
+
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.model_transmission.label }}</label>
                         {{ form.model_transmission }}
                     </div>
 
                     <!-- Row 3 -->
-                    <div class="col-md-2">
-                        {{ form.model_power.label_tag }}
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.model_power.label }}</label>
                         <div class="input-group">
                             {{ form.model_power }}
-                            <span class="input-group-text">kW</span>
+                            <div class="input-group-append">
+                                <span class="input-group-text">kW</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-2">
-                        {{ form.model_horse_power.label_tag }}
+
+                    <div class="col-md-3 mb-3">
+                        <label>{{ form.model_horse_power.label }}</label>
                         <div class="input-group">
                             {{ form.model_horse_power }}
-                            <span class="input-group-text">HP</span>
+                            <div class="input-group-append">
+                                <span class="input-group-text">HP</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="d-flex justify-content-between mt-4">
-            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-                {% trans "Save" %}
-            </button>
-            <a href="{% url 'fleet_app:vehicle_model_list' %}" class="btn btn-secondary px-4 py-2">
+        <!-- Sticky Footer Action Bar -->
+        <div class="action-bar mb-5">
+            <a href="{% url 'fleet_app:vehicle_model_list' %}" class="btn btn-outline-secondary px-4">
                 {% trans "Cancel" %}
             </a>
+            <button type="submit" class="btn btn-custom-primary px-4 shadow-sm">
+                <i class="bi bi-check2-circle mr-1"></i>{% trans "Save Model" %}
+            </button>
         </div>
     </form>
 </div>
@@ -179,28 +276,32 @@
 <!-- Manufacturer Modal -->
 <div class="modal fade" id="manufacturerModal" tabindex="-1" aria-labelledby="manufacturerModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="manufacturerModalLabel">{% trans "Add New Manufacturer" %}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
+        <div class="modal-content" style="border-radius:10px;">
+            <div class="modal-header card-banner-header">
+                <h5 class="modal-title font-weight-bold" id="manufacturerModalLabel">
+                    <i class="bi bi-building text-burgundy mr-2"></i>{% trans "Add New Manufacturer" %}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="manufacturerForm" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label for="manufacturer_name" class="form-label">{% trans "Manufacturer Name" %}</label>
+                        <label for="manufacturer_name" class="small font-weight-bold">{% trans "Manufacturer Name" %}</label>
                         <input type="text" class="form-control" id="manufacturer_name" name="manufacturer_name" required>
                     </div>
                     <div class="mb-3">
-                        <label for="manufacturer_logo" class="form-label">{% trans "Manufacturer Logo" %}</label>
+                        <label for="manufacturer_logo" class="small font-weight-bold">{% trans "Manufacturer Logo" %}</label>
                         <input type="file" class="form-control" id="manufacturer_logo" name="manufacturer_logo" accept="image/*">
                     </div>
                     <div id="manufacturerError" class="alert alert-danger d-none"></div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
-                <button type="button" class="btn btn-primary" id="saveManufacturerBtn">{% trans "Save" %}</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-custom-primary" id="saveManufacturerBtn">{% trans "Save Manufacturer" %}</button>
             </div>
         </div>
     </div>
@@ -209,24 +310,28 @@
 <!-- Vehicle Category Modal -->
 <div class="modal fade" id="vehicleCategoryModal" tabindex="-1" aria-labelledby="vehicleCategoryModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="vehicleCategoryModalLabel">{% trans "Add New Vehicle Type" %}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
+        <div class="modal-content" style="border-radius:10px;">
+            <div class="modal-header card-banner-header">
+                <h5 class="modal-title font-weight-bold" id="vehicleCategoryModalLabel">
+                    <i class="bi bi-tag text-burgundy mr-2"></i>{% trans "Add New Vehicle Type" %}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="vehicleCategoryForm">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label for="category_name" class="form-label">{% trans "Category Name" %}</label>
+                        <label for="category_name" class="small font-weight-bold">{% trans "Category Name" %}</label>
                         <input type="text" class="form-control" id="category_name" name="category_name" required>
                     </div>
                     <div id="vehicleCategoryError" class="alert alert-danger d-none"></div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
-                <button type="button" class="btn btn-primary" id="saveVehicleCategoryBtn">{% trans "Save" %}</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-custom-primary" id="saveVehicleCategoryBtn">{% trans "Save Category" %}</button>
             </div>
         </div>
     </div>
@@ -263,107 +368,135 @@
         }
 
         // Pre-fill on load (edit mode / validation re-render)
-        if (vehicleCategorySelect.value) {
+        if (vehicleCategorySelect && vehicleCategorySelect.value) {
             loadManufacturers(vehicleCategorySelect.value, currentManufacturerId);
         }
 
         // Re-filter on change
-        vehicleCategorySelect.addEventListener('change', function () {
-            loadManufacturers(this.value, null);
-        });
+        if (vehicleCategorySelect) {
+            vehicleCategorySelect.addEventListener('change', function () {
+                loadManufacturers(this.value, null);
+            });
+        }
+
+        // Helper to show/hide modals supporting both Bootstrap 4 and Bootstrap 5
+        function showModal(modalEl) {
+            if (window.bootstrap && bootstrap.Modal) {
+                let inst = bootstrap.Modal.getInstance(modalEl);
+                if (!inst) inst = new bootstrap.Modal(modalEl);
+                inst.show();
+            } else if (window.jQuery) {
+                $(modalEl).modal('show');
+            }
+        }
+        function hideModal(modalEl) {
+            if (window.bootstrap && bootstrap.Modal) {
+                let inst = bootstrap.Modal.getInstance(modalEl);
+                if (inst) inst.hide();
+            } else if (window.jQuery) {
+                $(modalEl).modal('hide');
+            }
+        }
 
         // --- Manufacturer modal ---
         const addManufacturerBtn = document.getElementById('addManufacturerBtn');
-        const manufacturerModal = new bootstrap.Modal(document.getElementById('manufacturerModal'));
+        const manufacturerModalEl = document.getElementById('manufacturerModal');
         const saveManufacturerBtn = document.getElementById('saveManufacturerBtn');
         const manufacturerForm = document.getElementById('manufacturerForm');
         const manufacturerError = document.getElementById('manufacturerError');
 
-        addManufacturerBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            if (!vehicleCategorySelect.value) {
-                alert("{% trans 'Please select a Vehicle Type first' %}");
-                return;
-            }
-            manufacturerForm.reset();
-            manufacturerError.classList.add('d-none');
-            manufacturerModal.show();
-        });
+        if (addManufacturerBtn) {
+            addManufacturerBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (!vehicleCategorySelect.value) {
+                    alert("{% trans 'Please select a Vehicle Type first' %}");
+                    return;
+                }
+                manufacturerForm.reset();
+                manufacturerError.classList.add('d-none');
+                showModal(manufacturerModalEl);
+            });
+        }
 
-        saveManufacturerBtn.addEventListener('click', function () {
-            const formData = new FormData(manufacturerForm);
-            formData.append('vehicle_type', vehicleCategorySelect.value);
+        if (saveManufacturerBtn) {
+            saveManufacturerBtn.addEventListener('click', function () {
+                const formData = new FormData(manufacturerForm);
+                formData.append('vehicle_type', vehicleCategorySelect.value);
 
-            fetch("{% url 'fleet_app:add_manufacturer_ajax' %}", {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        manufacturerModal.hide();
-                        manufacturerForm.reset();
-                        manufacturerError.classList.add('d-none');
-                        loadManufacturers(vehicleCategorySelect.value, data.manufacturer_id);
-                        alert(translations.successMessage);
-                    } else {
-                        manufacturerError.textContent = data.error || translations.errorMessage;
-                        manufacturerError.classList.remove('d-none');
-                    }
+                fetch("{% url 'fleet_app:add_manufacturer_ajax' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    manufacturerError.textContent = translations.savingError;
-                    manufacturerError.classList.remove('d-none');
-                });
-        });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            hideModal(manufacturerModalEl);
+                            manufacturerForm.reset();
+                            manufacturerError.classList.add('d-none');
+                            loadManufacturers(vehicleCategorySelect.value, data.manufacturer_id);
+                            alert(translations.successMessage);
+                        } else {
+                            manufacturerError.textContent = data.error || translations.errorMessage;
+                            manufacturerError.classList.remove('d-none');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        manufacturerError.textContent = translations.savingError;
+                        manufacturerError.classList.remove('d-none');
+                    });
+            });
+        }
 
         // --- Vehicle Category modal ---
         const addVehicleCategoryBtn = document.getElementById('addVehicleCategoryBtn');
-        const vehicleCategoryModal = new bootstrap.Modal(document.getElementById('vehicleCategoryModal'));
+        const vehicleCategoryModalEl = document.getElementById('vehicleCategoryModal');
         const saveVehicleCategoryBtn = document.getElementById('saveVehicleCategoryBtn');
         const vehicleCategoryForm = document.getElementById('vehicleCategoryForm');
         const vehicleCategoryError = document.getElementById('vehicleCategoryError');
 
-        addVehicleCategoryBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            vehicleCategoryForm.reset();
-            vehicleCategoryError.classList.add('d-none');
-            vehicleCategoryModal.show();
-        });
+        if (addVehicleCategoryBtn) {
+            addVehicleCategoryBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                vehicleCategoryForm.reset();
+                vehicleCategoryError.classList.add('d-none');
+                showModal(vehicleCategoryModalEl);
+            });
+        }
 
-        saveVehicleCategoryBtn.addEventListener('click', function () {
-            const formData = new FormData(vehicleCategoryForm);
+        if (saveVehicleCategoryBtn) {
+            saveVehicleCategoryBtn.addEventListener('click', function () {
+                const formData = new FormData(vehicleCategoryForm);
 
-            fetch("{% url 'fleet_app:add_vehicle_category_ajax' %}", {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const option = new Option(data.category_name, data.category_id, true, true);
-                        vehicleCategorySelect.add(option);
-
-                        vehicleCategoryModal.hide();
-                        vehicleCategoryForm.reset();
-                        vehicleCategoryError.classList.add('d-none');
-
-                        alert("{% trans 'Vehicle type added successfully!' %}");
-                    } else {
-                        vehicleCategoryError.textContent = data.error || translations.errorMessage;
-                        vehicleCategoryError.classList.remove('d-none');
-                    }
+                fetch("{% url 'fleet_app:add_vehicle_category_ajax' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    vehicleCategoryError.textContent = translations.savingError;
-                    vehicleCategoryError.classList.remove('d-none');
-                });
-        });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const option = new Option(data.category_name, data.category_id, true, true);
+                            vehicleCategorySelect.add(option);
+
+                            hideModal(vehicleCategoryModalEl);
+                            vehicleCategoryForm.reset();
+                            vehicleCategoryError.classList.add('d-none');
+
+                            alert("{% trans 'Vehicle type added successfully!' %}");
+                        } else {
+                            vehicleCategoryError.textContent = data.error || translations.errorMessage;
+                            vehicleCategoryError.classList.remove('d-none');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        vehicleCategoryError.textContent = translations.savingError;
+                        vehicleCategoryError.classList.remove('d-none');
+                    });
+            });
+        }
     });
 </script>
-
 {% endblock %}

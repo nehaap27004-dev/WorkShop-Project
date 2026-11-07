@@ -2,18 +2,23 @@ from django.contrib import admin
 from fleet_app.models import *
 
 class ManufacturerAdmin(admin.ModelAdmin):
-    list_display = ('manufacturer_name', 'vehicle_type', 'manufacturer_logo_preview')
+    list_display = ('manufacturer_name', 'manufacturer_logo_preview')
     search_fields = ('manufacturer_name',)
-    list_filter = ('vehicle_type',)
-
+    list_filter = ('manufacturer_name',)
+    
+    # Method to display a preview of the logo in the admin interface
     def manufacturer_logo_preview(self, obj):
         if obj.manufacturer_logo:
             return '<img src="{}" width="100" height="50" style="object-fit:contain;" />'.format(obj.manufacturer_logo.url)
-        return "No logo"
+        else:
+            return "No logo"
+    
     manufacturer_logo_preview.short_description = 'Logo'
     manufacturer_logo_preview.allow_tags = True
 
+# Register the Manufacturer model
 admin.site.register(Manufacturer, ManufacturerAdmin)
+
 
 
 @admin.register(VehicleCategory)
@@ -106,116 +111,55 @@ admin.site.register(LicensePlateCode, LicensePlateCodeAdmin)
 
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
-
+    # Fields to display in the list view
     list_display = (
-        'vehicle_name',
-        'model',
-        'customer',
-        'license_plate_code',
-        'license_plate_number',
-        'fuel_type',
-        'vehicle_registration_date',
-        'RC_number',
-        'last_odometer',
-        'status',
-        'is_owned',
-        'supplier',
+        'model', 'vehicle_name', 'license_plate_code', 'license_plate_number',
+        'vehicle_driver', 'driver_assignment_date', 'vehicle_registration_date',
+        'RC_number', 'last_odometer', 'rate_per_hr', 'rate_per_day', 'rate_per_month',
+        'RAS_inspection_date', 'hook_inspection_date', 'wire_rope_inspection_date',
+        'winch_inspection_date', 'lifting_wire_rope_inspection_date', 'lifting_belt_inspection_date', 'is_owned', 'supplier' 
     )
-
+    
+    # Fields that are searchable in the admin interface
     search_fields = (
-        'vehicle_name',
-        'license_plate_number',
-        'RC_number',
-        'chassis_number',
-        'engine_number',
-        'customer__ledger_name',
+        'license_plate_code', 'license_plate_number', 'model__model_name', 
+        'manufacturer__manufacturer_name', 'vehicle_driver__driver_name', 
+        'RC_number', 'chassis_number'
     )
-
-    list_filter = (
-        'status',
-        'fuel_type',
-        'vehicle_registration_date',
-        'RC_expiry_date',
-        'is_owned',
-    )
-
-    list_editable = (
-        'status',
-    )
-
+    
+    # Fields that can be filtered in the list view
+    list_filter = ('model', 'vehicle_driver', 'vehicle_registration_date', 'RC_expiry_date')
+    
+    # Fields that are editable directly in the list view
+    list_editable = ('vehicle_driver', 'vehicle_registration_date', 'RC_number', 'last_odometer', 'rate_per_hr', 'rate_per_day', 'rate_per_month')
+    
+    # Fieldsets to organize the form fields in the detail view
     fieldsets = (
-
-        ('Basic Information', {
+        (None, {
+            'fields': ('model', 'vehicle_name', 'license_plate_code', 'license_plate_number', 'vehicle_image')
+        }),
+        ('Driver Details', {
+            'fields': ('vehicle_driver', 'vehicle_second_driver', 'driver_assignment_date')
+        }),
+        ('Registration & Odometer', {
+            'fields': ('vehicle_registration_date', 'vehicle_cancellation_date', 'RC_number', 'RC_file', 'RC_expiry_date', 'chassis_number', 'last_odometer')
+        }),
+        ('Third Party Inspection Equipment', {
             'fields': (
-                'is_owned',
-                'supplier',
-                'customer',
-                'vehicle_category',
-                'vehicle_name',
-                'model',
-                'vehicle_image',
-                'status',
+                'RAS_inspection_date', 'RAS_inspection_expiry_date', 'RAS_inspection_certificate',
+                'hook_inspection_date', 'hook_inspection_expiry_date', 'hook_inspection_certificate',
+                'wire_rope_inspection_date', 'wire_rope_inspection_expiry_date', 'wire_rope_inspection_certificate',
+                'winch_inspection_date', 'winch_inspection_expiry_date', 'winch_inspection_certificate',
+                'lifting_wire_rope_inspection_date', 'lifting_wire_rope_inspection_expiry_date', 'lifting_wire_rope_inspection_certificate',
+                'lifting_belt_inspection_date', 'lifting_belt_inspection_expiry_date', 'lifting_belt_inspection_certificate'
             )
         }),
+    )    
+    # Ordering the entries by model in the list view
+    ordering = ['model'] 
+    
+ 
 
-        ('Registration Details', {
-            'fields': (
-                'license_plate_code',
-                'license_plate_number',
-                'vehicle_registration_date',
-                'vehicle_cancellation_date',
-                'RC_number',
-                'RC_file',
-                'RC_expiry_date',
-            )
-        }),
-
-        ('Vehicle Information', {
-            'fields': (
-                'chassis_number',
-                'engine_number',
-                'fuel_type',
-                'last_odometer',
-                'capacity',
-                'model_year',
-            )
-        }),
-
-        ('Insurance & Compliance', {
-            'fields': (
-                'insurance_policy_number',
-                'insurance_expiry_date',
-                'insurance_certificate',
-
-                'registration_renewed_date',
-                'registration_expiry_date',
-                'registration_document',
-
-                'fitness_test_date',
-                'fitness_test_expiry_date',
-                'fitness_test_certificate',
-            )
-        }),
-
-        ('Service Tracking', {
-            'fields': (
-                'last_service_date',
-                'service_due_date',
-                'service_interval_km',
-            )
-        }),
-
-        ('Financial Details', {
-            'fields': (
-                'purchase_value',
-                'replacement_value',
-                'vat',
-                'description',
-            )
-        }),
-    )
-
-    ordering = ['vehicle_name']
 @admin.register(RentalCompany)
 class RentalCompanyAdmin(admin.ModelAdmin):
     # Fields to display in the list view
@@ -372,12 +316,10 @@ class RepairAndMaintenanceItemAdmin(admin.ModelAdmin):
 admin.site.register(RepairAndMaintenanceItem, RepairAndMaintenanceItemAdmin)    
 
     
-'''
 @admin.register(VehicleMaster)
 class VehicleMasterAdmin(admin.ModelAdmin):
     # Fields to display in the list view
     list_display = (
-        'customer',
         'vehicle_name', 
         'license_plate_code', 
         'license_plate_number', 
@@ -401,7 +343,7 @@ class VehicleMasterAdmin(admin.ModelAdmin):
 
     # Editable fields in the list view
     list_editable = ('vehicle_driver', 'contract_no', 'contract_start_date', 'contract_end_date')
-'''
+    
 @admin.register(FleetCustomer)
 class FleetCustomerAdmin(admin.ModelAdmin):
     list_display = ('customer_name', 'customer_mobile', 'customer_email', 'customer_city', 'customer_country')
@@ -423,7 +365,7 @@ class SimpleQuotationAdmin(admin.ModelAdmin):
 class SimpleQuotationDetailsAdmin(admin.ModelAdmin):
     list_display = ('quotation', 'description', 'quantity', 'rent')
     search_fields = ('description', 'quotation__quotation_no')    
-'''    
+    
 class InvoiceDetailsInline(admin.TabularInline):
     model = InvoiceDetails
     extra = 1
@@ -440,7 +382,7 @@ class InvoiceDetailsAdmin(admin.ModelAdmin):
     list_display = ('invoice', 'vehicle', 'location', 'amount', 'tax', 'tax_amount', 'total_amount')
     search_fields = ('invoice__voucher_no', 'vehicle__vehicle_name')
     list_filter = ('vehicle',)    
-   ''' 
+    
 class FleetHireDetailsInline(admin.TabularInline):
     model = FleetHireDetails
     extra = 1   # number of empty rows shown
@@ -477,7 +419,7 @@ class FleetHireDetailsAdmin(admin.ModelAdmin):
     list_filter = ('unit', 'start_date', 'end_date')
     search_fields = ('reg_no', 'vehicle__name', 'fleet_hire__voucher_no')    
 
-'''@admin.register(Document)
+@admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
     list_display = (
         'title',
@@ -520,7 +462,6 @@ class DocumentAdmin(admin.ModelAdmin):
             'fields': ('status', 'upload_date', 'expiry_date', 'reminder_date')
         }),
     )
-'''
 
 
 @admin.register(CompanyDocument)
@@ -571,10 +512,273 @@ class EMIInstallmentAdmin(admin.ModelAdmin):
     # minimal filters to check what is unpaid
     list_filter = ('is_paid', 'due_date')    
 
-@admin.register(Vouchers)
-class VouchersAdmin(admin.ModelAdmin):
-    list_display = ('id', 'VoucherName', 'VoucherType', 'Prefix', 'Suffix', 'MinLength', 'StartingNo', 'isDefault', 'created_on', 'updated_on')
-    search_fields = ('VoucherName', 'VoucherType', 'Prefix')
-    list_filter = ('VoucherType', 'isDefault')
-    list_editable = ('Prefix', 'Suffix', 'MinLength', 'StartingNo')
-    ordering = ('id',)    
+
+class DeliveryContractDetailsInline(admin.TabularInline):
+    model = DeliveryContractDetails
+    extra = 0
+
+
+@admin.register(DeliveryContract)
+class DeliveryContractAdmin(admin.ModelAdmin):
+    list_display = (
+        'voucher_no',
+        'invoice_no',
+        'date',
+        'customer',
+        'payment_mode',
+        'grand_total',
+        'IsCleared',
+    )
+    list_filter = (
+        'date',
+        'payment_mode',
+        'invoice_type',
+        'IsCleared',
+    )
+    search_fields = (
+        'voucher_no',
+        'invoice_no',
+        'hire_contract_no',
+        'customer__ledger_name',
+        'site_contact_person',
+        'contact_no',
+    )
+    readonly_fields = (
+        'created_on',
+        'updated_on',
+    )
+    inlines = [DeliveryContractDetailsInline]
+
+
+@admin.register(DeliveryContractDetails)
+class DeliveryContractDetailsAdmin(admin.ModelAdmin):
+    list_display = (
+        'delivery_contract',
+        'vehicle',
+        'location',
+        'period',
+        'quantity',
+        'unit_rate',
+        'total_amount',
+        'IsCleared',
+    )
+    list_filter = (
+        'period',
+        'IsCleared',
+        'from_date',
+        'to_date',
+    )
+    search_fields = (
+        'vehicle__registration_no',
+        'vehicle_model',
+        'location',
+        'description',
+        'delivery_contract__voucher_no',
+    )    
+
+# =========================================================
+# SPARE PARTS INLINE
+# =========================================================
+
+class SparePartsInline(admin.TabularInline):
+    model = SpareParts
+    extra = 0
+    show_change_link = True
+
+    fields = (
+        'item_group',
+        'sparepart',
+        'part_no',
+        'quantity',
+        'rate',
+        'amount',
+        'warranty',
+    )
+
+
+# =========================================================
+# LABOUR CHARGE INLINE
+# =========================================================
+
+class LabourChargeInline(admin.TabularInline):
+    model = LabourCharge
+    extra = 0
+    show_change_link = True
+
+    fields = (
+        'description',
+        'hour',
+        'rate',
+        'amount',
+    )
+
+
+# =========================================================
+# REPAIR MASTER
+# =========================================================
+
+@admin.register(RepairMaster)
+class RepairMasterAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'voucher_no',
+        'date',
+        'vehicle',
+        'repair_type',
+        'category',
+        'supplier',
+        'client',
+        'spareparts_total',
+        'labourcharge_total',
+        'grand_total',
+        'payment_mode',
+        'created_at',
+    )
+
+    list_filter = (
+        'repair_type',
+        'category',
+        'payment_mode',
+        'date',
+        'cost_center',
+    )
+
+    search_fields = (
+        # Repair Master
+        'voucher_no',
+        'ref_voucher_no',
+        'invoice_no',
+        'mechanic',
+        'location',
+        'description',
+
+        # Vehicle
+        'vehicle__vehicle_name',
+        'vehicle__license_plate_number',
+        'vehicle__RC_number',
+        'vehicle__chassis_number',
+        'vehicle__engine_number',
+
+        # Supplier / Client
+        'supplier__ledger_name',
+        'client__ledger_name',
+
+        # Spare Parts
+        'spare_parts__part_no',
+        'spare_parts__sparepart__item_code',
+        'spare_parts__sparepart__item_name',
+
+        # Labour
+        'labour_charges__description',
+    )
+
+    date_hierarchy = 'date'
+
+    ordering = (
+        '-date',
+        '-id',
+    )
+
+    list_select_related = (
+        'vehicle',
+        'supplier',
+        'client',
+        'cost_center',
+        'staff',
+    )
+
+    inlines = [
+        SparePartsInline,
+        LabourChargeInline,
+    ]
+
+
+# =========================================================
+# SPARE PARTS
+# =========================================================
+
+@admin.register(SpareParts)
+class SparePartsAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'id',
+        'repair',
+        'sparepart',
+        'part_no',
+        'quantity',
+        'rate',
+        'amount',
+        'warranty',
+    )
+
+    search_fields = (
+        # Spare part
+        'part_no',
+        'sparepart__item_code',
+        'sparepart__item_name',
+
+        # Repair
+        'repair__voucher_no',
+
+        # Vehicle
+        'repair__vehicle__vehicle_name',
+        'repair__vehicle__license_plate_number',
+        'repair__vehicle__RC_number',
+        'repair__vehicle__chassis_number',
+        'repair__vehicle__engine_number',
+    )
+
+    list_filter = (
+        'warranty',
+        'item_group',
+    )
+
+    list_select_related = (
+        'repair',
+        'sparepart',
+        'item_group',
+    )
+
+    ordering = (
+        '-id',
+    )
+
+
+# =========================================================
+# LABOUR CHARGE
+# =========================================================
+
+@admin.register(LabourCharge)
+class LabourChargeAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'id',
+        'repair',
+        'description',
+        'hour',
+        'rate',
+        'amount',
+    )
+
+    search_fields = (
+        # Labour
+        'description',
+
+        # Repair
+        'repair__voucher_no',
+
+        # Vehicle
+        'repair__vehicle__vehicle_name',
+        'repair__vehicle__license_plate_number',
+        'repair__vehicle__RC_number',
+        'repair__vehicle__chassis_number',
+        'repair__vehicle__engine_number',
+    )
+
+    list_select_related = (
+        'repair',
+    )
+
+    ordering = (
+        '-id',
+    )    

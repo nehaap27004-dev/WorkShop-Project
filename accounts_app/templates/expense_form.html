@@ -1,0 +1,1072 @@
+{% extends "fleet_base1.html" %}
+{% load static %}
+{% load i18n %}
+{% load privilege_tags %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-end mb-3">
+        {% has_priv request.user 8 "can_read" as can_read_expense %}
+        {% if can_read_expense %}
+        <a href="{% url 'accounts_app:expense_list' %}" class="btn btn-custom">
+            <i class="bi bi-list"></i> {% trans "View" %}
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white border-bottom">
+            <h4 class="mb-0 text-dark">{{ title }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data" id="expenseForm">
+                {% csrf_token %}
+
+                <!-- SECTION 1: Expense Master Info -->
+                <div class="row">
+                    <!-- Voucher No -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ master_form.voucher_no.label }}</label>
+                        {{ master_form.voucher_no }}
+                    </div>
+
+                    <!-- Voucher Type (HIDDEN) -->
+                    <div class="col-md-3 mb-3" >
+                        <label class="form-label">{{ master_form.voucherType.label }}</label>
+                        {{ master_form.voucherType }}
+                    </div>
+
+                    <!-- Date -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ master_form.Date.label }}</label><span class="text-danger">*</span>
+                        {{ master_form.Date }}
+                    </div>
+
+                    <!-- Staff Payable Toggle -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{% trans "Staff Payable" %}</label>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="staffPayableToggle"
+                                style="width: 2.5em; height: 1.4em; cursor: pointer;"
+                                {% if master_form.staff.value %}checked{% endif %}>
+                            <label class="form-check-label ms-2" for="staffPayableToggle" style="cursor:pointer; user-select:none;">
+                                {% trans "Yes" %}
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Staff Dropdown -->
+                    <div class="col-md-3 mb-3" id="staffDropdownWrapper"
+                        style="{% if not master_form.staff.value %}display:none;{% endif %}">
+                        <label class="form-label">{{ master_form.staff.label }}</label>
+                        {{ master_form.staff }}
+                    </div>
+
+                    <!-- Ledger -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ master_form.ledger.label }}</label><span class="text-danger">*</span>
+                        {{ master_form.ledger }}
+                    </div>
+
+                    <!-- Ref No -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ master_form.ref_no.label }}</label>
+                        {{ master_form.ref_no }}
+                    </div>
+
+                    <!-- Expense Source -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ master_form.expense_source.label }}</label><span class="text-danger">*</span>
+                        {{ master_form.expense_source }}
+                    </div>
+
+                    <!-- Attachment -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ master_form.attachment.label }}</label>
+                        {{ master_form.attachment }}
+                    </div>
+
+                    <!-- Narration -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ master_form.narration.label }}</label>
+                        {{ master_form.narration }}
+                    </div>
+                </div>
+
+                <!-- SECTION 2: Expense Details Section -->
+                <div class="mb-3 mt-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="text-dark mb-0">{% trans "Expense Details" %}</h5>
+                        <!-- Detailed Expense Toggle -->
+                        <div class="form-check form-switch d-flex align-items-center gap-2 mb-0">
+                            <input class="form-check-input" type="checkbox" id="detailedExpenseToggle"
+                                style="width: 2.5em; height: 1.4em; cursor: pointer;"
+                                {% if is_edit_mode %}
+                                    {% if is_detailed_expense %}checked{% endif %}
+                                {% else %}
+                                    checked
+                                {% endif %}>
+                            <label class="form-check-label fw-semibold text-secondary ms-2"
+                                for="detailedExpenseToggle" style="cursor: pointer; user-select: none;">
+                                {% trans "Detailed Expense" %}
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border">
+                        <div class="card-body">
+
+                            <!-- ── SIMPLE MODE INPUT ROW ── -->
+                            <div id="simpleInputRow" class="row">
+                                <div class="col-md-3 mb-2">
+                                    <label class="form-label">{% trans "Ledger Account" %}</label><span class="text-danger">*</span>
+                                    <select class="form-control" id="inputLedger">
+                                        <option value="">---------</option>
+                                        {% if formset.empty_form.Ledger.field.queryset %}
+                                        {% for option in formset.empty_form.Ledger.field.queryset %}
+                                        <option value="{{ option.id }}">{{ option }}</option>
+                                        {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="form-label">{% trans "Amount" %}</label><span class="text-danger">*</span>
+                                    <input type="number" class="form-control" id="inputAmount" step="0.001" placeholder="0.000">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="form-label">{% trans "Paid To" %}</label>
+                                    <input type="text" class="form-control" id="inputPaidTo" placeholder="{% trans 'Paid To' %}">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="form-label">{% trans "Party VAT No" %}</label>
+                                    <input type="text" class="form-control" id="inputVatNo" placeholder="{% trans 'VAT No' %}">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="form-label">{% trans "Vehicle / Equipment" %}</label>
+                                    <select class="form-control" id="inputVehicle">
+                                        <option value="">---------</option>
+                                        {% for vehicle in all_vehicles %}
+                                        <option value="{{ vehicle.id }}">{{ vehicle }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="form-label">{% trans "Description" %}</label>
+                                    <input type="text" class="form-control" id="inputDesc" placeholder="{% trans 'Enter description' %}">
+                                </div>
+                                <div class="col-md-1 mb-2 d-flex align-items-end gap-1">
+                                    <button type="button" id="addRow" class="btn btn-custom flex-fill">{% trans "Add" %}</button>
+                                    <button type="button" id="cancelSimple" class="btn btn-secondary flex-fill" style="display:none;">{% trans "Cancel" %}</button>
+                                </div>
+                            </div>
+
+                            <!-- ── DETAILED MODE INPUT ROW ── -->
+                            <div id="detailedInputRow" class="row" style="display:none;">
+                                <div class="col-md-2 mb-2">
+                                    <label class="form-label">{% trans "Invoice Date" %}</label><span class="text-danger">*</span>
+                                    <input type="date" class="form-control" id="inputInvoiceDate">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="form-label">{% trans "Ledger Account" %}</label><span class="text-danger">*</span>
+                                    <select class="form-control" id="inputLedgerDetailed">
+                                        <option value="">---------</option>
+                                        {% if formset.empty_form.Ledger.field.queryset %}
+                                        {% for option in formset.empty_form.Ledger.field.queryset %}
+                                        <option value="{{ option.id }}">{{ option }}</option>
+                                        {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="form-label">{% trans "Paid To" %}</label>
+                                    <input type="text" class="form-control" id="inputPaidToDetailed" placeholder="{% trans 'Paid To' %}">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="form-label">{% trans "Party VAT No" %}</label>
+                                    <input type="text" class="form-control" id="inputVatNoDetailed" placeholder="{% trans 'VAT No' %}">
+                                </div>
+                                <div class="col-md-1 mb-2">
+                                    <label class="form-label">{% trans "Description" %}</label>
+                                    <input type="text" class="form-control" id="inputDescDetailed" placeholder="{% trans 'Description' %}">
+                                </div>
+                                <div class="col-md-1 mb-2">
+                                    <label class="form-label">{% trans "Invoice No" %}</label>
+                                    <input type="text" class="form-control" id="inputInvoiceNo" placeholder="{% trans 'Inv No' %}">
+                                </div>
+                                <div class="col-md-1 mb-2">
+                                    <label class="form-label">{% trans "VAT Type" %}</label><span class="text-danger">*</span>
+                                    <select class="form-control" id="inputVatType">
+                                        <option value="1">{% trans "No VAT" %}</option>
+                                        <option value="2">{% trans "Inclusive VAT (5%)" %}</option>
+                                        <option value="3">{% trans "Exclusive VAT (5%)" %}</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-1 mb-2">
+                                    <label class="form-label">{% trans "Vehicle / Equipment" %}</label>
+                                    <select class="form-control" id="inputVehicleDetailed">
+                                        <option value="">---------</option>
+                                        {% for vehicle in all_vehicles %}
+                                        <option value="{{ vehicle.id }}">{{ vehicle }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-1 mb-2">
+                                    <label class="form-label">{% trans "Amount" %}</label><span class="text-danger">*</span>
+                                    <input type="number" class="form-control" id="inputAmountDetailed" step="0.001" placeholder="0.000">
+                                </div>
+                                <div class="col-md-1 mb-2">
+                                    <label class="form-label">{% trans "Taxable" %}</label>
+                                    <input type="number" class="form-control" id="inputTaxableDisplay" step="0.001" readonly
+                                        style="background-color:#f8f9fa;">
+                                </div>
+                                <div class="col-md-1 mb-2">
+                                    <label class="form-label">{% trans "VAT" %}</label>
+                                    <input type="number" class="form-control" id="inputVatDisplay" step="0.001" readonly
+                                        style="background-color:#f8f9fa;">
+                                </div>
+                                <div class="col-md-1 mb-2 d-flex align-items-end gap-1">
+                                    <button type="button" id="addRowDetailed" class="btn btn-custom flex-fill">{% trans "Add" %}</button>
+                                    <button type="button" id="cancelDetailed" class="btn btn-secondary flex-fill" style="display:none;">{% trans "Cancel" %}</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ── SIMPLE TABLE ── -->
+                    <div class="table-responsive" id="simpleTable">
+                        <table class="table table-hover table-bordered align-middle" id="detailsTable">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th width="20%">{% trans "Ledger" %}</th>
+                                    <th width="12%">{% trans "Amount" %}</th>
+                                    <th width="18%">{% trans "Paid To" %}</th>
+                                    <th width="18%">{% trans "Party VAT No" %}</th>
+                                    <th width="20%">{% trans "Vehicle / Equipment" %}</th>
+                                    <th width="20%">{% trans "Description" %}</th>
+                                    <th width="10%" class="text-center">{% trans "Action" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody"></tbody>
+                            <tfoot>
+                                <tr class="table-info">
+                                    <th class="text-right">{% trans "Total Amount:" %}</th>
+                                    <th id="displayTotal">0.000</th>
+                                    <th colspan="5"></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- ── DETAILED TABLE ── -->
+                    <div class="table-responsive" id="detailedTable" style="display:none;">
+                        <table class="table table-hover table-bordered align-middle" id="detailsTableDetailed">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>{% trans "Invoice Date" %}</th>
+                                    <th>{% trans "Ledger" %}</th>
+                                    <th>{% trans "Paid To" %}</th>
+                                    <th>{% trans "Party VAT No" %}</th>
+                                    <th>{% trans "Description" %}</th>
+                                    <th>{% trans "Invoice No" %}</th>
+                                    <th>{% trans "VAT Type" %}</th>
+                                    <th>{% trans "Vehicle / Equipment" %}</th>
+                                    <th>{% trans "Amount" %}</th>
+                                    <th>{% trans "Taxable" %}</th>
+                                    <th>{% trans "VAT" %}</th>
+                                    <th class="text-center">{% trans "Action" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBodyDetailed"></tbody>
+                            <tfoot>
+                                <tr class="table-info">
+                                    <th colspan="8" class="text-right">{% trans "Total:" %}</th>
+                                    <th id="displayTotalNet">0.000</th>
+                                    <th id="displayTotalTaxable">0.000</th>
+                                    <th id="displayTotalVat">0.000</th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Total Amount Field -->
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{% trans "Total Amount" %}</label>
+                        <input type="number" step="0.001" name="TotalAmount" id="id_TotalAmount" class="form-control"
+                            readonly style="background-color: #e9ecef; font-weight: bold;">
+                    </div>
+                </div>
+
+                <!-- Detailed mode flag — defaults 1 on create, reads DB on edit -->
+                <input type="hidden" name="is_detailed" id="isDetailedFlag"
+                    value="{% if is_edit_mode %}{% if is_detailed_expense %}1{% else %}0{% endif %}{% else %}1{% endif %}">
+
+                <!-- Formset Management Forms -->
+                <input type="hidden" name="details-TOTAL_FORMS" id="id_details-TOTAL_FORMS" value="0">
+                <input type="hidden" name="details-INITIAL_FORMS" id="id_details-INITIAL_FORMS" value="0">
+                <input type="hidden" name="details-MIN_NUM_FORMS" id="id_details-MIN_NUM_FORMS" value="0">
+                <input type="hidden" name="details-MAX_NUM_FORMS" id="id_details-MAX_NUM_FORMS" value="1000">
+
+                <!-- Hidden formset details -->
+                <div id="hiddenForms"></div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'accounts_app:expense_list' %}" class="btn btn-secondary me-2">{% trans "Cancel" %}</a>
+                    <button type="submit" class="btn btn-custom">
+                        <i class="bi bi-save"></i> {% trans "Save Voucher" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-custom {
+        background-color: #5A8DEE;
+        border-color: #5A8DEE;
+        color: white;
+    }
+
+    .btn-custom:hover {
+        background-color: #4a7dd4;
+        border-color: #4a7dd4;
+        color: white;
+    }
+
+    .form-label {
+        font-size: 0.875rem;
+        color: #495057;
+        margin-bottom: 0.375rem;
+        font-weight: 600;
+    }
+
+    .form-control,
+    select {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        width: 100%;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    textarea,
+    select {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+        border-color: #5A8DEE;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(90, 141, 238, 0.25);
+    }
+
+    .card {
+        border: none;
+        border-radius: 0.5rem;
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    #displayTotal,
+    #displayTotalNet {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #28a745;
+    }
+
+    #detailedExpenseToggle {
+        accent-color: #5A8DEE;
+    }
+</style>
+
+<script>
+    // Visibility preprocessing before document-ready to eliminate load flicker
+    (function () {
+        var flag = document.getElementById('isDetailedFlag');
+        var isDetailed = !flag || flag.value !== '0';
+
+        document.getElementById('simpleInputRow').style.display   = isDetailed ? 'none' : '';
+        document.getElementById('simpleTable').style.display      = isDetailed ? 'none' : '';
+        document.getElementById('detailedInputRow').style.display = isDetailed ? '' : 'none';
+        document.getElementById('detailedTable').style.display    = isDetailed ? '' : 'none';
+
+        // Staff Payable visibility — no new logic beyond mirroring checkbox state
+        var staffToggle  = document.getElementById('staffPayableToggle');
+        var staffWrapper = document.getElementById('staffDropdownWrapper');
+        if (staffToggle && staffWrapper) {
+            staffWrapper.style.display = staffToggle.checked ? '' : 'none';
+        }
+    })();
+</script>
+
+<script>
+    $(document).ready(function () {
+        const translations = {
+            addDetail:    "{% trans 'Please add at least one expense detail.' %}",
+            selectLedger: "{% trans 'Please select a Ledger.' %}",
+            validAmount:  "{% trans 'Please enter a valid Amount.' %}",
+            fillAllFields:"{% trans 'Please fill all required fields.' %}",
+            noVat:        "{% trans 'No VAT' %}",
+            inclusiveVat: "{% trans 'Inclusive VAT (5%)' %}",
+            exclusiveVat: "{% trans 'Exclusive VAT (5%)' %}"
+        };
+
+        const vatTypeLabels = { 1: translations.noVat, 2: translations.inclusiveVat, 3: translations.exclusiveVat };
+        const existingData = {{ existing_details_json|default:"[]"|safe }};
+
+        // ── VAT Calculation ───────────────────────────────────────────────────
+        function calculateVATAmounts(amount, vatType) {
+            let taxable = 0, vat = 0, net = 0;
+            amount = parseFloat(amount) || 0;
+            switch (parseInt(vatType)) {
+                case 1: taxable = amount; vat = 0;             net = amount;           break;
+                case 2: net = amount; taxable = amount / 1.05; vat = amount - taxable; break;
+                case 3: taxable = amount; vat = amount * 0.05; net = amount + vat;     break;
+            }
+            return { taxable: taxable.toFixed(3), vat: vat.toFixed(3), net: net.toFixed(3) };
+        }
+
+        function updateDetailedDisplays() {
+            const r = calculateVATAmounts($('#inputAmountDetailed').val(), $('#inputVatType').val());
+            $('#inputTaxableDisplay').val(r.taxable);
+            $('#inputVatDisplay').val(r.vat);
+        }
+        $('#inputAmountDetailed').on('input', updateDetailedDisplays);
+        $('#inputVatType').on('change', updateDetailedDisplays);
+
+        // ── Mode Toggle ───────────────────────────────────────────────────────
+        const $toggle = $('#detailedExpenseToggle');
+        $toggle.on('change', function () {
+            const det = this.checked;
+            $('#isDetailedFlag').val(det ? '1' : '0');
+            $('#simpleInputRow, #simpleTable').toggle(!det);
+            $('#detailedInputRow, #detailedTable').toggle(det);
+            calculateTotalsSum();
+        });
+
+        // ── Staff Payable Toggle ────────────────────────────────────────────────
+        $('#staffPayableToggle').on('change', function () {
+            $('#staffDropdownWrapper').toggle(this.checked);
+            if (!this.checked) {
+                $('#id_staff').val('');
+            }
+        });
+
+        // ── Expense Form Manager ──────────────────────────────────────────────
+        class ExpenseFormManager {
+            constructor() {
+                this.formIndex = 0;
+                this.editingIndex = null;
+
+                this.$totalForms          = $('#id_details-TOTAL_FORMS');
+                this.$tableBody           = $('#tableBody');
+                this.$tableBodyDetailed   = $('#tableBodyDetailed');
+                this.$hiddenFormsContainer = $('#hiddenForms');
+                this.$totalAmountField    = $('#id_TotalAmount');
+
+                // Initialize invoice date picker default input to current date
+                const today = new Date().toISOString().split('T')[0];
+                $('#inputInvoiceDate').val(today);
+
+                this._initEventListeners();
+                this._loadExistingData();
+                this._updateTotalForms();
+                this._calculateTotal();
+            }
+
+            _initEventListeners() {
+                $('#addRow').on('click',         this._handleSimpleAction.bind(this));
+                $('#cancelSimple').on('click',   this._cancelSimpleEdit.bind(this));
+                $('#addRowDetailed').on('click', this._handleDetailedAction.bind(this));
+                $('#cancelDetailed').on('click', this._cancelDetailedEdit.bind(this));
+
+                this.$tableBody.on('click',         '.edit-row',   this._editSimpleRow.bind(this));
+                this.$tableBody.on('click',         '.remove-row', this._removeRow.bind(this));
+                this.$tableBodyDetailed.on('click', '.edit-row',   this._editDetailedRow.bind(this));
+                this.$tableBodyDetailed.on('click', '.remove-row', this._removeRow.bind(this));
+
+                $('#expenseForm').on('submit', this._onFormSubmit.bind(this));
+
+                // If the user comes back with the browser Back button (page
+                // restored from cache), unlock the Save button again
+                window.addEventListener('pageshow', (ev) => {
+                    if (ev.persisted) {
+                        this.isSubmitting = false;
+                        $('#expenseForm button[type="submit"]').prop('disabled', false);
+                    }
+                });
+            }
+
+            _loadExistingData() {
+                if (!existingData || !existingData.length) return;
+
+                const dbDetailed  = $('#isDetailedFlag').val() === '1';
+                const hasDetailed = dbDetailed || existingData.some(d => d.invoice_no && d.invoice_no !== '');
+                if (hasDetailed && !dbDetailed) {
+                    $toggle.prop('checked', true).trigger('change');
+                }
+
+                existingData.forEach(item => {
+                    if (hasDetailed) {
+                        this._appendDetailedRow(item, this.formIndex);
+                    } else {
+                        this._appendSimpleRow(item, this.formIndex);
+                        this._writeSimpleHidden(
+                            item.ledger_id, item.amount, item.paid_to || '', item.party_vat_no || '',
+                            item.vehicle_id || '', item.desc, this.formIndex, item.id 
+                        );
+                    }
+                    this.formIndex++;
+                });
+                // set INITIAL_FORMS to the number of pre-existing rows we just loaded
+                $('#id_details-INITIAL_FORMS').val(existingData.length);
+            }
+
+            _onFormSubmit(e) {
+                // Double-submit guard: a save is already in progress
+                if (this.isSubmitting) { e.preventDefault(); return false; }
+
+                if (this.editingIndex !== null) {
+                    alert("{% trans 'Please finish editing the current row before saving.' %}");
+                    e.preventDefault(); return false;
+                }
+
+                // Staff Payable requires a staff selection
+                if ($('#staffPayableToggle').prop('checked') && !$('#id_staff').val()) {
+                    alert("{% trans 'Please select a Staff.' %}");
+                    e.preventDefault(); return false;
+                }
+                
+                const det = $('#detailedExpenseToggle').prop('checked');
+                const count = det ? this.$tableBodyDetailed.find('tr.detail-row').length
+                                  : this.$tableBody.find('tr.detail-row').length;
+                if (count === 0) { alert(translations.addDetail); e.preventDefault(); return false; }
+                this._updateTotalForms();
+
+                // Validation passed -> lock until the page reloads / redirects
+                this.isSubmitting = true;
+                $('#expenseForm button[type="submit"]').prop('disabled', true);
+            }
+
+            // ── SIMPLE MODE ACTIONS ───────────────────────────────────────────
+            _handleSimpleAction() {
+                if (this.editingIndex !== null) this._updateSimpleRow();
+                else this._addSimpleRow();
+            }
+
+            _addSimpleRow() {
+                const ledger      = $('#inputLedger').val();
+                const ledgerText  = $('#inputLedger option:selected').text();
+                const amount      = $('#inputAmount').val();
+                const paidTo      = $('#inputPaidTo').val();
+                const partyVatNo  = $('#inputVatNo').val();
+                const vehicle     = $('#inputVehicle').val();
+                const vehicleText = vehicle ? $('#inputVehicle option:selected').text() : '';
+                const desc        = $('#inputDesc').val();
+
+                if (!ledger) { alert(translations.selectLedger); $('#inputLedger').focus(); return; }
+                if (!amount || parseFloat(amount) <= 0) { alert(translations.validAmount); $('#inputAmount').focus(); return; }
+
+                const item = {
+                    ledger_id: ledger, ledger_name: ledgerText, amount,
+                    paid_to: paidTo, party_vat_no: partyVatNo, vehicle_id: vehicle, vehicle_name: vehicleText, desc
+                };
+                this._appendSimpleRow(item, this.formIndex);
+                this._writeSimpleHidden(ledger, amount, paidTo, partyVatNo, vehicle, desc, this.formIndex);
+                this.formIndex++;
+                this._updateTotalForms();
+                this._calculateTotal();
+                this._clearSimpleInputs();
+                $('#inputLedger').focus();
+            }
+
+            _editSimpleRow(e) {
+                if (this.editingIndex !== null) return;
+                const $row = $(e.target).closest('tr');
+                const idx  = $row.data('form-index');
+                this.editingIndex = idx;
+
+                $('#inputLedger').val($row.data('ledger-id'));
+                $('#inputAmount').val($row.data('amount'));
+                $('#inputPaidTo').val($row.data('paid-to') || '');
+                $('#inputVatNo').val($row.data('party-vat-no') || '');
+                $('#inputVehicle').val($row.data('vehicle-id') || '');
+                $('#inputDesc').val($row.data('desc') || '');
+
+                $row.addClass('table-warning');
+                $('#addRow').text("{% trans 'Update' %}");
+                $('#cancelSimple').show();
+            }
+
+            _updateSimpleRow() {
+                const ledger      = $('#inputLedger').val();
+                const ledgerText  = $('#inputLedger option:selected').text();
+                const amount      = $('#inputAmount').val();
+                const paidTo      = $('#inputPaidTo').val();
+                const partyVatNo  = $('#inputVatNo').val();
+                const vehicle     = $('#inputVehicle').val();
+                const vehicleText = vehicle ? $('#inputVehicle option:selected').text() : '';
+                const desc        = $('#inputDesc').val();
+
+                if (!ledger) { alert(translations.selectLedger); return; }
+                if (!amount || parseFloat(amount) <= 0) { alert(translations.validAmount); return; }
+
+                const idx  = this.editingIndex;
+                const $row = this.$tableBody.find(`tr[data-form-index="${idx}"]`);
+
+                $row.attr({
+                    'data-ledger-id':    ledger,      'data-ledger-name': ledgerText,
+                    'data-amount':       amount,       'data-paid-to':     paidTo || '',
+                    'data-party-vat-no': partyVatNo || '',
+                    'data-vehicle-id':   vehicle || '','data-vehicle-name': vehicleText,
+                    'data-desc':         desc || ''
+                });
+                $row.find('td:eq(0)').text(ledgerText);
+                $row.find('td:eq(1)').text(parseFloat(amount).toFixed(3));
+                $row.find('td:eq(2)').text(paidTo || '-');
+                $row.find('td:eq(3)').text(partyVatNo || '-');
+                $row.find('td:eq(4)').text(vehicleText || '-');
+                $row.find('td:eq(5)').text(desc || '-');
+                $row.removeClass('table-warning');
+
+                const $h = this.$hiddenFormsContainer.find(`.hidden-form-row[data-index="${idx}"]`);
+                $h.find(`[name="details-${idx}-Ledger"]`).val(ledger);
+                $h.find(`[name="details-${idx}-Amount"]`).val(amount);
+                $h.find(`[name="details-${idx}-PaidTo"]`).val(paidTo || '');
+                $h.find(`[name="details-${idx}-party_VAT_no"]`).val(partyVatNo || '');
+                $h.find(`[name="details-${idx}-Vehicle"]`).val(vehicle || '');
+                $h.find(`[name="details-${idx}-Desc"]`).val(desc || '');
+
+                this._resetSimpleEditState();
+                this._calculateTotal();
+            }
+
+            _cancelSimpleEdit() {
+                if (this.editingIndex !== null) {
+                    this.$tableBody.find(`tr[data-form-index="${this.editingIndex}"]`).removeClass('table-warning');
+                }
+                this._resetSimpleEditState();
+            }
+
+            _resetSimpleEditState() {
+                this.editingIndex = null;
+                this._clearSimpleInputs();
+                $('#addRow').text("{% trans 'Add' %}");
+                $('#cancelSimple').hide();
+            }
+
+            _appendSimpleRow(item, index) {
+                const row = `
+                <tr class="detail-row" data-form-index="${index}" data-mode="simple"
+                    data-ledger-id="${item.ledger_id}"   data-ledger-name="${this._esc(item.ledger_name)}"
+                    data-amount="${item.amount}"
+                    data-paid-to="${this._esc(item.paid_to || '')}"
+                    data-party-vat-no="${this._esc(item.party_vat_no || '')}"
+                    data-vehicle-id="${item.vehicle_id || ''}"
+                    data-vehicle-name="${this._esc(item.vehicle_name || '')}"
+                    data-desc="${this._esc(item.desc || '')}">
+                    <td>${item.ledger_name}</td>
+                    <td class="amount-cell">${parseFloat(item.amount).toFixed(3)}</td>
+                    <td>${item.paid_to || '-'}</td>
+                    <td>${item.party_vat_no || '-'}</td>
+                    <td>${item.vehicle_name || '-'}</td>
+                    <td>${item.desc || '-'}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-warning btn-sm edit-row me-1">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm remove-row">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </td>
+                </tr>`;
+                this.$tableBody.append(row);
+            }
+
+            _writeSimpleHidden(ledger, amount, paidTo, partyVatNo, vehicle, desc, index, id = '') {
+                const html = `
+                <div class="hidden-form-row" data-index="${index}">
+                    <input type="hidden" name="details-${index}-id"           value="${id}">
+                    <input type="hidden" name="details-${index}-Ledger"       value="${ledger}">
+                    <input type="hidden" name="details-${index}-Amount"       value="${amount}">
+                    <input type="hidden" name="details-${index}-PaidTo"       value="${paidTo || ''}">
+                    <input type="hidden" name="details-${index}-party_VAT_no" value="${partyVatNo || ''}">
+                    <input type="hidden" name="details-${index}-Vehicle"      value="${vehicle || ''}">
+                    <input type="hidden" name="details-${index}-Desc"         value="${desc || ''}">
+                    <input type="hidden" name="details-${index}-invoice_date" value="">
+                    <input type="hidden" name="details-${index}-invoice_no"   value="">
+                    <input type="hidden" name="details-${index}-vat_type"     value="1">
+                    <input type="hidden" name="details-${index}-vat_amount"   value="0">
+                </div>`;
+                this.$hiddenFormsContainer.append(html);
+            }
+
+            _clearSimpleInputs() {
+                $('#inputLedger, #inputVehicle').val('');
+                $('#inputAmount').val('');
+                $('#inputPaidTo').val('');
+                $('#inputVatNo').val('');
+                $('#inputDesc').val('');
+            }
+
+            // ── DETAILED MODE ACTIONS ─────────────────────────────────────────
+            _handleDetailedAction() {
+                if (this.editingIndex !== null) this._updateDetailedRow();
+                else this._addDetailedRow();
+            }
+
+            _addDetailedRow() {
+                const invoiceDate = $('#inputInvoiceDate').val();
+                const ledger      = $('#inputLedgerDetailed').val();
+                const ledgerText  = $('#inputLedgerDetailed option:selected').text();
+                const paidTo      = $('#inputPaidToDetailed').val();
+                const partyVatNo  = $('#inputVatNoDetailed').val();
+                const desc        = $('#inputDescDetailed').val();
+                const invoiceNo   = $('#inputInvoiceNo').val();
+                const vatType     = parseInt($('#inputVatType').val());
+                const vehicle     = $('#inputVehicleDetailed').val();
+                const vehicleText = vehicle ? $('#inputVehicleDetailed option:selected').text() : '';
+                const amount      = $('#inputAmountDetailed').val();
+
+                if (!invoiceDate || !ledger || !amount || parseFloat(amount) <= 0) {
+                    alert(translations.fillAllFields); return;
+                }
+
+                const calc = calculateVATAmounts(amount, vatType);
+                const item = {
+                    invoice_date: invoiceDate, ledger_id: ledger, ledger_name: ledgerText,
+                    paid_to: paidTo, party_vat_no: partyVatNo, desc, invoice_no: invoiceNo, vat_type: vatType,
+                    vehicle_id: vehicle, vehicle_name: vehicleText,
+                    amount, taxable: calc.taxable, vat_amount: calc.vat, net: calc.net
+                };
+                this._appendDetailedRow(item, this.formIndex);
+                this.formIndex++;
+                this._updateTotalForms();
+                this._calculateTotal();
+                this._clearDetailedInputs();
+                $('#inputInvoiceDate').focus();
+            }
+
+            _editDetailedRow(e) {
+                if (this.editingIndex !== null) return;
+                const $row = $(e.target).closest('tr');
+                const idx  = $row.data('form-index');
+                this.editingIndex = idx;
+
+                $('#inputInvoiceDate').val($row.data('invoice-date'));
+                $('#inputLedgerDetailed').val($row.data('ledger-id'));
+                $('#inputPaidToDetailed').val($row.data('paid-to') || '');
+                $('#inputVatNoDetailed').val($row.data('party-vat-no') || '');
+                $('#inputDescDetailed').val($row.data('desc') || '');
+                $('#inputInvoiceNo').val($row.data('invoice-no') || '');
+                $('#inputVatType').val($row.data('vat-type') || 1);
+                $('#inputVehicleDetailed').val($row.data('vehicle-id') || '');
+                const savedAmount = parseFloat($row.data('amount')) || 0;
+                const savedVat = parseFloat($row.data('vat')) || 0;
+                const vatType = parseInt($row.data('vat-type')) || 1;
+
+                // Exclusive VAT: subtract VAT to recover taxable amount.
+                const inputAmount = vatType === 3
+                    ? savedAmount - savedVat
+                    : savedAmount;
+
+                $('#inputAmountDetailed').val(inputAmount.toFixed(3));
+                updateDetailedDisplays();
+
+                $row.addClass('table-warning');
+                $('#addRowDetailed').text("{% trans 'Update' %}");
+                $('#cancelDetailed').show();
+            }
+
+            _updateDetailedRow() {
+                const invoiceDate = $('#inputInvoiceDate').val();
+                const ledger      = $('#inputLedgerDetailed').val();
+                const ledgerText  = $('#inputLedgerDetailed option:selected').text();
+                const paidTo      = $('#inputPaidToDetailed').val();
+                const partyVatNo  = $('#inputVatNoDetailed').val();
+                const desc        = $('#inputDescDetailed').val();
+                const invoiceNo   = $('#inputInvoiceNo').val();
+                const vatType     = parseInt($('#inputVatType').val());
+                const vehicle     = $('#inputVehicleDetailed').val();
+                const vehicleText = vehicle ? $('#inputVehicleDetailed option:selected').text() : '';
+                const amount      = $('#inputAmountDetailed').val();
+
+                if (!invoiceDate || !ledger || !amount || parseFloat(amount) <= 0) {
+                    alert(translations.fillAllFields); return;
+                }
+
+                const calc = calculateVATAmounts(amount, vatType);
+                const idx  = this.editingIndex;
+                const $row = this.$tableBodyDetailed.find(`tr[data-form-index="${idx}"]`);
+
+                $row.attr({
+                    'data-invoice-date': invoiceDate,    'data-ledger-id':    ledger,
+                    'data-ledger-name':  ledgerText,     'data-paid-to':      paidTo || '',
+                    'data-party-vat-no': partyVatNo || '',
+                    'data-desc':         desc || '',      'data-invoice-no':   invoiceNo || '',
+                    'data-vat-type':     vatType,         'data-vehicle-id':   vehicle || '',
+                    'data-vehicle-name': vehicleText,     'data-amount':       amount,
+                    'data-net':          calc.net,        'data-taxable':      calc.taxable,
+                    'data-vat':          calc.vat
+                }).removeClass('table-warning');
+
+                $row.find('td:eq(0)').text(invoiceDate);
+                $row.find('td:eq(1)').text(ledgerText);
+                $row.find('td:eq(2)').text(paidTo || '-');
+                $row.find('td:eq(3)').text(partyVatNo || '-');
+                $row.find('td:eq(4)').text(desc || '-');
+                $row.find('td:eq(5)').text(invoiceNo || '');
+                $row.find('td:eq(6)').text(vatTypeLabels[vatType]);
+                $row.find('td:eq(7)').text(vehicleText || '-');
+                $row.find('td:eq(8)').text(parseFloat(amount).toFixed(3));
+                $row.find('td:eq(9)').text(calc.taxable);
+                $row.find('td:eq(10)').text(calc.vat);
+
+                const $h = this.$hiddenFormsContainer.find(`.hidden-form-row[data-index="${idx}"]`);
+                $h.find(`[name="details-${idx}-Ledger"]`).val(ledger);
+                $h.find(`[name="details-${idx}-Amount"]`).val(calc.net);
+                $h.find(`[name="details-${idx}-PaidTo"]`).val(paidTo || '');
+                $h.find(`[name="details-${idx}-party_VAT_no"]`).val(partyVatNo || '');
+                $h.find(`[name="details-${idx}-Vehicle"]`).val(vehicle || '');
+                $h.find(`[name="details-${idx}-Desc"]`).val(desc || '');
+                $h.find(`[name="details-${idx}-invoice_date"]`).val(invoiceDate);
+                $h.find(`[name="details-${idx}-invoice_no"]`).val(invoiceNo || '');
+                $h.find(`[name="details-${idx}-vat_type"]`).val(vatType);
+                $h.find(`[name="details-${idx}-vat_amount"]`).val(calc.vat);
+
+                this._resetDetailedEditState();
+                this._calculateTotal();
+            }
+
+            _cancelDetailedEdit() {
+                if (this.editingIndex !== null) {
+                    this.$tableBodyDetailed.find(`tr[data-form-index="${this.editingIndex}"]`).removeClass('table-warning');
+                }
+                this._resetDetailedEditState();
+            }
+
+            _resetDetailedEditState() {
+                this.editingIndex = null;
+                this._clearDetailedInputs();
+                $('#addRowDetailed').text("{% trans 'Add' %}");
+                $('#cancelDetailed').hide();
+            }
+
+            _appendDetailedRow(item, index) {
+                const vatType = parseInt(item.vat_type) || 1;
+                const amount = parseFloat(item.amount) || 0;
+
+                const vatAmt = parseFloat(item.vat_amount) || 0;
+
+                // Existing saved amount is already the final amount.
+                const net = amount;
+
+                // Derive taxable amount from saved amount and VAT.
+                const taxable = (net - vatAmt).toFixed(3);
+
+                const row = `
+                <tr class="detail-row" data-form-index="${index}" data-mode="detailed"
+                    data-invoice-date="${item.invoice_date || ''}"
+                    data-ledger-id="${item.ledger_id || ''}"     data-ledger-name="${this._esc(item.ledger_name || '')}"
+                    data-paid-to="${this._esc(item.paid_to || '')}"
+                    data-party-vat-no="${this._esc(item.party_vat_no || '')}"
+                    data-desc="${this._esc(item.desc || '')}"    data-invoice-no="${this._esc(item.invoice_no || '')}"
+                    data-vat-type="${vatType}"
+                    data-vehicle-id="${item.vehicle_id || ''}"   data-vehicle-name="${this._esc(item.vehicle_name || '')}"
+                    data-amount="${amount}" data-net="${net}" data-taxable="${taxable}" data-vat="${vatAmt}">
+                    <td>${item.invoice_date  || ''}</td>
+                    <td>${item.ledger_name   || ''}</td>
+                    <td>${item.paid_to       || '-'}</td>
+                    <td>${item.party_vat_no  || '-'}</td>
+                    <td>${item.desc          || '-'}</td>
+                    <td>${item.invoice_no    || ''}</td>
+                    <td>${vatTypeLabels[vatType]}</td>
+                    <td>${item.vehicle_name  || '-'}</td>
+                    <td class="amount-cell">${parseFloat(amount).toFixed(3)}</td>
+                    <td>${taxable}</td>
+                    <td>${vatAmt}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-warning btn-sm edit-row me-1">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm remove-row">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </td>
+                </tr>`;
+                this.$tableBodyDetailed.append(row);
+
+                const hidden = `
+                <div class="hidden-form-row" data-index="${index}">
+                    <input type="hidden" name="details-${index}-id" value="${item.id || ''}">
+                    <input type="hidden" name="details-${index}-Ledger"       value="${item.ledger_id || ''}">
+                    <input type="hidden" name="details-${index}-Amount"       value="${net}">
+                    <input type="hidden" name="details-${index}-PaidTo"       value="${item.paid_to || ''}">
+                    <input type="hidden" name="details-${index}-party_VAT_no" value="${item.party_vat_no || ''}">
+                    <input type="hidden" name="details-${index}-Vehicle"      value="${item.vehicle_id || ''}">
+                    <input type="hidden" name="details-${index}-Desc"         value="${item.desc || ''}">
+                    <input type="hidden" name="details-${index}-invoice_date" value="${item.invoice_date || ''}">
+                    <input type="hidden" name="details-${index}-invoice_no"   value="${item.invoice_no || ''}">
+                    <input type="hidden" name="details-${index}-vat_type"     value="${vatType}">
+                    <input type="hidden" name="details-${index}-vat_amount"   value="${vatAmt}">
+                </div>`;
+                this.$hiddenFormsContainer.append(hidden);
+            }
+
+            _clearDetailedInputs() {
+                $('#inputInvoiceDate, #inputLedgerDetailed, #inputPaidToDetailed, #inputVatNoDetailed, #inputDescDetailed, #inputInvoiceNo').val('');
+                $('#inputVatType').val('1');
+                $('#inputVehicleDetailed').val('');
+                $('#inputAmountDetailed, #inputTaxableDisplay, #inputVatDisplay').val('');
+            }
+
+            // ── SHARED OPERATIONS ─────────────────────────────────────────────
+            _removeRow(e) {
+                if (this.editingIndex !== null) return;
+                const $row   = $(e.target).closest('tr');
+                const rowIdx = $row.data('form-index');
+                const $hidden = this.$hiddenFormsContainer.find(`.hidden-form-row[data-index="${rowIdx}"]`);
+                const idVal   = $hidden.find(`[name="details-${rowIdx}-id"]`).val();
+
+                if (idVal) {
+                    // Existing DB row — soft delete. Keep the hidden inputs (esp. id) at their
+                    // frozen index so Django's formset can match & delete it server-side.
+                    if ($hidden.find(`[name="details-${rowIdx}-DELETE"]`).length) {
+                        $hidden.find(`[name="details-${rowIdx}-DELETE"]`).val('on');
+                    } else {
+                        $hidden.append(`<input type="hidden" name="details-${rowIdx}-DELETE" value="on">`);
+                    }
+                    $row.remove(); // remove from the visible table only
+                } else {
+                    // Brand-new, unsaved row — safe to fully remove and reindex among new rows only.
+                    $hidden.remove();
+                    $row.remove();
+                    this._reindexNewForms();
+                }
+                this._updateTotalForms();
+                this._calculateTotal();
+            }
+
+            // Reindex only rows without a DB id (index >= INITIAL_FORMS). Existing rows
+            // (with an id) are never renumbered, so Django can always match them by id.
+            _reindexNewForms() {
+                const initialCount = parseInt($('#id_details-INITIAL_FORMS').val(), 10) || 0;
+                let nextIndex = initialCount;
+
+                const rows = $('tr.detail-row')
+                    .filter(function () { return $(this).data('form-index') >= initialCount; })
+                    .toArray()
+                    .sort((a, b) => $(a).data('form-index') - $(b).data('form-index'));
+
+                rows.forEach(row => {
+                    const $row = $(row);
+                    const oldIdx = $row.data('form-index');
+                    if (oldIdx !== nextIndex) {
+                        const $hidden = this.$hiddenFormsContainer.find(`.hidden-form-row[data-index="${oldIdx}"]`);
+                        $row.attr('data-form-index', nextIndex);
+                        $hidden.attr('data-index', nextIndex);
+                        $hidden.find('input').each(function () {
+                            const n = $(this).attr('name');
+                            if (n) $(this).attr('name', n.replace(/details-\d+-/, `details-${nextIndex}-`));
+                        });
+                    }
+                    nextIndex++;
+                });
+
+                this.formIndex = nextIndex;
+            }
+
+            _updateTotalForms() {
+                // Count every hidden-form block, including soft-deleted existing rows —
+                // Django still needs those posted so it can see DELETE=on.
+                this.$totalForms.val(this.$hiddenFormsContainer.find('.hidden-form-row').length);
+            }
+
+            _calculateTotal() {
+                let simpleTotal = 0;
+                this.$tableBody.find('.amount-cell').each(function () {
+                    simpleTotal += parseFloat($(this).text()) || 0;
+                });
+                $('#displayTotal').text(simpleTotal.toFixed(3));
+
+                let dNet = 0, dTax = 0, dVat = 0;
+                this.$tableBodyDetailed.find('tr.detail-row').each(function () {
+                    dNet += parseFloat($(this).data('net'))     || 0;
+                    dTax += parseFloat($(this).data('taxable')) || 0;
+                    dVat += parseFloat($(this).data('vat'))     || 0;
+                });
+                $('#displayTotalNet').text(dNet.toFixed(3));
+                $('#displayTotalTaxable').text(dTax.toFixed(3));
+                $('#displayTotalVat').text(dVat.toFixed(3));
+
+                const det = $('#detailedExpenseToggle').prop('checked');
+                this.$totalAmountField.val((det ? dNet : simpleTotal).toFixed(3));
+            }
+
+            _esc(str) { return String(str).replace(/"/g, '&quot;'); }
+        }
+
+        // Initialize helper to execute total calculation externally when toggle adjustments are triggered
+        const manager = new ExpenseFormManager();
+        window.calculateTotalsSum = function() {
+            manager._calculateTotal();
+        }
+    });
+</script>
+
+<!-- Get Next Voucher_no (only in create mode) -->
+{% if not is_edit_mode %}
+<script>
+    function updateVoucherNumber() {
+        const select = document.getElementById('id_voucherType');
+        const input  = document.getElementById('id_voucher_no');
+
+        if (select && input && select.value) {
+            input.value = "{% trans 'Loading...' %}";
+            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) { input.value = data.voucher_number; }
+                    else              { input.value = "{% trans 'Error' %}"; }
+                })
+                .catch(() => { input.value = "{% trans 'Error' %}"; });
+        } else if (input) {
+            input.value = '';
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+        const voucherSelect = document.getElementById('id_voucherType');
+        if (voucherSelect) {
+            voucherSelect.addEventListener('change', updateVoucherNumber);
+            updateVoucherNumber();
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

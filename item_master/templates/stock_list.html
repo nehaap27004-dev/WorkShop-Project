@@ -1,267 +1,310 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
 <style>
-  h2 {
-      margin-bottom: 20px;
-      text-align: center;
-  }
+    /* ── Azur Burgundy Module Standards ── */
+    .text-burgundy { color: #9f1045 !important; }
+    .bg-burgundy { background-color: #9f1045 !important; color: #fff !important; }
 
-  .stock-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-  }
+    .btn-custom-primary {
+        background-color: #9f1045 !important;
+        border-color: #9f1045 !important;
+        color: #fff !important;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-custom-primary:hover {
+        background-color: #830d38 !important;
+        border-color: #830d38 !important;
+        color: #fff !important;
+    }
 
-  .stock-table th, .stock-table td {
-      padding: 12px 15px;
-      text-align: left;
-      border: 1px solid #ddd;
-  }
+    .btn-outline-burgundy {
+        color: #9f1045 !important;
+        border-color: #9f1045 !important;
+        background-color: #ffffff !important;
+    }
+    .btn-outline-burgundy:hover {
+        background-color: #9f1045 !important;
+        color: #ffffff !important;
+    }
 
-  .stock-table th {
-      background-color: #f4f4f4;
-      font-weight: bold;
-  }
+    /* KPI Cards */
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+    }
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .kpi-content {
+        min-width: 0;
+    }
+    .kpi-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
 
-  .stock-table tr:nth-child(even) {
-      background-color: #f9f9f9;
-  }
+    /* Card Banner Header */
+    .card-banner-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.9rem 1.25rem;
+    }
+    .card-banner-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #2d3748;
+        display: inline-flex;
+        align-items: center;
+    }
 
-  .stock-table tr:hover {
-      background-color: #f1f1f1;
-  }
+    /* Form control focus ring */
+    .form-control:focus {
+        border-color: #9f1045 !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+    }
 
-  .stock-table a {
-      color: #0066cc;
-      text-decoration: none;
-  }
+    /* Table styling */
+    .table thead th {
+        background-color: #fafbfc;
+        color: #4a5568;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
+    }
+    .table tbody td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+        vertical-align: middle;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #fdfafb;
+    }
 
-  .stock-table a:hover {
-      text-decoration: underline;
-  }
+    .more-btn {
+        background-color: #ffffff;
+        color: #9f1045;
+        border: 1px solid #9f1045;
+        padding: 4px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .more-btn:hover {
+        background-color: #9f1045;
+        color: #ffffff;
+    }
 
-  td[colspan="7"] {
-      text-align: center;
-      color: #888;
-      font-style: italic;
-  }
-
-  .low-stock {
-    color: red;
-  }
-
-  .stock-footer td {
-      font-weight: bold;
-      background-color: #f4f4f4;
-  }
-
-  input[type="text"] {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    min-width: 150px;
-  }
-
-  button {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-  }
-
-  button[type="submit"] {
-      background-color: #007BFF;
-      color: white;
-  }
-
-  button[type="button"] {
-      background-color: #6c757d;
-      color: white;
-  }
-
-  .more-btn {
-      background-color: #17a2b8;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-  }
-
-  .more-btn:hover {
-      background-color: #138496;
-  }
-
-  /* Modal Styles */
-  .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-  }
-
-  .modal-content {
-      background-color: white;
-      margin: 5% auto;
-      padding: 0;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 900px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  }
-
-  .modal-header {
-      background-color: #007BFF;
-      color: white;
-      padding: 15px 20px;
-      border-radius: 8px 8px 0 0;
-  }
-
-  .modal-header h3 {
-      margin: 0;
-      font-size: 18px;
-  }
-
-  .close {
-      color: white;
-      float: right;
-      font-size: 24px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: -5px;
-  }
-
-  .close:hover {
-      opacity: 0.8;
-  }
-
-  .modal-body {
-      padding: 20px;
-      max-height: 60vh;
-      overflow-y: auto;
-  }
-
-  .detail-section {
-      margin-bottom: 20px;
-  }
-
-  .detail-section h4 {
-      color: #333;
-      margin-bottom: 10px;
-      padding-bottom: 5px;
-      border-bottom: 2px solid #f4f4f4;
-  }
-
-  .detail-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 15px;
-  }
-
-  .detail-table th, .detail-table td {
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      text-align: left;
-  }
-
-  .detail-table th {
-      background-color: #f8f9fa;
-      font-weight: bold;
-      font-size: 13px;
-  }
-
-  .detail-table tr:nth-child(even) {
-      background-color: #f9f9f9;
-  }
-
-  .summary-info {
-      background-color: #f8f9fa;
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-      border-left: 4px solid #007BFF;
-  }
-
-  .summary-info h4 {
-      margin-top: 0;
-      color: #007BFF;
-  }
-
-  .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px;
-  }
-
-  .summary-item {
-      text-align: center;
-  }
-
-  .summary-item .label {
-      font-size: 12px;
-      color: #666;
-      margin-bottom: 5px;
-  }
-
-  .summary-item .value {
-      font-size: 16px;
-      font-weight: bold;
-      color: #333;
-  }
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+    .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 850px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        border: 1px solid #edf2f7;
+        overflow: hidden;
+    }
+    .modal-header {
+        background-color: #ffffff;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #edf2f7;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+    .close {
+        color: #6c757d;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        line-height: 1;
+        background: transparent;
+        border: none;
+    }
+    .close:hover {
+        color: #111827;
+    }
+    .modal-body {
+        padding: 1.5rem;
+        max-height: 65vh;
+        overflow-y: auto;
+    }
+    .detail-section {
+        margin-bottom: 20px;
+    }
+    .detail-section h4 {
+        color: #374151;
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+    .detail-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+    .detail-table th, .detail-table td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #edf2f7;
+        font-size: 0.85rem;
+    }
+    .detail-table th {
+        background-color: #fafbfc;
+        font-weight: 700;
+        color: #4b5563;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
 </style>
 
-<h2>Stock Report</h2>
+<div class="container-fluid p-0 mb-5">
 
-<form method="get" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-    <input type="text" name="item_name" placeholder="Item Name" value="{{ request.GET.item_name }}"
-        style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;">
-    <input type="text" name="item_code" placeholder="Item Code" value="{{ request.GET.item_code }}"
-        style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;">
-    <input type="text" name="cost_center" placeholder="Cost Center" value="{{ request.GET.cost_center }}"
-        style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;">
-    <input type="text" name="batch" placeholder="Batch" value="{{ request.GET.batch }}"
-        style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;">
-    <button type="submit"
-        style="padding: 8px 16px; background-color: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer;">
-        🔍 Search
-    </button>
-    <a href="{% url 'item_master:stock_list' %}" style="text-decoration: none;">
-        <button type="button"
-            style="padding: 8px 16px; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            All
-        </button>
-    </a>
-</form>
+    <!-- Top Header Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-1">
+                <i class="bi bi-boxes text-burgundy mr-2"></i>{% trans "Stock Summary & Inventory Balances" %}
+            </h2>
+            <div class="text-muted small">{% trans "Track on-hand stock quantities, valuation rates, batches, and warehouse locations" %}</div>
+        </div>
+        <a href="{% url 'item_master:stock_list' %}" class="btn btn-outline-secondary shadow-sm">
+            <i class="bi bi-arrow-clockwise mr-1"></i>{% trans "Refresh Report" %}
+        </a>
+    </div>
 
-<table class="stock-table" border="1" cellpadding="10" cellspacing="0" id="voucherTable">
-    <thead>
-        <tr>
-            <th>SI No</th>
-            <th>Item Name</th>
-            <th>Quantity</th>
-            <th>Unit</th>
-            <th>Stock Value</th>
-            <th>More</th>
-        </tr>
-    </thead>
-    <tbody id="stockTableBody">
-        <!-- JavaScript will populate this with grouped data -->
-    </tbody>
-</table>
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 mb-4" style="border-radius:10px;">
+        <div class="card-header card-banner-header">
+            <span class="card-banner-title"><i class="bi bi-funnel text-burgundy mr-2"></i>{% trans "Filter Stock Records" %}</span>
+        </div>
+        <div class="card-body p-3">
+            <form method="get" class="form-row align-items-end">
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <label class="small text-muted font-weight-bold mb-1">{% trans "Item Name" %}</label>
+                    <input type="text" name="item_name" placeholder="{% trans 'Search item name...' %}" value="{{ request.GET.item_name }}" class="form-control">
+                </div>
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <label class="small text-muted font-weight-bold mb-1">{% trans "Item Code" %}</label>
+                    <input type="text" name="item_code" placeholder="{% trans 'e.g. ITM-001' %}" value="{{ request.GET.item_code }}" class="form-control">
+                </div>
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <label class="small text-muted font-weight-bold mb-1">{% trans "Cost Center" %}</label>
+                    <input type="text" name="cost_center" placeholder="{% trans 'Cost center name...' %}" value="{{ request.GET.cost_center }}" class="form-control">
+                </div>
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <label class="small text-muted font-weight-bold mb-1">{% trans "Batch No." %}</label>
+                    <input type="text" name="batch" placeholder="{% trans 'Batch number...' %}" value="{{ request.GET.batch }}" class="form-control">
+                </div>
+                <div class="col-md-2 d-flex justify-content-end align-items-end">
+                    <a href="{% url 'item_master:stock_list' %}" class="btn btn-outline-secondary mr-2 w-50">
+                        {% trans "All" %}
+                    </a>
+                    <button type="submit" class="btn btn-custom-primary w-50">
+                        <i class="bi bi-search mr-1"></i>{% trans "Filter" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stock Table Card -->
+    <div class="card shadow-sm border-0" style="border-radius:10px;">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="card-banner-title">
+                <i class="bi bi-list-task text-burgundy mr-2"></i>{% trans "Stock Balances" %}
+            </span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold" style="border-radius:6px;" id="totalItemsBadge">
+                {% trans "Live Inventory" %}
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="voucherTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">{% trans "SI No" %}</th>
+                            <th>{% trans "Item Name" %}</th>
+                            <th class="text-right">{% trans "Quantity" %}</th>
+                            <th>{% trans "Unit" %}</th>
+                            <th class="text-right">{% trans "Stock Value" %}</th>
+                            <th style="width: 120px;" class="text-center">{% trans "Details" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockTableBody">
+                        <!-- JavaScript will populate this with grouped data -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
 
 <!-- Modal -->
 <div id="stockModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
+            <h3 id="modalTitle">{% trans "Item Details" %}</h3>
             <span class="close" onclick="closeModal()">&times;</span>
-            <h3 id="modalTitle">Item Details</h3>
         </div>
         <div class="modal-body" id="modalBody">
             <!-- Modal content will be populated by JavaScript -->
@@ -283,7 +326,7 @@
             batch: "{{ stock.batch|default:'No Batch'|escapejs }}",
             batchId: {{ stock.batch.id|default:0 }},
             costCenter: "{{ stock.costCenter|escapejs }}",
-            costCenterId: {{ stock.costCenter.id }},
+            costCenterId: {{ stock.costCenter.id|default:0 }},
             stockValue: {{ stock.stock_value|default:0 }},
             hasAlterUnits: {% if stock.has_alter_units %}true{% else %}false{% endif %}
         },
@@ -308,9 +351,9 @@
                 };
             }
             
-            const quantity = stock.inQuantity - stock.outQuantity;
+            const quantity = stock.inQuantity + stock.outQuantity;
             grouped[key].totalQuantity += quantity;
-            grouped[key].totalValue += quantity * stock.rate;
+            grouped[key].totalValue += stock.stockValue;
             grouped[key].entries.push(stock);
             
             if (stock.hasAlterUnits) {
@@ -327,7 +370,7 @@
         const groupedItems = groupStockEntries();
         
         if (groupedItems.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6">No stock available.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">{% trans "No stock available matching criteria." %}</td></tr>';
             return;
         }
         
@@ -335,18 +378,18 @@
         groupedItems.forEach((item, index) => {
             html += `
                 <tr>
-                    <td>${index + 1}</td>
-                    <td>${item.itemName}</td>
-                    <td style="color: ${item.totalQuantity < 0 ? 'red' : 'inherit'};">
+                    <td class="align-middle text-muted">${index + 1}</td>
+                    <td class="align-middle font-weight-bold text-dark">${item.itemName}</td>
+                    <td class="align-middle text-right font-weight-600" style="color: ${item.totalQuantity < 0 ? '#dc2626' : '#1f2937'};">
                         ${item.totalQuantity.toFixed(2)}
                     </td>
-                    <td>${item.unitName}</td>
-                    <td style="color: ${item.totalValue < 0 ? 'red' : 'inherit'};">
+                    <td class="align-middle"><span class="badge badge-light border text-dark">${item.unitName}</span></td>
+                    <td class="align-middle text-right font-weight-bold text-burgundy" style="color: ${item.totalValue < 0 ? '#dc2626' : '#9f1045'} !important;">
                         ${item.totalValue.toFixed(2)}
                     </td>
-                    <td style="text-align: center;">
+                    <td class="align-middle text-center">
                         <button class="more-btn" onclick="openModal(${item.itemId})">
-                            More
+                            <i class="bi bi-eye mr-1"></i>{% trans "Details" %}
                         </button>
                     </td>
                 </tr>
@@ -354,6 +397,8 @@
         });
         
         tbody.innerHTML = html;
+        const badge = document.getElementById('totalItemsBadge');
+        if (badge) badge.textContent = `${groupedItems.length} Products Tracked`;
     }
 
     async function openModal(itemId) {
@@ -361,48 +406,41 @@
         const modalBody = document.getElementById('modalBody');
         const modalTitle = document.getElementById('modalTitle');
         
-        // Find the item data
         const groupedItems = groupStockEntries();
         const itemData = groupedItems.find(item => item.itemId === itemId);
         
         if (!itemData) return;
         
-        modalTitle.textContent = `${itemData.itemName} - Complete Details`;
-        modalBody.innerHTML = '<p>Loading...</p>';
+        modalTitle.innerHTML = `<i class="bi bi-box-seam text-burgundy mr-2"></i>${itemData.itemName} - {% trans "Complete Details" %}`;
+        modalBody.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border text-danger spinner-border-sm mr-2" role="status"></div>Loading details...</div>';
         modal.style.display = 'block';
         
         try {
-            // Get all stock entries for this item
             const itemEntries = itemData.entries;
             
             let modalContent = `
-                
-                
-                
-                
                 <div class="detail-section">
-                    <h4>Details</h4>
-                    <table class="detail-table">
+                    <h4><i class="bi bi-layers mr-1 text-secondary"></i>{% trans "Warehouse & Batch Breakdowns" %}</h4>
+                    <table class="detail-table table table-hover">
                         <thead>
                             <tr>
-                                <th>Batch</th>
-                                <th>Cost Center</th>
-                                <th>Quantity</th>
-                                <th>Stock Value</th>
+                                <th>{% trans "Batch" %}</th>
+                                <th>{% trans "Cost Center" %}</th>
+                                <th class="text-right">{% trans "Quantity" %}</th>
+                                <th class="text-right">{% trans "Stock Value" %}</th>
                             </tr>
                         </thead>
                         <tbody>
             `;
             
             itemEntries.forEach(entry => {
-                const qty = entry.inQuantity - entry.outQuantity;
-                const entryValue = qty * entry.rate;
+                const qty = entry.inQuantity + entry.outQuantity;
                 modalContent += `
                     <tr>
-                        <td>${entry.batch}</td>
+                        <td class="font-mono text-dark">${entry.batch}</td>
                         <td>${entry.costCenter}</td>
-                        <td style="color: ${qty < 0 ? 'red' : 'inherit'};">` + `${qty.toFixed(2)}</td>
-                        <td style="color: ${entryValue < 0 ? 'red' : 'inherit'};">` + `${entryValue.toFixed(2)}</td>
+                        <td class="text-right font-weight-bold" style="color: ${qty < 0 ? '#dc2626' : '#1f2937'};">${qty.toFixed(2)}</td>
+                        <td class="text-right font-weight-600 text-burgundy">${entry.stockValue.toFixed(2)}</td>
                     </tr>
                 `;
             });
@@ -413,7 +451,6 @@
                 </div>
             `;
             
-            // Get alternate units if available
             if (itemData.hasAlterUnits) {
                 try {
                     const alterUnitsResponse = await fetch(`/get_alter_units_stock/${itemId}/`);
@@ -421,15 +458,15 @@
                     
                     if (alterUnitsData.units && alterUnitsData.units.length > 0) {
                         modalContent += `
-                            <div class="detail-section">
-                                <h4>Alternate Units</h4>
-                                <table class="detail-table">
+                            <div class="detail-section mt-4">
+                                <h4><i class="bi bi-diagram-3 mr-1 text-secondary"></i>{% trans "Alternate Units" %}</h4>
+                                <table class="detail-table table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Unit</th>
-                                            <th> Quantity</th>
-                                            <th>Rate</th>
-                                            <th>Stock Value</th>
+                                            <th>{% trans "Unit" %}</th>
+                                            <th class="text-right">{% trans "Quantity" %}</th>
+                                            <th class="text-right">{% trans "Rate" %}</th>
+                                            <th class="text-right">{% trans "Stock Value" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -448,10 +485,10 @@
                             
                             modalContent += `
                                 <tr>
-                                    <td>${unit.unit_name}</td>
-                                    <td style="color: ${alterStock < 0 ? 'red' : 'inherit'};">${alterStock.toFixed(2)}</td>
-                                    <td>${alterRate.toFixed(2)}</td>
-                                    <td style="color: ${alterStockValue < 0 ? 'red' : 'inherit'};">${alterStockValue.toFixed(2)}</td>
+                                    <td class="font-weight-600">${unit.unit_name}</td>
+                                    <td class="text-right font-weight-bold" style="color: ${alterStock < 0 ? '#dc2626' : '#1f2937'};">${alterStock.toFixed(2)}</td>
+                                    <td class="text-right text-muted">${alterRate.toFixed(2)}</td>
+                                    <td class="text-right font-weight-bold text-burgundy">${alterStockValue.toFixed(2)}</td>
                                 </tr>
                             `;
                         });
@@ -471,7 +508,7 @@
             
         } catch (error) {
             console.error('Error loading modal data:', error);
-            modalBody.innerHTML = '<p>Error loading data. Please try again.</p>';
+            modalBody.innerHTML = '<div class="alert alert-danger">Error loading data. Please try again.</div>';
         }
     }
 
@@ -479,7 +516,6 @@
         document.getElementById('stockModal').style.display = 'none';
     }
 
-    // Close modal when clicking outside of it
     window.onclick = function(event) {
         const modal = document.getElementById('stockModal');
         if (event.target == modal) {
@@ -487,14 +523,12 @@
         }
     }
 
-    // Close modal with Escape key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             closeModal();
         }
     });
 
-    // Initialize the page
     document.addEventListener("DOMContentLoaded", function () {
         populateTable();
     });

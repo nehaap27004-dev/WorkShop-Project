@@ -1,47 +1,265 @@
 {% extends 'fleet_base1.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <h3>{{ batch|yesno:"Update Batch,Create Batch" }}</h3>
-    {% if form.errors %}
-    <div class="alert alert-danger">
-        {% for error in form.non_field_errors %}
-            {{ error }}
-        {% endfor %}
+<style>
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
+
+    .batch-form-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
+
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        border-radius: 8px;
+        padding: 0.6rem 1.5rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+    }
+
+    .btn-outline-secondary {
+        border-radius: 8px;
+        padding: 0.6rem 1.25rem;
+        font-weight: 500;
+    }
+
+    /* Form Card */
+    .form-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .card-banner-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        padding: 1.25rem 1.75rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .form-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        background-color: var(--primary-burgundy-light);
+        color: var(--primary-burgundy);
+        border: 1px solid var(--primary-burgundy-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    .field-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #495057;
+        margin-bottom: 0.4rem;
+        display: block;
+    }
+
+    .form-card .form-control,
+    .form-card select {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.6rem 0.85rem;
+        font-size: 0.92rem;
+        transition: all 0.2s ease;
+    }
+
+    .form-card .form-control:focus,
+    .form-card select:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
+    }
+
+    /* Switch styling */
+    .form-check-card {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.85rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .form-check-card .form-check-input {
+        width: 1.25rem;
+        height: 1.25rem;
+        margin-top: 0;
+        cursor: pointer;
+    }
+
+    .form-check-card .form-check-input:checked {
+        background-color: var(--primary-burgundy);
+        border-color: var(--primary-burgundy);
+    }
+
+    .form-check-card label {
+        margin-bottom: 0;
+        cursor: pointer;
+        font-weight: 500;
+        color: #334155;
+    }
+
+    /* Action bar */
+    .form-actions-bar {
+        background-color: #fafbfc;
+        border-top: 1px solid #f1f3f5;
+        padding: 1rem 1.75rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+</style>
+
+<div class="batch-form-container">
+    <!-- Breadcrumb / Back Link -->
+    <div class="mb-3">
+        <a href="{% url 'item_master:batch_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Batch Directory
+        </a>
     </div>
-{% endif %}
-    <form method="post" novalidate>
-        {% csrf_token %}
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label for="{{ form.BatchNo.id_for_label }}">{{ form.BatchNo.label }}</label>
-                {{ form.BatchNo }}
+
+    <!-- Main Form Card -->
+    <div class="form-card">
+        <div class="card-banner-header">
+            <div class="form-icon-box">
+                <i class="bi bi-layers-fill"></i>
             </div>
-            <div class="col-md-6 mb-3">
-                <label for="{{ form.Item.id_for_label }}">{{ form.Item.label }}</label>
-                {{ form.Item }}
-            </div>
-            <div class="col-md-6 mb-3" id="batch-barcode-field">
-                <label for="{{ form.barcode_code.id_for_label }}">{{ form.barcode_code.label }}</label>
-                {{ form.barcode_code }}
+            <div>
+                <h5 class="mb-0 fw-bold text-dark">
+                    {% if batch %}Edit Batch: <span class="text-burgundy">{{ batch.BatchNo }}</span>{% else %}Create New Batch{% endif %}
+                </h5>
+                <small class="text-muted">Define batch details, manufacturing & expiration dates, and lot barcode</small>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label for="{{ form.Mfd.id_for_label }}">{{ form.Mfd.label }}</label>
-                {{ form.Mfd }}
+
+        <div class="p-4">
+            {% if form.errors %}
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <strong>Please correct the errors below:</strong>
+                </div>
+                <ul class="mb-0 mt-2 ps-3">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li>{% if field != '__all__' %}<strong>{{ field|title }}:</strong> {% endif %}{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-            <div class="col-md-6 mb-3">
-                <label for="{{ form.Exp.id_for_label }}">{{ form.Exp.label }}</label>
-                {{ form.Exp }}
-            </div>
+            {% endif %}
+
+            <form method="post" novalidate id="batchForm">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.BatchNo.id_for_label }}" class="field-label">
+                            {{ form.BatchNo.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.BatchNo }}
+                        {% if form.BatchNo.errors %}
+                            <div class="text-danger small mt-1">{{ form.BatchNo.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.Item.id_for_label }}" class="field-label">
+                            {{ form.Item.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.Item }}
+                        {% if form.Item.errors %}
+                            <div class="text-danger small mt-1">{{ form.Item.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6" id="batch-barcode-field">
+                        <label for="{{ form.barcode_code.id_for_label }}" class="field-label">
+                            <i class="bi bi-upc me-1 text-muted"></i>{{ form.barcode_code.label }}
+                        </label>
+                        {{ form.barcode_code }}
+                        {% if form.barcode_code.errors %}
+                            <div class="text-danger small mt-1">{{ form.barcode_code.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.Mfd.id_for_label }}" class="field-label">
+                            <i class="bi bi-calendar-check me-1 text-muted"></i>{{ form.Mfd.label }}
+                        </label>
+                        {{ form.Mfd }}
+                        {% if form.Mfd.errors %}
+                            <div class="text-danger small mt-1">{{ form.Mfd.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.Exp.id_for_label }}" class="field-label">
+                            <i class="bi bi-calendar-x me-1 text-muted"></i>{{ form.Exp.label }}
+                        </label>
+                        {{ form.Exp }}
+                        {% if form.Exp.errors %}
+                            <div class="text-danger small mt-1">{{ form.Exp.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 mt-3">
+                        <div class="form-check-card">
+                            {{ form.IsActive }}
+                            <label class="form-check-label" for="{{ form.IsActive.id_for_label }}">
+                                <strong>{{ form.IsActive.label }}</strong>
+                                <span class="text-muted small d-block">Enable this batch for inventory movement and stock allocation</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions-bar mt-4">
+                    <a href="{% url 'item_master:batch_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-1"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-custom-primary">
+                        <i class="bi bi-check-lg"></i> {% if batch %}Update Batch{% else %}Save Batch{% endif %}
+                    </button>
+                </div>
+            </form>
         </div>
-        <div class="form-check mb-3">
-            {{ form.IsActive }} <label class="form-check-label" for="{{ form.IsActive.id_for_label }}">{{ form.IsActive.label }}</label>
-        </div>
-        <button type="submit" class="btn btn-primary">Save</button>
-        <a href="{% url 'item_master:batch_list' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+    </div>
 </div>
 
 <script>
@@ -58,19 +276,24 @@
                     } else {
                         barcodeField.style.display = '';
                     }
+                })
+                .catch(err => {
+                    console.log('Barcode status check info:', err);
                 });
         }
 
-        itemSelect.addEventListener('change', function () {
-            const itemId = this.value;
-            if (itemId) {
-                checkBarcodeStatus(itemId);
-            }
-        });
+        if (itemSelect) {
+            itemSelect.addEventListener('change', function () {
+                const itemId = this.value;
+                if (itemId) {
+                    checkBarcodeStatus(itemId);
+                }
+            });
 
-        // Initial load (if pre-selected)
-        if (itemSelect.value) {
-            checkBarcodeStatus(itemSelect.value);
+            // Initial load (if pre-selected)
+            if (itemSelect.value) {
+                checkBarcodeStatus(itemSelect.value);
+            }
         }
     });
 </script>

@@ -118,8 +118,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'erp_db',
-        'HOST': 'Azurbusinessllc-5406.postgres.pythonanywhere-services.com',
-        'PORT': '15406',
+        'HOST': 'localhost',
+        'PORT': '5432',
         'USER': 'erp_user',
         'PASSWORD': 'Pass@@Azur26%',
     }

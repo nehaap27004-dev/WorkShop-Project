@@ -75,132 +75,6 @@ class UnitAdmin(admin.ModelAdmin):
 #     ordering = ('VAT_percent',)  # Default ordering of the list view
 #     list_filter = ('VAT_name',) 
     
-class PurchaseDetailInline(admin.TabularInline):
-    model = PurchaseDetail
-    extra = 1  # Number of extra blank forms
-    autocomplete_fields = ['item_name', 'unit', 'Batch']
-    fields = [
-        'item_code', 'item_name', 'barcode_code', 'quantity', 'purchase_rate',
-        'item_net_amount', 'tax', 'item_tax_amount', 'unit', 'free_quantity',
-        'MFD', 'EXP', 'sales_rate_percentage', 'sales_rate', 'profit',
-        'item_total_amount', 'Batch', 'isexp', 'QtyInBaseUnit', 'RateInBaseUnit',
-        'BaseUnit', 'Cess', 'SerialNo'
-    ]
-
-@admin.register(PurchaseMaster)
-class PurchaseMasterAdmin(admin.ModelAdmin):
-    list_display = ['voucher_no', 'transaction_date', 'ledger', 'payment_mode', 'grand_total_amount']
-    list_filter = ['payment_mode', 'transaction_date', 'ledger']
-    search_fields = ['voucher_no', 'ledger__ledger_name']
-    inlines = [PurchaseDetailInline]
-    readonly_fields = ['auto_no', 'created_on', 'updated_on']
-    fieldsets = (
-        ('Voucher Info', {
-            'fields': ('voucher_no', 'voucherType', 'transaction_date', 'ledger', 'payment_mode', 'VendorInvNo', 'InvoiceDate')
-        }),
-        ('Amount Details', {
-            'fields': ('total_net_value', 'total_tax_amount', 'discount', 'grand_total_amount')
-        }),
-        ('Additional Info', {
-            'fields': ('payment_terms', 'remarks', 'cost_center', 'lrNo', 'transportCompany', 'Freight', 'isDeleted')
-        }),
-        ('Timestamps', {
-            'fields': ('auto_no', 'created_on', 'updated_on')
-        }),
-    )
-
-@admin.register(PurchaseDetail)
-class PurchaseDetailAdmin(admin.ModelAdmin):
-    list_display = ['item_name', 'purchase', 'quantity', 'purchase_rate', 'item_total_amount', 'RateInBaseUnit', 'QtyInBaseUnit']
-    list_filter = ['item_name', 'Batch']
-    search_fields = ['item_name__item_name', 'purchase__voucher_no']
-    
-
-class SalesReturnVoucherItemInline(admin.TabularInline):
-    model = SalesReturnDetail
-    extra = 1
-    fields = ( 'item_code', 'item_name', 'barcode_code', 'quantity', 'purchase_rate', 'item_net_amount', 'tax', 'item_tax_amount', 'unit', 'free_quantity', 'sales_rate', 'profit', 'item_total_amount')
-    readonly_fields = ('item_net_amount', 'item_tax_amount', 'item_total_amount')
-
-class SalesReturnVoucherAdmin(admin.ModelAdmin):
-    list_display = ('auto_no', 'voucher_no', 'transaction_date', 'ledger', 'payment_mode', 'total_net_value', 'total_tax_amount', 'grand_total_amount')
-    list_filter = ('ledger', 'payment_mode', 'transaction_date')
-    search_fields = ('voucher_no',)
-    inlines = [SalesReturnVoucherItemInline]
-    readonly_fields = ('voucher_no',)
-
-    fieldsets = (
-        (None, {
-            'fields': ('voucher_no', 'transaction_date', 'ledger', 'payment_mode', 'remarks')
-        }),
-        ('Amount Details', {
-            'fields': ('total_net_value', 'total_tax_amount', 'discount', 'payment_terms', 'grand_total_amount')
-        }),
-    )
-
-admin.site.register(SalesReturnMaster, SalesReturnVoucherAdmin)
-
-
-
-    
-class SalesVoucherItemInline(admin.TabularInline):
-    model = SalesDetail
-    extra = 1  # Allows adding one extra row for new items
-    fields = ['item_code', 'item_name', 'barcode_code', 'quantity', 'unit', 'sales_rate', 'item_net_amount', 'tax', 'item_tax_amount', 'item_total_amount']
-    readonly_fields = ['item_net_amount', 'item_tax_amount', 'item_total_amount']
-    autocomplete_fields = ['item_name', 'unit']  # If you have a lot of items and units, this adds a search field
-
-@admin.register(SalesMaster)
-class SalesVoucherAdmin(admin.ModelAdmin):
-    list_display = ['voucher_no', 'transaction_date','payment_mode', 'grand_total_amount']
-    search_fields = ['voucher_no', 'mobile', 'PO_number', 'DO_number']  # Search by customer and other fields
-    list_filter = ['transaction_date', 'payment_mode']  # Filters for easier navigation
-    inlines = [SalesVoucherItemInline]
-    fields = ['voucher_no', 'transaction_date', 'payment_mode', 'PO_number', 'DO_number', 'mobile', 
-              'customer_TRN', 'vehicle_number', 'location', 'terms_and_conditions', 'remarks', 
-              'total_net_value', 'total_tax_amount', 'discount', 'grand_total_amount']
-    readonly_fields = ['total_net_value', 'total_tax_amount', 'grand_total_amount']
-
-    def get_readonly_fields(self, request, obj=None):
-        if obj:  # If editing an existing voucher
-            return self.readonly_fields + ['voucher_no', 'transaction_date']
-        return self.readonly_fields
-
-@admin.register(SalesDetail)
-class SalesVoucherItemAdmin(admin.ModelAdmin):
-    list_display = ['sales_voucher', 'quantity', 'sales_rate', 'item_net_amount', 'tax', 'item_tax_amount', 'item_total_amount', 'RateInBaseUnit', 'QtyInBaseUnit' ,'Batch', 'MFD', 'EXP']
-    search_fields = ['item__name', 'item_code', 'sales_voucher__voucher_no']    
-
-
-
-# class PurchaseReturnVoucherItemInline(admin.TabularInline):
-#     model = PurchaseReturnVoucherItem
-#     extra = 1  # Allows adding one extra row for new items
-#     fields = ['item_code', 'item_name', 'barcode_code', 'quantity', 'unit', 'sales_rate', 'item_net_amount', 'tax', 'item_tax_amount', 'item_total_amount']
-#     readonly_fields = ['item_net_amount', 'item_tax_amount', 'item_total_amount']
-#     autocomplete_fields = ['item_name', 'unit']  # If you have a lot of items and units, this adds a search field
-
-# @admin.register(PurchaseReturnVoucher)
-# class PurchaseReturnVoucherAdmin(admin.ModelAdmin):
-#     list_display = ['voucher_no', 'transaction_date', 'payment_mode', 'grand_total_amount']
-#     search_fields = ['voucher_no', 'mobile', 'PO_number', 'DO_number']  # Search by customer and other fields
-#     list_filter = ['transaction_date', 'payment_mode']  # Filters for easier navigation
-#     inlines = [PurchaseReturnVoucherItemInline]
-#     fields = ['voucher_no', 'transaction_date', 'payment_mode', 'PO_number', 'DO_number', 'mobile', 
-#               'customer_TRN', 'vehicle_number', 'location', 'terms_and_conditions', 'remarks', 
-#               'total_net_value', 'total_tax_amount', 'discount', 'grand_total_amount']
-#     readonly_fields = ['total_net_value', 'total_tax_amount', 'grand_total_amount']
-
-#     def get_readonly_fields(self, request, obj=None):
-#         if obj:  # If editing an existing voucher
-#             return self.readonly_fields + ['voucher_no', 'transaction_date']
-#         return self.readonly_fields
-
-# @admin.register(PurchaseReturnVoucherItem)
-# class PurchaseReturnVoucherItemAdmin(admin.ModelAdmin):
-#     list_display = ['purchase_return_voucher', 'quantity', 'sales_rate', 'item_net_amount', 'tax', 'item_tax_amount', 'item_total_amount']
-#     search_fields = ['item__name', 'item_code', 'sales_voucher__voucher_no']    
-    
 
 @admin.register(OutstandingReport)
 class OutstandingReportAdmin(admin.ModelAdmin):
@@ -247,29 +121,6 @@ class CostCenterAdmin(admin.ModelAdmin):
     
 
     
-class OpeningStockItemInline(admin.TabularInline):
-    model = OpeningStockDetail
-    extra = 1
-    fields = ( 'item_code', 'item_name', 'barcode_code', 'quantity', 'purchase_rate', 'item_net_amount', 'tax', 'item_tax_amount', 'unit', 'free_quantity', 'sales_rate', 'profit', 'item_total_amount')
-    readonly_fields = ('item_net_amount', 'item_tax_amount', 'item_total_amount')
-
-class OpeningStockAdmin(admin.ModelAdmin):
-    list_display = ('auto_no', 'voucher_no', 'transaction_date', 'ledger', 'payment_mode', 'total_net_value', 'total_tax_amount', 'grand_total_amount')
-    list_filter = ('ledger', 'payment_mode', 'transaction_date')
-    search_fields = ('voucher_no',)
-    inlines = [OpeningStockItemInline]
-    readonly_fields = ('voucher_no',)
-
-    fieldsets = (
-        (None, {
-            'fields': ('voucher_no', 'transaction_date', 'ledger', 'payment_mode', 'remarks')
-        }),
-        ('Amount Details', {
-            'fields': ('total_net_value', 'total_tax_amount', 'discount', 'payment_terms', 'grand_total_amount')
-        }),
-    )
-
-admin.site.register(OpeningStockMaster, OpeningStockAdmin)    
 
 @admin.register(Batch)
 class BatchAdmin(admin.ModelAdmin):
@@ -328,3 +179,201 @@ class StockTransferItemAdmin(admin.ModelAdmin):
     list_display = ['stock_transfer', 'item', 'unit', 'quantity', 'rate']
     search_fields = ['item__item_name', 'stock_transfer__voucher_no']
     autocomplete_fields = ['item', 'unit', 'batch', 'stock_transfer']
+
+
+from django.contrib import admin
+from django.utils.html import format_html
+from .models import PurchaseMaster, PurchaseDetail, ItemGrvMaster, ItemGrvDetail
+
+@admin.register(ItemGrvMaster)
+class ItemGrvMasterAdmin(admin.ModelAdmin):
+    list_display = ('voucher_no', 'transaction_date', 'IsInvoiced', 'isDeleted')
+    list_filter = ('IsInvoiced', 'isDeleted')
+    search_fields = ('voucher_no',)
+    date_hierarchy = 'transaction_date'
+
+class PurchaseDetailInline(admin.TabularInline):
+    model = PurchaseDetail
+    extra = 0
+    fields = (
+        'item_group', 'item_name', 'item_code', 'barcode_code',
+        'Batch', 'MFD', 'EXP', 'unit',
+        'quantity', 'free_quantity',
+        'purchase_rate', 'item_net_amount', 'tax', 'item_tax_amount',
+        'sales_rate', 'profit', 'item_total_amount',
+        'Cost', 'Cess', 'SerialNo',
+    )
+    autocomplete_fields = ('item_name', 'Batch')
+    show_change_link = True
+
+
+@admin.register(PurchaseMaster)
+class PurchaseMasterAdmin(admin.ModelAdmin):
+    list_display = (
+        'voucher_no', 'auto_no', 'transaction_date', 'ledger',
+        'voucherType', 'payment_mode', 'grand_total_amount',
+        'IsCleared', 'linked_grv', 'isDeleted',
+    )
+    list_filter = (
+        'payment_mode', 'IsCleared', 'isDeleted', 'voucherType',
+        'cost_center', 'transaction_date',
+    )
+    search_fields = (
+        'voucher_no', 'VendorInvNo', 'ledger__ledger_name',
+        'item_grv__voucher_no',
+    )
+    date_hierarchy = 'transaction_date'
+    ordering = ('-auto_no',)
+    readonly_fields = ('auto_no', 'created_on', 'updated_on')
+    autocomplete_fields = ('ledger', 'item_grv')
+    inlines = [PurchaseDetailInline]
+
+    fieldsets = (
+        ('Voucher Info', {
+            'fields': (
+                'voucher_no', 'auto_no', 'voucherType', 'transaction_date',
+                'ledger', 'payment_mode', 'cost_center',
+            )
+        }),
+        ('Vendor Invoice', {
+            'fields': ('VendorInvNo', 'InvoiceDate', 'item_grv')
+        }),
+        ('Freight / Transport', {
+            'fields': ('lrNo', 'transportCompany', 'Freight'),
+            'classes': ('collapse',),
+        }),
+        ('Totals', {
+            'fields': (
+                'total_net_value', 'total_tax_amount',
+                'discount', 'grand_total_amount',
+            )
+        }),
+        ('Status', {
+            'fields': ('IsCleared', 'isDeleted', 'remarks', 'payment_terms')
+        }),
+        ('Timestamps', {
+            'fields': ('created_on', 'updated_on'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    def linked_grv(self, obj):
+        if obj.item_grv_id:
+            return format_html(
+                '<span style="color:#2e7d32;">✔ {}</span>', obj.item_grv.voucher_no
+            )
+        return '—'
+    linked_grv.short_description = 'GRV'
+
+
+@admin.register(PurchaseDetail)
+class PurchaseDetailAdmin(admin.ModelAdmin):
+    list_display = (
+        'purchase', 'item_group', 'item_name', 'item_code', 'Batch',
+        'quantity', 'purchase_rate', 'tax', 'item_total_amount',
+    )
+    list_filter = ('item_group', 'unit', 'isexp')
+    search_fields = (
+        'purchase__voucher_no', 'item_name__item_name',
+        'item_code', 'barcode_code', 'SerialNo',
+    )
+    autocomplete_fields = ('purchase', 'item_name', 'Batch', 'unit', 'BaseUnit')
+    readonly_fields = ('created_on', 'updated_on')    
+
+class OpeningStockDetailInline(admin.TabularInline):
+    model = OpeningStockDetail
+    extra = 0
+    fields = (
+        'item_group',
+        'item_code',
+        'item_name',
+        'barcode_code',
+        'quantity',
+        'purchase_rate',
+        'item_net_amount',
+        'tax',
+        'item_tax_amount',
+        'unit',
+        'item_total_amount',
+        'QtyInBaseUnit',
+        'RateInBaseUnit',
+        'BaseUnit',
+        'SerialNo',
+        'Cost',
+    )
+    readonly_fields = ('created_on', 'updated_on')
+    show_change_link = True
+
+
+@admin.register(OpeningStockMaster)
+class OpeningStockMasterAdmin(admin.ModelAdmin):
+    list_display = (
+        'voucher_no',
+        'voucherType',
+        'transaction_date',
+        'cost_center',
+        'total_net_value',
+        'total_tax_amount',
+        'grand_total_amount',
+        'IsCleared',
+        'created_on',
+    )
+
+    list_filter = (
+        'voucherType',
+        'transaction_date',
+        'cost_center',
+        'IsCleared',
+    )
+
+    search_fields = (
+        'voucher_no',
+        'remarks',
+        'items__item_code',       # Search by Item Code
+        'items__barcode_code',    # Search by Barcode
+        'items__item_name__item_name',  # Search by Item Name
+    )
+
+    date_hierarchy = 'transaction_date'
+
+    inlines = [OpeningStockDetailInline]
+
+    ordering = ('-transaction_date', '-id')
+
+
+@admin.register(OpeningStockDetail)
+class OpeningStockDetailAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'opening_stock',
+        'item_code',
+        'item_name',
+        'barcode_code',
+        'quantity',
+        'purchase_rate',
+        'item_total_amount',
+        'SerialNo',
+    )
+
+    search_fields = (
+        'item_code',
+        'barcode_code',
+        'item_name__item_name',
+        'opening_stock__voucher_no',
+    )
+
+    list_filter = (
+        'item_group',
+        'unit',
+        'BaseUnit',
+    )
+
+    list_select_related = (
+        'opening_stock',
+        'item_name',
+        'item_group',
+        'unit',
+        'BaseUnit',
+    )
+
+    ordering = ('-id',)    

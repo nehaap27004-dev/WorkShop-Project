@@ -4,61 +4,123 @@
 
 {% block content %}
 <style>
-    .module-title {
-        color: #5A8DEE;
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 26px;
+    /* ── Azur Burgundy Module Standards ── */
+    .text-burgundy { color: #9f1045 !important; }
+    .bg-burgundy { background-color: #9f1045 !important; color: #fff !important; }
+
+    .btn-custom-primary {
+        background-color: #9f1045 !important;
+        border-color: #9f1045 !important;
+        color: #fff !important;
         font-weight: 500;
+        transition: all 0.2s ease-in-out;
     }
+    .btn-custom-primary:hover {
+        background-color: #830d38 !important;
+        border-color: #830d38 !important;
+        color: #fff !important;
+    }
+
+    /* KPI Cards */
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+    }
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .kpi-content {
+        min-width: 0;
+    }
+    .kpi-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    /* Card Banner Header */
     .card-banner-header {
-        background-color: #dce4ec !important;
-        padding: 12px 20px;
-        border-bottom: none;
+        background-color: #ffffff;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.9rem 1.25rem;
     }
     .card-banner-title {
-        color: #7b8b9a;
-        font-weight: 500;
-        font-size: 15px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #2d3748;
+        display: inline-flex;
+        align-items: center;
     }
-    .custom-btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
-        color: #ffffff !important;
-        border-radius: 4px;
-        font-size: 14px;
-        padding: 5px 18px;
+
+    /* Table styling */
+    .table thead th {
+        background-color: #fafbfc;
+        color: #4a5568;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
     }
-    .table-custom-header th {
-        background-color: #f4f7fb !important;
-        color: #6c7a89;
-        font-weight: 600;
-        font-size: 13.5px;
-        border-color: #e2e8f0 !important;
+    .table tbody td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+        vertical-align: middle;
     }
-    .stat-card-custom {
-        background: #ffffff;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        padding: 10px 16px;
-        flex: 1;
-        min-width: 150px;
+    .table-hover tbody tr:hover {
+        background-color: #fdfafb;
     }
 </style>
 
-<div class="container-fluid mt-3 mb-5">
+<div class="container-fluid p-0 mb-5">
 
-    <!-- Top Bar -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="module-title mb-0">{% trans "Service Categories" %}</h2>
-        <a href="{% url 'jobcard_app:service_category_create' %}" class="btn custom-btn-primary">
-            + {% trans "New Category" %}
+    <!-- Top Header Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="module-title mb-1">
+                <i class="bi bi-folder2 text-burgundy mr-2"></i>{% trans "Service Categories" %}
+            </h2>
+            <div class="text-muted small">{% trans "Classify workshop services into logical parent categories and management groups" %}</div>
+        </div>
+        <a href="{% url 'jobcard_app:service_category_create' %}" class="btn btn-custom-primary shadow-sm">
+            <i class="bi bi-plus-lg mr-1"></i>{% trans "New Category" %}
         </a>
     </div>
 
     <!-- Alert Messages -->
     {% if messages %}
         {% for m in messages %}
-            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4" role="alert">
+            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm" style="border-radius:8px;" role="alert">
                 {{ m }}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -67,45 +129,74 @@
         {% endfor %}
     {% endif %}
 
-    <!-- Stat Cards -->
-    <div class="d-flex gap-3 mb-4 flex-wrap">
-        <div class="stat-card-custom mr-2 mb-2">
-            <div class="text-muted small font-weight-bold">{% trans "TOTAL" %}</div>
-            <div class="h5 font-weight-bold mb-0" style="color: #5A8DEE;">{{ total }}</div>
+    <!-- KPI Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background:#fdf2f5 !important; color:#9f1045 !important;">
+                    <i class="bi bi-folder2"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">{% trans "TOTAL CATEGORIES" %}</div>
+                    <div class="kpi-value text-burgundy">{{ total }}</div>
+                </div>
+            </div>
         </div>
-        <div class="stat-card-custom mr-2 mb-2">
-            <div class="text-muted small font-weight-bold">{% trans "ACTIVE" %}</div>
-            <div class="h5 font-weight-bold mb-0 text-success">{{ active }}</div>
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background:#d1fae5 !important; color:#059669 !important;">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">{% trans "ACTIVE" %}</div>
+                    <div class="kpi-value text-success">{{ active }}</div>
+                </div>
+            </div>
         </div>
-        <div class="stat-card-custom mr-2 mb-2">
-            <div class="text-muted small font-weight-bold">{% trans "INACTIVE" %}</div>
-            <div class="h5 font-weight-bold mb-0 text-danger">{{ inactive }}</div>
+        <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background:#fee2e2 !important; color:#dc2626 !important;">
+                    <i class="bi bi-x-circle"></i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-label">{% trans "INACTIVE" %}</div>
+                    <div class="kpi-value text-danger">{{ inactive }}</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Category List Card -->
-    <div class="card shadow-sm border-0" style="border-radius: 8px; overflow: hidden; background: #ffffff;">
-        <div class="card-header card-banner-header d-flex justify-content-between align-items-center">
-            <span class="card-banner-title">{% trans "Category Details" %}</span>
-            <span style="color: #7b8b9a; font-size: 13.5px;">{% trans "Total:" %} {{ total }}</span>
+    <div class="card shadow-sm border-0" style="border-radius:10px;">
+        <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="card-banner-title">
+                <i class="bi bi-list-task text-burgundy mr-2"></i>{% trans "Category Details & Directory" %}
+            </span>
+            <span class="badge badge-secondary px-3 py-1 font-weight-bold" style="border-radius:6px;">
+                {% trans "Total Listed" %}: {{ total }}
+            </span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered mb-0">
+                <table class="table table-hover mb-0">
                     <thead>
-                        <tr class="table-custom-header">
-                            <th>{% trans "Name" %}</th>
+                        <tr>
+                            <th>{% trans "Category Name" %}</th>
                             <th>{% trans "Description" %}</th>
                             <th>{% trans "Status" %}</th>
-                            <th>{% trans "Created" %}</th>
-                            <th style="width: 160px;" class="text-center">{% trans "Action" %}</th>
+                            <th>{% trans "Created Date" %}</th>
+                            <th style="width: 150px;" class="text-center">{% trans "Action" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for cat in categories %}
                         <tr>
-                            <td class="align-middle font-weight-bold" style="color: #333;">{{ cat.name }}</td>
-                            <td class="align-middle">{{ cat.description|default:"—" }}</td>
+                            <td class="align-middle">
+                                <a href="{% url 'jobcard_app:service_category_edit' cat.pk %}" class="font-weight-bold text-burgundy" style="font-size:14px;">
+                                    <i class="bi bi-folder mr-1 text-secondary"></i>{{ cat.name }}
+                                </a>
+                            </td>
+                            <td class="align-middle text-muted">{{ cat.description|default:"—" }}</td>
                             <td class="align-middle">
                                 {% if cat.is_active %}
                                     <span class="badge badge-success px-2 py-1">{% trans "Active" %}</span>
@@ -113,24 +204,25 @@
                                     <span class="badge badge-secondary px-2 py-1">{% trans "Inactive" %}</span>
                                 {% endif %}
                             </td>
-                            <td class="align-middle">{{ cat.created_on|date:"d M Y" }}</td>
-                            <td class="text-center align-middle">
-                                <a href="{% url 'jobcard_app:service_category_edit' cat.pk %}" class="btn btn-sm btn-warning mr-1" style="border-radius: 4px; font-size: 13px;">
-                                    {% trans "Edit" %}
+                            <td class="align-middle text-muted">{{ cat.created_on|date:"d M Y" }}</td>
+                            <td class="text-center align-middle text-nowrap">
+                                <a href="{% url 'jobcard_app:service_category_edit' cat.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit' %}">
+                                    <i class="bi bi-pencil"></i>
                                 </a>
                                 <form method="post" action="{% url 'jobcard_app:service_category_delete' cat.pk %}"
-                                      onsubmit="return confirm('{% trans "Delete" %} {{ cat.name }}?')" style="display:inline">
+                                      onsubmit="return confirm('{% trans "Are you sure you want to delete" %} {{ cat.name }}?')" style="display:inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-danger" style="border-radius: 4px; font-size: 13px;">
-                                        {% trans "Delete" %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete' %}">
+                                        <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted" style="font-size: 14px;">
-                                {% trans "No service categories yet." %}
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-folder2 display-4 d-block mb-2 text-secondary"></i>
+                                {% trans "No service categories found. Click 'New Category' above to create one." %}
                             </td>
                         </tr>
                         {% endfor %}

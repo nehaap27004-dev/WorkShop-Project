@@ -46,7 +46,7 @@
         <div class="card-body">
 
             <!-- ACTION BUTTONS -->
-            <div class="mb-3">
+            <div class="mb-3 d-flex align-items-center flex-wrap gap-2">
                 <button type="button" class="btn btn-success" id="btn-cleared">
                     <i class="fas fa-check-circle"></i> {% trans "Cleared" %}
                 </button>
@@ -59,8 +59,12 @@
                 <a href="{% url 'accounts_app:cheque_clearance' %}" class="btn btn-secondary">
                     <i class="fas fa-sign-out-alt"></i> {% trans "Exit" %}
                 </a>
-            </div>
 
+                <div class="input-group ms-3" style="max-width: 240px;">
+                    <span class="input-group-text">{% trans "Posting Date" %}</span>
+                    <input type="date" class="form-control" id="posting-date">
+                </div>
+            </div>
             <hr>
 
             <!-- FILTER OPTIONS -->
@@ -96,9 +100,13 @@
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="input-group">
+                    <div class="input-group mb-2">
                         <span class="input-group-text">{% trans "Date" %}</span>
                         <input type="date" class="form-control" id="date-filter">
+                    </div>
+                    <div class="input-group" id="party-filter-wrapper" style="display:none;">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" id="party-filter" placeholder="{% trans 'Search Party...' %}">
                     </div>
                 </div>
             </div>
@@ -117,6 +125,7 @@
                             <th>{% trans "VoucherNo" %}</th>
                             <th>{% trans "Date" %}</th>
                             <th>{% trans "NetTotal" %}</th>
+                            <th>{% trans "Party" %}</th>
                             <th>{% trans "LedgerName" %}</th>
                             <th>{% trans "CheckDate" %}</th>
                             <th>{% trans "ChequeNo" %}</th>
@@ -171,42 +180,64 @@
     let bounceChargeModal;
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Initialize Bootstrap modal
-        bounceChargeModal = new bootstrap.Modal(document.getElementById('bounceChargeModal'));
+    bounceChargeModal = new bootstrap.Modal(document.getElementById('bounceChargeModal'));
 
-        loadBills();
+    // ✅ default posting date to today
+    const postingDateInput = document.getElementById('posting-date');
+    const today = new Date();
+    postingDateInput.value = today.toISOString().split('T')[0];
 
-        document.querySelectorAll('input[name="filterType"]').forEach(radio => {
-            radio.addEventListener('change', loadBills);
-        });
+    togglePartyFilterVisibility(); // ✅ fixed function name
+    loadBills();
 
-        document.getElementById('date-filter').addEventListener('change', loadBills);
-
-        document.getElementById('btn-cleared').addEventListener('click', () => updateStatus('Cleared'));
-        document.getElementById('btn-bounced').addEventListener('click', handleBounced);  // ✅ Changed
-        document.getElementById('btn-uncleared').addEventListener('click', () => updateStatus('Not Cleared'));
-
-        // ✅ Handle bounce charge confirmation
-        document.getElementById('confirm-bounce').addEventListener('click', confirmBounce);
-
-        document.getElementById('select-all').addEventListener('change', function (e) {
-            const checkboxes = document.querySelectorAll('.bill-checkbox');
-
-            checkboxes.forEach(cb => {
-                cb.checked = this.checked;
-                const billId = parseInt(cb.dataset.billId);
-                const row = cb.closest('tr');
-
-                if (this.checked) {
-                    selectedBills.add(billId);
-                    row.classList.add('selected-row');
-                } else {
-                    selectedBills.delete(billId);
-                    row.classList.remove('selected-row');
-                }
-            });
+    document.querySelectorAll('input[name="filterType"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            togglePartyFilterVisibility();
+            loadBills();
         });
     });
+
+    document.getElementById('date-filter').addEventListener('change', loadBills);
+
+    let partyFilterTimeout;
+    document.getElementById('party-filter').addEventListener('input', function () {
+        clearTimeout(partyFilterTimeout);
+        partyFilterTimeout = setTimeout(loadBills, 350);
+    });
+
+    document.getElementById('btn-cleared').addEventListener('click', () => updateStatus('Cleared'));
+    document.getElementById('btn-bounced').addEventListener('click', handleBounced);
+    document.getElementById('btn-uncleared').addEventListener('click', () => updateStatus('Not Cleared'));
+    document.getElementById('confirm-bounce').addEventListener('click', confirmBounce);
+
+    document.getElementById('select-all').addEventListener('change', function (e) {
+        const checkboxes = document.querySelectorAll('.bill-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = this.checked;
+            const billId = parseInt(cb.dataset.billId);
+            const row = cb.closest('tr');
+            if (this.checked) {
+                selectedBills.add(billId);
+                row.classList.add('selected-row');
+            } else {
+                selectedBills.delete(billId);
+                row.classList.remove('selected-row');
+            }
+        });
+    });
+});
+
+    // ✅ NEW — only payment-bill / receipt-bill have a party to search on
+    function togglePartyFilterVisibility() {
+        const filterType = document.querySelector('input[name="filterType"]:checked').value;
+        const wrapper = document.getElementById('party-filter-wrapper');
+        if (filterType === 'payment-bill' || filterType === 'receipt-bill') {
+            wrapper.style.display = '';
+        } else {
+            wrapper.style.display = 'none';
+            document.getElementById('party-filter').value = '';
+        }
+    }
 
     const translations = {
         selectBill: "{% trans 'Please select at least one bill' %}",
@@ -225,31 +256,28 @@
     function loadBills() {
         const filterType = document.querySelector('input[name="filterType"]:checked').value;
         const dateFilter = document.getElementById('date-filter').value || '';
+        const partyFilter = document.getElementById('party-filter').value.trim() || '';  // ✅ NEW
 
         const tbody = document.getElementById('bills-tbody');
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i> ' + translations.loading + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center"><i class="fas fa-spinner fa-spin"></i> ' + translations.loading + '</td></tr>';
 
         selectedBills.clear();
         document.getElementById('select-all').checked = false;
 
-        fetch(`/cheque-clearance/bills/?type=${filterType}&date=${dateFilter}`)
+        fetch(`/cheque-clearance/bills/?type=${filterType}&date=${dateFilter}&party=${encodeURIComponent(partyFilter)}`)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 return response.json();
             })
             .then(data => {
                 if (data.error) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">${translations.error}: ${data.error}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">${translations.error}: ${data.error}</td></tr>`;
                     return;
                 }
-
                 if (data.bills.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">' + translations.noBills + '</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">' + translations.noBills + '</td></tr>';
                     return;
                 }
-
                 tbody.innerHTML = '';
                 data.bills.forEach(bill => {
                     const row = document.createElement('tr');
@@ -262,7 +290,8 @@
                     </td>
                     <td>${bill.voucher_no}</td>
                     <td>${bill.date}</td>
-                    <td class="text-end">${parseFloat(bill.net_total).toFixed(2)}</td>
+                    <td class="text-end">${parseFloat(bill.net_total).toFixed(3)}</td>
+                    <td>${bill.party_name || ''}</td>
                     <td>${bill.ledger_name}</td>
                     <td>${bill.check_date}</td>
                     <td>${bill.cheque_no}</td>
@@ -275,7 +304,6 @@
                     checkbox.addEventListener('change', function (e) {
                         const billId = parseInt(this.dataset.billId);
                         const row = this.closest('tr');
-
                         if (this.checked) {
                             selectedBills.add(billId);
                             row.classList.add('selected-row');
@@ -288,7 +316,7 @@
             })
             .catch(error => {
                 console.error('Error loading bills:', error);
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">${translations.error}: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">${translations.error}: ${error.message}</td></tr>`;
             });
     }
 
@@ -328,9 +356,15 @@
             return;
         }
 
+        const postingDate = document.getElementById('posting-date').value;
+        if (!postingDate) {
+            alert("{% trans 'Please select a posting date' %}");
+            return;
+        }
+
         const confirmMsg = status === 'Bounced' && bounceCharge > 0
-            ? `${translations.confirmMark} ${selectedBills.size} bill(s) ${translations.as} "${status}" ${translations.withBounce} ₹${bounceCharge.toFixed(2)}?`
-            : `${translations.confirmMark} ${selectedBills.size} bill(s) ${translations.as} "${status}"?`;
+            ? `${translations.confirmMark} ${selectedBills.size} bill(s) ${translations.as} "${status}" ${translations.withBounce} ₹${bounceCharge.toFixed(3)} (${postingDate})?`
+            : `${translations.confirmMark} ${selectedBills.size} bill(s) ${translations.as} "${status}" (${postingDate})?`;
 
         if (!confirm(confirmMsg)) {
             return;
@@ -350,7 +384,8 @@
                     bill_id: billId,
                     status: status,
                     type: filterType,
-                    bounce_charge: bounceCharge  // ✅ Send bounce charge
+                    bounce_charge: bounceCharge,
+                    posting_date: postingDate   // ✅ NEW
                 })
             }).then(response => response.json());
 
