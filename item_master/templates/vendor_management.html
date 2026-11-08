@@ -3,119 +3,238 @@
 
 {% block content %}
 <style>
-     h2 {
-        text-align: center;
-        color: #333;
+    :root {
+        --primary-color: #9f1045;
+        --primary-hover: #830d38;
+        --primary-light: #fff5f8;
+        --primary-border: #f1d6df;
     }
 
-    form {
-        background: white;
-        padding: 20px;
-        margin: 20px auto;
-        width: 50%;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid var(--primary-border);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 1px 4px rgba(159,16,69,0.07);
     }
-
-    label {
-        font-weight: bold;
-        margin-top: 10px;
+    .page-header-card .page-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin: 0;
     }
+    .page-header-card .page-subtitle {
+        font-size: 0.82rem;
+        color: #6c757d;
+        margin: 0;
+    }
+    .header-icon {
+        width: 44px; height: 44px;
+        background: var(--primary-light);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        margin-right: 1rem; flex-shrink: 0;
+    }
+    .header-icon i { font-size: 1.3rem; color: var(--primary-color); }
 
-    input, textarea, select {
+    .content-card {
+        background: #ffffff;
+        border: 1px solid var(--primary-border);
+        border-radius: 12px;
+        box-shadow: 0 1px 4px rgba(159,16,69,0.07);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .card-banner-header {
+        background: var(--primary-light);
+        border-bottom: 1px solid var(--primary-border);
+        padding: 0.75rem 1.25rem;
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .card-banner-header h6 {
+        margin: 0;
+        font-size: 0.88rem; font-weight: 700;
+        color: var(--primary-color);
+        text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .card-body-padded { padding: 1.25rem; }
+
+    .form-label {
+        font-size: 0.78rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.04em;
+        color: #495057; margin-bottom: 0.3rem;
+    }
+    .form-control, .form-select {
+        border: 1px solid #dee2e6;
+        border-radius: 7px; font-size: 0.9rem;
+        padding: 0.42rem 0.75rem;
         width: 100%;
-        padding: 8px;
-        margin: 10px 0;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        box-sizing: border-box;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(159,16,69,0.12);
+        outline: none;
     }
 
-    input[type="submit"] {
-        background-color: darkred;
-        color: white;
-        padding: 10px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        width: 100%;
+    .btn-custom-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #ffffff;
+        font-size: 0.85rem; font-weight: 600;
+        border-radius: 8px; padding: 0.45rem 1.25rem;
+        transition: background-color 0.2s, border-color 0.2s;
+    }
+    .btn-custom-primary:hover, .btn-custom-primary:focus {
+        background-color: var(--primary-hover);
+        border-color: var(--primary-hover); color: #ffffff;
     }
 
-    input[type="submit"]:hover {
-        background-color: #b01033;
+    .table-modern { font-size: 0.875rem; margin: 0; }
+    .table-modern thead th {
+        background: var(--primary-light);
+        color: var(--primary-color);
+        font-size: 0.75rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--primary-border);
+        padding: 0.65rem 0.85rem; white-space: nowrap;
     }
+    .table-modern tbody tr:hover { background-color: #fdf4f7; }
+    .table-modern td {
+        padding: 0.6rem 0.85rem; vertical-align: middle;
+        border-color: #f0f0f0; color: #2d2d2d;
+    }
+    .table-modern tbody tr:last-child td { border-bottom: none; }
 
-    .vendor-list {
-        margin-top: 30px;
-        border-collapse: collapse;
-        width: 80%;
-        margin: 0 auto;
-        font-size: 14px;
+    .btn-action-edit {
+        background: #fff5f8; border: 1px solid var(--primary-border);
+        color: var(--primary-color); border-radius: 6px;
+        font-size: 0.75rem; font-weight: 600; padding: 0.28rem 0.65rem;
+        transition: all 0.18s; text-decoration: none; display: inline-block;
     }
+    .btn-action-edit:hover { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
 
-    .vendor-list th, .vendor-list td {
-        padding: 10px;
-        text-align: left;
-        border: 1px solid #ddd;
-    }
-
-    .vendor-list th {
-        background-color: #f4f4f4;
-    }
-
-    .actions a {
-        margin-right: 10px;
-        text-decoration: none;
-        color: #007BFF;
-    }
-
-    .actions a:hover {
-        text-decoration: underline;
-    }
+    .search-wrapper { position: relative; max-width: 280px; }
+    .search-wrapper .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #adb5bd; font-size: 0.85rem; }
+    .search-wrapper input { padding-left: 2rem; font-size: 0.85rem; border-radius: 8px; }
 </style>
 
-<h2>Vendor Management</h2>
+<div class="container-fluid px-0">
 
-<!-- Vendor Creation/Update Form -->
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
+    <!-- Page Header -->
+    <div class="page-header-card">
+        <div class="d-flex align-items-center">
+            <div class="header-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+                <p class="page-title">Vendor Management</p>
+                <p class="page-subtitle">{% if vendor %}Edit vendor details{% else %}Add and manage vendors{% endif %}</p>
+            </div>
+        </div>
+        {% if vendor %}
+            <a href="{% url 'item_master:vendor_management' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-plus-circle me-1"></i>Add New
+            </a>
+        {% endif %}
+    </div>
 
-    <input type="submit" value="{% if vendor %}Update Vendor{% else %}Create Vendor{% endif %}">
-</form>
+    <!-- Add / Edit Form -->
+    <div class="content-card">
+        <div class="card-banner-header">
+            <i class="bi bi-person-plus-fill" style="color: var(--primary-color);"></i>
+            <h6>{% if vendor %}Edit Vendor{% else %}Add New Vendor{% endif %}</h6>
+        </div>
+        <div class="card-body-padded">
+            <form method="POST">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+                <div class="d-flex justify-content-end gap-2 pt-2 border-top mt-2">
+                    {% if vendor %}
+                        <a href="{% url 'item_master:vendor_management' %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-custom-primary">
+                            <i class="bi bi-check2 me-1"></i>Update Vendor
+                        </button>
+                    {% else %}
+                        <button type="submit" class="btn btn-custom-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Save Vendor
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
 
-<!-- Vendor List -->
-<h2>Vendors List</h2>
+    <!-- Vendor List -->
+    <div class="content-card">
+        <div class="card-banner-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-list-ul" style="color: var(--primary-color);"></i>
+                <h6 class="mb-0">Vendors List</h6>
+            </div>
+            <div class="search-wrapper">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" id="vendorSearch" class="form-control form-control-sm" placeholder="Search vendors...">
+            </div>
+        </div>
+        <div class="table-responsive">
+            {% if vendors %}
+            <table class="table table-modern" id="vendorTable">
+                <thead>
+                    <tr>
+                        <th style="width:40px;">#</th>
+                        <th>Name</th>
+                        <th>Mobile</th>
+                        <th>Email</th>
+                        <th>City</th>
+                        <th style="width:100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in vendors %}
+                    <tr>
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td><strong>{{ v.vendor_name }}</strong></td>
+                        <td>{{ v.vendor_mobile|default:"—" }}</td>
+                        <td>{{ v.vendor_email|default:"—" }}</td>
+                        <td>{{ v.vendor_city|default:"—" }}</td>
+                        <td>
+                            <a href="{% url 'item_master:vendor_management' v.id %}" class="btn btn-action-edit">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-people" style="font-size:2.5rem; opacity:0.3;"></i>
+                <p class="mt-2 mb-0">No vendors found. Add your first vendor above.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 
-<table class="vendor-list">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Mobile</th>
-            <th>Email</th>
-            <th>City</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for vendor in vendors %}
-        <tr>
-            <td>{{ vendor.vendor_name }}</td>
-            <td>{{ vendor.vendor_mobile }}</td>
-            <td>{{ vendor.vendor_email }}</td>
-            <td>{{ vendor.vendor_city }}</td>
-            <td class="actions">
-                <a href="{% url 'item_master:vendor_management' vendor.id %}">Update</a>
-                
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="5">No vendors available.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+</div>
 
+<script>
+    document.getElementById('vendorSearch').addEventListener('input', function () {
+        const query = this.value.toLowerCase();
+        document.querySelectorAll('#vendorTable tbody tr').forEach(function (row) {
+            row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+        });
+    });
+</script>
 {% endblock %}

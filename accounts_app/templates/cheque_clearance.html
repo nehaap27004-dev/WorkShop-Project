@@ -4,170 +4,367 @@
 
 {% block content %}
 <style>
-    /* ✅ Force checkboxes to be visible - override any parent CSS */
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
+
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
+
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    /* Action Buttons */
+    .btn-action-cleared {
+        background-color: #10b981 !important;
+        border-color: #10b981 !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        border-radius: 6px;
+        padding: 0.45rem 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action-cleared:hover {
+        background-color: #059669 !important;
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-action-bounced {
+        background-color: #ef4444 !important;
+        border-color: #ef4444 !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        border-radius: 6px;
+        padding: 0.45rem 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action-bounced:hover {
+        background-color: #dc2626 !important;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-action-uncleared {
+        background-color: #f59e0b !important;
+        border-color: #f59e0b !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        border-radius: 6px;
+        padding: 0.45rem 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action-uncleared:hover {
+        background-color: #d97706 !important;
+        box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-action-exit {
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #475569 !important;
+        font-weight: 500;
+        border-radius: 6px;
+        padding: 0.45rem 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action-exit:hover {
+        background-color: #f8fafc !important;
+        color: #0f172a !important;
+    }
+
+    /* Filter Pills */
+    .filter-pills-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .filter-pill-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+        cursor: pointer;
+        margin: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .filter-pill-label input[type="radio"] {
+        accent-color: var(--primary-burgundy);
+        cursor: pointer;
+    }
+
+    /* Table styling */
+    .table-modern {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top: none;
+        white-space: nowrap;
+    }
+
+    .table-modern tbody td {
+        padding: 0.8rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        border-top: 1px solid #f1f3f5;
+        color: #212529;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: var(--primary-burgundy-light);
+    }
+
+    /* Checkbox visibility */
     input[type="checkbox"].bill-checkbox,
     input[type="checkbox"]#select-all {
         display: inline-block !important;
-        width: 20px !important;
-        height: 20px !important;
+        width: 18px !important;
+        height: 18px !important;
         opacity: 1 !important;
         visibility: visible !important;
         position: relative !important;
         cursor: pointer !important;
-        margin: 0 auto !important;
-        -webkit-appearance: checkbox !important;
-        -moz-appearance: checkbox !important;
-        appearance: checkbox !important;
+        accent-color: var(--primary-burgundy);
+        vertical-align: middle;
     }
 
-    #bills-table th:first-child,
-    #bills-table td:first-child {
-        text-align: center !important;
-        vertical-align: middle !important;
-        padding: 10px !important;
-    }
-
-    /* Highlight selected rows */
     tr.selected-row {
-        background-color: #e3f2fd !important;
+        background-color: #fff0f4 !important;
     }
 
-    /* Make sure table cells don't hide overflow */
-    #bills-table td {
-        overflow: visible !important;
+    .status-badge-cleared {
+        background-color: #d1fae5;
+        color: #065f46;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.55rem;
+        border-radius: 50px;
+        display: inline-block;
+    }
+
+    .status-badge-bounced {
+        background-color: #fee2e2;
+        color: #991b1b;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.55rem;
+        border-radius: 50px;
+        display: inline-block;
+    }
+
+    .status-badge-pending {
+        background-color: #fef3c7;
+        color: #92400e;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.55rem;
+        border-radius: 50px;
+        display: inline-block;
     }
 </style>
 
-<div class="container-fluid mt-3">
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h4><i class="fas fa-money-check"></i> {% trans "Cheque Clearance" %}</h4>
-        </div>
-        <div class="card-body">
-
-            <!-- ACTION BUTTONS -->
-            <div class="mb-3 d-flex align-items-center flex-wrap gap-2">
-                <button type="button" class="btn btn-success" id="btn-cleared">
-                    <i class="fas fa-check-circle"></i> {% trans "Cleared" %}
-                </button>
-                <button type="button" class="btn btn-danger" id="btn-bounced">
-                    <i class="fas fa-times-circle"></i> {% trans "Bounced" %}
-                </button>
-                <button type="button" class="btn btn-warning" id="btn-uncleared">
-                    <i class="fas fa-clock"></i> {% trans "Un Cleared" %}
-                </button>
-                <a href="{% url 'accounts_app:cheque_clearance' %}" class="btn btn-secondary">
-                    <i class="fas fa-sign-out-alt"></i> {% trans "Exit" %}
+<div class="voucher-container">
+    <!-- Header Banner -->
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Finance & Accounts" %}
+                    </span>
+                </div>
+                <h3 class="font-weight-bold text-dark mb-1">{% trans "Cheque Clearance" %}</h3>
+                <p class="text-muted small mb-0">{% trans "Track, clear, or mark cheque bounce status for payable & receivable transactions." %}</p>
+            </div>
+            <div>
+                <a href="{% url 'accounts_app:cheque_clearance' %}" class="btn-action-exit">
+                    <i class="bi bi-arrow-clockwise"></i> {% trans "Refresh" %}
                 </a>
+            </div>
+        </div>
+    </div>
 
-                <div class="input-group ms-3" style="max-width: 240px;">
-                    <span class="input-group-text">{% trans "Posting Date" %}</span>
-                    <input type="date" class="form-control" id="posting-date">
+    <!-- Main Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <!-- Action Toolbar -->
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <button type="button" class="btn-action-cleared" id="btn-cleared">
+                        <i class="bi bi-check-circle-fill"></i> {% trans "Cleared" %}
+                    </button>
+                    <button type="button" class="btn-action-bounced" id="btn-bounced">
+                        <i class="bi bi-x-circle-fill"></i> {% trans "Bounced" %}
+                    </button>
+                    <button type="button" class="btn-action-uncleared" id="btn-uncleared">
+                        <i class="bi bi-clock-fill"></i> {% trans "Un Cleared" %}
+                    </button>
+                    <a href="{% url 'accounts_app:cheque_clearance' %}" class="btn-action-exit">
+                        <i class="bi bi-box-arrow-right"></i> {% trans "Exit" %}
+                    </a>
+                </div>
+
+                <div class="d-flex align-items-center gap-2" style="max-width: 280px;">
+                    <span class="text-muted small font-weight-bold" style="white-space: nowrap;">{% trans "Posting Date" %}:</span>
+                    <input type="date" class="form-control form-control-sm" id="posting-date" style="border-radius: 6px; border: 1px solid #cbd5e1;">
                 </div>
             </div>
-            <hr>
 
-            <!-- FILTER OPTIONS -->
-            <div class="row mb-3">
-                <div class="col-md-8">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="filterType" id="radio-payable"
-                            value="payable" checked>
-                        <label class="form-check-label" for="radio-payable">
+            <hr class="my-3" style="border-top: 1px solid #f1f3f5;">
+
+            <!-- Filters -->
+            <div class="row align-items-center g-2">
+                <div class="col-md-7">
+                    <div class="filter-pills-box">
+                        <label class="filter-pill-label" for="radio-payable">
+                            <input type="radio" name="filterType" id="radio-payable" value="payable" checked>
                             {% trans "Payable" %}
                         </label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="filterType" id="radio-receivable"
-                            value="receivable">
-                        <label class="form-check-label" for="radio-receivable">
+                        <label class="filter-pill-label" for="radio-receivable">
+                            <input type="radio" name="filterType" id="radio-receivable" value="receivable">
                             {% trans "Receivable" %}
                         </label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="filterType" id="radio-payment-bill"
-                            value="payment-bill">
-                        <label class="form-check-label" for="radio-payment-bill">
+                        <label class="filter-pill-label" for="radio-payment-bill">
+                            <input type="radio" name="filterType" id="radio-payment-bill" value="payment-bill">
                             {% trans "Payment-Bill" %}
                         </label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="filterType" id="radio-receipt-bill"
-                            value="receipt-bill">
-                        <label class="form-check-label" for="radio-receipt-bill">
+                        <label class="filter-pill-label" for="radio-receipt-bill">
+                            <input type="radio" name="filterType" id="radio-receipt-bill" value="receipt-bill">
                             {% trans "Receipt-Bill" %}
                         </label>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="input-group mb-2">
-                        <span class="input-group-text">{% trans "Date" %}</span>
-                        <input type="date" class="form-control" id="date-filter">
+
+                <div class="col-md-5 d-flex gap-2 justify-content-end">
+                    <div style="min-width: 170px;">
+                        <input type="date" class="form-control form-control-sm" id="date-filter" style="border-radius: 6px;" title="{% trans 'Filter by Date' %}">
                     </div>
-                    <div class="input-group" id="party-filter-wrapper" style="display:none;">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" id="party-filter" placeholder="{% trans 'Search Party...' %}">
+                    <div id="party-filter-wrapper" style="display:none; min-width: 200px;">
+                        <input type="text" class="form-control form-control-sm" id="party-filter" placeholder="{% trans 'Search Party...' %}" style="border-radius: 6px;">
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- BILLS TABLE -->
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="bills-table">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="100" class="text-center">
-                                <label>
-                                    <input type="checkbox" id="select-all">
-                                    {% trans "Select All" %}
-                                </label>
-                            </th>
-                            <th>{% trans "VoucherNo" %}</th>
-                            <th>{% trans "Date" %}</th>
-                            <th>{% trans "NetTotal" %}</th>
-                            <th>{% trans "Party" %}</th>
-                            <th>{% trans "LedgerName" %}</th>
-                            <th>{% trans "CheckDate" %}</th>
-                            <th>{% trans "ChequeNo" %}</th>
-                            <th>{% trans "Status" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bills-tbody">
-                        <tr>
-                            <td colspan="7" class="text-center text-muted">
-                                <i class="fas fa-spinner fa-spin"></i> {% trans "Loading..." %}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
+        <!-- Table -->
+        <div class="table-responsive">
+            <table class="table-modern" id="bills-table">
+                <thead>
+                    <tr>
+                        <th width="90" class="text-center">
+                            <label class="mb-0 d-inline-flex align-items-center gap-1" style="cursor: pointer;">
+                                <input type="checkbox" id="select-all">
+                                <span class="small font-weight-bold">{% trans "All" %}</span>
+                            </label>
+                        </th>
+                        <th>{% trans "Voucher No" %}</th>
+                        <th>{% trans "Date" %}</th>
+                        <th class="text-right">{% trans "Net Total" %}</th>
+                        <th>{% trans "Party" %}</th>
+                        <th>{% trans "Ledger Name" %}</th>
+                        <th>{% trans "Cheque Date" %}</th>
+                        <th>{% trans "Cheque No" %}</th>
+                        <th class="text-center">{% trans "Status" %}</th>
+                    </tr>
+                </thead>
+                <tbody id="bills-tbody">
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <div class="spinner-border spinner-border-sm text-burgundy mr-1" role="status"></div>
+                            {% trans "Loading records..." %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
+
     <!-- BOUNCE CHARGE MODAL -->
     <div class="modal fade" id="bounceChargeModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title">{% trans "Enter Bounce Charge" %}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                <div class="modal-header text-white" style="background-color: var(--primary-burgundy);">
+                    <h5 class="modal-title font-weight-bold"><i class="bi bi-exclamation-triangle mr-2"></i>{% trans "Enter Bounce Charge" %}</h5>
+                    <button type="button" class="close text-white" data-bs-dismiss="modal" style="opacity: 0.9;"><span>&times;</span></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label for="bounce-charge-amount" class="form-label">{% trans "Bounce Charge Amount:" %}</label>
+                        <label for="bounce-charge-amount" class="form-label font-weight-bold text-dark">{% trans "Bounce Charge Amount:" %}</label>
                         <input type="number" class="form-control" id="bounce-charge-amount"
-                            placeholder="{% trans 'Enter bounce charge' %}" step="0.01" min="0" value="0">
+                            placeholder="{% trans 'Enter bounce charge' %}" step="0.01" min="0" value="0" style="border-radius: 8px;">
                     </div>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> {% trans "This charge will be debited to Bank Charges
-                        account" %}
+                    <div class="alert mb-0" style="background-color: var(--primary-burgundy-light); border: 1px solid var(--primary-burgundy-border); color: var(--primary-burgundy); border-radius: 8px; font-size: 0.85rem;">
+                        <i class="bi bi-info-circle mr-1"></i> {% trans "This charge will be debited to Bank Charges account" %}
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel"
-                        %}</button>
-                    <button type="button" class="btn btn-danger" id="confirm-bounce">
-                        <i class="fas fa-check"></i> {% trans "Confirm Bounce" %}
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius: 6px;">{% trans "Cancel" %}</button>
+                    <button type="button" class="btn btn-danger btn-sm" id="confirm-bounce" style="border-radius: 6px;">
+                        <i class="bi bi-check2"></i> {% trans "Confirm Bounce" %}
                     </button>
                 </div>
             </div>
@@ -180,54 +377,53 @@
     let bounceChargeModal;
 
     document.addEventListener('DOMContentLoaded', function () {
-    bounceChargeModal = new bootstrap.Modal(document.getElementById('bounceChargeModal'));
+        bounceChargeModal = new bootstrap.Modal(document.getElementById('bounceChargeModal'));
 
-    // ✅ default posting date to today
-    const postingDateInput = document.getElementById('posting-date');
-    const today = new Date();
-    postingDateInput.value = today.toISOString().split('T')[0];
+        // default posting date to today
+        const postingDateInput = document.getElementById('posting-date');
+        const today = new Date();
+        postingDateInput.value = today.toISOString().split('T')[0];
 
-    togglePartyFilterVisibility(); // ✅ fixed function name
-    loadBills();
+        togglePartyFilterVisibility();
+        loadBills();
 
-    document.querySelectorAll('input[name="filterType"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            togglePartyFilterVisibility();
-            loadBills();
+        document.querySelectorAll('input[name="filterType"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                togglePartyFilterVisibility();
+                loadBills();
+            });
+        });
+
+        document.getElementById('date-filter').addEventListener('change', loadBills);
+
+        let partyFilterTimeout;
+        document.getElementById('party-filter').addEventListener('input', function () {
+            clearTimeout(partyFilterTimeout);
+            partyFilterTimeout = setTimeout(loadBills, 350);
+        });
+
+        document.getElementById('btn-cleared').addEventListener('click', () => updateStatus('Cleared'));
+        document.getElementById('btn-bounced').addEventListener('click', handleBounced);
+        document.getElementById('btn-uncleared').addEventListener('click', () => updateStatus('Not Cleared'));
+        document.getElementById('confirm-bounce').addEventListener('click', confirmBounce);
+
+        document.getElementById('select-all').addEventListener('change', function (e) {
+            const checkboxes = document.querySelectorAll('.bill-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+                const billId = parseInt(cb.dataset.billId);
+                const row = cb.closest('tr');
+                if (this.checked) {
+                    selectedBills.add(billId);
+                    row.classList.add('selected-row');
+                } else {
+                    selectedBills.delete(billId);
+                    row.classList.remove('selected-row');
+                }
+            });
         });
     });
 
-    document.getElementById('date-filter').addEventListener('change', loadBills);
-
-    let partyFilterTimeout;
-    document.getElementById('party-filter').addEventListener('input', function () {
-        clearTimeout(partyFilterTimeout);
-        partyFilterTimeout = setTimeout(loadBills, 350);
-    });
-
-    document.getElementById('btn-cleared').addEventListener('click', () => updateStatus('Cleared'));
-    document.getElementById('btn-bounced').addEventListener('click', handleBounced);
-    document.getElementById('btn-uncleared').addEventListener('click', () => updateStatus('Not Cleared'));
-    document.getElementById('confirm-bounce').addEventListener('click', confirmBounce);
-
-    document.getElementById('select-all').addEventListener('change', function (e) {
-        const checkboxes = document.querySelectorAll('.bill-checkbox');
-        checkboxes.forEach(cb => {
-            cb.checked = this.checked;
-            const billId = parseInt(cb.dataset.billId);
-            const row = cb.closest('tr');
-            if (this.checked) {
-                selectedBills.add(billId);
-                row.classList.add('selected-row');
-            } else {
-                selectedBills.delete(billId);
-                row.classList.remove('selected-row');
-            }
-        });
-    });
-});
-
-    // ✅ NEW — only payment-bill / receipt-bill have a party to search on
     function togglePartyFilterVisibility() {
         const filterType = document.querySelector('input[name="filterType"]:checked').value;
         const wrapper = document.getElementById('party-filter-wrapper');
@@ -256,10 +452,10 @@
     function loadBills() {
         const filterType = document.querySelector('input[name="filterType"]:checked').value;
         const dateFilter = document.getElementById('date-filter').value || '';
-        const partyFilter = document.getElementById('party-filter').value.trim() || '';  // ✅ NEW
+        const partyFilter = document.getElementById('party-filter').value.trim() || '';
 
         const tbody = document.getElementById('bills-tbody');
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center"><i class="fas fa-spinner fa-spin"></i> ' + translations.loading + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-burgundy mr-1" role="status"></div> ' + translations.loading + '</td></tr>';
 
         selectedBills.clear();
         document.getElementById('select-all').checked = false;
@@ -271,31 +467,38 @@
             })
             .then(data => {
                 if (data.error) {
-                    tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">${translations.error}: ${data.error}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">${translations.error}: ${data.error}</td></tr>`;
                     return;
                 }
                 if (data.bills.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">' + translations.noBills + '</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-5"><i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>' + translations.noBills + '</td></tr>';
                     return;
                 }
                 tbody.innerHTML = '';
                 data.bills.forEach(bill => {
                     const row = document.createElement('tr');
+                    
+                    let statusHtml = '';
+                    if (bill.cleared === 'Cleared') {
+                        statusHtml = '<span class="status-badge-cleared">Cleared</span>';
+                    } else if (bill.cleared === 'Bounced') {
+                        statusHtml = '<span class="status-badge-bounced">Bounced</span>';
+                    } else {
+                        statusHtml = `<span class="status-badge-pending">${bill.cleared || 'Pending'}</span>`;
+                    }
+
                     row.innerHTML = `
                     <td class="text-center">
-                        <label style="cursor: pointer; display: block;">
-                            <input type="checkbox" class="bill-checkbox" data-bill-id="${bill.id}">
-                            <span style="margin-left: 5px;">${translations.select}</span>
-                        </label>
+                        <input type="checkbox" class="bill-checkbox" data-bill-id="${bill.id}">
                     </td>
-                    <td>${bill.voucher_no}</td>
+                    <td><strong class="font-monospace" style="color: var(--primary-burgundy);">${bill.voucher_no}</strong></td>
                     <td>${bill.date}</td>
-                    <td class="text-end">${parseFloat(bill.net_total).toFixed(3)}</td>
-                    <td>${bill.party_name || ''}</td>
-                    <td>${bill.ledger_name}</td>
-                    <td>${bill.check_date}</td>
-                    <td>${bill.cheque_no}</td>
-                    <td>${bill.cleared}</td>
+                    <td class="text-right font-weight-bold">${parseFloat(bill.net_total).toFixed(3)}</td>
+                    <td>${bill.party_name || '-'}</td>
+                    <td><strong>${bill.ledger_name}</strong></td>
+                    <td>${bill.check_date || '-'}</td>
+                    <td><span class="badge badge-light border">${bill.cheque_no || '-'}</span></td>
+                    <td class="text-center">${statusHtml}</td>
                 `;
                     tbody.appendChild(row);
                 });
@@ -316,25 +519,19 @@
             })
             .catch(error => {
                 console.error('Error loading bills:', error);
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">${translations.error}: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">${translations.error}: ${error.message}</td></tr>`;
             });
     }
 
-    // ✅ Handle Bounced button - show modal
     function handleBounced() {
         if (selectedBills.size === 0) {
             alert(translations.selectBill);
             return;
         }
-
-        // Reset bounce charge input
         document.getElementById('bounce-charge-amount').value = '0';
-
-        // Show modal
         bounceChargeModal.show();
     }
 
-    // ✅ Confirm bounce with charge
     function confirmBounce() {
         const bounceCharge = parseFloat(document.getElementById('bounce-charge-amount').value) || 0;
 
@@ -343,10 +540,7 @@
             return;
         }
 
-        // Hide modal
         bounceChargeModal.hide();
-
-        // Update status with bounce charge
         updateStatus('Bounced', bounceCharge);
     }
 
@@ -385,7 +579,7 @@
                     status: status,
                     type: filterType,
                     bounce_charge: bounceCharge,
-                    posting_date: postingDate   // ✅ NEW
+                    posting_date: postingDate
                 })
             }).then(response => response.json());
 

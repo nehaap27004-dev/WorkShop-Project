@@ -25,19 +25,46 @@
 </style>
 
 
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-end mb-3">
-        {% has_priv request.user 8 "can_read" as can_read_payment %}
-        {% if can_read_payment %}
-        <a href="{% url 'accounts_app:list_payment' %}" class="btn btn-custom">
-            <i class="bi bi-list"></i> {% trans "View" %}
-        </a>
-        {% endif %}
+<div class="voucher-container">
+    <!-- Header Banner -->
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: #fff5f8; color: #9f1045; font-weight: 600; font-size: 0.75rem; border: 1px solid #f1d6df;">
+                        {% trans "Finance & Accounts" %}
+                    </span>
+                </div>
+                <h3 class="font-weight-bold text-dark mb-1">
+                    {% if is_edit_mode %}
+                        {% trans "Edit Payment" %}
+                    {% else %}
+                        {% trans "Create Payment" %}
+                    {% endif %}
+                </h3>
+                <p class="text-muted small mb-0">{% trans "Record outgoing payments, supplier settlements, and bank disbursements." %}</p>
+            </div>
+            <div>
+                {% has_priv request.user 8 "can_read" as can_read_payment %}
+                {% if can_read_payment %}
+                <a href="{% url 'accounts_app:list_payment' %}" class="btn-custom-outline">
+                    <i class="bi bi-list"></i> {% trans "Payments List" %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-header bg-white border-bottom">
-            <h4 class="mb-0 text-dark">{% trans "Create Payment" %}</h4>
+    <div class="card shadow-sm border" style="border-radius: 12px; border-color: #e9ecef;">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="bi bi-credit-card text-burgundy mr-2"></i>
+                {% if is_edit_mode %}
+                    {% trans "Edit Payment Details" %}
+                {% else %}
+                    {% trans "New Payment Voucher" %}
+                {% endif %}
+            </h5>
         </div>
         <div class="card-body">
             <form method="POST" id="paymentForm">
@@ -408,20 +435,62 @@
 </div>
 
 <style>
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    .text-burgundy {
+        color: #9f1045 !important;
+    }
+
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
     .btn-custom {
-        background-color: #5A8DEE;
-        border-color: #5A8DEE;
-        color: white;
+        background-color: #9f1045 !important;
+        border-color: #9f1045 !important;
+        color: white !important;
+        font-weight: 500;
+        border-radius: 6px;
+        transition: all 0.2s ease;
     }
 
     .btn-custom:hover {
-        background-color: #4a7dd4;
-        border-color: #4a7dd4;
-        color: white;
+        background-color: #830d38 !important;
+        border-color: #830d38 !important;
+        color: white !important;
+        box-shadow: 0 4px 10px rgba(159, 16, 69, 0.2);
+    }
+
+    .btn-custom-outline {
+        color: #9f1045 !important;
+        border: 1px solid #9f1045 !important;
+        background-color: transparent !important;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-custom-outline:hover {
+        background-color: #9f1045 !important;
+        color: #ffffff !important;
     }
 
     .form-label {
-        font-size: 0.875rem;
+        font-size: 0.85rem;
         color: #495057;
         margin-bottom: 0.375rem;
         font-weight: 600;
@@ -432,7 +501,7 @@
         font-size: 0.875rem;
         padding: 0.5rem 0.75rem;
         border: 1px solid #ced4da;
-        border-radius: 0.25rem;
+        border-radius: 0.35rem;
         width: 100%;
     }
 
@@ -450,21 +519,22 @@
         color: #495057;
         background-color: #fff;
         border: 1px solid #ced4da;
-        border-radius: 0.25rem;
+        border-radius: 0.35rem;
     }
 
     input:focus,
     textarea:focus,
     select:focus {
-        border-color: #5A8DEE;
+        border-color: #9f1045 !important;
         outline: 0;
-        box-shadow: 0 0 0 0.2rem rgba(90, 141, 238, 0.25);
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
     }
 
     input[type="checkbox"] {
         width: auto;
         height: 18px;
         cursor: pointer;
+        accent-color: #9f1045;
     }
 
     .form-check {
@@ -485,29 +555,28 @@
     }
 
     .card {
-        border: none;
-        border-radius: 0.5rem;
+        border-radius: 12px;
     }
 
     .card-header {
         padding: 1.25rem 1.5rem;
-        border-radius: 0.5rem 0.5rem 0 0 !important;
+        border-radius: 12px 12px 0 0 !important;
     }
 
     .table-hover tbody tr:hover {
-        background-color: #f8f9fa;
+        background-color: #fff5f8;
     }
 
     #displayTotal,
     #displayTotalNet {
         font-weight: bold;
         font-size: 1.1rem;
-        color: #28a745;
+        color: #9f1045;
     }
 
     /* Toggle switch style */
     #detailedPaymentToggle {
-        accent-color: #5A8DEE;
+        accent-color: #9f1045;
     }
 </style>
 

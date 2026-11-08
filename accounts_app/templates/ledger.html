@@ -1,142 +1,231 @@
 {% extends 'fleet_base1.html' %}
 {% load i18n %}
+{% load static %}
 
 {% block content %}
-<!-- Custom CSS -->
 <style>
-    h2,
-    h3,
-    h4,
-    h5 {
-        font-family: 'Segoe UI', sans-serif;
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
+
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
+
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
     }
 
     form label {
-        font-weight: 500;
-        color: #444;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.85rem;
+        margin-bottom: 0.35rem;
     }
 
-    input,
-    select,
-    textarea {
+    input, select, textarea {
         width: 100% !important;
         border: 1px solid #ced4da;
         border-radius: 6px;
         padding: 6px 10px;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
 
-    input:focus,
-    select:focus,
-    textarea:focus {
-        border-color: #5A8DEE;
-        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+    input:focus, select:focus, textarea:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
         outline: none;
     }
 
-    .btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
-    }
-
-    .btn-secondary {
-        background-color: #6c757d !important;
-        border-color: #6c757d !important;
-    }
-
-    .btn-danger {
-        background-color: #dc3545 !important;
-        border-color: #dc3545 !important;
-    }
-
-    .card {
-        border-radius: 12px;
-    }
-
-    .card-header {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .table th {
-        background-color: #343a40;
-        color: white;
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
         font-weight: 600;
+        border-radius: 6px;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
     }
 
-    .btn:hover {
-        opacity: 0.9;
-        transition: 0.2s ease-in-out;
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 10px rgba(159, 16, 69, 0.2);
     }
 
-    /* Dynamic Search by ID */
-    #id-search-wrapper {
+    .btn-custom-outline {
+        color: var(--primary-burgundy) !important;
+        border: 1px solid var(--primary-burgundy) !important;
+        background-color: transparent !important;
+        border-radius: 6px;
+        padding: 0.4rem 0.85rem;
+        font-weight: 500;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-custom-outline:hover {
+        background-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+    }
+
+    .table-modern {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top: none;
+        white-space: nowrap;
+    }
+
+    .table-modern tbody td {
+        padding: 0.8rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        border-top: 1px solid #f1f3f5;
+        color: #212529;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: var(--primary-burgundy-light);
+    }
+
+    .search-wrapper {
         position: relative;
-        max-width: 300px;
+        max-width: 320px;
     }
 
-    #id-search-wrapper .search-icon {
-        position: absolute;
-        left: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #5A8DEE;
-        font-size: 1rem;
-        pointer-events: none;
-    }
-
-    #ledger-id-search {
-        padding-left: 34px !important;
-        border: 2px solid #5A8DEE !important;
+    .search-wrapper input {
+        padding-left: 2.35rem !important;
         border-radius: 8px !important;
-        font-size: 0.95rem !important;
-        transition: box-shadow 0.2s, border-color 0.2s;
+        border: 1px solid #dee2e6 !important;
+        font-size: 0.88rem !important;
     }
 
-    #ledger-id-search:focus {
-        box-shadow: 0 0 0 3px rgba(90, 141, 238, 0.25) !important;
-        border-color: #3a6fd8 !important;
+    .search-wrapper input:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
     }
 
-    #clear-id-search {
+    .search-wrapper i {
         position: absolute;
-        right: 8px;
+        left: 0.85rem;
         top: 50%;
         transform: translateY(-50%);
-        background: none;
-        border: none;
-        color: #aaa;
-        font-size: 1rem;
-        cursor: pointer;
-        display: none;
-        padding: 0;
-        line-height: 1;
+        color: #adb5bd;
     }
 
-    #clear-id-search:hover { color: #dc3545; }
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: #64748b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+        background: #ffffff;
+        color: var(--primary-burgundy);
+        border-color: var(--primary-burgundy);
+    }
+
+    .btn-action-delete:hover {
+        color: #ef4444;
+        border-color: #ef4444;
+    }
 
     tr.id-match-highlight td {
-        background-color: #eef3ff !important;
-        transition: background-color 0.3s;
+        background-color: #fff0f4 !important;
     }
 
     .no-id-match {
         display: none !important;
     }
-
-    #id-search-no-result {
-        display: none;
-    }
 </style>
 
-<div class="container mt-4 mb-5">
-    <h2 class="mb-4 text-center fw-bold text-primary">{% trans "Ledger Creation" %}</h2>
+<div class="voucher-container">
+    <!-- Header Banner -->
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Accounting Ledgers" %}
+                    </span>
+                </div>
+                <h3 class="font-weight-bold text-dark mb-1">{% trans "Ledgers Overview" %}</h3>
+                <p class="text-muted small mb-0">{% trans "Create, manage and inspect chart of accounts ledgers and opening balances." %}</p>
+            </div>
+        </div>
+    </div>
 
     <!-- Form Section -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">{% trans "Create or Update Ledger" %}</h5>
+    <div class="content-card mb-4">
+        <div class="content-card-header">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="bi bi-journal-plus text-burgundy mr-2"></i>{% trans "Create / Update Ledger" %}
+            </h5>
         </div>
-        <div class="card-body">
+        <div class="p-4">
             <form method="POST">
                 {% csrf_token %}
                 <div class="row g-3">
@@ -163,24 +252,23 @@
                 </div>
 
                 <div class="d-flex gap-2 mt-4">
-                    <button type="submit" name="save" class="btn text-white px-4 py-2"
-                        style="background-color:#5A8DEE;">
-                        <i class="bi bi-save me-2"></i>{% trans "SAVE" %}
+                    <button type="submit" name="save" class="btn-custom-primary">
+                        <i class="bi bi-save"></i> {% trans "Save Ledger" %}
                     </button>
-                    <button type="reset" name="clear" class="btn btn-secondary px-4 py-2">
-                        <i class="bi bi-x-circle me-2"></i>{% trans "CLEAR" %}
+                    <button type="reset" name="clear" class="btn btn-outline-secondary px-3">
+                        <i class="bi bi-x-circle"></i> {% trans "Clear" %}
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Filter by Group -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body py-3">
+    <!-- Filter by Group Card -->
+    <div class="content-card mb-4">
+        <div class="p-3">
             <form method="GET" class="d-flex align-items-center gap-3 flex-wrap">
-                <label class="fw-semibold text-secondary mb-0" style="white-space:nowrap;">
-                    <i class="bi bi-funnel me-1"></i>{% trans "Filter by Group" %}:
+                <label class="font-weight-bold text-dark mb-0" style="white-space:nowrap;">
+                    <i class="bi bi-funnel text-burgundy mr-1"></i>{% trans "Filter by Group" %}:
                 </label>
                 <select name="group" id="group_filter"
                     class="form-select"
@@ -195,8 +283,8 @@
                     {% endfor %}
                 </select>
                 {% if selected_group %}
-                <a href="{% url 'accounts_app:ledger_view' %}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-x-circle me-1"></i>{% trans "Clear Filter" %}
+                <a href="{% url 'accounts_app:ledger_view' %}" class="btn-custom-outline">
+                    <i class="bi bi-x-circle"></i> {% trans "Clear Filter" %}
                 </a>
                 {% endif %}
             </form>
@@ -204,101 +292,101 @@
     </div>
 
     <!-- List Section -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-light d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <h5 class="mb-0 fw-bold text-secondary">{% trans "Ledger List" %}</h5>
+    <div class="content-card">
+        <div class="content-card-header">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-journal-text text-burgundy font-weight-bold"></i>
+                <h5 class="mb-0 font-weight-bold text-dark">{% trans "Ledgers List" %}</h5>
+                <span class="badge badge-light border text-muted ml-2">{{ ledgers|length }} {% trans "Total" %}</span>
+            </div>
 
-            <!-- Dynamic Search by ID -->
-            <div id="id-search-wrapper">
-                <i class="bi bi-search search-icon"></i>
+            <div class="search-wrapper">
+                <i class="bi bi-search"></i>
                 <input
                     type="number"
                     id="ledger-id-search"
-                    placeholder="Search by ID…"
+                    class="form-control"
+                    placeholder="{% trans 'Search by ID…' %}"
                     min="1"
                     autocomplete="off"
                 />
-                <button id="clear-id-search" title="Clear">&#x2715;</button>
             </div>
         </div>
-        <div id="id-search-no-result" class="text-center text-muted py-3">
+
+        <div id="id-search-no-result" class="text-center text-muted py-4" style="display: none;">
             <i class="bi bi-search fs-4 d-block mb-1"></i>
             <span>{% trans "No ledger found with that ID." %}</span>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>{% trans "#" %}</th>
-                            
-                            <th>{% trans "ID" %}</th> 
-                            <th>{% trans "Ledger Name" %}</th>
-                            <th>{% trans "Group" %}</th>
-                            <th>{% trans "Opening Balance" %}</th>
-                            <th>{% trans "Actions" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ledger in ledgers %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ ledger.id }}</td>
-                            <td><strong>{{ ledger.ledger_name }}</strong></td>
-                            <td>{{ ledger.groups.groupName }}</td>
-                            <td class="text-end">{{ ledger.opening_balance }}</td>
-                            <td>
-                                <div class="d-flex gap-2 justify-content-center">
-                                    <a href="{% url 'accounts_app:ledger_edit' ledger.id %}"
-                                        class="btn btn-sm btn-primary px-3 py-1">
-                                        <i class="bi bi-pencil-square me-1"></i>{% trans "EDIT" %}
-                                    </a>
-                                    <a href="{% url 'accounts_app:ledger_delete' ledger.id %}"
-                                        class="btn btn-sm btn-danger px-3 py-1"
-                                        onclick="return confirm('Are you sure you want to delete this ledger?');">
-                                        <i class="bi bi-trash me-1"></i>{% trans "DELETE" %}
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
-                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                {% trans "No ledgers found. Create your first ledger using the form." %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+
+        <div class="table-responsive">
+            <table class="table-modern" id="ledgerTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th style="width: 80px;">{% trans "ID" %}</th>
+                        <th>{% trans "Ledger Name" %}</th>
+                        <th>{% trans "Group" %}</th>
+                        <th class="text-right">{% trans "Opening Balance" %}</th>
+                        <th class="text-center" style="width: 120px;">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ledger in ledgers %}
+                    <tr>
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td><span class="badge badge-light border font-monospace">#{{ ledger.id }}</span></td>
+                        <td><strong>{{ ledger.ledger_name }}</strong></td>
+                        <td><span class="badge" style="background-color: #f1f5f9; color: #475569; font-weight: 500;">{{ ledger.groups.groupName }}</span></td>
+                        <td class="text-right font-weight-bold">{{ ledger.opening_balance }}</td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{% url 'accounts_app:ledger_edit' ledger.id %}"
+                                   class="btn-action" title="{% trans 'Edit' %}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'accounts_app:ledger_delete' ledger.id %}"
+                                   class="btn-action btn-action-delete"
+                                   title="{% trans 'Delete' %}"
+                                   onclick="return confirm('{% trans 'Are you sure you want to delete this ledger?' %}');">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="bi bi-journal-x" style="font-size: 2.5rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>
+                            {% trans "No ledgers found. Create your first ledger using the form above." %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
 <script>
 (function () {
-    const searchInput  = document.getElementById('ledger-id-search');
-    const clearBtn     = document.getElementById('clear-id-search');
-    const noResult     = document.getElementById('id-search-no-result');
-    const tableBody    = document.querySelector('.table tbody');
+    const searchInput = document.getElementById('ledger-id-search');
+    const noResult = document.getElementById('id-search-no-result');
+    const tableBody = document.querySelector('#ledgerTable tbody');
 
     function doSearch() {
         const query = searchInput.value.trim();
-        clearBtn.style.display = query ? 'block' : 'none';
-
         const rows = tableBody ? tableBody.querySelectorAll('tr') : [];
         let matched = 0;
 
         rows.forEach(function (row) {
-            // ID is the 2nd <td> (index 1)
             const idCell = row.querySelector('td:nth-child(2)');
-            if (!idCell) return; // empty-state row
+            if (!idCell) return;
 
+            const text = idCell.textContent.replace('#', '').trim();
             if (query === '') {
                 row.classList.remove('no-id-match', 'id-match-highlight');
                 matched++;
-            } else if (idCell.textContent.trim() === query) {
+            } else if (text === query) {
                 row.classList.remove('no-id-match');
                 row.classList.add('id-match-highlight');
                 matched++;
@@ -312,12 +400,6 @@
     }
 
     searchInput.addEventListener('input', doSearch);
-
-    clearBtn.addEventListener('click', function () {
-        searchInput.value = '';
-        searchInput.focus();
-        doSearch();
-    });
 })();
 </script>
 {% endblock %}

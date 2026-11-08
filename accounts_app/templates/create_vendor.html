@@ -1,218 +1,432 @@
 {% extends 'fleet_base1.html' %}
 {% load i18n %}
-{% block title %}{% trans "Create Supplier" %}{% endblock %}
+{% block title %}{% trans "Supplier / Vendor Master" %}{% endblock %}
 
 {% block content %}
-<!-- Custom CSS -->
 <style>
-    h2, h3, h4, h5 {
-        font-family: 'Segoe UI', sans-serif;
+    :root {
+        --primary-color: #9f1045;
+        --primary-hover: #830d38;
+        --primary-light: #fff5f8;
+        --primary-border: #f1d6df;
     }
 
-    form label {
-        font-weight: 500;
-        color: #444;
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid var(--primary-border);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 1px 4px rgba(159,16,69,0.07);
+    }
+    .page-header-card .page-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin: 0;
+    }
+    .page-header-card .page-subtitle {
+        font-size: 0.82rem;
+        color: #6c757d;
+        margin: 0;
+    }
+    .page-header-card .header-icon {
+        width: 44px;
+        height: 44px;
+        background: var(--primary-light);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .page-header-card .header-icon i {
+        font-size: 1.3rem;
+        color: var(--primary-color);
     }
 
-    input, select, textarea {
-        width: 100% !important;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        padding: 6px 10px;
-        font-size: 0.95rem;
+    .content-card {
+        background: #ffffff;
+        border: 1px solid var(--primary-border);
+        border-radius: 12px;
+        box-shadow: 0 1px 4px rgba(159,16,69,0.07);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .content-card .card-banner-header {
+        background: var(--primary-light);
+        border-bottom: 1px solid var(--primary-border);
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .content-card .card-banner-header h6 {
+        margin: 0;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .content-card .card-body-padded {
+        padding: 1.25rem;
     }
 
-    input:focus, select:focus, textarea:focus {
-        border-color: #5A8DEE;
-        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+    .form-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #495057;
+        margin-bottom: 0.3rem;
+    }
+
+    .form-control, .form-select {
+        border: 1px solid #dee2e6;
+        border-radius: 7px;
+        font-size: 0.9rem;
+        padding: 0.42rem 0.75rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(159,16,69,0.12);
         outline: none;
     }
 
-    .btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
-    }
-
-    .btn-success {
-        background-color: #28a745 !important;
-        border-color: #28a745 !important;
-    }
-
-    .btn-danger {
-        background-color: #dc3545 !important;
-        border-color: #dc3545 !important;
-    }
-
-    .btn-secondary {
-        background-color: #6c757d !important;
-        border-color: #6c757d !important;
-    }
-
-    .card {
-        border-radius: 12px;
-    }
-
-    .card-header {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .table th {
-        background-color: #343a40;
-        color: white;
+    .btn-custom-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #ffffff;
+        font-size: 0.85rem;
         font-weight: 600;
+        border-radius: 8px;
+        padding: 0.45rem 1.25rem;
+        transition: background-color 0.2s, border-color 0.2s;
+    }
+    .btn-custom-primary:hover, .btn-custom-primary:focus {
+        background-color: var(--primary-hover);
+        border-color: var(--primary-hover);
+        color: #ffffff;
     }
 
-    .btn:hover {
-        opacity: 0.9;
-        transition: 0.2s ease-in-out;
+    .btn-outline-secondary {
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
     }
 
+    /* Table */
+    .table-modern {
+        font-size: 0.875rem;
+        margin: 0;
+    }
+    .table-modern thead th {
+        background: var(--primary-light);
+        color: var(--primary-color);
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--primary-border);
+        padding: 0.65rem 0.85rem;
+        white-space: nowrap;
+    }
+    .table-modern tbody tr:hover {
+        background-color: #fdf4f7;
+    }
+    .table-modern td {
+        padding: 0.6rem 0.85rem;
+        vertical-align: middle;
+        border-color: #f0f0f0;
+        color: #2d2d2d;
+    }
+    .table-modern tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .btn-action-edit {
+        background: #fff5f8;
+        border: 1px solid var(--primary-border);
+        color: var(--primary-color);
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.28rem 0.65rem;
+        transition: all 0.18s;
+    }
+    .btn-action-edit:hover {
+        background: var(--primary-color);
+        color: #fff;
+        border-color: var(--primary-color);
+    }
+    .btn-action-delete {
+        background: #fff5f5;
+        border: 1px solid #f5c6cb;
+        color: #dc3545;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.28rem 0.65rem;
+        transition: all 0.18s;
+    }
+    .btn-action-delete:hover {
+        background: #dc3545;
+        color: #fff;
+        border-color: #dc3545;
+    }
+
+    /* Search box */
+    .search-wrapper {
+        position: relative;
+        max-width: 300px;
+    }
+    .search-wrapper .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+        font-size: 0.85rem;
+    }
+    .search-wrapper input {
+        padding-left: 2rem;
+        font-size: 0.85rem;
+        border-radius: 8px;
+    }
+
+    /* Alert messages */
     .alert {
         border-radius: 8px;
+        font-size: 0.875rem;
+    }
+
+    /* Edit mode banner */
+    .edit-mode-banner {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+        color: #856404;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 </style>
 
-<div class="container mt-4 mb-5">
+<div class="container-fluid px-0">
+
     <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-primary">{% trans "Create New Supplier" %}</h2>
+    <div class="page-header-card">
+        <div class="d-flex align-items-center">
+            <div class="header-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+                <p class="page-title">{% trans "Supplier / Vendor Master" %}</p>
+                <p class="page-subtitle">{% if edit_mode %}{% trans "Edit supplier details" %}{% else %}{% trans "Manage suppliers and vendors" %}{% endif %}</p>
+            </div>
+        </div>
         {% if edit_mode %}
-            <a href="{% url 'accounts_app:manage_vendors' %}" class="btn btn-secondary">{% trans "Add New" %}</a>
+            <a href="{% url 'accounts_app:manage_vendors' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-plus-circle me-1"></i>{% trans "Add New" %}
+            </a>
         {% endif %}
     </div>
 
-   
-
-    <!-- Add/Edit Form -->
-    <form method="POST" class="needs-validation">
-        {% csrf_token %}
-
-        <!-- Supplier Information -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">{% trans "Supplier Information" %}</h5>
+    <!-- Django Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <!-- Row 1 -->
-                    <div class="col-md-2">
-                        {{ form.ledger_name.label_tag }}
+        {% endfor %}
+    {% endif %}
+
+    <!-- Add / Edit Form -->
+    <div class="content-card">
+        <div class="card-banner-header">
+            <i class="bi bi-person-plus-fill" style="color: var(--primary-color);"></i>
+            <h6>{% if edit_mode %}{% trans "Edit Supplier" %}{% else %}{% trans "Add New Supplier" %}{% endif %}</h6>
+        </div>
+        <div class="card-body-padded">
+
+            {% if edit_mode %}
+                <div class="edit-mode-banner">
+                    <i class="bi bi-pencil-square"></i>
+                    {% trans "You are editing supplier:" %} <strong>{{ form.instance.ledger_name }}</strong>
+                </div>
+            {% endif %}
+
+            <form method="POST" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                <!-- Row 1: Core Info -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "Supplier Name" %}</label>
                         {{ form.ledger_name }}
                     </div>
                     <div class="col-md-2">
-                        {{ form.remark.label_tag }}
-                        {{ form.remark }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.trn_number.label_tag }}
+                        <label class="form-label">{% trans "TRN Number" %}</label>
                         {{ form.trn_number }}
                     </div>
                     <div class="col-md-2">
-                        {{ form.cr_no.label_tag }}
+                        <label class="form-label">{% trans "CR No." %}</label>
                         {{ form.cr_no }}
                     </div>
                     <div class="col-md-2">
-                        {{ form.email.label_tag }}
+                        <label class="form-label">{% trans "Email" %}</label>
                         {{ form.email }}
                     </div>
                     <div class="col-md-2">
-                        {{ form.mobile.label_tag }}
+                        <label class="form-label">{% trans "Mobile" %}</label>
                         {{ form.mobile }}
                     </div>
-
-                    <!-- Row 2 -->
-                    <div class="col-md-2">
-                        {{ form.phone_no.label_tag }}
+                    <div class="col-md-1">
+                        <label class="form-label">{% trans "Phone" %}</label>
                         {{ form.phone_no }}
                     </div>
-                    <div class="col-md-2">
-                        {{ form.address1.label_tag }}
+                </div>
+
+                <!-- Row 2: Address Info -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">{% trans "Address" %}</label>
                         {{ form.address1 }}
                     </div>
                     <div class="col-md-2">
-                        {{ form.country.label_tag }}
+                        <label class="form-label">{% trans "Country" %}</label>
                         {{ form.country }}
                     </div>
                     <div class="col-md-2">
-                        {{ form.state.label_tag }}
+                        <label class="form-label">{% trans "State" %}</label>
                         {{ form.state }}
                     </div>
                     <div class="col-md-2">
-                        {{ form.city.label_tag }}
+                        <label class="form-label">{% trans "City" %}</label>
                         {{ form.city }}
                     </div>
                     <div class="col-md-2">
-                        {{ form.zipcode.label_tag }}
+                        <label class="form-label">{% trans "Zipcode" %}</label>
                         {{ form.zipcode }}
                     </div>
+                </div>
 
-                    <!-- Row 3 -->
-                    <div class="col-md-12">
-                        {{ form.description.label_tag }}
+                <!-- Row 3: Remark / Description -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">{% trans "Remark" %}</label>
+                        {{ form.remark }}
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">{% trans "Description" %}</label>
                         {{ form.description }}
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="text-end mt-4">
-            {% if edit_mode %}
-                <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">{% trans "Update" %}</button>
-            {% else %}
-                <button type="submit" class="btn btn-success px-4 py-2">{% trans "Save" %}</button>
-            {% endif %}
+                <!-- Submit -->
+                <div class="d-flex justify-content-end gap-2 pt-2 border-top mt-2">
+                    {% if edit_mode %}
+                        <a href="{% url 'accounts_app:manage_vendors' %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i>{% trans "Cancel" %}
+                        </a>
+                        <button type="submit" class="btn btn-custom-primary">
+                            <i class="bi bi-check2 me-1"></i>{% trans "Update Supplier" %}
+                        </button>
+                    {% else %}
+                        <button type="submit" class="btn btn-custom-primary">
+                            <i class="bi bi-plus-circle me-1"></i>{% trans "Save Supplier" %}
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 
     <!-- Supplier List -->
-    <div class="card shadow-sm mt-5">
-        <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">{% trans "Suppliers List" %}</h5>
+    <div class="content-card">
+        <div class="card-banner-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-list-ul" style="color: var(--primary-color);"></i>
+                <h6 class="mb-0">{% trans "Suppliers List" %}</h6>
+            </div>
+            <div class="search-wrapper">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" id="vendorSearch" class="form-control form-control-sm" placeholder="{% trans 'Search suppliers...' %}">
+            </div>
         </div>
-        <div class="card-body">
+        <div class="table-responsive">
             {% if vendors %}
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle text-center">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>#</th>
-                            <th>{% trans "Supplier Name" %}</th>
-                            <th>{% trans "Email" %}</th>
-                            <th>{% trans "Mobile" %}</th>
-                            <th>{% trans "City" %}</th>
-                            <th>{% trans "Country" %}</th>
-                            <th>{% trans "Opening Balance" %}</th>
-                            <th>{% trans "Actions" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for vendor in vendors %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ vendor.ledger_name }}</td>
-                            <td>{{ vendor.email|default:"-" }}</td>
-                            <td>{{ vendor.mobile|default:"-" }}</td>
-                            <td>{{ vendor.city|default:"-" }}</td>
-                            <td>{{ vendor.country|default:"-" }}</td>
-                            <td>{{ vendor.opening_balance }}</td>
-                            <td>
-                                <a href="{% url 'accounts_app:edit_vendor' vendor.pk %}" class="btn btn-sm btn-primary">{% trans "Edit" %}</a>
-                                <form method="POST" style="display:inline;">
+            <table class="table table-modern" id="vendorTable">
+                <thead>
+                    <tr>
+                        <th style="width:40px;">#</th>
+                        <th>{% trans "Supplier Name" %}</th>
+                        <th>{% trans "Email" %}</th>
+                        <th>{% trans "Mobile" %}</th>
+                        <th>{% trans "City" %}</th>
+                        <th>{% trans "Country" %}</th>
+                        <th>{% trans "Opening Balance" %}</th>
+                        <th style="width:120px;">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vendor in vendors %}
+                    <tr>
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td><strong>{{ vendor.ledger_name }}</strong></td>
+                        <td>{{ vendor.email|default:"—" }}</td>
+                        <td>{{ vendor.mobile|default:"—" }}</td>
+                        <td>{{ vendor.city|default:"—" }}</td>
+                        <td>{{ vendor.country|default:"—" }}</td>
+                        <td>{{ vendor.opening_balance }}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'accounts_app:edit_vendor' vendor.pk %}" class="btn btn-action-edit">
+                                    <i class="bi bi-pencil"></i> {% trans "Edit" %}
+                                </a>
+                                <form method="POST" style="display:inline;" onsubmit="return confirm('{% trans "Delete this supplier?" %}')">
                                     {% csrf_token %}
                                     <input type="hidden" name="delete_id" value="{{ vendor.id }}">
-                                    <button type="submit" class="btn btn-sm btn-danger"
-                                        onclick="return confirm('{% trans 'Delete this vendor?' %}');">{% trans "Delete" %}</button>
+                                    <button type="submit" class="btn btn-action-delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             {% else %}
-                <p class="text-muted text-center">{% trans "No vendors found." %}</p>
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-people" style="font-size:2.5rem; opacity:0.3;"></i>
+                <p class="mt-2 mb-0">{% trans "No suppliers found. Add your first supplier above." %}</p>
+            </div>
             {% endif %}
         </div>
     </div>
+
 </div>
+
+<script>
+    // Live search for vendor table
+    document.getElementById('vendorSearch').addEventListener('input', function () {
+        const query = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#vendorTable tbody tr');
+        rows.forEach(function (row) {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    });
+</script>
 {% endblock %}

@@ -194,20 +194,37 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#9f1045;background:#fff}
 .iopt:hover{background:#fdf2f5;color:#9f1045}
 .iopt:last-child{border-bottom:none}
 .iopt-code{font-size:10px;color:#94a3b8;font-family:monospace;flex-shrink:0}
+
+/* ── Read-only (view) mode ── */
+.view-mode .vm-hide,
+.view-mode .doc-loader-card,
+.view-mode .btn-add,
+.view-mode .btn-rm,
+.view-mode button[onclick^="removeInvVehRow"]{display:none!important}
+.view-mode input:disabled,.view-mode select:disabled,.view-mode textarea:disabled{
+  color:#0f172a!important;-webkit-text-fill-color:#0f172a;opacity:1;
+  background:#f8fafc!important;cursor:default}
+.view-mode select:disabled{appearance:none;-webkit-appearance:none;background-image:none!important}
+.jc-btn-edit{background:#9f1045;color:#fff;border:1px solid #9f1045;border-radius:6px;padding:8px 16px;
+  font-size:12.5px;font-weight:600;text-decoration:none!important;display:inline-flex;align-items:center;gap:6px;transition:all .15s ease}
+.jc-btn-edit:hover{background:#830d38;color:#fff}
 </style>
 
-<div class="iw">
+<div class="iw {% if view_mode %}view-mode{% endif %}">
 
 <!-- Top Page Header -->
 <div class="jc-page-hdr">
   <div class="jc-page-hdr-left">
     <div class="jc-page-icon"><i class="bi bi-receipt"></i></div>
     <div>
-      <h1 class="jc-page-title">{% if invoice %}Edit Invoice — {{ invoice.display_number }}{% else %}New Tax Invoice{% endif %}</h1>
+      <h1 class="jc-page-title">{% if view_mode %}View Invoice — {{ invoice.display_number }}{% elif invoice %}Edit Invoice — {{ invoice.display_number }}{% else %}New Tax Invoice{% endif %}</h1>
       <div class="jc-page-sub">Customer billing, itemized parts, labour charges &amp; tax settlements</div>
     </div>
   </div>
-  <div class="d-flex align-items-center gap-2">
+  <div class="d-flex align-items-center" style="gap:8px">
+    {% if view_mode %}
+    <a href="{% url 'jobcard_app:invoice_edit' invoice.pk %}" class="jc-btn-edit"><i class="bi bi-pencil"></i> Edit</a>
+    {% endif %}
     <a href="{% url 'jobcard_app:invoice_list' %}" class="jc-btn-back">
       <i class="bi bi-arrow-left"></i> Back to Invoices
     </a>
@@ -301,6 +318,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#9f1045;background:#fff}
 
 <form method="post" id="invForm">{% csrf_token %}
 <input type="hidden" name="request_id"value="{{ request_id }}">
+<fieldset {% if view_mode %}disabled{% endif %} style="border:0;padding:0;margin:0;min-width:0">
 
 <!-- Hidden document reference trackers -->
 <input type="hidden" name="loaded_delivery_note" id="loadedDN" value="">
@@ -852,6 +870,7 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#9f1045;background:#fff}
   </div>
 </div>
 
+</fieldset>
 </form>
 
 <!-- ROW TEMPLATES FOR DYNAMIC INSERTION -->
@@ -892,13 +911,23 @@ table.inv-tbl select.inv-item-sel:focus{border-color:#9f1045;background:#fff}
 
 <!-- Bottom floating bar -->
 <div class="bottom-bar">
-  <div class="bb-unsaved" id="bbUnsaved" style="display:none">⚠ Unsaved changes in form</div>
-  <div class="bb-actions">
-    <a href="{% url 'jobcard_app:invoice_list' %}" class="btn-discard">Discard</a>
-    <button type="button" class="btn-save-inv" onclick="submitInvoiceForm()">
-      💾 Save Invoice
-    </button>
-  </div>
+  {% if view_mode %}
+    <div></div>
+    <div class="bb-actions">
+      <a href="{% url 'jobcard_app:invoice_list' %}" class="btn-discard">Back to Invoices</a>
+      <a href="{% url 'jobcard_app:invoice_edit' invoice.pk %}" class="btn-save-inv" style="text-decoration:none">
+        <i class="bi bi-pencil"></i> Edit Invoice
+      </a>
+    </div>
+  {% else %}
+    <div class="bb-unsaved" id="bbUnsaved" style="display:none">⚠ Unsaved changes in form</div>
+    <div class="bb-actions">
+      <a href="{% url 'jobcard_app:invoice_list' %}" class="btn-discard">Discard</a>
+      <button type="button" class="btn-save-inv" onclick="submitInvoiceForm()">
+        💾 Save Invoice
+      </button>
+    </div>
+  {% endif %}
 </div>
 
 </div><!-- /iw -->

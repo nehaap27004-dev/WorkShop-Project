@@ -1036,7 +1036,21 @@ def manage_customers(request, pk=None):
         'title': title,
         'customers': customers,
     })
-    
+@login_required
+def customer_view(request, pk):
+    customer = get_object_or_404(LedgerCreation, pk=pk, groups_id=29, types='DR')
+    form = CustomerForm(instance=customer)
+    for f in form.fields.values():
+        f.disabled = True
+    customers = LedgerCreation.objects.filter(groups_id=29, types='DR').order_by('ledger_name')
+    return render(request, 'create_customer.html', {
+        'form': form,
+        'edit_mode': True,
+        'view_mode': True,
+        'title': 'View Customer',
+        'customers': customers,
+    })
+@login_required
 def manage_vendors(request, pk=None):
     """Add, Edit, and List Vendors in one page"""
 
@@ -4166,18 +4180,35 @@ def receipt_delete(request, pk):
 
         
 def ledger_posting_list(request):
-    # Get all postings
-    postings = list(
-        LedgerPosting.objects.all()
-        .select_related('ledger', 'VoucherType')
-        .order_by('-date', '-id')
-    )
+    qs = LedgerPosting.objects.filter(IsDeleted=False).select_related('ledger', 'VoucherType')
+
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    voucher_type_id = request.GET.get('voucher_type', '')
+    ledger_id = request.GET.get('ledger', '')
+
+    if date_from:
+        qs = qs.filter(date__gte=date_from)
+    if date_to:
+        qs = qs.filter(date__lte=date_to)
+    if voucher_type_id:
+        qs = qs.filter(VoucherType_id=voucher_type_id)
+    if ledger_id:
+        qs = qs.filter(ledger_id=ledger_id)
+
+    postings = list(qs.order_by('-date', '-id'))
 
     # Resolve real voucher_no strings the same way the ledger report does
     number_lookup = resolve_voucher_numbers(postings)
+    total_debit = 0
+    total_credit = 0
     for p in postings:
         type_name = p.VoucherType.VoucherName if p.VoucherType_id else ''
         p.display_no = number_lookup.get((type_name, p.VoucherNo), p.VoucherNo)
+        total_debit += float(p.debit or 0)
+        total_credit += float(p.credit or 0)
+
+    balance = total_debit - total_credit
 
     # Get filter options
     voucher_types = Vouchers.objects.all()
@@ -4186,7 +4217,15 @@ def ledger_posting_list(request):
     context = {
         'postings': postings,
         'voucher_types': voucher_types,
+        'vouchers': voucher_types,
         'ledgers': ledgers,
+        'date_from': date_from,
+        'date_to': date_to,
+        'voucher_type_id': voucher_type_id,
+        'ledger_id': ledger_id,
+        'total_debit': total_debit,
+        'total_credit': total_credit,
+        'balance': balance,
     }
 
     return render(request, 'ledger_posting_list.html', context)

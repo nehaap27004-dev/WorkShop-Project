@@ -103,7 +103,7 @@
                             <th>{% trans "Odometer Out" %}</th>
                             <th>{% trans "Status" %}</th>
                             <th class="text-right">{% trans "Grand Total" %}</th>
-                            <th style="width: 130px;" class="text-center">{% trans "Actions" %}</th>
+                            <th style="width: 160px;" class="text-center">{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -165,6 +165,9 @@
                                 {{ dn.get_grand_total|floatformat:3 }}
                             </td>
                             <td class="align-middle text-center text-nowrap">
+                                <a href="{% url 'jobcard_app:delivery_view' dn.pk %}" class="btn btn-sm btn-outline-info mr-1" title="{% trans 'View Delivery Note' %}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
                                 <a href="{% url 'jobcard_app:delivery_edit' dn.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit Delivery Note' %}">
                                     <i class="bi bi-pencil"></i>
                                 </a>

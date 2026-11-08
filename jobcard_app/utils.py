@@ -98,6 +98,8 @@ def generate_voucher_number(voucher_type_name, model_cls, number_field_name, def
         next_num += 1
 from fleet_app.models import Vouchers
 
+from fleet_app.models import Vouchers
+
 
 def get_next_document_number(voucher_type_id, model_cls, number_field):
     """
@@ -114,4 +116,8 @@ def get_next_document_number(voucher_type_id, model_cls, number_field):
             f"Voucher type {voucher_type_id} does not exist."
         )
 
-    return voucher.get_next_voucher_number()
+    return generate_voucher_number(
+        voucher.VoucherName,
+        model_cls,
+        number_field
+    )

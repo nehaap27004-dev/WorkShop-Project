@@ -387,6 +387,7 @@
                     <i class="bi bi-chevron-right arrow-icon"></i>
                 </a>
                 <ul class="erp-submenu">
+                    <li><a class="erp-submenu-link"href="{% url 'accounts_app:ledger_posting_list' %}">{% trans "Ledger Posting" %}</a></li>
                     <li><a class="erp-submenu-link" href="{% url 'accounts_app:ledger_report_page' %}">{% trans "Ledger Report" %}</a></li>
                     <li><a class="erp-submenu-link" href="{% url 'fleet_app:trial_balance_report' %}">{% trans "Trial Balance" %}</a></li>
                     <li><a class="erp-submenu-link" href="{% url 'fleet_app:profit_loss' %}">{% trans "Profit & Loss" %}</a></li>

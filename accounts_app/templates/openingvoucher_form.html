@@ -1,234 +1,403 @@
 {% extends 'fleet_base1.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{% if is_edit %}Edit{% else %}Create{% endif %} Opening Voucher{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-3">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">{% if is_edit %}Edit Opening Voucher{% else %}Create Opening Voucher{% endif %}</h4>
-            <a href="{% url 'accounts_app:list_openingvoucher' %}" class="btn btn-secondary btn-sm">Back to List</a>
-        </div>
-        <div class="card-body">
+<style>
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
 
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
 
-            <form method="post" novalidate>
-                {% csrf_token %}
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
 
-                {% if master_form.non_field_errors %}
-                    <div class="alert alert-danger">{{ master_form.non_field_errors }}</div>
-                {% endif %}
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
 
-                <!-- Master Fields -->
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Voucher No <span class="text-danger"></span></label>
-                        {{ master_form.voucher_no }}
-                        {% if master_form.voucher_no.errors %}
-                            <div class="text-danger small">{{ master_form.voucher_no.errors|join:", " }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Date <span class="text-danger">*</span></label>
-                        {{ master_form.date }}
-                        {% if master_form.date.errors %}
-                            <div class="text-danger small">{{ master_form.date.errors|join:", " }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-3 mb-3" style="display: none;">
-                        <label class="form-label">Voucher Type <span class="text-danger"></span></label>
-                        {{ master_form.voucherType }}
-                        {% if master_form.voucherType.errors %}
-                            <div class="text-danger small">{{ master_form.voucherType.errors|join:", " }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Cost Center <span class="text-danger"></span></label>
-                        {{ master_form.cost_conter }}
-                        {% if master_form.cost_conter.errors %}
-                            <div class="text-danger small">{{ master_form.cost_conter.errors|join:", " }}</div>
-                        {% endif %}
-                    </div>
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 10px rgba(159, 16, 69, 0.2);
+    }
+
+    .btn-custom-outline {
+        color: var(--primary-burgundy) !important;
+        border: 1px solid var(--primary-burgundy) !important;
+        background-color: transparent !important;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-custom-outline:hover {
+        background-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+    }
+
+    form label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.85rem;
+        margin-bottom: 0.35rem;
+    }
+
+    input, select, textarea {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.9rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
+    }
+
+    .table-modern {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top: none;
+        white-space: nowrap;
+    }
+
+    .table-modern tbody td {
+        padding: 0.8rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        border-top: 1px solid #f1f3f5;
+        color: #212529;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: var(--primary-burgundy-light);
+    }
+
+    .btn-action-delete {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: #ef4444;
+        background: #fff5f5;
+        border: 1px solid #fecaca;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action-delete:hover {
+        background: #dc2626;
+        color: #ffffff;
+    }
+</style>
+
+<div class="voucher-container">
+    <!-- Header Banner -->
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Accounting Ledgers" %}
+                    </span>
                 </div>
-
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Sales Person <span class="text-danger"></span></label>
-                        {{ master_form.sales_person }}
-                        {% if master_form.sales_person.errors %}
-                            <div class="text-danger small">{{ master_form.sales_person.errors|join:", " }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-9 mb-3">
-                        <label class="form-label">Remark</label>
-                        {{ master_form.remark }}
-                        {% if master_form.remark.errors %}
-                            <div class="text-danger small">{{ master_form.remark.errors|join:", " }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <hr>
-
-                <!-- Details Formset -->
-                <h5 class="mb-3">Voucher Details</h5>
-                {{ formset.management_form }}
-                {% if formset.non_form_errors %}
-                    <div class="alert alert-danger">{{ formset.non_form_errors }}</div>
-                {% endif %}
-
-                <div class="table-responsive">
-                    <table class="table table-bordered" id="details-table">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 45%;">Ledger</th>
-                                <th style="width: 20%;">Debit Amount</th>
-                                <th style="width: 20%;">Credit Amount</th>
-                                <th style="width: 10%;">Delete</th>
-                            </tr>
-                        </thead>
-                        <tbody id="details-body">
-                            {% for form in formset %}
-                                <tr class="detail-row">
-                                    {% if form.instance.pk %}{{ form.id }}{% endif %}
-                                    <td>
-                                        {{ form.ledger }}
-                                        {% if form.ledger.errors %}
-                                            <div class="text-danger small">{{ form.ledger.errors|join:", " }}</div>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {{ form.debit_amount }}
-                                        {% if form.debit_amount.errors %}
-                                            <div class="text-danger small">{{ form.debit_amount.errors|join:", " }}</div>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {{ form.credit_amount }}
-                                        {% if form.credit_amount.errors %}
-                                            <div class="text-danger small">{{ form.credit_amount.errors|join:", " }}</div>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        {% if form.instance.pk %}
-                                            <div style="display:none;">{{ form.DELETE }}</div>
-                                            <button type="button" class="btn btn-sm btn-danger remove-row">&times;</button>
-                                        {% else %}
-                                            <button type="button" class="btn btn-sm btn-danger remove-row">&times;</button>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <button type="button" id="add-row" class="btn btn-outline-primary btn-sm mb-4">
-                    + Add Item
-                </button>
-
-                <div class="mt-3">
-                    <button type="submit" class="btn btn-primary">
-                        {% if is_edit %}Update Voucher{% else %}Save Voucher{% endif %}
-                    </button>
-                    <a href="{% url 'accounts_app:list_openingvoucher' %}" class="btn btn-light">Cancel</a>
-                </div>
-
-            </form>
+                <h3 class="font-weight-bold text-dark mb-1">
+                    {% if is_edit %}{% trans "Edit Opening Voucher" %}{% else %}{% trans "Create Opening Voucher" %}{% endif %}
+                </h3>
+                <p class="text-muted small mb-0">{% trans "Define starting debit & credit balances across asset, liability, and equity accounts." %}</p>
+            </div>
+            <div>
+                <a href="{% url 'accounts_app:list_openingvoucher' %}" class="btn-custom-outline">
+                    <i class="bi bi-list"></i> {% trans "Opening Voucher List" %}
+                </a>
+            </div>
         </div>
     </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show border-0 shadow-sm" style="border-radius: 8px;">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if master_form.non_field_errors %}
+            <div class="alert alert-danger border-0 shadow-sm" style="border-radius: 8px;">{{ master_form.non_field_errors }}</div>
+        {% endif %}
+
+        <!-- Master Fields Card -->
+        <div class="content-card mb-4">
+            <div class="content-card-header">
+                <h5 class="mb-0 font-weight-bold text-dark">
+                    <i class="bi bi-file-earmark-diff text-burgundy mr-2"></i>{% trans "Voucher Details" %}
+                </h5>
+            </div>
+            <div class="p-4">
+                <div class="row g-3">
+                    <div class="col-md-3 form-group mb-2">
+                        <label>{{ master_form.voucher_no.label }}</label>
+                        {{ master_form.voucher_no }}
+                        {% if master_form.voucher_no.errors %}
+                            <div class="text-danger small mt-1">{{ master_form.voucher_no.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 form-group mb-2">
+                        <label>{{ master_form.date.label }} <span class="text-danger">*</span></label>
+                        {{ master_form.date }}
+                        {% if master_form.date.errors %}
+                            <div class="text-danger small mt-1">{{ master_form.date.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 form-group mb-2" style="display: none;">
+                        <label>{{ master_form.voucherType.label }}</label>
+                        {{ master_form.voucherType }}
+                    </div>
+                    <div class="col-md-3 form-group mb-2">
+                        <label>{{ master_form.cost_conter.label }}</label>
+                        {{ master_form.cost_conter }}
+                        {% if master_form.cost_conter.errors %}
+                            <div class="text-danger small mt-1">{{ master_form.cost_conter.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 form-group mb-2">
+                        <label>{{ master_form.sales_person.label }}</label>
+                        {{ master_form.sales_person }}
+                        {% if master_form.sales_person.errors %}
+                            <div class="text-danger small mt-1">{{ master_form.sales_person.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-12 form-group mb-0">
+                        <label>{{ master_form.remark.label }}</label>
+                        {{ master_form.remark }}
+                        {% if master_form.remark.errors %}
+                            <div class="text-danger small mt-1">{{ master_form.remark.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Formset Card -->
+        <div class="content-card mb-4">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-table text-burgundy font-weight-bold"></i>
+                    <h5 class="mb-0 font-weight-bold text-dark">{% trans "Voucher Details" %}</h5>
+                </div>
+                <button type="button" id="add-row" class="btn-custom-outline py-1 px-3">
+                    <i class="bi bi-plus-lg"></i> {% trans "Add Line" %}
+                </button>
+            </div>
+            
+            {{ formset.management_form }}
+            {% if formset.non_form_errors %}
+                <div class="alert alert-danger m-3 border-0 shadow-sm">{{ formset.non_form_errors }}</div>
+            {% endif %}
+
+            <div class="table-responsive">
+                <table class="table-modern" id="details-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 45%;">{% trans "Ledger" %}</th>
+                            <th style="width: 25%;">{% trans "Debit Amount" %}</th>
+                            <th style="width: 25%;">{% trans "Credit Amount" %}</th>
+                            <th style="width: 60px;" class="text-center">{% trans "Action" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="details-body">
+                        {% for form in formset %}
+                            <tr class="detail-row">
+                                {% if form.instance.pk %}{{ form.id }}{% endif %}
+                                <td>
+                                    {{ form.ledger }}
+                                    {% if form.ledger.errors %}
+                                        <div class="text-danger small mt-1">{{ form.ledger.errors|join:", " }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ form.debit_amount }}
+                                    {% if form.debit_amount.errors %}
+                                        <div class="text-danger small mt-1">{{ form.debit_amount.errors|join:", " }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ form.credit_amount }}
+                                    {% if form.credit_amount.errors %}
+                                        <div class="text-danger small mt-1">{{ form.credit_amount.errors|join:", " }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if form.instance.pk %}
+                                        <div style="display:none;">{{ form.DELETE }}</div>
+                                        <button type="button" class="btn-action-delete remove-row" title="{% trans 'Remove' %}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn-action-delete remove-row" title="{% trans 'Remove' %}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex justify-content-end gap-2 mb-4">
+            <a href="{% url 'accounts_app:list_openingvoucher' %}" class="btn btn-outline-secondary px-4">
+                {% trans "Cancel" %}
+            </a>
+            <button type="submit" class="btn-custom-primary px-4">
+                <i class="bi bi-save"></i>
+                {% if is_edit %}{% trans "Update Voucher" %}{% else %}{% trans "Save Voucher" %}{% endif %}
+            </button>
+        </div>
+    </form>
 </div>
 
-<!-- Empty form template for JS cloning (rendered outside the visible table, display:none) -->
-<table style="display:none;">
-    <tbody id="empty-form-row">
-        <tr class="detail-row">
-            <td>{{ formset.empty_form.ledger }}</td>
-            <td>{{ formset.empty_form.debit_amount }}</td>
-            <td>{{ formset.empty_form.credit_amount }}</td>
-            <td class="text-center">
-                <button type="button" class="btn btn-sm btn-danger remove-row">&times;</button>
-            </td>
-        </tr>
-    </tbody>
-</table>
-{% endblock %}
-
-{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const detailsBody = document.getElementById('details-body');
-    const addRowBtn = document.getElementById('add-row');
-    const totalFormsInput = document.querySelector('#id_details-TOTAL_FORMS');
-    const emptyFormRow = document.getElementById('empty-form-row').querySelector('.detail-row');
+    const tableBody = document.getElementById('details-body');
+    const addBtn = document.getElementById('add-row');
+    const totalForms = document.getElementById('id_details-TOTAL_FORMS');
 
-    // Add new row
-    addRowBtn.addEventListener('click', function () {
-        let formIndex = parseInt(totalFormsInput.value);
+    addBtn.addEventListener('click', function () {
+        const formCount = parseInt(totalForms.value, 10);
+        const rows = tableBody.querySelectorAll('.detail-row');
+        const lastRow = rows[rows.length - 1];
 
-        let newRow = emptyFormRow.cloneNode(true);
-        newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, formIndex);
+        const newRow = lastRow.cloneNode(true);
 
-        detailsBody.appendChild(newRow);
-        totalFormsInput.value = formIndex + 1;
-    });
+        const hiddenId = newRow.querySelector('input[type="hidden"][name$="-id"]');
+        if (hiddenId) hiddenId.remove();
 
-    // Remove row (handles both new unsaved rows and existing rows via DELETE checkbox)
-    detailsBody.addEventListener('click', function (e) {
-        if (e.target.classList.contains('remove-row')) {
-            const row = e.target.closest('.detail-row');
-            const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+        newRow.querySelectorAll('input, select').forEach(function (el) {
+            const name = el.getAttribute('name');
+            const id = el.getAttribute('id');
 
-            if (deleteCheckbox) {
-                // Existing row tied to a DB record: mark for deletion and hide
-                deleteCheckbox.checked = true;
-                row.style.display = 'none';
-            } else {
-                // New row not yet saved: just remove it from the DOM
-                row.remove();
+            if (name) el.setAttribute('name', name.replace(/-\d+-/, `-${formCount}-`));
+            if (id) el.setAttribute('id', id.replace(/-\d+-/, `-${formCount}-`));
+
+            if (el.tagName === 'SELECT') {
+                el.selectedIndex = 0;
+            } else if (el.type === 'number' || el.type === 'text') {
+                el.value = '';
+            } else if (el.type === 'checkbox') {
+                el.checked = false;
             }
-        }
+        });
+
+        newRow.querySelectorAll('.text-danger').forEach(el => el.remove());
+        newRow.style.display = '';
+
+        tableBody.appendChild(newRow);
+        totalForms.value = formCount + 1;
     });
 
-    // Prevent submitting with zero visible detail rows
-    document.querySelector('form').addEventListener('submit', function (e) {
-        const visibleRows = detailsBody.querySelectorAll('.detail-row:not([style*="display: none"])');
-        if (visibleRows.length === 0) {
-            e.preventDefault();
-            alert('Please add at least one detail row.');
+    tableBody.addEventListener('click', function (e) {
+        const btn = e.target.closest('.remove-row');
+        if (!btn) return;
+
+        const row = btn.closest('.detail-row');
+        const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+
+        if (deleteCheckbox) {
+            deleteCheckbox.checked = true;
+            row.style.display = 'none';
+        } else {
+            const rows = tableBody.querySelectorAll('.detail-row:not([style*="display: none"])');
+            if (rows.length > 1) {
+                row.remove();
+            } else {
+                row.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+                row.querySelectorAll('input:not([type="hidden"])').forEach(el => el.value = '');
+            }
         }
     });
 });
 </script>
-
-<!-- Get Next Voucher_no -->
-{% if not is_edit %}
-<script>
-    function updateVoucherNumber() {
-        const select = document.getElementById('id_voucherType');
-        const input = document.getElementById('id_voucher_no');
-        if (select && input && select.value) {
-            input.value = "Loading...";
-            fetch('/get-voucher-number-fleet/?voucher_type_id=' + select.value)
-                .then(r => r.json())
-                .then(data => { input.value = data.success ? data.voucher_number : "Error"; })
-                .catch(() => { input.value = "Error"; });
-        } else if (input) { input.value = ''; }
-    }
-    window.addEventListener('DOMContentLoaded', function () {
-        const voucherSelect = document.getElementById('id_voucherType');
-        if (voucherSelect) {
-            voucherSelect.addEventListener('change', updateVoucherNumber);
-            updateVoucherNumber();
-        }
-    });
-</script>
-{% endif %}
-
 {% endblock %}

@@ -1,238 +1,173 @@
 {% extends 'fleet_base1.html' %}
+{% load static %}
+{% load i18n %}
+
 {% block content %}
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#f5f6fa;font-family:'Segoe UI',sans-serif}
-.wrap{max-width:1000px;margin:0 auto;padding:20px 16px 100px}
+  .jc-wrapper { max-width: 1140px; margin: 0 auto; padding-bottom: 90px; }
 
-/* ── Page header ── */
-.page-hdr{display:flex;align-items:center;justify-content:space-between;
-          margin-bottom:20px;flex-wrap:wrap;gap:10px}
-.page-hdr-left{display:flex;align-items:center;gap:10px}
-.page-icon{width:38px;height:38px;background:#fdf2f5;border:1px solid #f9c9d5;color:#9f1045;border-radius:9px;
-           display:flex;align-items:center;justify-content:center;font-size:20px}
-.page-title{font-size:20px;font-weight:700;color:#111827;margin:0}
-.page-sub{font-size:12px;color:#6b7280;margin-top:2px}
-.btn-back{background:#f9fafb;color:#374151;border:1px solid #e5e7eb;
-          border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;
-          text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+  /* Page header */
+  .jc-page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .jc-page-hdr-left { display:flex; align-items:center; gap:10px; }
+  .jc-page-icon { width:38px; height:38px; background:#fdf2f5; border:1px solid #f9c9d5; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:20px; color:#9f1045; }
+  .jc-page-title { font-size:20px; font-weight:700; color:#0f172a; margin:0; line-height:1.2; letter-spacing:-0.3px; }
+  .jc-page-sub { font-size:12px; color:#64748b; margin-top:2px; }
+  .jc-btn-back { background:#fff; color:#334155; border:1px solid #cbd5e1; border-radius:6px; padding:7px 14px; font-size:12.5px; font-weight:600; text-decoration:none !important; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; }
+  .jc-btn-back:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
+  .jc-btn-edit { background:#9f1045; color:#fff; border:1px solid #9f1045; border-radius:6px; padding:7px 14px; font-size:12.5px; font-weight:600; text-decoration:none !important; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; }
+  .jc-btn-edit:hover { background:#830d38; color:#fff; }
 
-/* ── White cards ── */
-.card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;
-      margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
-.card-hdr{padding:14px 20px;border-bottom:1px solid #f3f4f6;
-          display:flex;align-items:center;gap:8px}
-.card-hdr-icon{font-size:16px}
-.card-hdr-title{font-size:14px;font-weight:700;color:#111827}
-.card-hdr-sub{font-size:11px;color:#6b7280;margin-top:1px}
-.card-body{padding:20px}
+  /* Cards */
+  .jc-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:16px; box-shadow:0 1px 3px rgba(15,23,42,.04); }
+  .jc-card-hdr { background:#fff; border-bottom:1px solid #f1f5f9; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-radius:10px 10px 0 0; }
+  .jc-card-title { font-size:13.5px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px; margin:0; }
+  .jc-card-body { padding:18px; }
+  .jc-card-actions { display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap; }
+  .tbl-clip { overflow:hidden; border-radius:0 0 10px 10px; }
 
-/* ── Field labels ── */
-.fl{display:block;font-size:10px;font-weight:700;color:#9ca3af;
-    text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-.req{color:#ef4444}
+  /* Fields */
+  .fl { display:block; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+  .req { color:#ef4444; margin-left:2px; }
+  .fi { width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 10px; font-size:12.5px; color:#0f172a; background:#fff; outline:none; transition:all .15s ease-in-out; font-family:inherit; }
+  .fi:focus { border-color:#9f1045; box-shadow:0 0 0 3px rgba(159,16,69,.12); }
+  .fi::placeholder { color:#94a3b8; }
+  .fi[readonly] { background:#f8fafc; color:#475569; border-color:#e2e8f0; }
+  select.fi { cursor:pointer; background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 10px center; background-size:12px 10px; padding-right:28px; -webkit-appearance:none; -moz-appearance:none; appearance:none; text-overflow:ellipsis; }
+  textarea.fi { resize:vertical; }
+  .text-r { text-align:right; }
 
-/* ── Inputs ── */
-.fi{width:100%;border:1px solid #e5e7eb;border-radius:6px;
-    padding:9px 12px;font-size:13px;color:#111827;
-    background:#fff;outline:none;transition:border-color .15s;font-family:inherit}
-.fi:focus{border-color:#9f1045;box-shadow:0 0 0 3px rgba(159,16,69,.12)}
-.fi::placeholder{color:#d1d5db}
-.fi[readonly]{background:#f9fafb;color:#6b7280}
-select.fi{cursor:pointer}
-textarea.fi{resize:vertical}
+  /* Grids */
+  .g4 { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+  .g3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .g4 > div, .g3 > div, .g2 > div { min-width:0; }
+  .mb { margin-bottom:14px; }
+  @media (max-width:991px) { .g4 { grid-template-columns:repeat(2,1fr); } .g3 { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:576px) { .g4,.g3,.g2 { grid-template-columns:1fr; } }
 
-/* ── Grids ── */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.mb{margin-bottom:14px}
-@media(max-width:680px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
-@media(max-width:460px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  /* Buttons */
+  .btn-add { background:#9f1045; color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; white-space:nowrap; text-decoration:none !important; }
+  .btn-add:hover { background:#830d38; color:#fff; }
+  .btn-rm { background:none; border:none; color:#94a3b8; border-radius:4px; padding:4px 6px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:3px; transition:all .15s ease; white-space:nowrap; }
+  .btn-rm:hover { background:#fef2f2; color:#dc2626; }
+  .imp-btn { background:#fdf2f5; color:#9f1045; border:1px solid #f9c9d5; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; transition:all .15s ease; }
+  .imp-btn:hover { background:#fae1e8; color:#830d38; border-color:#f4a2b9; }
 
-/* ── Sub heading ── */
-.sub-hdr{display:flex;align-items:center;gap:8px;padding:14px 20px 0;
-         border-top:2px solid #f3f4f6;margin-top:4px}
-.sub-hdr-icon{font-size:15px}
-.sub-hdr-title{font-size:13px;font-weight:700;color:#111827}
-.sub-hdr-sub{font-size:11px;color:#6b7280;margin-top:1px}
+  /* Import panels */
+  .imp-panel { display:none; position:absolute; right:0; top:110%; background:#fff; border:1.5px solid #9f1045; border-radius:8px; min-width:380px; max-width:92vw; z-index:400; box-shadow:0 8px 24px rgba(0,0,0,.13); overflow:hidden; }
+  .imp-panel-hdr { background:#fdf2f5; padding:10px 14px; border-bottom:1px solid #f9c9d5; display:flex; justify-content:space-between; align-items:center; }
+  .imp-panel-title { font-size:12px; font-weight:700; color:#9f1045; }
+  .imp-x { background:none; border:none; color:#9ca3af; font-size:16px; cursor:pointer; line-height:1; }
+  .imp-msg { padding:14px; font-size:12px; color:#9ca3af; text-align:center; }
 
-/* ── Complaints box ── */
-.cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px 20px}
-@media(max-width:560px){.cf-grid{grid-template-columns:1fr}}
-.cf-box{border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
-.cf-box-hdr{background:#f9fafb;padding:10px 14px;border-bottom:1px solid #e5e7eb;
-            display:flex;justify-content:space-between;align-items:center}
-.cf-box-title{font-size:12px;font-weight:700;color:#374151;
-              display:flex;align-items:center;gap:5px}
-.cf-cnt{background:#e5e7eb;color:#6b7280;border-radius:10px;
-        padding:1px 8px;font-size:11px;font-weight:700}
-.cf-body{padding:12px}
-.cf-empty{font-size:12px;color:#9ca3af;margin-bottom:10px;font-style:italic}
-.cf-item{display:flex;align-items:flex-start;gap:7px;padding:7px 0;
-         border-top:1px solid #f3f4f6}
-.cf-num-c{background:#fdf2f5;color:#9f1045;border:1px solid #f9c9d5;border-radius:4px;
-          padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0}
-.cf-num-t{background:#fefce8;color:#ca8a04;border-radius:4px;
-          padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0}
-.cf-txt{font-size:12px;color:#374151;flex:1;line-height:1.5}
-.cf-del{background:none;border:none;color:#d1d5db;cursor:pointer;
-        font-size:14px;flex-shrink:0}
-.cf-del:hover{color:#ef4444}
-.cf-add-row{display:flex;gap:6px;margin-top:8px}
-.cf-inp{flex:1;border:1px solid #e5e7eb;border-radius:6px;
-        padding:8px 10px;font-size:12px;color:#374151;
-        background:#f9fafb;outline:none;font-family:inherit}
-.cf-inp:focus{border-color:#9f1045;background:#fff;box-shadow:0 0 0 2px rgba(159,16,69,.1)}
-.cf-inp::placeholder{color:#d1d5db}
-.btn-cf-c{background:#9f1045;color:#fff;border:none;border-radius:6px;
-          width:30px;height:30px;font-size:17px;font-weight:700;
-          cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s ease}
-.btn-cf-c:hover{background:#830d38}
-.btn-cf-t{background:#f59e0b;color:#fff;border:none;border-radius:6px;
-          width:30px;height:30px;font-size:17px;font-weight:700;
-          cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  /* Tables */
+  .stbl-container { overflow-x:auto; }
+  .stbl { width:100%; border-collapse:collapse; }
+  .stbl thead th { background:#fff; color:#64748b; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; padding:9px 10px; border-bottom:1px solid #e2e8f0; white-space:nowrap; text-align:left; }
+  .stbl thead th.r { text-align:right; }
+  .stbl thead th.c { text-align:center; }
+  .stbl tbody td { padding:6px 8px; border-bottom:1px solid #f1f5f9; vertical-align:middle; font-size:12.5px; }
+  .stbl tbody tr:last-child td { border-bottom:none; }
+  .stbl tbody tr:hover { background-color:#fbfbfc; }
+  .part-total, .lab-tot { text-align:right; font-weight:700; font-family:monospace; color:#0f172a; padding-right:6px; }
+  .skill-badge-info { margin-top:3px; }
+  .empty-note { text-align:center; padding:20px; color:#94a3b8; font-size:12.5px; }
 
-/* ── Parts / Labour table ── */
-.tbl-wrap{overflow-x:auto;padding:0 20px}
-.est-tbl{width:100%;border-collapse:collapse;margin-bottom:4px}
-.est-tbl thead th{padding:9px 10px;font-size:10px;font-weight:700;
-                  color:#6b7280;text-transform:uppercase;letter-spacing:.5px;
-                  border-bottom:1px solid #e5e7eb;text-align:left;
-                  background:#f9fafb;white-space:nowrap}
-.est-tbl thead th.r{text-align:right}
-.est-tbl tbody td{padding:6px 6px;border-bottom:1px solid #f9fafb;
-                  vertical-align:middle}
-.est-tbl tbody tr:last-child td{border-bottom:none}
-.est-tbl tbody tr:hover{background:#fafbfd}
-.est-tbl input,.est-tbl select{
-  width:100%;border:1px solid transparent;border-radius:5px;
-  padding:7px 8px;font-size:12px;color:#111827;background:transparent;
-  outline:none;font-family:inherit;transition:all .12s}
-.est-tbl input:focus,.est-tbl select:focus{
-  border-color:#9f1045;background:#fff;box-shadow:0 0 0 2px rgba(159,16,69,.1)}
-.est-tbl input::placeholder{color:#d1d5db}
-.est-tbl input[readonly]{background:#f9fafb;color:#374151;font-weight:600}
-.est-tbl tbody tr:hover input,
-.est-tbl tbody tr:hover select{background:#fff;border-color:#e5e7eb}
-.cell-r{text-align:right;font-size:13px;font-weight:600;
-         color:#111827;padding-right:6px}
-.btn-rm{background:none;border:none;color:#d1d5db;cursor:pointer;
-        font-size:16px;padding:2px 4px;line-height:1}
-.btn-rm:hover{color:#ef4444}
+  /* Subtotal bars */
+  .totals-bar-inline { padding:10px 18px; background:#fff; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; align-items:center; gap:10px; border-radius:0 0 10px 10px; }
+  .totals-lbl { font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.3px; }
+  .totals-val { font-size:14px; font-weight:700; color:#9f1045; font-family:monospace; }
 
-/* item search */
-.item-wrap{position:relative}
-.item-dd{position:absolute;top:100%;left:0;right:0;background:#fff;
-         border:1.5px solid #9f1045;border-radius:7px;z-index:200;
-         max-height:180px;overflow-y:auto;display:none;
-         box-shadow:0 8px 20px rgba(0,0,0,.1);margin-top:2px}
-.i-opt{padding:8px 12px;cursor:pointer;font-size:12px;color:#111827;
-       border-bottom:1px solid #f3f4f6;display:flex;
-       justify-content:space-between;align-items:center}
-.i-opt:hover{background:#fdf2f5;color:#9f1045}
-.i-opt:last-child{border-bottom:none}
-.i-opt-price{font-size:11px;color:#9ca3af;font-family:monospace}
+  /* Banner */
+  .jc-banner { background:#fdf2f5; border:1px solid #f9c9d5; border-radius:7px; padding:9px 14px; font-size:12px; color:#9f1045; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px; }
+  .jc-banner button { background:none; border:none; color:#9f1045; cursor:pointer; font-size:14px; }
 
-.btn-add-row{background:none;border:none;color:#9f1045;font-size:13px;
-             font-weight:600;cursor:pointer;padding:8px 20px;
-             display:inline-flex;align-items:center;gap:5px;font-family:inherit}
-.btn-add-row:hover{color:#830d38}
-.sub-total-row{display:flex;justify-content:flex-end;padding:8px 20px 12px;
-               font-size:12px;font-weight:700;color:#6b7280;gap:6px}
-.sub-total-row span{color:#111827;font-family:monospace}
+  /* Summary card */
+  .sum-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f1f5f9; font-size:13px; }
+  .sum-row:last-child { border-bottom:none; }
+  .sum-lbl { color:#334155; font-weight:600; }
+  .sum-inp { border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-size:13px; text-align:right; outline:none; font-family:monospace; font-weight:700; color:#0f172a; background:#fff; }
+  .sum-inp:focus { border-color:#9f1045; box-shadow:0 0 0 3px rgba(159,16,69,.12); }
 
-/* ── Grand Total ── */
-.grand-box{background:#fff;border:1px solid #e5e7eb;border-radius:10px;
-           margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
-.gt-row{display:flex;justify-content:space-between;align-items:center;
-        padding:11px 20px;border-bottom:1px solid #f3f4f6;font-size:13px}
-.gt-row:last-child{border-bottom:none}
-.gt-lbl{color:#374151;font-weight:500}
-.gt-val{font-weight:700;color:#111827;font-family:monospace}
-.gt-row.total{background:#1e293b;padding:14px 20px}
-.gt-row.total .gt-lbl{color:#94a3b8;font-size:14px;font-weight:700}
-.gt-row.total .gt-val{color:#22c55e;font-size:18px}
+  /* Grand totals */
+  .grand-totals-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px 20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(15,23,42,.04); }
+  .gt-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-items:center; }
+  @media (max-width:576px) { .gt-grid { grid-template-columns:1fr; } }
+  .gt-item { padding:10px 14px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; text-align:center; }
+  .gt-item.highlight { background:#fdf2f5; border-color:#f9c9d5; }
+  .gt-lbl { font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px; }
+  .gt-item.highlight .gt-lbl { color:#9f1045; }
+  .gt-val { font-size:15px; font-weight:700; color:#0f172a; font-family:monospace; }
+  .gt-val.grand { font-size:18px; color:#9f1045; }
 
-/* ── Save bar ── */
-.save-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;
-          border-top:1px solid #e5e7eb;padding:12px 24px;
-          display:flex;justify-content:flex-end;gap:10px;
-          z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,.06)}
-.btn-cancel{background:#f9fafb;color:#374151;border:1px solid #e5e7eb;
-            border-radius:7px;padding:10px 20px;font-size:13px;
-            font-weight:600;text-decoration:none;display:inline-flex;align-items:center}
-.btn-save{background:#9f1045;color:#fff;border:none;border-radius:7px;
-          padding:10px 26px;font-size:14px;font-weight:700;cursor:pointer;
-          display:inline-flex;align-items:center;gap:6px;
-          box-shadow:0 2px 8px rgba(159,16,69,.25);transition:background .15s ease}
-.btn-save:hover{background:#830d38}
+  /* Save bar */
+  .save-bar { position:sticky; bottom:16px; z-index:100; background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:12px 20px; display:flex; align-items:center; justify-content:flex-end; gap:10px; box-shadow:0 4px 16px rgba(0,0,0,.08); margin-top:20px; }
+  .btn-save { background:#9f1045; color:#fff; border:none; border-radius:6px; padding:8px 20px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .15s ease; text-decoration:none !important; }
+  .btn-save:hover { background:#830d38; color:#fff; }
+  .btn-cancel { background:#fff; color:#475569; border:1px solid #cbd5e1; border-radius:6px; padding:8px 16px; font-size:13px; font-weight:600; text-decoration:none !important; transition:all .15s ease; }
+  .btn-cancel:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
 
-/* flash */
-.flash{padding:10px 16px;border-radius:7px;margin-bottom:12px;font-size:13px}
-.flash-ok {background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
-.flash-err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
-
-/* divider */
-.divider{height:1px;background:#f3f4f6;margin:0 20px}
-
-/* import buttons */
-.imp-btn{background:#fdf2f5;color:#9f1045;border:1px solid #f9c9d5;
-         border-radius:6px;padding:7px 14px;font-size:12px;
-         font-weight:700;cursor:pointer;display:inline-flex;
-         align-items:center;gap:6px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.05);transition:all .15s ease}
-.imp-btn:hover{background:#fae1e8}
-.imp-panel{display:none;position:absolute;right:0;top:110%;
-           background:#fff;border:1.5px solid #9f1045;border-radius:8px;
-           min-width:380px;max-width:92vw;z-index:400;
-           box-shadow:0 8px 24px rgba(0,0,0,.13);overflow:hidden}
-.imp-panel-hdr{background:#fdf2f5;padding:10px 14px;border-bottom:1px solid #f9c9d5;
-               display:flex;justify-content:space-between;align-items:center}
-.imp-panel-title{font-size:12px;font-weight:700;color:#9f1045}
-.imp-x{background:none;border:none;color:#9ca3af;font-size:16px;cursor:pointer;line-height:1}
-.imp-msg{padding:14px;font-size:12px;color:#9ca3af;text-align:center}
+  /* Read-only (view) mode */
+  .view-mode input:disabled,
+  .view-mode select:disabled,
+  .view-mode textarea:disabled {
+    color:#0f172a !important; -webkit-text-fill-color:#0f172a; opacity:1;
+    background:#f8fafc !important; cursor:default;
+  }
+  .view-mode select:disabled { background-image:none !important; padding-right:10px; }
+  .view-mode .btn-add,
+  .view-mode .btn-rm,
+  .view-mode .imp-btn,
+  .view-mode .imp-panel,
+  .view-mode #estBanner,
+  .view-mode .jc-card-actions { display:none !important; }
 </style>
 
-<div class="wrap">
+<div class="container-fluid p-0 jc-wrapper {% if view_mode %}view-mode{% endif %}">
 
-  <!-- ── Page Header ── -->
-  <div class="page-hdr">
-    <div class="page-hdr-left">
+  <!-- ── Page header ── -->
+  <div class="jc-page-hdr">
+    <div class="jc-page-hdr-left">
+      <div class="jc-page-icon"><i class="bi bi-file-earmark-text"></i></div>
       <div>
-        <h1 class="page-title">
-          {% if edit_mode %}Edit Quotation — {{ quotation.quotation_number }}
-          {% else %}Create Quotation{% endif %}
+        <h1 class="jc-page-title">
+          {% if view_mode %}{% trans "View Quotation" %}: {{ quotation.voucher_number|default:quotation.quotation_number }}{% elif edit_mode %}{% trans "Edit Quotation" %}: {{ quotation.voucher_number|default:quotation.quotation_number }}{% else %}{% trans "Create Quotation" %}{% endif %}
         </h1>
+        <div class="jc-page-sub">{% trans "Prepare customer quotations with complaints, spare parts & labour charges" %}</div>
       </div>
     </div>
-    <a href="{% url 'jobcard_app:quotation_list' %}" class="btn-back">← Back</a>
+    <div class="d-flex align-items-center" style="gap:8px">
+      {% if view_mode %}
+      <a href="{% url 'jobcard_app:quotation_edit' quotation.pk %}" class="jc-btn-edit"><i class="bi bi-pencil"></i> {% trans "Edit" %}</a>
+      {% endif %}
+      <a href="{% url 'jobcard_app:quotation_list' %}" class="jc-btn-back"><i class="bi bi-arrow-left"></i> {% trans "Back to List" %}</a>
+    </div>
   </div>
 
-  {% if messages %}{% for m in messages %}
-  <div class="flash {% if 'error' in m.tags %}flash-err{% else %}flash-ok{% endif %}">{{ m }}</div>
-  {% endfor %}{% endif %}
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-3 shadow-sm" style="border-radius:8px; font-size:12.5px;" role="alert">
+        {{ m }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+    {% endfor %}
+  {% endif %}
 
   <form method="post" id="quaForm">{% csrf_token %}
+  <fieldset {% if view_mode %}disabled{% endif %} style="border:0;padding:0;margin:0;min-width:0;">
 
   <input type="hidden" name="loaded_estimate" id="loadedEstId" value="{% if edit_mode and quotation.estimate %}{{ quotation.estimate.id }}{% elif prefill_est %}{{ prefill_est.id }}{% endif %}">
   <input type="hidden" name="loaded_jobcard" id="loadedJcId" value="{% if edit_mode and quotation.jobcard %}{{ quotation.jobcard.id }}{% elif prefill_job %}{{ prefill_job.id }}{% endif %}">
 
-  <!-- ════════════════════════════════════════
-       TABLE 1 — QUOTATION INFORMATION
-  ════════════════════════════════════════ -->
-  <div class="card">
-    <div class="card-hdr" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-      <div style="display:flex;align-items:center;gap:8px">
-        <div>
-          <div class="card-hdr-title">Quotation Info</div>
-        </div>
-      </div>
+  <!-- ════════ 1. QUOTATION INFO ════════ -->
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title"><i class="bi bi-info-circle-fill text-burgundy"></i> {% trans "Quotation Info" %}</h2>
 
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-
+      <div class="jc-card-actions">
         <!-- Load from Job Card -->
         <div style="position:relative" id="jcPickerWrap">
-          <button type="button" class="imp-btn" onclick="toggleJcPicker()">Load from Job Card ▾</button>
+          <button type="button" class="imp-btn" onclick="toggleJcPicker()"><i class="bi bi-card-checklist"></i> {% trans "Load from Job Card" %} ▾</button>
           <div id="jcPickerPanel" class="imp-panel">
             <div class="imp-panel-hdr">
               <span class="imp-panel-title">Select Job Card to Import</span>
@@ -246,7 +181,7 @@ textarea.fi{resize:vertical}
 
         <!-- Load from Estimate -->
         <div style="position:relative" id="estPickerWrap">
-          <button type="button" class="imp-btn" onclick="toggleEstPicker()">Load from Estimate ▾</button>
+          <button type="button" class="imp-btn" onclick="toggleEstPicker()"><i class="bi bi-calculator"></i> {% trans "Load from Estimate" %} ▾</button>
           <div id="estPickerPanel" class="imp-panel">
             <div class="imp-panel-hdr">
               <span class="imp-panel-title">Select Estimate to Import</span>
@@ -257,61 +192,53 @@ textarea.fi{resize:vertical}
             <div id="estEmpty" class="imp-msg" style="display:none">No estimates found for this customer</div>
           </div>
         </div>
-
       </div>
     </div>
 
-    <div class="card-body">
+    <div class="jc-card-body">
 
-      <!-- Loaded (imported) banner -->
-      <div id="estBanner"
-           style="display:{% if prefill_est or prefill_job or edit_mode and quotation.estimate %}flex{% else %}none{% endif %};background:#fdf2f5;border:1px solid #f9c9d5;border-radius:7px;padding:9px 14px;font-size:12px;color:#9f1045;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px">
+      <!-- Imported banner -->
+      <div id="estBanner" class="jc-banner"
+           style="display:{% if prefill_est or prefill_job or edit_mode and quotation.estimate %}flex{% else %}none{% endif %}">
         <span id="estBannerText">
           {% if prefill_est %}Imported data from Estimate: <strong>{{ prefill_est.estimate_number }}</strong>
           {% elif prefill_job %}Imported data from Job Card: <strong>{{ prefill_job.voucher_number }}</strong>
           {% elif edit_mode and quotation.estimate %}Linked Estimate: <strong>{{ quotation.estimate.estimate_number }}</strong>{% endif %}
         </span>
-        <button type="button" onclick="this.parentElement.style.display='none'"
-                style="background:none;border:none;color:#9f1045;cursor:pointer;font-size:14px">✕</button>
+        <button type="button" onclick="this.parentElement.style.display='none'">✕</button>
       </div>
 
-      <!-- Row 1: Voucher No | PO No | Date | Status -->
       <div class="g4 mb">
-        <!-- Voucher number is generated by the server when the quotation is saved
-             (Quotation voucher type). This box only shows it; nothing is posted. -->
         <div>
-          <label class="fl">Voucher Number</label>
+          <label class="fl">{% trans "Voucher Number" %}</label>
           <input type="text" class="fi" id="id_voucher_number" readonly
             value="{% if edit_mode %}{{ quotation.voucher_number|default:quotation.quotation_number }}{% else %}{{ next_voucher_no }}{% endif %}">
         </div>
         <div>
-          <label class="fl">PO Number</label>
-          <input type="text" name="po_number" class="fi"
-            placeholder="e.g. PO-2026-001"
+          <label class="fl">{% trans "PO Number" %}</label>
+          <input type="text" name="po_number" class="fi" placeholder="e.g. PO-2026-001"
             value="{% if edit_mode %}{{ quotation.po_number|default:'' }}{% endif %}">
         </div>
         <div>
-          <label class="fl">Date <span class="req">*</span></label>
+          <label class="fl">{% trans "Date" %} <span class="req">*</span></label>
           <input type="date" name="date" class="fi" required
             value="{% if edit_mode %}{{ quotation.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
         </div>
         <div>
-          <label class="fl">Status</label>
+          <label class="fl">{% trans "Status" %}</label>
           <select name="status" class="fi">
-            <option value="draft"    {% if not edit_mode or quotation.status == 'draft'    %}selected{% endif %}>Draft</option>
-            <option value="sent"     {% if edit_mode and quotation.status == 'sent'        %}selected{% endif %}>Sent</option>
-            <option value="approved" {% if edit_mode and quotation.status == 'approved'    %}selected{% endif %}>Approved</option>
-            <option value="rejected" {% if edit_mode and quotation.status == 'rejected'    %}selected{% endif %}>Rejected</option>
+            <option value="draft"    {% if not edit_mode or quotation.status == 'draft' %}selected{% endif %}>Draft</option>
+            <option value="sent"     {% if edit_mode and quotation.status == 'sent' %}selected{% endif %}>Sent</option>
+            <option value="approved" {% if edit_mode and quotation.status == 'approved' %}selected{% endif %}>Approved</option>
+            <option value="rejected" {% if edit_mode and quotation.status == 'rejected' %}selected{% endif %}>Rejected</option>
           </select>
         </div>
       </div>
 
-      <!-- Row 2: Customer | Customer Phone -->
       <div class="g2 mb">
         <div>
-          <label class="fl">Customer Name <span class="req">*</span></label>
-          <select name="customer" class="fi" required id="custSel"
-            onchange="loadVehicles(this.value);loadPhone(this)">
+          <label class="fl">{% trans "Customer Name" %} <span class="req">*</span></label>
+          <select name="customer" class="fi" required id="custSel" onchange="loadVehicles(this.value);loadPhone(this)">
             <option value="">— Select Customer —</option>
             {% for c in customers %}
             <option value="{{ c.id }}"
@@ -323,65 +250,53 @@ textarea.fi{resize:vertical}
           </select>
         </div>
         <div>
-          <label class="fl">Customer Phone</label>
-          <input type="text" name="customer_phone" class="fi" id="custPhone"
-            placeholder="e.g. +968 9123 4567"
+          <label class="fl">{% trans "Customer Phone" %}</label>
+          <input type="text" name="customer_phone" class="fi" id="custPhone" placeholder="e.g. +968 9123 4567"
             value="{% if edit_mode %}{{ quotation.customer_phone|default:'' }}{% endif %}">
         </div>
       </div>
 
-      <!-- Row 3: Service Advisor | VIN | Remarks -->
       <div class="g3">
         <div>
-          <label class="fl">Service Advisor</label>
+          <label class="fl">{% trans "Service Advisor" %}</label>
           <select name="advisor" class="fi">
             <option value="">— Select —</option>
             {% for s in advisors %}
-            <option value="{{ s.id }}"
-              {% if edit_mode and quotation.advisor_id == s.id %}selected{% endif %}>
-              {{ s.full_name }}
-            </option>
+            <option value="{{ s.id }}" {% if edit_mode and quotation.advisor_id == s.id %}selected{% endif %}>{{ s.full_name }}</option>
             {% endfor %}
           </select>
         </div>
         <div>
-          <label class="fl">VIN / Chassis No</label>
-          <input type="text" name="vin" class="fi"
-            placeholder="e.g. JTEBU5JR805..."
+          <label class="fl">{% trans "VIN / Chassis No" %}</label>
+          <input type="text" name="vin" class="fi" placeholder="e.g. JTEBU5JR805..."
             value="{% if edit_mode %}{{ quotation.vin|default:'' }}{% elif prefill_est %}{{ prefill_est.vin|default:'' }}{% endif %}">
         </div>
         <div>
-          <label class="fl">Remarks</label>
-          <input type="text" name="remarks" class="fi"
-            placeholder="Any additional remarks..."
+          <label class="fl">{% trans "Remarks" %}</label>
+          <input type="text" name="remarks" class="fi" placeholder="Any additional remarks..."
             value="{% if edit_mode %}{{ quotation.remarks|default:'' }}{% endif %}">
         </div>
       </div>
-    </div><!-- /card-body: customer info -->
-  </div><!-- /card: customer info -->
-
-  <!-- ════════════════════════════════════════
-       VEHICLES
-  ════════════════════════════════════════ -->
-  <div class="card">
-    <div class="card-hdr" style="justify-content:space-between">
-      <div class="card-hdr-title">Vehicle</div>
-      <button type="button" onclick="addVehicleRow()"
-              style="background:#9f1045;color:#fff;border:none;border-radius:5px;
-                     padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;
-                     display:inline-flex;align-items:center;gap:5px">
-        + Add Vehicle
-      </button>
     </div>
-    <div class="card-body" style="padding:0">
-      <div class="tbl-wrap" style="padding:0">
-        <table class="est-tbl" id="vehTbl">
+  </div>
+
+  <!-- ════════ 2. VEHICLES ════════ -->
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title"><i class="bi bi-truck text-burgundy"></i> {% trans "Vehicles" %}</h2>
+      <div class="jc-card-actions">
+        <button type="button" class="btn-add" onclick="addVehicleRow()"><i class="bi bi-plus"></i> {% trans "Add Vehicle" %}</button>
+      </div>
+    </div>
+    <div class="tbl-clip">
+      <div class="stbl-container">
+        <table class="stbl" id="vehTbl">
           <thead>
             <tr>
-              <th style="width:26%">Vehicle Number</th>
-              <th style="width:28%">Model</th>
-              <th style="width:22%">Mileage (km)</th>
-              <th style="width:14%">Action</th>
+              <th style="width:32%">{% trans "Vehicle Number" %}</th>
+              <th style="width:32%">{% trans "Make & Model" %}</th>
+              <th style="width:24%">{% trans "Mileage (km)" %}</th>
+              <th class="c" style="width:12%">{% trans "Action" %}</th>
             </tr>
           </thead>
           <tbody id="vehBody">
@@ -389,19 +304,17 @@ textarea.fi{resize:vertical}
               {% for qv in quotation.vehicles.all %}
               <tr>
                 <td>
-                  <select name="qt_vehicle_id[]" class="veh-select" onchange="onVehRowChange(this)">
+                  <select name="qt_vehicle_id[]" class="veh-select fi" onchange="onVehRowChange(this)">
                     <option value="{{ qv.vehicle_id }}" selected>{{ qv.vehicle.vehicle_number }}{% if qv.vehicle.registration_number %} ({{ qv.vehicle.registration_number }}){% endif %}</option>
                   </select>
                 </td>
-                <td>
-                  <input type="text" class="fi veh-mm-box" readonly
-                        value="{{ qv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ qv.vehicle.vehicle_model.model_name|default:'' }}"
-                        placeholder="Make & Model">
-                </td>
+                <td><input type="text" class="fi veh-mm-box" readonly
+                      value="{{ qv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ qv.vehicle.vehicle_model.model_name|default:'' }}"
+                      placeholder="Make & Model"></td>
                 <td><input type="number" name="qt_vehicle_mileage[]" value="{{ qv.mileage|default:'' }}" min="0" class="fi"></td>
-                <td>
+                <td style="text-align:center">
                   <input type="hidden" name="qt_vehicle_notes[]" value="{{ qv.notes }}">
-                  <button type="button" class="btn-rm" onclick="removeVehRow(this)" style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">✕ Remove</button>
+                  <button type="button" class="btn-rm" onclick="removeVehRow(this)">✕</button>
                 </td>
               </tr>
               {% endfor %}
@@ -409,19 +322,17 @@ textarea.fi{resize:vertical}
               {% for ev in prefill_est.vehicles.all %}
               <tr>
                 <td>
-                  <select name="qt_vehicle_id[]" class="veh-select" onchange="onVehRowChange(this)">
+                  <select name="qt_vehicle_id[]" class="veh-select fi" onchange="onVehRowChange(this)">
                     <option value="{{ ev.vehicle_id }}" selected>{{ ev.vehicle.vehicle_number }}{% if ev.vehicle.registration_number %} ({{ ev.vehicle.registration_number }}){% endif %}</option>
                   </select>
                 </td>
-                <td>
-                  <input type="text" class="fi veh-mm-box" readonly
-                        value="{{ ev.vehicle.manufacturer.manufacturer_name|default:'' }} {{ ev.vehicle.vehicle_model.model_name|default:'' }}"
-                        placeholder="Make & Model">
-                </td>
+                <td><input type="text" class="fi veh-mm-box" readonly
+                      value="{{ ev.vehicle.manufacturer.manufacturer_name|default:'' }} {{ ev.vehicle.vehicle_model.model_name|default:'' }}"
+                      placeholder="Make & Model"></td>
                 <td><input type="number" name="qt_vehicle_mileage[]" value="{{ ev.mileage|default:'' }}" min="0" class="fi"></td>
-                <td>
+                <td style="text-align:center">
                   <input type="hidden" name="qt_vehicle_notes[]" value="{{ ev.notes }}">
-                  <button type="button" class="btn-rm" onclick="removeVehRow(this)" style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">✕ Remove</button>
+                  <button type="button" class="btn-rm" onclick="removeVehRow(this)">✕</button>
                 </td>
               </tr>
               {% endfor %}
@@ -429,90 +340,66 @@ textarea.fi{resize:vertical}
               {% for jv in prefill_job.vehicles.all %}
               <tr>
                 <td>
-                  <select name="qt_vehicle_id[]" class="veh-select" onchange="onVehRowChange(this)">
+                  <select name="qt_vehicle_id[]" class="veh-select fi" onchange="onVehRowChange(this)">
                     <option value="{{ jv.vehicle_id }}" selected>{{ jv.vehicle.vehicle_number }}{% if jv.vehicle.registration_number %} ({{ jv.vehicle.registration_number }}){% endif %}</option>
                   </select>
                 </td>
-                <td>
-                  <input type="text" class="fi veh-mm-box" readonly
-                        value="{{ jv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ jv.vehicle.vehicle_model.model_name|default:'' }}"
-                        placeholder="Make & Model">
-                </td>
+                <td><input type="text" class="fi veh-mm-box" readonly
+                      value="{{ jv.vehicle.manufacturer.manufacturer_name|default:'' }} {{ jv.vehicle.vehicle_model.model_name|default:'' }}"
+                      placeholder="Make & Model"></td>
                 <td><input type="number" name="qt_vehicle_mileage[]" value="{{ jv.mileage|default:'' }}" min="0" class="fi"></td>
-                <td>
+                <td style="text-align:center">
                   <input type="hidden" name="qt_vehicle_notes[]" value="{{ jv.notes }}">
-                  <button type="button" class="btn-rm" onclick="removeVehRow(this)" style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">✕ Remove</button>
+                  <button type="button" class="btn-rm" onclick="removeVehRow(this)">✕</button>
                 </td>
               </tr>
               {% endfor %}
             {% endif %}
           </tbody>
         </table>
-      </div>
-      <div id="vehEmpty" style="{% if edit_mode and quotation.vehicles.exists or prefill_est and prefill_est.vehicles.exists or prefill_job and prefill_job.vehicles.exists %}display:none{% else %}display:block{% endif %};text-align:center;padding:20px;color:#9ca3af;font-size:13px">
-        No vehicles added yet. Select a customer first, then click "Add Vehicle".
+        <div id="vehEmpty" class="empty-note" style="{% if edit_mode and quotation.vehicles.exists or prefill_est and prefill_est.vehicles.exists or prefill_job and prefill_job.vehicles.exists %}display:none{% else %}display:block{% endif %}">
+          <i class="bi bi-info-circle text-muted mr-1"></i> {% trans "No vehicles added yet. Select a customer above, then click Add Vehicle." %}
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════
-       TABLE 2 — QUOTATION DETAILS
-  ════════════════════════════════════════ -->
-  <div class="card">
-    <div class="card-hdr">
-      <div>
-        <div class="card-hdr-title">Quotation Details</div>
+  <!-- ════════ 3. COMPLAINTS ════════ -->
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title"><i class="bi bi-exclamation-triangle-fill text-warning"></i> {% trans "Complaint Management" %}</h2>
+      <div class="jc-card-actions">
+        <button type="button" class="btn-add" onclick="addQuotComplaint()"><i class="bi bi-plus"></i> {% trans "Add Complaint" %}</button>
       </div>
     </div>
-
-    <!-- Complaint section card -->
-    <div style="margin:12px 20px 0">
-
-      <!-- Section header with button -->
-      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px 8px 0 0;
-                  padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-        <span style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px">
-          Complaint Management
-        </span>
-        <button type="button" onclick="addQuotComplaint()"
-                style="background:#9f1045;color:#fff;border:none;border-radius:5px;
-                       padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;
-                       display:inline-flex;align-items:center;gap:5px;white-space:nowrap">
-          + Add Complaint
-        </button>
-      </div>
-
-      <!-- Complaint Table -->
-      <div style="overflow-x:auto;border:1px solid #e5e7eb;border-top:none;
-                  border-radius:0 0 8px 8px">
-        <table style="width:100%;border-collapse:collapse;min-width:750px">
+    <div class="tbl-clip">
+      <div class="stbl-container">
+        <table class="stbl" style="min-width:860px">
           <thead>
-            <tr style="background:#f9fafb">
-              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:12%">Vehicle</th>
-              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:16%">Service Category</th>
-              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:18%">Complaint Type</th>
-              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:24%">Complaint Description</th>
-              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:20%">Assigned Technician</th>
-              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:left;width:10%">Status</th>
-              <th style="padding:9px 10px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;text-align:center;width:6%">Action</th>
+            <tr>
+              <th style="width:13%">{% trans "Vehicle" %}</th>
+              <th style="width:16%">{% trans "Service Category" %}</th>
+              <th style="width:18%">{% trans "Complaint Type" %}</th>
+              <th style="width:21%">{% trans "Description" %}</th>
+              <th style="width:18%">{% trans "Technician" %}</th>
+              <th style="width:10%">{% trans "Status" %}</th>
+              <th class="c" style="width:4%">{% trans "Action" %}</th>
             </tr>
           </thead>
           <tbody id="quotComplaintBody">
             {% if edit_mode and complaints %}
               {% for c in complaints %}
-              <tr style="border-bottom:1px solid #f3f4f6">
-                <td style="padding:6px 6px">
-                  <select name="complaint_vehicle_id[]" class="row-veh-select fi"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;background:#fff;outline:none">
+              <tr>
+                <td>
+                  <select name="complaint_vehicle_id[]" class="row-veh-select fi">
                     <option value="">— Vehicle —</option>
                     {% for qv in quotation.vehicles.all %}
                     <option value="{{ qv.vehicle_id }}" {% if c.vehicle_id == qv.vehicle_id %}selected{% endif %}>{{ qv.vehicle.vehicle_number }}</option>
                     {% endfor %}
                   </select>
                 </td>
-                <td style="padding:6px 6px">
-                  <select name="complaint_category_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+                <td>
+                  <select name="complaint_category_id[]" class="complaint-cat-select fi" onchange="handleCategoryChange(this)">
                     <option value="">— Category —</option>
                     {% for cat in categories %}
                     <option value="{{ cat.id }}" {% if c.service_category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
@@ -520,150 +407,121 @@ textarea.fi{resize:vertical}
                   </select>
                   <input type="hidden" name="complaint_category[]" class="cat-txt" value="{{ c.category }}">
                 </td>
-                <td style="padding:6px 6px">
-                  <select name="complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
-                          data-initial-type-id="{% if c.service_type_ref_id %}st_{{ c.service_type_ref_id }}{% else %}{{ c.complaint_type_ref_id|default:'' }}{% endif %}"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+                <td>
+                  <select name="complaint_type_id[]" class="complaint-type-select fi" onchange="handleComplaintTypeChange(this)"
+                          data-initial-type-id="{% if c.service_type_ref_id %}st_{{ c.service_type_ref_id }}{% else %}{{ c.complaint_type_ref_id|default:'' }}{% endif %}">
                     <option value="">— Complaint Type —</option>
                   </select>
                   <input type="hidden" name="complaint_type[]" class="type-txt" value="{{ c.type }}">
                 </td>
-                <td style="padding:6px 6px">
-                  <input type="text" name="complaint_description[]" value="{{ c.description }}"
-                        placeholder="Describe complaint..."
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
-                </td>
-                <td style="padding:6px 6px">
-                  <select name="complaint_technician[]" class="complaint-tech-select"
-                          data-initial-tech-id="{{ c.technician_id|default:'' }}"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+                <td><input type="text" name="complaint_description[]" value="{{ c.description }}" class="fi" placeholder="Describe complaint..."></td>
+                <td>
+                  <select name="complaint_technician[]" class="complaint-tech-select fi" data-initial-tech-id="{{ c.technician_id|default:'' }}">
                     <option value="">— Select Technician —</option>
                   </select>
+                  <div class="skill-badge-info"></div>
                   <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="{% if c.is_manual_override %}1{% else %}0{% endif %}">
                 </td>
-                <td style="padding:6px 6px">
-                  <select name="complaint_status[]"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
-                    <option value="Open"        {% if c.status == 'Open'        %}selected{% endif %}>Open</option>
+                <td>
+                  <select name="complaint_status[]" class="fi">
+                    <option value="Open"        {% if c.status == 'Open' %}selected{% endif %}>Open</option>
                     <option value="In Progress" {% if c.status == 'In Progress' %}selected{% endif %}>In Progress</option>
-                    <option value="Resolved"    {% if c.status == 'Resolved'    %}selected{% endif %}>Resolved</option>
+                    <option value="Resolved"    {% if c.status == 'Resolved' %}selected{% endif %}>Resolved</option>
                   </select>
                 </td>
-                <td style="padding:6px 6px;text-align:center">
-                  <button type="button" class="btn-rm" onclick="rmQuotComplaint(this)">✕ Remove</button>
-                </td>
+                <td style="text-align:center"><button type="button" class="btn-rm" onclick="rmQuotComplaint(this)">✕</button></td>
               </tr>
               {% endfor %}
             {% else %}
-              <tr style="border-bottom:1px solid #f3f4f6" id="quotCmpDefault">
-                <td style="padding:6px 6px">
-                  <select name="complaint_vehicle_id[]" class="row-veh-select fi"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;background:#fff;outline:none">
-                    <option value="">— Vehicle —</option>
-                  </select>
+              <tr id="quotCmpDefault">
+                <td>
+                  <select name="complaint_vehicle_id[]" class="row-veh-select fi"><option value="">— Vehicle —</option></select>
                 </td>
-                <td style="padding:6px 6px">
-                  <select name="complaint_category_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+                <td>
+                  <select name="complaint_category_id[]" class="complaint-cat-select fi" onchange="handleCategoryChange(this)">
                     <option value="">— Category —</option>
                     {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
                   </select>
                   <input type="hidden" name="complaint_category[]" class="cat-txt">
                 </td>
-                <td style="padding:6px 6px">
-                  <select name="complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+                <td>
+                  <select name="complaint_type_id[]" class="complaint-type-select fi" onchange="handleComplaintTypeChange(this)">
                     <option value="">— Complaint Type —</option>
                   </select>
                   <input type="hidden" name="complaint_type[]" class="type-txt">
                 </td>
-                <td style="padding:6px 6px">
-                  <input type="text" name="complaint_description[]"
-                        placeholder="Describe complaint..."
-                        style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
-                </td>
-                <td style="padding:6px 6px">
-                  <select name="complaint_technician[]" class="complaint-tech-select"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
-                    <option value="">— Select Technician —</option>
-                  </select>
+                <td><input type="text" name="complaint_description[]" class="fi" placeholder="Describe complaint..."></td>
+                <td>
+                  <select name="complaint_technician[]" class="complaint-tech-select fi"><option value="">— Select Technician —</option></select>
+                  <div class="skill-badge-info"></div>
                   <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
                 </td>
-                <td style="padding:6px 6px">
-                  <select name="complaint_status[]"
-                          style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+                <td>
+                  <select name="complaint_status[]" class="fi">
                     <option value="Open">Open</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Resolved">Resolved</option>
                   </select>
                 </td>
-                <td style="padding:6px 6px;text-align:center">
-                  <button type="button" class="btn-rm" onclick="rmQuotComplaint(this)">✕ Remove</button>
-                </td>
+                <td style="text-align:center"><button type="button" class="btn-rm" onclick="rmQuotComplaint(this)">✕</button></td>
               </tr>
             {% endif %}
           </tbody>
         </table>
       </div>
     </div>
+  </div>
 
-    <div class="divider"></div>
-
-    <!-- ── Parts Quotation ── -->
-    <div class="sub-hdr" style="margin-top:16px">
-        <div>
-            <div class="sub-hdr-title">Parts Quotation</div>
-        </div>
-    </div>
-
-    <div class="tbl-wrap" style="margin-top:12px">
-        <table class="est-tbl" id="partsTbl">
-            <thead>
-                <tr>
-                    <th style="width:14%">Vehicle</th>
-                    <th style="width:26%">Spare Part</th>
-                    <th style="width:10%">Unit</th>
-                    <th style="width:8%">Qty</th>
-                    <th style="width:14%">Rate </th>
-                    <th style="width:14%">Amount </th>
-                    <th style="width:10%">Warranty</th>
-                    <th style="width:4%">Action</th>
-                </tr>
-            </thead>
-            <tbody id="partsTbody">
-            </tbody>
-        </table>
-    </div>
-
-    <button type="button" class="btn-add-row" onclick="addPartRow()">
-        + Add Part
-    </button>
-
-    <div class="sub-total-row">
-        PARTS SUBTOTAL
-        &nbsp;
-        <span id="partsSub">0.000 </span>
-    </div>
-    <div class="divider"></div>
-
-    <!-- ── Labour ── -->
-    <div class="sub-hdr" style="margin-top:16px">
-      <div>
-        <div class="sub-hdr-title">Labour Charges</div>
+  <!-- ════════ 4. PARTS ════════ -->
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title"><i class="bi bi-boxes text-burgundy"></i> {% trans "Parts Quotation" %}</h2>
+      <div class="jc-card-actions">
+        <button type="button" class="btn-add" onclick="addPartRow()"><i class="bi bi-plus"></i> {% trans "Add Part" %}</button>
       </div>
     </div>
-
-    <div class="tbl-wrap" style="margin-top:12px">
-      <table class="est-tbl">
+    <div class="stbl-container">
+      <table class="stbl" id="partsTbl" style="min-width:860px">
         <thead>
           <tr>
-            <th style="width:14%">Vehicle</th>
-            <th style="width:30%">Labour Description</th>
-            <th style="width:16%">Technician</th>
-            <th style="width:10%">HRS</th>
-            <th style="width:14%">Rate/Hr </th>
-            <th style="width:12%" class="r">Total </th>
-            <th style="width:4%"></th>
+            <th style="width:14%">{% trans "Vehicle" %}</th>
+            <th style="width:25%">{% trans "Spare Part" %}</th>
+            <th style="width:9%">{% trans "Unit" %}</th>
+            <th class="r" style="width:9%">{% trans "Qty" %}</th>
+            <th class="r" style="width:13%">{% trans "Rate" %}</th>
+            <th class="r" style="width:13%">{% trans "Amount" %}</th>
+            <th style="width:11%">{% trans "Warranty" %}</th>
+            <th class="c" style="width:6%">{% trans "Action" %}</th>
+          </tr>
+        </thead>
+        <tbody id="partsTbody"></tbody>
+      </table>
+    </div>
+    <div class="totals-bar-inline">
+      <span class="totals-lbl">{% trans "Parts Subtotal" %}</span>
+      <span id="partsSub" class="totals-val">0.000</span>
+    </div>
+  </div>
+
+  <!-- ════════ 5. LABOUR ════════ -->
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title"><i class="bi bi-wrench-adjustable text-burgundy"></i> {% trans "Labour Charges" %}</h2>
+      <div class="jc-card-actions">
+        <button type="button" class="btn-add" onclick="addLabour()"><i class="bi bi-plus"></i> {% trans "Add Labour" %}</button>
+      </div>
+    </div>
+    <div class="stbl-container">
+      <table class="stbl" style="min-width:760px">
+        <thead>
+          <tr>
+            <th style="width:15%">{% trans "Vehicle" %}</th>
+            <th style="width:29%">{% trans "Labour Description" %}</th>
+            <th style="width:18%">{% trans "Technician" %}</th>
+            <th class="r" style="width:9%">{% trans "Hours" %}</th>
+            <th class="r" style="width:12%">{% trans "Rate / Hr" %}</th>
+            <th class="r" style="width:12%">{% trans "Total" %}</th>
+            <th class="c" style="width:5%">{% trans "Action" %}</th>
           </tr>
         </thead>
         <tbody id="labourTbody">
@@ -671,128 +529,115 @@ textarea.fi{resize:vertical}
             {% for l in labour %}
             <tr>
               <td>
-                <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
+                <select name="labour_vehicle_id[]" class="row-veh-select fi">
                   <option value="">— Vehicle —</option>
                   {% for qv in quotation.vehicles.all %}
                   <option value="{{ qv.vehicle_id }}" {% if l.vehicle_id == qv.vehicle_id %}selected{% endif %}>{{ qv.vehicle.vehicle_number }}</option>
                   {% endfor %}
                 </select>
               </td>
-              <td><input type="text" name="labour_desc[]"
-                    value="{{ l.description }}" placeholder="e.g. Engine repair..."></td>
+              <td><input type="text" name="labour_desc[]" class="fi" value="{{ l.description }}" placeholder="e.g. Engine repair..."></td>
               <td>
-                <select name="labour_tech[]">
+                <select name="labour_tech[]" class="fi">
                   <option value="">— Assign —</option>
                   {% for t in technicians %}
-                  <option value="{{ t.id }}" {% if l.technician_id == t.id %}selected{% endif %}>
-                    {{ t.full_name }}
-                  </option>
+                  <option value="{{ t.id }}" {% if l.technician_id == t.id %}selected{% endif %}>{{ t.full_name }}</option>
                   {% endfor %}
                 </select>
               </td>
-              <td><input type="number" name="labour_hrs[]" class="lab-hrs"
-                    value="{{ l.hours|default:1 }}" min="0" step="0.5" oninput="calcLabour(this)"></td>
-              <td><input type="number" name="labour_rate[]" class="lab-rate"
-                    value="{{ l.unit_price }}" min="0" step="0.001" oninput="calcLabour(this)"></td>
-              <td><div class="cell-r lab-tot">{{ l.total_price|floatformat:3 }} </div></td>
-              <td><button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">×</button></td>
+              <td><input type="number" name="labour_hrs[]" class="fi text-r lab-hrs" value="{{ l.hours|default:1 }}" min="0" step="0.5" oninput="calcLabour(this)"></td>
+              <td><input type="number" name="labour_rate[]" class="fi text-r lab-rate" value="{{ l.unit_price }}" min="0" step="0.001" oninput="calcLabour(this)"></td>
+              <td><div class="lab-tot">{{ l.total_price|floatformat:3 }}</div></td>
+              <td style="text-align:center"><button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">✕</button></td>
             </tr>
             {% endfor %}
           {% else %}
-          <tr>
-            <td>
-              <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
-                <option value="">— Vehicle —</option>
-              </select>
-            </td>
-            <td><input type="text" name="labour_desc[]" placeholder="e.g. Engine repair..."></td>
-            <td>
-              <select name="labour_tech[]">
-                <option value="">— Assign —</option>
-                {% for t in technicians %}
-                <option value="{{ t.id }}">{{ t.full_name }}</option>
-                {% endfor %}
-              </select>
-            </td>
-            <td><input type="number" name="labour_hrs[]" class="lab-hrs"
-                  value="1" min="0" step="0.5" oninput="calcLabour(this)"></td>
-            <td><input type="number" name="labour_rate[]" class="lab-rate"
-                  value="0.000" min="0" step="0.001" oninput="calcLabour(this)"></td>
-            <td><div class="cell-r lab-tot">0.000 </div></td>
-            <td><button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">×</button></td>
-          </tr>
+            <tr>
+              <td>
+                <select name="labour_vehicle_id[]" class="row-veh-select fi"><option value="">— Vehicle —</option></select>
+              </td>
+              <td><input type="text" name="labour_desc[]" class="fi" placeholder="e.g. Engine repair..."></td>
+              <td>
+                <select name="labour_tech[]" class="fi">
+                  <option value="">— Assign —</option>
+                  {% for t in technicians %}<option value="{{ t.id }}">{{ t.full_name }}</option>{% endfor %}
+                </select>
+              </td>
+              <td><input type="number" name="labour_hrs[]" class="fi text-r lab-hrs" value="1" min="0" step="0.5" oninput="calcLabour(this)"></td>
+              <td><input type="number" name="labour_rate[]" class="fi text-r lab-rate" value="0.000" min="0" step="0.001" oninput="calcLabour(this)"></td>
+              <td><div class="lab-tot">0.000</div></td>
+              <td style="text-align:center"><button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">✕</button></td>
+            </tr>
           {% endif %}
         </tbody>
       </table>
     </div>
-    <button type="button" class="btn-add-row" onclick="addLabour()">+ Add Item</button>
-    <div class="sub-total-row">LABOUR SUBTOTAL &nbsp;<span id="labourSub">0.000 </span></div>
-
-  </div>
-
-  <!-- ════════════════════════════════════════
-       GRAND TOTAL
-  ════════════════════════════════════════ -->
-  <div class="grand-box">
-    <div class="gt-row">
-      <span class="gt-lbl">Parts Total</span>
-      <span class="gt-val" id="gtParts">0.000 </span>
-    </div>
-    <div class="gt-row">
-      <span class="gt-lbl">Labour Total</span>
-      <span class="gt-val" id="gtLabour">0.000 </span>
-    </div>
-    <div class="gt-row">
-      <span class="gt-lbl">Discount </span>
-      <span class="gt-val">
-        <input type="number" name="discount" id="discInp"
-          min="0" step="0.001"
-          value="{% if edit_mode %}{{ quotation.discount|default:0 }}{% else %}0{% endif %}"
-          style="border:1px solid #e5e7eb;border-radius:5px;padding:5px 9px;
-                 font-size:13px;width:110px;text-align:right;outline:none;
-                 font-family:monospace;font-weight:700"
-          oninput="calcAll()">
-      </span>
-    </div>
-    <div class="gt-row">
-      <span class="gt-lbl">Tax %</span>
-      <span class="gt-val" style="display:flex;align-items:center;gap:6px">
-        <input type="number" name="tax_percent" id="taxInp"
-          min="0" max="100" step="0.01"
-          value="{% if edit_mode %}{{ quotation.tax_percent|default:0 }}{% else %}0{% endif %}"
-          style="border:1px solid #e5e7eb;border-radius:5px;padding:5px 9px;
-                 font-size:13px;width:80px;text-align:right;outline:none;font-family:monospace"
-          oninput="calcAll()">
-        % &nbsp;= <span id="taxAmt" style="font-family:monospace">0.000 </span>
-      </span>
-    </div>
-    <div class="gt-row total">
-      <span class="gt-lbl">GRAND TOTAL</span>
-      <span class="gt-val" id="grandTotal">0.000 </span>
+    <div class="totals-bar-inline">
+      <span class="totals-lbl">{% trans "Labour Subtotal" %}</span>
+      <span id="labourSub" class="totals-val">0.000</span>
     </div>
   </div>
 
-  <!-- Notes -->
-  <div class="card">
-    <div class="card-body">
-      <label class="fl" style="margin-bottom:6px">Notes / Terms</label>
-      <textarea name="notes" class="fi" rows="3"
-        placeholder="Warranty terms, payment conditions, validity period...">{% if edit_mode %}{{ quotation.notes|default:'' }}{% endif %}</textarea>
+  <!-- ════════ 6. DISCOUNT, TAX & NOTES ════════ -->
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title"><i class="bi bi-percent text-burgundy"></i> {% trans "Discount, Tax & Notes" %}</h2>
+    </div>
+    <div class="jc-card-body">
+      <div class="g2">
+        <div>
+          <div class="sum-row">
+            <span class="sum-lbl">{% trans "Discount" %}</span>
+            <input type="number" name="discount" id="discInp" class="sum-inp" min="0" step="0.001" style="width:130px"
+                   value="{% if edit_mode %}{{ quotation.discount|default:0 }}{% else %}0{% endif %}"
+                   oninput="calcAll()">
+          </div>
+          <div class="sum-row">
+            <span class="sum-lbl">{% trans "Tax %" %}</span>
+            <span style="display:flex;align-items:center;gap:8px">
+              <input type="number" name="tax_percent" id="taxInp" class="sum-inp" min="0" max="100" step="0.01" style="width:90px"
+                     value="{% if edit_mode %}{{ quotation.tax_percent|default:0 }}{% else %}0{% endif %}"
+                     oninput="calcAll()">
+              <span style="font-size:12px;color:#64748b">% =</span>
+              <span id="taxAmt" style="font-family:monospace;font-weight:700;color:#0f172a;min-width:60px;text-align:right">0.000</span>
+            </span>
+          </div>
+        </div>
+        <div>
+          <label class="fl">{% trans "Notes / Terms" %}</label>
+          <textarea name="notes" class="fi" rows="3"
+            placeholder="Warranty terms, payment conditions, validity period...">{% if edit_mode %}{{ quotation.notes|default:'' }}{% endif %}</textarea>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- ════════ 7. GRAND TOTALS ════════ -->
+  <div class="grand-totals-card">
+    <div class="gt-grid">
+      <div class="gt-item"><div class="gt-lbl">{% trans "Parts Total" %}</div><div class="gt-val" id="gtParts">0.000</div></div>
+      <div class="gt-item"><div class="gt-lbl">{% trans "Labour Total" %}</div><div class="gt-val" id="gtLabour">0.000</div></div>
+      <div class="gt-item highlight"><div class="gt-lbl">{% trans "Grand Total" %}</div><div class="gt-val grand" id="grandTotal">0.000</div></div>
+    </div>
+  </div>
+
+  </fieldset>
   </form>
 
-  <!-- Save bar -->
+  {% if view_mode %}
   <div class="save-bar">
-    <a href="{% url 'jobcard_app:quotation_list' %}" class="btn-cancel">Cancel</a>
+    <a href="{% url 'jobcard_app:quotation_list' %}" class="btn-cancel">{% trans "Back to Quotations" %}</a>
+    <a href="{% url 'jobcard_app:quotation_edit' quotation.pk %}" class="btn-save"><i class="bi bi-pencil"></i> {% trans "Edit Quotation" %}</a>
+  </div>
+  {% else %}
+  <div class="save-bar">
+    <a href="{% url 'jobcard_app:quotation_list' %}" class="btn-cancel">{% trans "Cancel" %}</a>
     <!-- requestSubmit() runs the browser's required-field checks; submit() skips them -->
-    <button type="button" class="btn-save"
-            onclick="document.getElementById('quaForm').requestSubmit()">
-        💾
-        {% if edit_mode %}Update Quotation{% else %}Save Quotation{% endif %}
+    <button type="button" class="btn-save" onclick="document.getElementById('quaForm').requestSubmit()">
+      <i class="bi bi-check2-circle"></i> {% if edit_mode %}{% trans "Update Quotation" %}{% else %}{% trans "Save Quotation" %}{% endif %}
     </button>
   </div>
+  {% endif %}
 
 </div>
 
@@ -801,9 +646,9 @@ const VEH_URL          = "{% url 'jobcard_app:jc_get_vehicles' %}";
 const ITEMS_URL        = "{% url 'jobcard_app:jc_get_items' %}";
 const ITEM_MASTER_URL  = "{% url 'jobcard_app:ajax_get_all_items' %}";
 const GET_CUST_EST_URL = "{% url 'jobcard_app:ajax_get_customer_estimates' %}";
-const GET_EST_URL      = "{% url 'jobcard_app:ajax_estimate_quotation_data' %}";   // estimate -> quotation payload
-const JC_LIST_URL      = "{% url 'jobcard_app:ajax_customer_jobcards' %}";         // job cards of a customer
-const JC_DATA_URL      = "{% url 'jobcard_app:ajax_jobcard_estimate_data' %}";     // job card -> payload
+const GET_EST_URL      = "{% url 'jobcard_app:ajax_estimate_quotation_data' %}";
+const JC_LIST_URL      = "{% url 'jobcard_app:ajax_customer_jobcards' %}";
+const JC_DATA_URL      = "{% url 'jobcard_app:ajax_jobcard_estimate_data' %}";
 const HAS_PREFILL      = {% if prefill_est or prefill_job %}true{% else %}false{% endif %};
 
 const fmt = n => parseFloat(n||0).toFixed(3);
@@ -812,9 +657,7 @@ const escAttr = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/
 let quotationItems = [];
 let itemsReady = Promise.resolve();
 
-/* ══════════════════════════════════════════
-   IMPORT PICKERS (Job Card / Estimate)
-══════════════════════════════════════════ */
+/* ══════════ IMPORT PICKERS ══════════ */
 function toggleJcPicker() {
   const panel = document.getElementById('jcPickerPanel');
   if (!panel) return;
@@ -826,7 +669,6 @@ function toggleJcPicker() {
     panel.style.display = 'none';
   }
 }
-
 function closeJcPicker() {
   const panel = document.getElementById('jcPickerPanel');
   if (panel) panel.style.display = 'none';
@@ -888,7 +730,6 @@ function selectAndLoadJobcard(jobId) {
   loadJobCardData(jobId);
 }
 
-/* ── Estimate Picker Dropdown ── */
 function toggleEstPicker() {
   const panel = document.getElementById('estPickerPanel');
   if (!panel) return;
@@ -900,7 +741,6 @@ function toggleEstPicker() {
     panel.style.display = 'none';
   }
 }
-
 function closeEstPicker() {
   const panel = document.getElementById('estPickerPanel');
   if (panel) panel.style.display = 'none';
@@ -933,21 +773,19 @@ function fetchCustomerEstimates() {
       d.estimates.forEach(e => {
         html += `
           <div onclick="selectAndLoadEstimate(${e.id})"
-               style="padding:10px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;
-                      transition:background .12s"
+               style="padding:10px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .12s"
                onmouseover="this.style.background='#fdf2f5'"
                onmouseout="this.style.background='#fff'">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <span style="font-weight:700;font-size:13px;color:#9f1045">${e.estimate_number}</span>
-              <span style="font-size:12px;font-weight:700;color:#16a34a">${e.grand_total} </span>
+              <span style="font-size:12px;font-weight:700;color:#16a34a">${e.grand_total}</span>
             </div>
             <div style="font-size:11px;color:#4b5563;margin-top:3px;display:flex;justify-content:space-between;gap:8px">
               <span>👤 <strong>${e.customer || 'No Customer'}</strong></span>
               <span>📅 ${e.date}</span>
             </div>
             ${e.vehicle ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px">🚗 ${e.vehicle}</div>` : ''}
-          </div>
-        `;
+          </div>`;
       });
       if (list) list.innerHTML = html;
     })
@@ -963,16 +801,13 @@ function selectAndLoadEstimate(estId) {
   loadEstimateData(estId);
 }
 
-/* ══════════════════════════════════════════
-   LOAD A JOB CARD / ESTIMATE INTO THIS QUOTATION
-══════════════════════════════════════════ */
+/* ══════════ LOAD A JOB CARD / ESTIMATE ══════════ */
 function quotFormHasData() {
   const any = q => [...document.querySelectorAll(q)].some(el => (el.value || '').trim() !== '');
   return any('input[name="complaint_description[]"]') ||
          any('select[name="part_item_id[]"]') ||
          any('input[name="labour_desc[]"]');
 }
-
 function confirmReplace() {
   return !quotFormHasData() ||
     confirm('Replace the vehicles, complaints, parts and labour on this quotation with the imported details?');
@@ -980,7 +815,7 @@ function confirmReplace() {
 
 async function loadEstimateData(estId) {
   if (!estId) return;
-  await itemsReady;                       // so parts can be matched to the item list
+  await itemsReady;
   let d;
   try {
     const r = await fetch(GET_EST_URL + '?estimate_id=' + estId, { credentials: 'same-origin' });
@@ -1011,7 +846,6 @@ async function loadJobCardData(jobId) {
 }
 
 function addQuotVehicle(v) {
-  // make sure the vehicle can be selected even if it is not in the customer's list
   if (!customerVehicleCache.some(x => String(x.id) === String(v.id))) {
     customerVehicleCache.push({ id: v.id, label: v.label, vehicle_number: v.label, vehicle_model: v.mm_label || '' });
   }
@@ -1052,7 +886,6 @@ function addQuotComplaintFull(c) {
       : (c.type || '');
   }
 
-  // show every technician so the imported technician is never lost
   const techSel = tr.querySelector('.complaint-tech-select');
   if (techSel) {
     techSel.dataset.initialTechId = c.technician_id || '';
@@ -1075,7 +908,6 @@ function addQuotPart(p) {
   addPartRow(match ? match.id : '', p.unit || '', qty, rate.toFixed(3),
              p.warranty || 'None', p.description || '', p.vehicle_id || '');
   if (!match) {
-    // part is not in the item master: show its name in the box
     const tr  = document.querySelector('#partsTbody tr:last-child');
     const sel = tr && tr.querySelector('select.part-item');
     if (sel) {
@@ -1087,7 +919,6 @@ function addQuotPart(p) {
 }
 
 async function applyImportedData(d, bannerHtml) {
-  // customer, phone, advisor, VIN
   const custSel = document.getElementById('custSel');
   if (d.customer_id && custSel) {
     if (![...custSel.options].some(o => String(o.value) === String(d.customer_id))) {
@@ -1103,7 +934,6 @@ async function applyImportedData(d, bannerHtml) {
   const vin = document.querySelector('input[name="vin"]');
   if (vin && d.vin !== undefined) vin.value = d.vin || '';
 
-  // vehicles: load the customer's vehicle list first, then add the imported rows
   await new Promise(resolve => loadVehicles(custSel ? custSel.value : '', resolve));
   document.getElementById('vehBody').innerHTML = '';
   (d.vehicles || []).forEach(addQuotVehicle);
@@ -1111,22 +941,18 @@ async function applyImportedData(d, bannerHtml) {
   if (vEmpty) vEmpty.style.display = (d.vehicles || []).length ? 'none' : 'block';
   syncVehicleDropdowns();
 
-  // complaints
   document.getElementById('quotComplaintBody').innerHTML = '';
   (d.complaints || []).forEach(addQuotComplaintFull);
   if (!(d.complaints || []).length) addQuotComplaint();
 
-  // parts
   document.getElementById('partsTbody').innerHTML = '';
   (d.parts || []).forEach(addQuotPart);
   if (!(d.parts || []).length) addPartRow();
 
-  // labour
   document.getElementById('labourTbody').innerHTML = '';
   (d.labours || []).forEach(l => addLabourRowWithData(l.description, l.technician_id, l.hours, l.rate, l.vehicle_id));
   if (!(d.labours || []).length) addLabour();
 
-  // discount, tax, notes (estimates only)
   if (d.discount !== undefined && document.getElementById('discInp')) document.getElementById('discInp').value = d.discount || 0;
   if (d.tax_percent !== undefined && document.getElementById('taxInp')) document.getElementById('taxInp').value = d.tax_percent || 0;
   if (d.notes !== undefined) {
@@ -1134,7 +960,6 @@ async function applyImportedData(d, bannerHtml) {
     if (notesArea) notesArea.value = d.notes || '';
   }
 
-  // remember where it came from
   document.getElementById('loadedEstId').value = d.estimate_id || '';
   document.getElementById('loadedJcId').value  = d.jobcard_id || '';
 
@@ -1148,6 +973,7 @@ async function applyImportedData(d, bannerHtml) {
   }
 }
 
+/* ══════════ VEHICLES TABLE ══════════ */
 let customerVehicleCache = [];
 
 function loadVehicles(cid, callback) {
@@ -1155,7 +981,6 @@ function loadVehicles(cid, callback) {
   const tbody = document.getElementById('vehBody');
   const emptyDiv = document.getElementById('vehEmpty');
   if (!cid) {
-    // Clear rows and show empty message
     if (tbody) tbody.innerHTML = '';
     if (emptyDiv) emptyDiv.style.display = 'block';
     syncVehicleDropdowns();
@@ -1166,11 +991,10 @@ function loadVehicles(cid, callback) {
     .then(r => r.json())
     .then(d => {
       customerVehicleCache = d.vehicles || [];
-      // Clear old rows so we show vehicles for the newly selected customer
       if (tbody) tbody.innerHTML = '';
       if (customerVehicleCache.length > 0) {
         if (emptyDiv) emptyDiv.style.display = 'none';
-        addVehicleRow(); // Auto-add first row with first vehicle
+        addVehicleRow();
       } else {
         if (emptyDiv) emptyDiv.style.display = 'block';
       }
@@ -1191,7 +1015,6 @@ function syncVehicleDropdowns() {
   const selectedVehicles = customerVehicleCache.filter(v => selectedVehicleIds.includes(String(v.id)));
 
   document.querySelectorAll('.row-veh-select').forEach(sel => {
-    // data-want = vehicle requested when the row was created (imported rows)
     const curVal = sel.value || sel.dataset.want || '';
     delete sel.dataset.want;
     sel.innerHTML = '<option value="">— Vehicle —</option>';
@@ -1224,33 +1047,28 @@ function addVehicleRow(vehicleIdToSelect, mileageVal) {
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td><select name="qt_vehicle_id[]" class="veh-select" onchange="onVehRowChange(this)"></select></td>
+    <td><select name="qt_vehicle_id[]" class="veh-select fi" onchange="onVehRowChange(this)"></select></td>
     <td><input type="text" class="fi veh-mm-box" readonly placeholder="Make & Model"></td>
     <td><input type="number" name="qt_vehicle_mileage[]" min="0" class="fi" placeholder="Mileage"></td>
-    <td>
+    <td style="text-align:center">
       <input type="hidden" name="qt_vehicle_notes[]" value="">
-      <button type="button" class="btn-rm" onclick="removeVehRow(this)" style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">✕ Remove</button>
-    </td>
-  `;
+      <button type="button" class="btn-rm" onclick="removeVehRow(this)">✕</button>
+    </td>`;
   tbody.appendChild(tr);
 
   const sel = tr.querySelector('.veh-select');
   populateVehSelectOptions(sel, vehicleIdToSelect);
 
   if (!vehicleIdToSelect && customerVehicleCache.length > 0) {
-    const usedIds = Array.from(document.querySelectorAll('#vehBody select[name="qt_vehicle_id[]"]'))
-      .map(s => s.value);
+    const usedIds = Array.from(document.querySelectorAll('#vehBody select[name="qt_vehicle_id[]"]')).map(s => s.value);
     const avail = customerVehicleCache.find(v => !usedIds.includes(String(v.id)));
-    if (avail) {
-      sel.value = avail.id;
-    }
+    if (avail) sel.value = avail.id;
   }
 
   if (mileageVal) {
     const milInp = tr.querySelector('input[name="qt_vehicle_mileage[]"]');
     if (milInp) milInp.value = mileageVal;
   }
-
   onVehRowChange(sel);
 }
 
@@ -1289,39 +1107,36 @@ function loadPhone(sel) {
   if (phoneInp) phoneInp.value = phone;
 }
 
-/* ── Calc ── */
+/* ══════════ CALCULATIONS ══════════ */
 function calcPart(inp) {
-    if (!inp) return;
-    const tr = inp.closest('tr');
-    const qty = parseFloat(tr.querySelector('.qty')?.value) || 0;
-    const rate = parseFloat(tr.querySelector('.price')?.value) || 0;
-    const total = qty * rate;
-    const output = tr.querySelector('.part-total');
-    if (output) {
-        output.textContent = total.toFixed(3) ;
-    }
-    calcAll();
+  if (!inp) return;
+  const tr = inp.closest('tr');
+  const qty = parseFloat(tr.querySelector('.qty')?.value) || 0;
+  const rate = parseFloat(tr.querySelector('.price')?.value) || 0;
+  const output = tr.querySelector('.part-total');
+  if (output) output.textContent = (qty * rate).toFixed(3);
+  calcAll();
 }
 
 function renderQuotationParts() {
-    const tbody = document.getElementById('partsTbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    {% if edit_mode and parts %}
-        {% for p in parts %}
-            addPartRow(
-                '{{ p.item_ref|default:"" }}',
-                '{{ p.unit|default:"" }}',
-                '{{ p.quantity|default:1 }}',
-                '{{ p.unit_price|floatformat:3 }}',
-                '{{ p.warranty|default:"None" }}',
-                '{{ p.description|default:""|escapejs }}',
-                '{{ p.vehicle_id|default:"" }}'
-            );
-        {% endfor %}
-    {% else %}
-        addPartRow();
-    {% endif %}
+  const tbody = document.getElementById('partsTbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  {% if edit_mode and parts %}
+    {% for p in parts %}
+      addPartRow(
+        '{{ p.item_ref|default:"" }}',
+        '{{ p.unit|default:"" }}',
+        '{{ p.quantity|default:1 }}',
+        '{{ p.unit_price|floatformat:3 }}',
+        '{{ p.warranty|default:"None" }}',
+        '{{ p.description|default:""|escapejs }}',
+        '{{ p.vehicle_id|default:"" }}'
+      );
+    {% endfor %}
+  {% else %}
+    addPartRow();
+  {% endif %}
 }
 
 function calcLabour(inp) {
@@ -1329,7 +1144,7 @@ function calcLabour(inp) {
   const hrs = parseFloat(tr.querySelector('.lab-hrs')?.value)  || 0;
   const rt  = parseFloat(tr.querySelector('.lab-rate')?.value) || 0;
   const td  = tr.querySelector('.lab-tot');
-  if (td) td.textContent = fmt(hrs * rt) ;
+  if (td) td.textContent = fmt(hrs * rt);
   calcAll();
 }
 
@@ -1346,21 +1161,21 @@ function calcAll() {
     labour += h * r;
   });
   const sub    = parts + labour;
-  const discInp = document.getElementById('discInp');
-  const taxInp  = document.getElementById('taxInp');
-  const disc   = parseFloat(discInp ? discInp.value : 0) || 0;
-  const taxPct = parseFloat(taxInp ? taxInp.value : 0)   || 0;
+  const disc   = parseFloat(document.getElementById('discInp')?.value) || 0;
+  const taxPct = parseFloat(document.getElementById('taxInp')?.value)  || 0;
   const tax    = sub * taxPct / 100;
   const grand  = sub - disc + tax;
 
-  if (document.getElementById('partsSub'))   document.getElementById('partsSub').textContent   = fmt(parts)  ;
-  if (document.getElementById('labourSub'))  document.getElementById('labourSub').textContent  = fmt(labour) ;
-  if (document.getElementById('gtParts'))    document.getElementById('gtParts').textContent    = fmt(parts)  ;
-  if (document.getElementById('gtLabour'))   document.getElementById('gtLabour').textContent   = fmt(labour);
-  if (document.getElementById('taxAmt'))     document.getElementById('taxAmt').textContent     = fmt(tax)    ;
-  if (document.getElementById('grandTotal')) document.getElementById('grandTotal').textContent = fmt(grand)  ;
+  const el = id => document.getElementById(id);
+  if (el('partsSub'))   el('partsSub').textContent   = fmt(parts);
+  if (el('labourSub'))  el('labourSub').textContent  = fmt(labour);
+  if (el('gtParts'))    el('gtParts').textContent    = fmt(parts);
+  if (el('gtLabour'))   el('gtLabour').textContent   = fmt(labour);
+  if (el('taxAmt'))     el('taxAmt').textContent     = fmt(tax);
+  if (el('grandTotal')) el('grandTotal').textContent = fmt(grand);
 }
 
+/* ══════════ LABOUR ══════════ */
 function addLabour() {
   addLabourRowWithData('', '', 1, 0, '');
 }
@@ -1375,18 +1190,13 @@ function addLabourRowWithData(desc = '', techId = '', hrs = 1, rate = 0, vehId =
   {% endfor %}
 
   tr.innerHTML = `
-    <td>
-      <select name="labour_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
-        <option value="">— Vehicle —</option>
-      </select>
-    </td>
-    <td><input type="text" name="labour_desc[]" value="${escAttr(desc)}" placeholder="e.g. Engine repair..."></td>
-    <td><select name="labour_tech[]">${techOpts}</select></td>
-    <td><input type="number" name="labour_hrs[]" class="lab-hrs" value="${hrs}" min="0" step="0.5" oninput="calcLabour(this)"></td>
-    <td><input type="number" name="labour_rate[]" class="lab-rate" value="${parseFloat(rate).toFixed(3)}" min="0" step="0.001" oninput="calcLabour(this)"></td>
-    <td><div class="cell-r lab-tot">${fmt(hrs * rate)} </div></td>
-    <td><button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">×</button></td>
-  `;
+    <td><select name="labour_vehicle_id[]" class="row-veh-select fi"><option value="">— Vehicle —</option></select></td>
+    <td><input type="text" name="labour_desc[]" class="fi" value="${escAttr(desc)}" placeholder="e.g. Engine repair..."></td>
+    <td><select name="labour_tech[]" class="fi">${techOpts}</select></td>
+    <td><input type="number" name="labour_hrs[]" class="fi text-r lab-hrs" value="${hrs}" min="0" step="0.5" oninput="calcLabour(this)"></td>
+    <td><input type="number" name="labour_rate[]" class="fi text-r lab-rate" value="${parseFloat(rate).toFixed(3)}" min="0" step="0.001" oninput="calcLabour(this)"></td>
+    <td><div class="lab-tot">${fmt(hrs * rate)}</div></td>
+    <td style="text-align:center"><button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">✕</button></td>`;
   tbody.appendChild(tr);
   if (vehId) {
     const vSel = tr.querySelector('.row-veh-select');
@@ -1403,156 +1213,114 @@ function rmRow(btn) {
   calcAll();
 }
 
-/* ── Item Master Search & Row Addition ── */
+/* ══════════ ITEM MASTER / PARTS ══════════ */
 document.addEventListener('DOMContentLoaded', function () {
-    const custSel = document.getElementById('custSel');
-    const cid = custSel ? custSel.value : '';
+  const custSel = document.getElementById('custSel');
+  const cid = custSel ? custSel.value : '';
 
-    itemsReady = fetch(ITEM_MASTER_URL)
-        .then(response => response.json())
-        .then(data => {
-            quotationItems = data.items || [];
-            renderQuotationParts();
-            calcAll();
+  itemsReady = fetch(ITEM_MASTER_URL)
+    .then(response => response.json())
+    .then(data => {
+      quotationItems = data.items || [];
+      renderQuotationParts();
+      calcAll();
 
-            // when opened from a job card / estimate the loader builds the vehicle rows itself
-            if (cid && !HAS_PREFILL) {
-              loadVehicles(cid, function() {
-                {% if edit_mode and quotation.vehicles.exists %}
-                  const vehTbody = document.getElementById('vehBody');
-                  if (vehTbody) vehTbody.innerHTML = '';
-                  {% for qv in quotation.vehicles.all %}
-                    addVehicleRow('{{ qv.vehicle_id }}', '{{ qv.mileage|default:"" }}');
-                  {% endfor %}
-                {% endif %}
-              });
-            }
-        })
-        .catch(error => {
-            console.error('Failed to load Item Master:', error);
+      if (cid && !HAS_PREFILL) {
+        loadVehicles(cid, function () {
+          {% if edit_mode and quotation.vehicles.exists %}
+          const vehTbody = document.getElementById('vehBody');
+          if (vehTbody) vehTbody.innerHTML = '';
+          {% for qv in quotation.vehicles.all %}
+          addVehicleRow('{{ qv.vehicle_id }}', '{{ qv.mileage|default:"" }}');
+          {% endfor %}
+          {% endif %}
         });
+      }
+    })
+    .catch(error => {
+      console.error('Failed to load Item Master:', error);
+      renderQuotationParts();   // still show saved parts / one blank row
+      calcAll();
+    });
 
-    {% if prefill_est %}
-    itemsReady.then(() => loadEstimateData({{ prefill_est.id }}));
-    {% elif prefill_job %}
-    itemsReady.then(() => loadJobCardData({{ prefill_job.id }}));
-    {% endif %}
+  {% if prefill_est %}
+  itemsReady.then(() => loadEstimateData({{ prefill_est.id }}));
+  {% elif prefill_job %}
+  itemsReady.then(() => loadJobCardData({{ prefill_job.id }}));
+  {% endif %}
 });
 
 function buildQuotationItemOptions(selectedId = '') {
-    let html = '<option value="">— Select Spare Part —</option>';
-    quotationItems.forEach(item => {
-        const selected = String(selectedId) === String(item.id) ? 'selected' : '';
-        html += `
-            <option
-                value="${item.id}"
-                data-name="${escAttr(item.name)}"
-                data-unit="${escAttr(item.unit)}"
-                data-price="${item.unit_price}"
-                ${selected}>
-                ${item.name}
-            </option>
-        `;
-    });
-    return html;
+  let html = '<option value="">— Select Spare Part —</option>';
+  quotationItems.forEach(item => {
+    const selected = String(selectedId) === String(item.id) ? 'selected' : '';
+    html += `<option value="${item.id}" data-name="${escAttr(item.name)}" data-unit="${escAttr(item.unit)}" data-price="${item.unit_price}" ${selected}>${escAttr(item.name)}</option>`;
+  });
+  return html;
 }
 
 function buildWarrantyOptions(selected = 'None') {
-    const options = ['None', '1 Month', '3 Months', '6 Months', '12 Months', '2 Years'];
-    return options.map(w => `
-        <option value="${w}" ${w === selected ? 'selected' : ''}>${w}</option>
-    `).join('');
+  const options = ['None', '1 Month', '3 Months', '6 Months', '12 Months', '2 Years'];
+  return options.map(w => `<option value="${w}" ${w === selected ? 'selected' : ''}>${w}</option>`).join('');
 }
 
-function addPartRow(
-    itemId = '',
-    unit = '',
-    qty = 1,
-    rate = '0.000',
-    warranty = 'None',
-    customDesc = '',
-    vehId = ''
-) {
-    const tbody = document.getElementById('partsTbody');
-    if (!tbody) return;
+function addPartRow(itemId = '', unit = '', qty = 1, rate = '0.000', warranty = 'None', customDesc = '', vehId = '') {
+  const tbody = document.getElementById('partsTbody');
+  if (!tbody) return;
 
-    const tr = document.createElement('tr');
-    const existingItem = quotationItems.find(i => String(i.id) === String(itemId) || (customDesc && String(i.name).toLowerCase() === String(customDesc).toLowerCase()));
-    const matchedId = existingItem ? existingItem.id : itemId;
-    const description = existingItem ? existingItem.name : (customDesc || '');
-    const existingUnit = unit || (existingItem ? existingItem.unit : '');
-    const safeDesc = escAttr(description);
+  const tr = document.createElement('tr');
+  const existingItem = quotationItems.find(i => String(i.id) === String(itemId) || (customDesc && String(i.name).toLowerCase() === String(customDesc).toLowerCase()));
+  const matchedId = existingItem ? existingItem.id : itemId;
+  const description = existingItem ? existingItem.name : (customDesc || '');
+  const existingUnit = unit || (existingItem ? existingItem.unit : '');
 
-    tr.innerHTML = `
-        <td>
-            <select name="part_vehicle_id[]" class="row-veh-select fi" style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:6px 9px;font-size:12px;background:#fff;outline:none">
-                <option value="">— Vehicle —</option>
-            </select>
-        </td>
-        <td>
-            <select name="part_item_id[]" class="part-item" onchange="quotationItemChanged(this)">
-                ${buildQuotationItemOptions(matchedId)}
-            </select>
-            <input type="hidden" name="description[]" class="part-desc" value="${safeDesc}">
-        </td>
-        <td>
-            <input type="text" name="item_unit[]" class="part-unit" value="${escAttr(existingUnit)}" ${matchedId ? 'readonly' : ''} style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:5px 8px;font-size:12px">
-        </td>
-        <td>
-            <input type="number" name="quantity[]" class="qty" value="${qty}" min="0" step="0.01" oninput="calcPart(this)">
-        </td>
-        <td>
-            <input type="number" name="unit_price[]" class="price" value="${rate}" min="0" step="0.001" oninput="calcPart(this)">
-        </td>
-        <td>
-            <div class="cell-r part-total">0.000 </div>
-        </td>
-        <td>
-            <select name="part_warranty[]">
-                ${buildWarrantyOptions(warranty)}
-            </select>
-        </td>
-        <td>
-            <button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">×</button>
-        </td>
-    `;
-    tbody.appendChild(tr);
-    if (vehId) {
-      const vSel = tr.querySelector('.row-veh-select');
-      if (vSel) vSel.dataset.want = String(vehId);
-    }
-    syncVehicleDropdowns();
-    calcPart(tr.querySelector('.qty'));
+  tr.innerHTML = `
+    <td><select name="part_vehicle_id[]" class="row-veh-select fi"><option value="">— Vehicle —</option></select></td>
+    <td>
+      <select name="part_item_id[]" class="part-item fi" onchange="quotationItemChanged(this)">${buildQuotationItemOptions(matchedId)}</select>
+      <input type="hidden" name="description[]" class="part-desc" value="${escAttr(description)}">
+    </td>
+    <td><input type="text" name="item_unit[]" class="fi part-unit" value="${escAttr(existingUnit)}" ${matchedId ? 'readonly' : ''}></td>
+    <td><input type="number" name="quantity[]" class="fi text-r qty" value="${qty}" min="0" step="0.01" oninput="calcPart(this)"></td>
+    <td><input type="number" name="unit_price[]" class="fi text-r price" value="${rate}" min="0" step="0.001" oninput="calcPart(this)"></td>
+    <td><div class="part-total">0.000</div></td>
+    <td><select name="part_warranty[]" class="fi">${buildWarrantyOptions(warranty)}</select></td>
+    <td style="text-align:center"><button type="button" class="btn-rm" onclick="rmRow(this);calcAll()">✕</button></td>`;
+  tbody.appendChild(tr);
+  if (vehId) {
+    const vSel = tr.querySelector('.row-veh-select');
+    if (vSel) vSel.dataset.want = String(vehId);
+  }
+  syncVehicleDropdowns();
+  calcPart(tr.querySelector('.qty'));
 }
 
 function quotationItemChanged(select) {
-    const tr = select.closest('tr');
-    const option = select.options[select.selectedIndex];
-    const descInp = tr.querySelector('.part-desc');
-    const unitInp = tr.querySelector('.part-unit');
-    const priceInp = tr.querySelector('.price');
+  const tr = select.closest('tr');
+  const option = select.options[select.selectedIndex];
+  const descInp = tr.querySelector('.part-desc');
+  const unitInp = tr.querySelector('.part-unit');
+  const priceInp = tr.querySelector('.price');
 
-    if (!option || !option.value) {
-        if (descInp) descInp.value = '';
-        if (unitInp) { unitInp.value = ''; unitInp.removeAttribute('readonly'); }
-        if (priceInp) priceInp.value = '0.000';
-        calcPart(tr.querySelector('.qty'));
-        return;
-    }
-
-    const name  = option.dataset.name || '';
-    const unit  = option.dataset.unit || '';
-    const price = parseFloat(option.dataset.price || 0);
-
-    if (descInp) descInp.value = name;
-    if (unitInp) { unitInp.value = unit; unitInp.setAttribute('readonly', 'readonly'); }
-    if (priceInp) priceInp.value = price.toFixed(3);
+  if (!option || !option.value) {
+    if (descInp) descInp.value = '';
+    if (unitInp) { unitInp.value = ''; unitInp.removeAttribute('readonly'); }
+    if (priceInp) priceInp.value = '0.000';
     calcPart(tr.querySelector('.qty'));
+    return;
+  }
+
+  const name  = option.dataset.name || '';
+  const unit  = option.dataset.unit || '';
+  const price = parseFloat(option.dataset.price || 0);
+
+  if (descInp) descInp.value = name;
+  if (unitInp) { unitInp.value = unit; unitInp.setAttribute('readonly', 'readonly'); }
+  if (priceInp) priceInp.value = price.toFixed(3);
+  calcPart(tr.querySelector('.qty'));
 }
 
-/* ══════════════════════════════════════════
-   RELATIONAL MAPPING: Category -> Complaint Type -> Skill -> Technician
-══════════════════════════════════════════ */
+/* ══════════ RELATIONAL MAPPING ══════════ */
 let relationalMappingData = { categories: [], technicians: [], skills: [] };
 try {
   relationalMappingData = {{ relational_mapping_json|safe }};
@@ -1654,9 +1422,7 @@ function handleComplaintTypeChange(typeSelect) {
 function handleOverrideToggle(checkbox) {
   const tr = checkbox.closest('tr');
   const overrideHidden = tr.querySelector('.override-hidden');
-  if (overrideHidden) {
-    overrideHidden.value = checkbox.checked ? '1' : '0';
-  }
+  if (overrideHidden) overrideHidden.value = checkbox.checked ? '1' : '0';
 
   const typeSelect = tr.querySelector('.complaint-type-select');
   const selectedOpt = typeSelect ? typeSelect.options[typeSelect.selectedIndex] : null;
@@ -1685,9 +1451,7 @@ function updateTechnicianOptions(tr, skillId, isOverride, skillName = '') {
       opt.value = t.id;
       opt.textContent = `${t.staff_id ? t.staff_id + ' — ' : ''}${t.full_name}${isQualified && skillId ? ' ★' : ''}`;
       opt.dataset.isQualified = isQualified ? '1' : '0';
-      if (String(t.id) === String(currentTechVal)) {
-        opt.selected = true;
-      }
+      if (String(t.id) === String(currentTechVal)) opt.selected = true;
       techSelect.appendChild(opt);
     }
   });
@@ -1698,11 +1462,9 @@ function updateTechnicianOptions(tr, skillId, isOverride, skillName = '') {
 
   if (skillBadge) {
     if (skillId && skillName) {
-      if (isOverride) {
-        skillBadge.innerHTML = `<span style="font-size:10px;color:#d97706;background:#fef3c7;padding:2px 6px;border-radius:4px;display:inline-block">⚙️ Override (Req: ${skillName})</span>`;
-      } else {
-        skillBadge.innerHTML = `<span style="font-size:10px;color:#9f1045;background:#fdf2f5;padding:2px 6px;border-radius:4px;display:inline-block">🎯 Skill: <strong>${skillName}</strong> (${qualifiedCount} spec.)</span>`;
-      }
+      skillBadge.innerHTML = isOverride
+        ? `<span style="font-size:10px;color:#d97706;background:#fef3c7;padding:2px 6px;border-radius:4px;display:inline-block">⚙️ Override (Req: ${escAttr(skillName)})</span>`
+        : `<span style="font-size:10px;color:#9f1045;background:#fdf2f5;padding:2px 6px;border-radius:4px;display:inline-block">🎯 ${escAttr(skillName)} (${qualifiedCount})</span>`;
     } else {
       skillBadge.innerHTML = '';
     }
@@ -1741,55 +1503,39 @@ function initComplaintRows() {
   });
 }
 
-/* ── Add complaint row (relational style) ── */
+/* ══════════ COMPLAINT ROWS ══════════ */
 function addQuotComplaint(desc='', catName='', type='Mechanical', status='Open', bg='', vehId='') {
   const tr = document.createElement('tr');
-  tr.style.cssText = 'border-bottom:1px solid #f3f4f6' + (bg ? ';background:' + bg : '');
+  if (bg) tr.style.background = bg;
   tr.innerHTML = `
-    <td style="padding:6px 6px">
-      <select name="complaint_vehicle_id[]" class="row-veh-select fi"
-              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;background:#fff;outline:none">
-        <option value="">— Vehicle —</option>
-      </select>
-    </td>
-    <td style="padding:6px 6px">
-      <select name="complaint_category_id[]" class="complaint-cat-select" onchange="handleCategoryChange(this)"
-              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+    <td><select name="complaint_vehicle_id[]" class="row-veh-select fi"><option value="">— Vehicle —</option></select></td>
+    <td>
+      <select name="complaint_category_id[]" class="complaint-cat-select fi" onchange="handleCategoryChange(this)">
         <option value="">— Category —</option>
         {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name|escapejs }}</option>{% endfor %}
       </select>
       <input type="hidden" name="complaint_category[]" class="cat-txt">
     </td>
-    <td style="padding:6px 6px">
-      <select name="complaint_type_id[]" class="complaint-type-select" onchange="handleComplaintTypeChange(this)"
-              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+    <td>
+      <select name="complaint_type_id[]" class="complaint-type-select fi" onchange="handleComplaintTypeChange(this)">
         <option value="">— Complaint Type —</option>
       </select>
       <input type="hidden" name="complaint_type[]" class="type-txt">
     </td>
-    <td style="padding:6px 6px">
-      <input type="text" name="complaint_description[]" value="${escAttr(desc)}"
-            placeholder="Describe complaint..."
-            style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 8px;font-size:12px;color:#111827;background:#fff;outline:none">
-    </td>
-    <td style="padding:6px 6px">
-      <select name="complaint_technician[]" class="complaint-tech-select"
-              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
-        <option value="">— Select Technician —</option>
-      </select>
+    <td><input type="text" name="complaint_description[]" class="fi" value="${escAttr(desc)}" placeholder="Describe complaint..."></td>
+    <td>
+      <select name="complaint_technician[]" class="complaint-tech-select fi"><option value="">— Select Technician —</option></select>
+      <div class="skill-badge-info"></div>
       <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
     </td>
-    <td style="padding:6px 6px">
-      <select name="complaint_status[]"
-              style="width:100%;border:1px solid #e5e7eb;border-radius:5px;padding:7px 6px;font-size:12px;color:#111827;background:#fff;outline:none;cursor:pointer">
+    <td>
+      <select name="complaint_status[]" class="fi">
         <option value="Open" ${status==='Open'?'selected':''}>Open</option>
         <option value="In Progress" ${status==='In Progress'?'selected':''}>In Progress</option>
         <option value="Resolved" ${status==='Resolved'?'selected':''}>Resolved</option>
       </select>
     </td>
-    <td style="padding:6px 6px;text-align:center">
-      <button type="button" class="btn-rm" onclick="rmQuotComplaint(this)">✕ Remove</button>
-    </td>`;
+    <td style="text-align:center"><button type="button" class="btn-rm" onclick="rmQuotComplaint(this)">✕</button></td>`;
   document.getElementById('quotComplaintBody').appendChild(tr);
   if (vehId) {
     const vSel = tr.querySelector('.row-veh-select');
@@ -1799,7 +1545,6 @@ function addQuotComplaint(desc='', catName='', type='Mechanical', status='Open',
   syncVehicleDropdowns();
 }
 
-/* ── Remove complaint row ── */
 function rmQuotComplaint(btn) {
   const tbody = btn.closest('tbody');
   const tr    = btn.closest('tr');
@@ -1817,7 +1562,7 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#jcPickerWrap'))  closeJcPicker();
 });
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   calcAll();
   initComplaintRows();
 });

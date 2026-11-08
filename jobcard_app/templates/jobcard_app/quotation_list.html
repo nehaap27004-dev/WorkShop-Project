@@ -171,6 +171,9 @@
                                 {{ q.grand_total|floatformat:2 }}
                             </td>
                             <td class="align-middle text-center text-nowrap">
+                                <a href="{% url 'jobcard_app:quotation_view' q.pk %}" class="btn btn-sm btn-outline-info mr-1" title="{% trans 'View Quotation' %}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
                                 <a href="{% url 'jobcard_app:quotation_edit' q.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit Quotation' %}">
                                     <i class="bi bi-pencil"></i>
                                 </a>

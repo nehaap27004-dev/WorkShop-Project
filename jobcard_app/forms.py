@@ -221,8 +221,10 @@ class WorkshopVehicleForm(forms.ModelForm):
             self.fields["status"].initial = "active"
 
         # Customer selection
-        self.fields["customer"].queryset = LedgerCreation.objects.all()
-
+        self.fields["customer"].queryset = LedgerCreation.objects.filter(
+            groups_id=29,
+            types='DR'
+        ).order_by('ledger_name')
         # Model selection is populated through Select2/AJAX.
         self.fields["vehicle_model"].queryset = model_queryset()
         self.fields["vehicle_model"].required = True

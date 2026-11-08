@@ -2,147 +2,166 @@
 {% load i18n %}
 
 {% block content %}
-<!-- Custom CSS -->
 <style>
-    h2, h3, h4, h5 {
-        font-family: 'Segoe UI', sans-serif;
-    }
-
-    form label {
-        font-weight: 500;
-        color: #444;
-    }
-
-    input, select, textarea {
-        width: 100% !important;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        padding: 6px 10px;
-        font-size: 0.95rem;
-    }
-
-    input:focus, select:focus, textarea:focus {
-        border-color: #5A8DEE;
-        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
-        outline: none;
-    }
-
-    .btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
-    }
-
-    .btn-secondary {
-        background-color: #6c757d !important;
-        border-color: #6c757d !important;
-    }
-
-    .btn-danger {
-        background-color: #dc3545 !important;
-        border-color: #dc3545 !important;
-    }
-
-    .card {
-        border-radius: 12px;
-    }
-
-    .card-header {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .table th {
-        background-color: #343a40;
-        color: white;
-        font-weight: 600;
-    }
-
-    .btn:hover {
-        opacity: 0.9;
-        transition: 0.2s ease-in-out;
-    }
+  .sf-wrapper { max-width:900px; margin:0 auto; padding-bottom:60px; }
+  .jc-page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .jc-page-hdr-left { display:flex; align-items:center; gap:10px; }
+  .jc-page-icon { width:38px; height:38px; background:#fdf2f5; border:1px solid #f9c9d5; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:20px; color:#9f1045; }
+  .jc-page-title { font-size:20px; font-weight:700; color:#0f172a; margin:0; line-height:1.2; letter-spacing:-0.3px; }
+  .jc-page-sub { font-size:12px; color:#64748b; margin-top:2px; }
+  .jc-btn-back { background:#fff; color:#334155; border:1px solid #cbd5e1; border-radius:6px; padding:7px 14px; font-size:12.5px; font-weight:600; text-decoration:none !important; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; }
+  .jc-btn-back:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
+  .jc-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:16px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,.04); }
+  .jc-card-hdr { background:#ffffff; border-bottom:1px solid #f1f5f9; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .jc-card-title { font-size:13.5px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px; margin:0; }
+  .jc-card-body { padding:18px; }
+  .fl { display:block; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+  .fi { width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 10px; font-size:12.5px; color:#0f172a; background:#fff; outline:none; transition:all .15s ease-in-out; font-family:inherit; box-sizing:border-box; }
+  .fi:focus { border-color:#9f1045; box-shadow:0 0 0 3px rgba(159,16,69,.12); }
+  .fi::placeholder { color:#94a3b8; }
+  select.fi { cursor:pointer; background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 10px center; background-size:12px 10px; padding-right:28px; -webkit-appearance:none; -moz-appearance:none; appearance:none; }
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .mb { margin-bottom:14px; }
+  .btn-save { background:#9f1045; color:#fff; border:none; border-radius:6px; padding:7px 18px; font-size:12.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; }
+  .btn-save:hover { background:#830d38; }
+  .btn-cancel { background:#fff; color:#475569; border:1px solid #cbd5e1; border-radius:6px; padding:7px 14px; font-size:12.5px; font-weight:600; text-decoration:none !important; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; }
+  .btn-cancel:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
+  .stbl { width:100%; border-collapse:collapse; }
+  .stbl thead th { background:#ffffff; color:#64748b; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; padding:9px 14px; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+  .stbl tbody td { padding:9px 14px; border-bottom:1px solid #f1f5f9; vertical-align:middle; font-size:12.5px; color:#1e293b; }
+  .stbl tbody tr:last-child td { border-bottom:none; }
+  .stbl tbody tr:hover { background:#fafafa; }
+  .btn-act-edit { background:#fdf2f5; border:1px solid #f9c9d5; color:#9f1045; border-radius:5px; font-size:11.5px; font-weight:600; padding:4px 10px; transition:all .15s; white-space:nowrap; }
+  .btn-act-edit:hover { background:#9f1045; color:#fff; border-color:#9f1045; }
+  .btn-act-del { background:#fff5f5; border:1px solid #fecaca; color:#dc2626; border-radius:5px; font-size:11.5px; font-weight:600; padding:4px 8px; transition:all .15s; }
+  .btn-act-del:hover { background:#dc2626; color:#fff; border-color:#dc2626; }
+  .search-wrap { position:relative; }
+  .search-wrap .si { position:absolute; left:9px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:13px; }
+  .search-wrap input { padding-left:28px; border:1px solid #e2e8f0; border-radius:6px; font-size:12.5px; padding-top:6px; padding-bottom:6px; outline:none; min-width:200px; }
+  .search-wrap input:focus { border-color:#9f1045; box-shadow:0 0 0 2px rgba(159,16,69,.1); }
+  .edit-banner { background:#fffbeb; border:1px solid #fcd34d; border-radius:7px; padding:8px 14px; font-size:12.5px; color:#92400e; display:flex; align-items:center; gap:7px; margin-bottom:14px; }
 </style>
 
-<div class="container mt-4 mb-5">
-    <h2 class="mb-4 text-center fw-bold text-primary">
-        {% if edit_id %}{% trans "Update" %}{% else %}{% trans "Add" %}{% endif %} {% trans "Staff Category" %}
-    </h2>
+<div class="container-fluid p-0 sf-wrapper">
 
-    <!-- Add/Edit Form -->
-    <form method="post" class="needs-validation">
-        {% csrf_token %}
-        
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">{% trans "Category Information" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        {{ form.name.label_tag }}
-                        {{ form.name }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="d-flex gap-3 mt-4">
-            <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-                <i class="bi bi-{% if edit_id %}check-circle{% else %}plus-circle{% endif %} me-2"></i>
-                {% if edit_id %}{% trans "Update" %}{% else %}{% trans "Add" %}{% endif %}
-            </button>
-            {% if edit_id %}
-                <a href="{% url 'fleet_app:staff_category_manage' %}" class="btn btn-secondary px-4 py-2">
-                    <i class="bi bi-x-circle me-2"></i>{% trans "Cancel" %}
-                </a>
-            {% endif %}
-        </div>
-    </form>
-
-    <!-- Categories List -->
-    <div class="card shadow-sm mt-5">
-        <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">{% trans "Existing Categories" %}</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle text-center">
-                    <thead class="table-dark">
-                        <tr>
-                            <th><i class="bi bi-tag me-2"></i>{% trans "Name" %}</th>
-                            <th><i class="bi bi-gear me-2"></i>{% trans "Actions" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for category in categories %}
-                            <tr>
-                                <td><strong>{{ category.name }}</strong></td>
-                                <td>
-                                    <div class="d-flex justify-content-center gap-2">
-                                        <a href="{% url 'fleet_app:staff_category_edit' category.pk %}" class="btn btn-sm btn-primary px-3 py-1">
-                                            <i class="bi bi-pencil-square me-1"></i>{% trans "Edit" %}
-                                        </a>
-                                        <form method="post" style="display:inline;">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="delete" value="{{ category.pk }}">
-                                            <button type="submit" class="btn btn-sm btn-danger px-3 py-1" onclick="return confirm('{% trans 'Are you sure you want to delete this category?' %}')">
-                                                <i class="bi bi-trash me-1"></i>{% trans "Delete" %}
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="2" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                    {% trans "No categories found. Add your first category above." %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <!-- Page Header -->
+  <div class="jc-page-hdr">
+    <div class="jc-page-hdr-left">
+      <div class="jc-page-icon"><i class="bi bi-tags-fill"></i></div>
+      <div>
+        <h1 class="jc-page-title">{% trans "Staff Categories" %}</h1>
+        <div class="jc-page-sub">{% trans "Manage staff category types used in the Staff Directory" %}</div>
+      </div>
     </div>
+    {% if edit_id %}
+      <a href="{% url 'fleet_app:staff_category_manage' %}" class="jc-btn-back">
+        <i class="bi bi-plus-circle"></i>{% trans "Add New" %}
+      </a>
+    {% endif %}
+  </div>
+
+  <!-- Add / Edit Form -->
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title">
+        <i class="bi bi-{% if edit_id %}pencil-fill{% else %}plus-circle-fill{% endif %}" style="color:#9f1045;"></i>
+        {% if edit_id %}{% trans "Edit Category" %}{% else %}{% trans "Add New Category" %}{% endif %}
+      </h2>
+    </div>
+    <div class="jc-card-body">
+      {% if edit_id %}
+      <div class="edit-banner">
+        <i class="bi bi-pencil-square"></i>
+        {% trans "Editing category ID:" %} <strong>{{ edit_id }}</strong>
+      </div>
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="g2 mb">
+          <div>
+            <label class="fl">{{ form.name.label }}</label>
+            {{ form.name }}
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; padding-top:12px; border-top:1px solid #f1f5f9; margin-top:4px;">
+          {% if edit_id %}
+            <a href="{% url 'fleet_app:staff_category_manage' %}" class="btn-cancel">
+              <i class="bi bi-x-circle"></i>{% trans "Cancel" %}
+            </a>
+          {% endif %}
+          <button type="submit" class="btn-save">
+            <i class="bi bi-{% if edit_id %}check2{% else %}plus-circle{% endif %}"></i>
+            {% if edit_id %}{% trans "Update Category" %}{% else %}{% trans "Save Category" %}{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Categories List -->
+  <div class="jc-card">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title"><i class="bi bi-list-ul" style="color:#9f1045;"></i> {% trans "Existing Categories" %}</h2>
+      <div class="search-wrap">
+        <i class="bi bi-search si"></i>
+        <input type="text" id="catSearch" placeholder="{% trans 'Search...' %}">
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="stbl" id="catTable">
+        <thead>
+          <tr>
+            <th style="width:40px;">#</th>
+            <th>{% trans "Category Name" %}</th>
+            <th style="width:120px;">{% trans "Actions" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for category in categories %}
+          <tr>
+            <td style="color:#94a3b8; font-size:11.5px;">{{ forloop.counter }}</td>
+            <td><strong>{{ category.name }}</strong></td>
+            <td>
+              <div style="display:flex; gap:5px;">
+                <a href="{% url 'fleet_app:staff_category_edit' category.pk %}" class="btn-act-edit">
+                  <i class="bi bi-pencil"></i> {% trans "Edit" %}
+                </a>
+                <form method="post" style="display:inline;" onsubmit="return confirm('{% trans "Are you sure you want to delete this category?" %}')">
+                  {% csrf_token %}
+                  <input type="hidden" name="delete" value="{{ category.pk }}">
+                  <button type="submit" class="btn-act-del"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" style="text-align:center; padding:40px 20px; color:#94a3b8; font-size:13px;">
+              <i class="bi bi-tags" style="font-size:2rem; display:block; margin-bottom:8px; opacity:0.4;"></i>
+              {% trans "No categories found. Add your first category using the form above." %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
+
+<script>
+// Apply .fi to form inputs
+document.querySelectorAll('.jc-card-body input:not([type="checkbox"]), .jc-card-body select, .jc-card-body textarea').forEach(function(el) {
+  el.classList.add('fi');
+});
+// Live search
+document.getElementById('catSearch').addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#catTable tbody tr').forEach(function (row) {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+
 {% endblock %}

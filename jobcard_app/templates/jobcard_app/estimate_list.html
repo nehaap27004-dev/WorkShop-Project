@@ -101,7 +101,7 @@
                             <th>{% trans "Vehicles" %}</th>
                             <th>{% trans "Status" %}</th>
                             <th class="text-right">{% trans "Grand Total" %}</th>
-                            <th style="width: 130px;" class="text-center">{% trans "Actions" %}</th>
+                            <th style="width: 160px;" class="text-center">{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -153,11 +153,14 @@
                                 {{ e.grand_total|floatformat:2 }}
                             </td>
                             <td class="align-middle text-center text-nowrap">
+                                <a href="{% url 'jobcard_app:estimate_view' e.pk %}" class="btn btn-sm btn-outline-info mr-1" title="{% trans 'View Estimate' %}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
                                 <a href="{% url 'jobcard_app:estimate_edit' e.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit Estimate' %}">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <form method="post" action="{% url 'jobcard_app:estimate_delete' e.pk %}" class="d-inline"
-                                      onsubmit="return confirm('Delete estimate {{ e.voucher_number|default:e.estimate_number }}? This cannot be undone.');">
+                                    onsubmit="return confirm('Delete estimate {{ e.voucher_number|default:e.estimate_number }}? This cannot be undone.');">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete Estimate' %}">
                                         <i class="bi bi-trash"></i>

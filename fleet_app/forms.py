@@ -1492,6 +1492,12 @@ class CompanyForm(forms.ModelForm):
             'email': _('Email'),
             'phone': _('Phone'),
         }
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Enter company name')}),
+            'website': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://www.example.com'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'company@example.com'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+968 ...'}),
+        }
 
 
 class CompanyDocumentForm(forms.ModelForm):

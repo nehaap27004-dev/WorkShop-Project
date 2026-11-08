@@ -1,193 +1,309 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Company Documents" %} — {{ company.name }}{% endblock %}
 
 {% block content %}
-<!-- Custom CSS -->
 <style>
-    h2, h3, h4, h5 {
-        font-family: 'Segoe UI', sans-serif;
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
     }
 
-    form label {
-        font-weight: 500;
-        color: #444;
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
     }
 
-    input, select, textarea {
-        width: 100% !important;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        padding: 6px 10px;
-        font-size: 0.95rem;
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
     }
 
-    input:focus, select:focus, textarea:focus {
-        border-color: #5A8DEE;
-        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
-        outline: none;
-    }
-
-    .btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
-    }
-
-    .btn-success {
-        background-color: #28a745 !important;
-        border-color: #28a745 !important;
-    }
-
-    .btn-danger {
-        background-color: #dc3545 !important;
-        border-color: #dc3545 !important;
-    }
-
-    .btn-secondary {
-        background-color: #6c757d !important;
-        border-color: #6c757d !important;
-    }
-
-    .card {
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
         border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
-    .card-header {
-        border-bottom: 1px solid #e9ecef;
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
     }
 
-    .table th {
-        background-color: #343a40;
-        color: white;
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 0.55rem 1.35rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+    }
+
+    .btn-custom-outline {
+        color: var(--primary-burgundy) !important;
+        border: 1px solid var(--primary-burgundy) !important;
+        background-color: transparent !important;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-custom-outline:hover {
+        background-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+    }
+
+    .form-label {
+        font-size: 0.85rem;
+        color: #475569;
+        margin-bottom: 0.35rem;
         font-weight: 600;
     }
 
-    .btn:hover {
-        opacity: 0.9;
-        transition: 0.2s ease-in-out;
+    .form-control, select, textarea {
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        width: 100%;
+        color: #1e293b;
+        background-color: #ffffff;
     }
 
-    .button-group {
-        display: flex;
-        gap: 8px;
-        margin-top: 24px;
+    .form-control:focus, select:focus, textarea:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #475569;
+        border-top: none;
+        padding: 0.75rem 1rem;
+    }
+
+    .table td {
+        font-size: 0.88rem;
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: var(--primary-burgundy-light);
     }
 </style>
 
-<div class="container mt-4 mb-5">
-    <h2 class="mb-4 text-center fw-bold text-primary">Documents for {{ company.name }}</h2>
-
-    <!-- Upload Form -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">
-                {% if edit_doc %}Edit Document{% else %}Upload New Document{% endif %}
-            </h5>
+<div class="voucher-container">
+    <!-- Header Banner -->
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Company & Settings" %}
+                    </span>
+                </div>
+                <h3 class="font-weight-bold text-dark mb-1">{% trans "Company Documents" %} — {{ company.name }}</h3>
+                <p class="text-muted small mb-0">{% trans "Upload, store, track expiry, and configure reminders for official corporate documentation." %}</p>
+            </div>
+            <div>
+                <a href="{% url 'fleet_app:company_setup' %}" class="btn-custom-outline">
+                    <i class="bi bi-arrow-left"></i> {% trans "Back to Company Setup" %}
+                </a>
+            </div>
         </div>
-        <div class="card-body">
+    </div>
+
+    <!-- Messages -->
+    {% for msg in messages %}
+    <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm mb-4" style="border-radius: 8px;">
+        {{ msg }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+
+    <!-- Upload/Edit Document Form Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="bi bi-cloud-arrow-up text-burgundy mr-2"></i>
+                {% if edit_doc %}{% trans "Edit Document" %}: {{ edit_doc.name }}{% else %}{% trans "Upload New Document" %}{% endif %}
+            </h5>
+            {% if edit_doc %}
+            <a href="{% url 'fleet_app:document_list' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x"></i> {% trans "Cancel Edit" %}
+            </a>
+            {% endif %}
+        </div>
+        <div class="p-4">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="row g-3">
-                    <div class="col-md-3">
-                        {{ doc_form.name.label_tag }}
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ doc_form.name.label }} <span class="text-danger">*</span></label>
                         {{ doc_form.name }}
                     </div>
-                    <div class="col-md-3">
-                        {{ doc_form.file.label_tag }}
+
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ doc_form.file.label }} <span class="text-danger">*</span></label>
                         {{ doc_form.file }}
                         {% if edit_doc and edit_doc.file %}
                             <small class="text-muted d-block mt-1">
-                                Current:
-                                <a href="{{ edit_doc.file.url }}" target="_blank">View file</a>
+                                {% trans "Current" %}:
+                                <a href="{{ edit_doc.file.url }}" target="_blank" class="text-burgundy font-weight-bold">
+                                    <i class="bi bi-file-earmark-check"></i> {% trans "View File" %}
+                                </a>
                             </small>
                         {% endif %}
                     </div>
 
-                    <div class="col-md-2">
-                        {{ doc_form.expiry_date.label_tag }}
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ doc_form.expiry_date.label }}</label>
                         {{ doc_form.expiry_date }}
                     </div>
-                    <div class="col-md-2">
-                        {{ doc_form.reminder_date.label_tag }}
+
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ doc_form.reminder_date.label }}</label>
                         {{ doc_form.reminder_date }}
                     </div>
-                    <div class="col-md-2">
-                        <div class="button-group">
-                            <button type="submit" class="btn btn-primary flex-fill">
-                                {% if edit_doc %}Update{% else %}Upload{% endif %}
-                            </button>
-                            <a href="{% url 'fleet_app:document_crud' %}" class="btn btn-secondary flex-fill">
-                                Cancel
-                            </a>
-                        </div>
-                    </div>
                 </div>
-                {% if edit_doc %}
-<input type="hidden" name="doc_id" value="{{ edit_doc.id }}">
-{% endif %}
 
+                {% if edit_doc %}
+                <input type="hidden" name="doc_id" value="{{ edit_doc.id }}">
+                {% endif %}
+
+                <div class="d-flex justify-content-end gap-2 mt-2 pt-3 border-top">
+                    {% if edit_doc %}
+                    <a href="{% url 'fleet_app:document_list' %}" class="btn btn-outline-secondary px-3">
+                        {% trans "Cancel" %}
+                    </a>
+                    {% endif %}
+                    <button type="submit" class="btn-custom-primary">
+                        <i class="bi bi-{% if edit_doc %}check-circle{% else %}cloud-arrow-up{% endif %}"></i>
+                        {% if edit_doc %}{% trans "Update Document" %}{% else %}{% trans "Upload Document" %}{% endif %}
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- Document List -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">Uploaded Documents</h5>
+    <!-- Document List Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="bi bi-folder2 text-burgundy mr-2"></i>
+                {% trans "Uploaded Documents" %}
+            </h5>
+            <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); border: 1px solid var(--primary-burgundy-border); font-weight: 600; padding: 0.4rem 0.75rem;">
+                {{ documents.count }} {% trans "Documents" %}
+            </span>
         </div>
-        <div class="card-body">
+        <div class="p-0">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle text-center">
-                    <thead class="table-dark">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead>
                         <tr>
-                            <th><i class="bi bi-file-text me-2"></i>Name</th>
-                            <th><i class="bi bi-paperclip me-2"></i>File</th>
-                            <th><i class="bi bi-calendar-check me-2"></i>Uploaded At</th>
-                            <th><i class="bi bi-calendar-x me-2"></i>Expiry</th>
-                            <th><i class="bi bi-bell me-2"></i>Reminder</th>
-                            <th><i class="bi bi-gear me-2"></i>Actions</th>
+                            <th class="text-left">{% trans "Document Name" %}</th>
+                            <th>{% trans "File Attachment" %}</th>
+                            <th>{% trans "Uploaded At" %}</th>
+                            <th>{% trans "Expiry Date" %}</th>
+                            <th>{% trans "Reminder Date" %}</th>
+                            <th>{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for doc in documents %}
                         <tr>
-                            <td><strong>{{ doc.name }}</strong></td>
-                            <td>
-                                <a href="{{ doc.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye me-1"></i>View
-                                </a>
+                            <td class="text-left font-weight-bold text-dark">
+                                <i class="bi bi-file-earmark-text text-burgundy mr-1"></i>
+                                {{ doc.name }}
                             </td>
-                            <td>{{ doc.uploaded_at|date:"M d, Y" }}</td>
+                            <td>
+                                {% if doc.file %}
+                                <a href="{{ doc.file.url }}" target="_blank" class="btn-custom-outline btn-sm py-1 px-2" style="font-size: 0.8rem;">
+                                    <i class="bi bi-paperclip"></i> {% trans "View File" %}
+                                </a>
+                                {% else %}
+                                <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            <td><small class="text-muted">{{ doc.uploaded_at|date:"M d, Y" }}</small></td>
                             <td>
                                 {% if doc.expiry_date %}
-                                    {{ doc.expiry_date|date:"M d, Y" }}
+                                    <span class="badge badge-light border text-dark">{{ doc.expiry_date|date:"M d, Y" }}</span>
                                 {% else %}
-                                    <span class="text-muted">-</span>
+                                    <span class="text-muted small">-</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if doc.reminder_date %}
-                                    {{ doc.reminder_date|date:"M d, Y" }}
+                                    <span class="badge badge-light border text-dark">{{ doc.reminder_date|date:"M d, Y" }}</span>
                                 {% else %}
-                                    <span class="text-muted">-</span>
+                                    <span class="text-muted small">-</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="?edit={{ doc.id }}" class="btn btn-sm btn-warning px-3 py-1 me-1">
-                                    <i class="bi bi-pencil me-1"></i>Edit
-                                </a>
-
-                                <a href="{% url 'fleet_app:document_delete' doc.id %}"
-                                   class="btn btn-sm btn-danger px-3 py-1"
-                                   onclick="return confirm('Are you sure you want to delete this document?')">
-                                    <i class="bi bi-trash me-1"></i>Delete
-                                </a>
+                                <div class="d-inline-flex gap-1">
+                                    <a href="?edit={{ doc.id }}" class="btn btn-sm btn-outline-secondary px-2 py-1" title="{% trans 'Edit' %}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'fleet_app:document_delete' doc.id %}"
+                                       class="btn btn-sm btn-outline-danger px-2 py-1"
+                                       onclick="return confirm('{% trans "Are you sure you want to delete this document?" %}')"
+                                       title="{% trans 'Delete' %}">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
-                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                No documents uploaded yet. Upload your first document using the form above.
+                            <td colspan="6" class="text-center text-muted py-5">
+                                <i class="bi bi-folder-x fs-1 d-block mb-2 text-muted" style="font-size: 2rem;"></i>
+                                {% trans "No company documents uploaded yet." %}
                             </td>
                         </tr>
                         {% endfor %}

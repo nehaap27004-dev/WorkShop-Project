@@ -78,7 +78,7 @@ urlpatterns = [
     path('quotation/<int:pk>/edit/',
          views.quotation_edit,
          name='quotation_edit'),
-
+    path('quotation/<int:pk>/view/', views.quotation_view, name='quotation_view'),
     path('quotation/<int:pk>/delete/',
          views.quotation_delete,
          name='quotation_delete'),
@@ -121,7 +121,7 @@ urlpatterns = [
     path('inspection/<int:pk>/edit/', views.inspection_edit,name='inspection_edit'),
  
     path('inspection/<int:pk>/delete/',views.inspection_delete,name='inspection_delete'),
- 
+    path('inspection/<int:pk>/', views.inspection_view, name='inspection_view'),
     # AJAX
     path('ajax/inspection-vehicles/',views.insp_get_vehicles,name='insp_get_vehicles'),
 
@@ -166,6 +166,7 @@ urlpatterns = [
     "ajax/get-customer-estimates/",
     views.ajax_get_customer_estimates,
     name="ajax_get_customer_estimates"),
+    path('estimate/<int:pk>/view/', views.estimate_view, name='estimate_view'),
     path('ajax/get-all-items/',
      views.ajax_get_all_items,
      name='ajax_get_all_items'),
@@ -186,6 +187,7 @@ urlpatterns = [
     path('delivery/<int:pk>/edit/',
          views.delivery_edit,
          name='delivery_edit'),
+    path('delivery/<int:pk>/view/', views.delivery_view, name='delivery_view'), 
     path('delivery/<int:pk>/delete/',
          views.delivery_delete,
          name='delivery_delete'),

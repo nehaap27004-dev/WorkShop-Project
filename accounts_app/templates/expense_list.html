@@ -1,10 +1,201 @@
 {% extends 'fleet_base1.html' %}
+{% load i18n %}
+{% load static %}
 
 {% block content %}
-<div class="container-fluid my-4">
+<style>
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
+
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
+
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        border-radius: 8px;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+    }
+
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .search-wrapper {
+        position: relative;
+        min-width: 280px;
+    }
+
+    .search-wrapper input {
+        padding-left: 2.35rem;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        font-size: 0.88rem;
+    }
+
+    .search-wrapper input:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
+    }
+
+    .search-wrapper i {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+    }
+
+    .table-modern {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top: none;
+        white-space: nowrap;
+    }
+
+    .table-modern tbody td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        border-top: 1px solid #f1f3f5;
+        color: #212529;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: var(--primary-burgundy-light);
+    }
+
+    .voucher-badge {
+        font-family: monospace;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        background-color: #f1f5f9;
+        color: #1e293b;
+        border: 1px solid #cbd5e1;
+        display: inline-block;
+    }
+
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: #64748b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+        background: #ffffff;
+        color: var(--primary-burgundy);
+        border-color: var(--primary-burgundy);
+    }
+
+    .btn-action-delete:hover {
+        color: #ef4444;
+        border-color: #ef4444;
+    }
+
+    .btn-action-pdf:hover {
+        color: #0284c7;
+        border-color: #0284c7;
+    }
+</style>
+
+<div class="voucher-container">
+    <!-- Header Banner -->
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Accounting Ledgers" %}
+                    </span>
+                </div>
+                <h3 class="font-weight-bold text-dark mb-1">{% trans "Expense Vouchers" %}</h3>
+                <p class="text-muted small mb-0">{% trans "Track workshop operating expenses, direct costs, and petty cash logs." %}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'accounts_app:create_expense' %}" class="btn-custom-primary">
+                    <i class="bi bi-plus-lg"></i> {% trans "Create New Voucher" %}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 8px;">
                 {{ message }}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -13,76 +204,99 @@
         {% endfor %}
     {% endif %}
 
-    <div class="card shadow">
-        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">Expense Voucher List</h4>
-            <a href="{% url 'accounts_app:create_expense' %}" class="btn btn-primary btn-sm">Create New Voucher</a>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-striped mb-0 align-middle">
-                    <thead class="thead-light">
-                        <tr>
-                            <th>Voucher No</th>
-                            <th>Date</th>
-                            <th>Ledger</th>
-                            <th>Expense Source</th>
-                            <th>Total Amount</th>
-                            <th>Reference No</th>
-                            <th class="text-center" style="width: 180px;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for expense in expenses %}
-                            <tr>
-                                <td class="font-weight-bold">{{ expense.voucher_no }}</td>
-                                <td>{{ expense.Date|date:"Y-m-d" }}</td>
-                                <td>{{ expense.ledger }}</td>
-                                <td><span class="badge badge-secondary">{{ expense.expense_source }}</span></td>
-                                <td class="font-weight-bold text-primary">{{ expense.TotalAmount }}</td>
-                                <td>{{ expense.ref_no|default:"-" }}</td>
-                                <td class="text-center">
-                                    <div class="btn-group" role="group">
-                                        <a href="{% url 'accounts_app:edit_expense' expense.pk %}" class="btn btn-outline-secondary btn-sm">Edit</a>
-                                        <a href="{% url 'accounts_app:expense_pdf' expense.pk %}" target="_blank" class="btn btn-outline-info btn-sm">PDF</a>
-                                        <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal" data-target="#deleteModal{{ expense.pk }}">
-                                            Delete
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-4">No expense vouchers found. Click "Create New Voucher" to add one.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- Main Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-receipt-cutoff text-burgundy font-weight-bold"></i>
+                <h5 class="font-weight-bold mb-0 text-dark">{% trans "Expense Records" %}</h5>
+                <span class="badge badge-light border text-muted ml-2">{{ expenses|length }} {% trans "Total" %}</span>
             </div>
+            <div class="search-wrapper">
+                <i class="bi bi-search"></i>
+                <input type="text" id="expenseSearch" class="form-control" placeholder="{% trans 'Search Voucher or Ledger...' %}">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table-modern" id="expenseTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>{% trans "Voucher No" %}</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Ledger" %}</th>
+                        <th>{% trans "Expense Source" %}</th>
+                        <th class="text-right">{% trans "Total Amount" %}</th>
+                        <th>{% trans "Reference No" %}</th>
+                        <th class="text-center" style="width: 140px;">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                        <tr>
+                            <td class="text-muted">{{ forloop.counter }}</td>
+                            <td><span class="voucher-badge">{{ expense.voucher_no }}</span></td>
+                            <td>{{ expense.Date|date:"d M Y" }}</td>
+                            <td><strong>{{ expense.ledger }}</strong></td>
+                            <td><span class="badge badge-light border">{{ expense.expense_source }}</span></td>
+                            <td class="text-right font-weight-bold text-dark">{{ expense.TotalAmount }}</td>
+                            <td>{{ expense.ref_no|default:"-" }}</td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1">
+                                    <a href="{% url 'accounts_app:edit_expense' expense.pk %}" class="btn-action" title="{% trans 'Edit' %}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'accounts_app:expense_pdf' expense.pk %}" target="_blank" class="btn-action btn-action-pdf" title="{% trans 'Export PDF' %}">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </a>
+                                    <button type="button" class="btn-action btn-action-delete"
+                                            title="{% trans 'Delete' %}"
+                                            data-toggle="modal"
+                                            data-target="#deleteModal{{ expense.pk }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-5">
+                                <i class="bi bi-receipt-cutoff" style="font-size: 2.5rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>
+                                {% trans "No expense vouchers found. Click 'Create New Voucher' to add one." %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<!-- Modals rendered outside of the table to avoid Bootstrap/HTML nesting issues -->
+<!-- Modals outside of table -->
 {% for expense in expenses %}
 <div class="modal fade" id="deleteModal{{ expense.pk }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel{{ expense.pk }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteModalLabel{{ expense.pk }}">Confirm Deletion</h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header text-white" style="background-color: var(--primary-burgundy);">
+                <h5 class="modal-title font-weight-bold" id="deleteModalLabel{{ expense.pk }}">
+                    <i class="bi bi-exclamation-triangle mr-2"></i>{% trans "Confirm Deletion" %}
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.9;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body text-left">
-                <p>Are you sure you want to delete Expense Voucher <strong>"{{ expense.voucher_no }}"</strong>?</p>
-                <p class="text-muted small mb-0">This action will delete all corresponding expense detail records.</p>
+            <div class="modal-body p-4 text-left">
+                <p class="mb-1">{% trans "Are you sure you want to delete Expense Voucher" %} <strong>"{{ expense.voucher_no }}"</strong>?</p>
+                <p class="text-muted small mb-0">{% trans "This action will delete all corresponding expense detail records." %}</p>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <div class="modal-footer bg-light border-top">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" style="border-radius: 6px;">{% trans "Cancel" %}</button>
                 <form action="{% url 'accounts_app:delete_expense' expense.pk %}" method="post" class="d-inline">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                    <button type="submit" class="btn btn-danger btn-sm" style="border-radius: 6px;">
+                        <i class="bi bi-trash mr-1"></i>{% trans "Yes, Delete" %}
+                    </button>
                 </form>
             </div>
         </div>
@@ -98,12 +312,26 @@
     if (pdfId) {
         const pdfUrl = "{% url 'accounts_app:expense_pdf' 0 %}".replace('/0/', `/${pdfId}/`);
         window.open(pdfUrl, '_blank');
-
-        params.delete('pdf');
-        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-        window.history.replaceState({}, '', newUrl);
+        const url = new URL(window.location);
+        url.searchParams.delete('pdf');
+        window.history.replaceState({}, document.title, url.toString());
     }
+
+    document.getElementById("expenseSearch").addEventListener("keyup", function () {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll("#expenseTable tbody tr");
+
+        rows.forEach(function(row) {
+            if (row.children.length <= 1) return;
+            let voucher = row.cells[1].textContent.toLowerCase();
+            let ledger = row.cells[3].textContent.toLowerCase();
+            if (voucher.includes(filter) || ledger.includes(filter)) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    });
 })();
 </script>
-
-{% endblock content %}
+{% endblock %}

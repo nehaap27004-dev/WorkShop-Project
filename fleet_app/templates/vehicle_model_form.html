@@ -381,23 +381,20 @@
 
         // Helper to show/hide modals supporting both Bootstrap 4 and Bootstrap 5
         function showModal(modalEl) {
-            if (window.bootstrap && bootstrap.Modal) {
-                let inst = bootstrap.Modal.getInstance(modalEl);
-                if (!inst) inst = new bootstrap.Modal(modalEl);
-                inst.show();
-            } else if (window.jQuery) {
+            if (window.jQuery && typeof $(modalEl).modal === 'function') {
                 $(modalEl).modal('show');
-            }
-        }
-        function hideModal(modalEl) {
-            if (window.bootstrap && bootstrap.Modal) {
-                let inst = bootstrap.Modal.getInstance(modalEl);
-                if (inst) inst.hide();
-            } else if (window.jQuery) {
-                $(modalEl).modal('hide');
+            } else {
+                console.error('Bootstrap 4 modal is not loaded.');
             }
         }
 
+        function hideModal(modalEl) {
+            if (window.jQuery && typeof $(modalEl).modal === 'function') {
+                $(modalEl).modal('hide');
+            } else {
+                console.error('Bootstrap 4 modal is not loaded.');
+            }
+        }
         // --- Manufacturer modal ---
         const addManufacturerBtn = document.getElementById('addManufacturerBtn');
         const manufacturerModalEl = document.getElementById('manufacturerModal');

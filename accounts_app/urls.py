@@ -43,6 +43,7 @@ urlpatterns = [
     
     path('customers-manage/', manage_customers, name='manage_customers'),
     path('customers/<int:pk>/', manage_customers, name='edit_customer'),
+    path('customers/<int:pk>/view/', customer_view, name='customer_view'),
     
     path('vendors-manage/', manage_vendors, name='manage_vendors'),
     path('vendors/<int:pk>/', manage_vendors, name='edit_vendor'),

@@ -111,12 +111,13 @@
                             <th>{% trans "Status" %}</th>
                             <th>{% trans "Inspector" %}</th>
                             <th>{% trans "Fuel" %}</th>
-                            <th style="width: 130px;" class="text-center">{% trans "Actions" %}</th>
+                            <th style="width: 160px;" class="text-center">{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for insp in inspections %}
                         <tr>
+                            
                             <td class="align-middle">
                                 <a href="{% url 'jobcard_app:inspection_edit' insp.pk %}" class="font-weight-bold text-burgundy" style="font-size:14px;">
                                     <i class="bi bi-receipt text-secondary mr-1"></i>
@@ -150,11 +151,14 @@
                             <td class="align-middle text-muted small">{{ insp.inspector.first_name|default:insp.inspector|default:"—" }}</td>
                             <td class="align-middle text-muted small font-weight-600">{{ insp.fuel_level|default:"—" }}</td>
                             <td class="align-middle text-center text-nowrap">
+                                <a href="{% url 'jobcard_app:inspection_view' insp.pk %}" class="btn btn-sm btn-outline-info mr-1" title="{% trans 'View Inspection' %}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
                                 <a href="{% url 'jobcard_app:inspection_edit' insp.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit Inspection' %}">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <form method="post" action="{% url 'jobcard_app:inspection_delete' insp.pk %}" class="d-inline"
-                                      onsubmit="return confirm('Delete inspection {{ insp.inspection_number|default:insp.voucher_number }}? This cannot be undone.');">
+                                    onsubmit="return confirm('Delete inspection {{ insp.inspection_number|default:insp.voucher_number }}? This cannot be undone.');">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete Inspection' %}">
                                         <i class="bi bi-trash"></i>

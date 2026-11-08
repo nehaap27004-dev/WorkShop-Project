@@ -21,26 +21,36 @@ class Company(models.Model):
     
     def __str__(self):
         return self.name
-    
+from django.db.models.functions import Lower
 
 class Manufacturer(models.Model):
-    manufacturer_name = models.CharField(max_length=100, unique=True)
-    manufacturer_logo = models.ImageField(upload_to='manufacturer_logos/', null=True, blank=True)   
-    vehicle_type = models.ForeignKey('VehicleCategory', on_delete=models.PROTECT, null=True, blank=True,related_name='manufacturers')  
-      
+    manufacturer_name = models.CharField(max_length=100)          # unique=True removed
+    manufacturer_logo = models.ImageField(upload_to='manufacturer_logos/', null=True, blank=True)
+    vehicle_type = models.ForeignKey(
+        'VehicleCategory',
+        on_delete=models.PROTECT,
+        related_name='manufacturers',
+        verbose_name='Vehicle Type',
+    )                                                              # now required (null/blank removed)
+
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
-    created_by = models.IntegerField(null=True, blank=True)   
+    created_by = models.IntegerField(null=True, blank=True)
     updated_by = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
-        return self.manufacturer_name
+        return f"{self.manufacturer_name} ({self.vehicle_type})"
 
     class Meta:
-        verbose_name = "manufacturer_name"
-        verbose_name_plural = "manufacturer_name"
-        ordering = ['manufacturer_name']
-        
+        verbose_name = "manufacturer"
+        verbose_name_plural = "manufacturers"
+        ordering = ['vehicle_type__category_name', 'manufacturer_name']
+        constraints = [
+            models.UniqueConstraint(
+                Lower('manufacturer_name'), 'vehicle_type',
+                name='uniq_manufacturer_per_vehicle_type',
+            ),
+        ]
 class VehicleCategory(models.Model):
     category_name = models.CharField(max_length=100, unique=True)
     
@@ -484,66 +494,116 @@ class Vouchers(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
     
+    def get_next_voucher_number(self, model_class=None, number_field='voucher_number'):
     
-    def get_next_voucher_number(self):
-        """Generate the next voucher number for this voucher type"""
+
         from django.apps import apps
+        from django.db import transaction
         from django.db.models import ForeignKey
-        from django.db.models.deletion import PROTECT, PROTECT, SET_NULL
-        
+
+        number_field = number_field or 'voucher_number'
+
         all_voucher_numbers = []
 
-        # Loop through all installed models
-        for model in apps.get_models():
-            # Check if model has both fields
-            if hasattr(model, 'voucher_no') and hasattr(model, 'voucherType'):
-                try:
-                    # Ensure voucherType is a ForeignKey to THIS model
-                    field = model._meta.get_field('voucherType')
-                    if isinstance(field, ForeignKey) and field.remote_field.model == type(self):
-                        # Only then try to query
-                        vouchers = model.objects.filter(voucherType=self).values_list('voucher_no', flat=True)
-                        all_voucher_numbers.extend(vouchers)
-                except Exception:
-                    continue  # skip any models that don't match cleanly
-
-        # If no existing vouchers found
-        if not all_voucher_numbers:
-            current_number = self.StartingNo
+        # If a model is provided, check only that model.
+        if model_class:
+            models_to_check = [model_class]
         else:
-            # Extract numbers safely
-            max_number = self.StartingNo - 1
-            for voucher_no in all_voucher_numbers:
-                number_part = str(voucher_no)
-                if self.Prefix:
-                    number_part = number_part.replace(self.Prefix, '', 1)
-                if getattr(self, 'Suffix'):
-                    number_part = number_part.replace(self.Suffix, '')
+            # Otherwise, find all models linked to this Voucher Master.
+            models_to_check = []
 
+            for model in apps.get_models():
                 try:
-                    number = int(''.join(filter(str.isdigit, number_part)))
-                    max_number = max(max_number, number)
-                except ValueError:
+                    field = model._meta.get_field('voucherType')
+
+                    if (
+                        isinstance(field, ForeignKey)
+                        and field.remote_field.model == type(self)
+                    ):
+                        model._meta.get_field('voucher_number')
+                        models_to_check.append(model)
+
+                except Exception:
                     continue
-            current_number = max_number + 1
 
-        # Format with zero padding
-        formatted_number = str(current_number).zfill(self.MinLength)
+        # Collect existing voucher numbers.
+        for model in models_to_check:
+            try:
+                model._meta.get_field(number_field)
 
-        # Handle None or empty Prefix/Suffix cleanly
-        prefix = self.Prefix if self.Prefix else ""
-        suffix = self.Suffix if hasattr(self, 'Suffix') and self.Suffix else ""
+                records = model.objects.filter(
+                    voucherType=self
+                ).exclude(
+                    **{f'{number_field}__isnull': True}
+                ).exclude(
+                    **{number_field: ''}
+                ).values_list(
+                    number_field, flat=True
+                )
 
-        # Construct final voucher number
-        voucher_number = f"{prefix}{formatted_number}{suffix}"
-        return voucher_number
+                all_voucher_numbers.extend(records)
 
+            except Exception:
+                continue
 
-    
+        # Starting number.
+        starting_no = self.StartingNo or 1
+        max_number = starting_no - 1
 
-    def __str__(self):
-     return f"{self.VoucherName}"
-        
+        prefix = self.Prefix or ''
+        suffix = self.Suffix or ''
+        min_length = self.MinLength or 5
+
+        # Find the highest existing number.
+        for voucher_no in all_voucher_numbers:
+
+            number_part = str(voucher_no).strip()
+
+            if prefix:
+                if not number_part.startswith(prefix):
+                    continue
+                number_part = number_part[len(prefix):]
+
+            if suffix and number_part.endswith(suffix):
+                number_part = number_part[:-len(suffix)]
+
+            digits = ''.join(
+                filter(str.isdigit, number_part)
+            )
+
+            if digits:
+                max_number = max(max_number, int(digits))
+
+        # Generate next number.
+        next_number = max_number + 1
+
+        while True:
+            formatted_number = str(next_number).zfill(min_length)
+
+            voucher_number = (
+                f'{prefix}{formatted_number}{suffix}'
+            )
+
+            # Check duplicate in the selected model(s).
+            duplicate = False
+
+            for model in models_to_check:
+                try:
+                    if model.objects.filter(
+                        voucherType=self,
+                        **{number_field: voucher_number}
+                    ).exists():
+                        duplicate = True
+                        break
+                except Exception:
+                    continue
+
+            if not duplicate:
+                return voucher_number
+
+            next_number += 1
+
+    # Keep your existing number calculation and formatting logic below.
 class TimeSheet(models.Model):
     voucher_no = models.CharField(max_length=50, unique=True)
     voucherType = models.ForeignKey(Vouchers, on_delete=models.PROTECT, default=8)

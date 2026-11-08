@@ -4,192 +4,221 @@
 
 {% block content %}
 <style>
-    .module-title {
-        color: #5A8DEE;
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 26px;
-        font-weight: 500;
-    }
-    .card-banner-header {
-        background-color: #dce4ec !important;
-        padding: 12px 20px;
-        border-bottom: none;
-    }
-    .card-banner-title {
-        color: #475f7b;
-        font-weight: 600;
-        font-size: 15px;
-    }
-    .custom-btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
-        color: #ffffff !important;
-        border-radius: 4px;
-        font-size: 14px;
-        padding: 6px 18px;
-    }
-    .table-custom-header th {
-        background-color: #f4f7fb !important;
-        color: #6c7a89;
-        font-weight: 600;
-        font-size: 13.5px;
-        border-color: #e2e8f0 !important;
-    }
-    .skill-pill-preview {
-        background-color: #eef2ff;
-        color: #4f46e5;
-        border: 1px solid #c7d2fe;
-        border-radius: 20px;
-        padding: 4px 12px;
-        font-size: 13px;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-    }
+  .sf-wrapper { max-width:1100px; margin:0 auto; padding-bottom:60px; }
+  .jc-page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .jc-page-hdr-left { display:flex; align-items:center; gap:10px; }
+  .jc-page-icon { width:38px; height:38px; background:#fdf2f5; border:1px solid #f9c9d5; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:20px; color:#9f1045; }
+  .jc-page-title { font-size:20px; font-weight:700; color:#0f172a; margin:0; line-height:1.2; letter-spacing:-0.3px; }
+  .jc-page-sub { font-size:12px; color:#64748b; margin-top:2px; }
+  .jc-btn-back { background:#fff; color:#334155; border:1px solid #cbd5e1; border-radius:6px; padding:7px 14px; font-size:12.5px; font-weight:600; text-decoration:none !important; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; }
+  .jc-btn-back:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
+  .jc-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:16px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,.04); }
+  .jc-card-hdr { background:#ffffff; border-bottom:1px solid #f1f5f9; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .jc-card-title { font-size:13.5px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px; margin:0; }
+  .jc-card-body { padding:18px; }
+  .fl { display:block; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+  .fi { width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 10px; font-size:12.5px; color:#0f172a; background:#fff; outline:none; transition:all .15s ease-in-out; font-family:inherit; box-sizing:border-box; }
+  .fi:focus { border-color:#9f1045; box-shadow:0 0 0 3px rgba(159,16,69,.12); }
+  .fi::placeholder { color:#94a3b8; }
+  select.fi { cursor:pointer; background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 10px center; background-size:12px 10px; padding-right:28px; -webkit-appearance:none; -moz-appearance:none; appearance:none; }
+  textarea.fi { resize:vertical; min-height:70px; }
+  .check-row { display:flex; align-items:center; gap:8px; margin-top:4px; }
+  .check-row input[type="checkbox"] { width:16px; height:16px; accent-color:#9f1045; cursor:pointer; }
+  .check-row label { font-size:12.5px; color:#374151; cursor:pointer; margin:0; }
+  .g3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .mb { margin-bottom:14px; }
+  @media (max-width:768px) { .g3 { grid-template-columns:1fr; } }
+  .btn-save { background:#9f1045; color:#fff; border:none; border-radius:6px; padding:7px 18px; font-size:12.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; }
+  .btn-save:hover { background:#830d38; }
+  .btn-cancel { background:#fff; color:#475569; border:1px solid #cbd5e1; border-radius:6px; padding:7px 14px; font-size:12.5px; font-weight:600; text-decoration:none !important; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; }
+  .btn-cancel:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
+  .stbl { width:100%; border-collapse:collapse; }
+  .stbl thead th { background:#ffffff; color:#64748b; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; padding:9px 14px; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+  .stbl tbody td { padding:9px 14px; border-bottom:1px solid #f1f5f9; vertical-align:middle; font-size:12.5px; color:#1e293b; }
+  .stbl tbody tr:last-child td { border-bottom:none; }
+  .stbl tbody tr:hover { background:#fafafa; }
+  /* Skill pill preview */
+  .skill-pill-preview { display:inline-flex; align-items:center; background:#fdf2f5; color:#9f1045; border:1px solid #f9c9d5; border-radius:20px; padding:3px 11px; font-size:12px; font-weight:600; }
+  /* Toggle badges */
+  .badge-active   { display:inline-block; background:#dcfce7; color:#15803d; border-radius:20px; padding:3px 11px; font-size:11px; font-weight:700; text-transform:uppercase; text-decoration:none; letter-spacing:.03em; }
+  .badge-active:hover   { background:#bbf7d0; color:#15803d; }
+  .badge-inactive { display:inline-block; background:#f1f5f9; color:#64748b; border-radius:20px; padding:3px 11px; font-size:11px; font-weight:700; text-transform:uppercase; text-decoration:none; letter-spacing:.03em; }
+  .badge-inactive:hover { background:#e2e8f0; color:#334155; }
+  .btn-act-edit { background:#fdf2f5; border:1px solid #f9c9d5; color:#9f1045; border-radius:5px; font-size:11.5px; font-weight:600; padding:4px 10px; transition:all .15s; white-space:nowrap; }
+  .btn-act-edit:hover { background:#9f1045; color:#fff; border-color:#9f1045; }
+  .btn-act-del { background:#fff5f5; border:1px solid #fecaca; color:#dc2626; border-radius:5px; font-size:11.5px; font-weight:600; padding:4px 8px; transition:all .15s; }
+  .btn-act-del:hover { background:#dc2626; color:#fff; border-color:#dc2626; }
+  .search-wrap { position:relative; }
+  .search-wrap .si { position:absolute; left:9px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:13px; }
+  .search-wrap input { padding-left:28px; border:1px solid #e2e8f0; border-radius:6px; font-size:12.5px; padding-top:6px; padding-bottom:6px; outline:none; min-width:200px; }
+  .search-wrap input:focus { border-color:#9f1045; box-shadow:0 0 0 2px rgba(159,16,69,.1); }
+  .edit-banner { background:#fffbeb; border:1px solid #fcd34d; border-radius:7px; padding:8px 14px; font-size:12.5px; color:#92400e; display:flex; align-items:center; gap:7px; margin-bottom:14px; }
 </style>
 
-<div class="container-fluid mt-3 mb-5">
+<div class="container-fluid p-0 sf-wrapper">
 
-    <!-- Top Bar -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="module-title mb-0"><i class="bi bi-tools text-primary mr-2"></i>{% trans "Skill Tag Master" %}</h2>
-            <small class="text-muted">{% trans "Define and manage technician skill tags for workshop Job Card matching" %}</small>
+  <!-- Page Header -->
+  <div class="jc-page-hdr">
+    <div class="jc-page-hdr-left">
+      <div class="jc-page-icon"><i class="bi bi-tools"></i></div>
+      <div>
+        <h1 class="jc-page-title">{% trans "Skill Tag Master" %}</h1>
+        <div class="jc-page-sub">{% trans "Define and manage technician skill tags for Job Card matching" %}</div>
+      </div>
+    </div>
+    <a href="{% url 'fleet_app:staff_manage' %}" class="jc-btn-back">
+      <i class="bi bi-arrow-left"></i>{% trans "Back to Staff" %}
+    </a>
+  </div>
+
+  <!-- Django Messages -->
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-3" style="border-radius:8px; font-size:12.5px;" role="alert">
+        <i class="bi bi-{% if 'error' in m.tags %}exclamation-triangle{% else %}check-circle{% endif %} me-2"></i>{{ m }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row g-3">
+    <!-- Left: Form -->
+    <div class="col-lg-4">
+      <div class="jc-card">
+        <div class="jc-card-hdr">
+          <h2 class="jc-card-title">
+            <i class="bi bi-{% if edit_instance %}pencil-fill{% else %}plus-circle-fill{% endif %}" style="color:#9f1045;"></i>
+            {% if edit_instance %}{% trans "Edit Skill Tag" %}{% else %}{% trans "Create New Skill Tag" %}{% endif %}
+          </h2>
         </div>
-        <a href="{% url 'fleet_app:staff_manage' %}" class="btn btn-outline-secondary">
-            ← {% trans "Back to Staff Creation" %}
-        </a>
+        <div class="jc-card-body">
+          {% if edit_instance %}
+          <div class="edit-banner">
+            <i class="bi bi-pencil-square"></i>
+            {% trans "Editing:" %} <strong>{{ edit_instance.name }}</strong>
+          </div>
+          {% endif %}
+
+          <form method="post" action="{% if edit_instance %}{% url 'jobcard_app:skill_tag_edit' edit_instance.pk %}{% else %}{% url 'jobcard_app:skill_tag_create' %}{% endif %}">
+            {% csrf_token %}
+
+            <div class="mb">
+              <label class="fl">{{ form.name.label }} <span style="color:#ef4444;">*</span></label>
+              {{ form.name }}
+              {% if form.name.errors %}
+                <div style="color:#dc2626; font-size:11.5px; margin-top:4px;">{{ form.name.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb">
+              <label class="fl">{{ form.description.label }}</label>
+              {{ form.description }}
+              {% if form.description.errors %}
+                <div style="color:#dc2626; font-size:11.5px; margin-top:4px;">{{ form.description.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb">
+              <div class="check-row">
+                {{ form.is_active }}
+                <label for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px; padding-top:12px; border-top:1px solid #f1f5f9; margin-top:4px;">
+              {% if edit_instance %}
+                <a href="{% url 'jobcard_app:skill_tag_list' %}" class="btn-cancel">
+                  <i class="bi bi-x-circle"></i>{% trans "Cancel" %}
+                </a>
+              {% endif %}
+              <button type="submit" class="btn-save">
+                <i class="bi bi-{% if edit_instance %}check2{% else %}plus-circle{% endif %}"></i>
+                {% if edit_instance %}{% trans "Update" %}{% else %}{% trans "Save Skill Tag" %}{% endif %}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
-    <!-- Flash Messages -->
-    {% if messages %}
-        {% for m in messages %}
-            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4" role="alert">
-                {{ m }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <div class="row">
-        <!-- Form Column (Left) -->
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow-sm border-0" style="border-radius: 8px; overflow: hidden; background: #ffffff;">
-                <div class="card-header card-banner-header">
-                    <span class="card-banner-title">
-                        {% if edit_instance %}
-                            ✏️ {% trans "Edit Skill Tag" %}
-                        {% else %}
-                            ➕ {% trans "Create New Skill Tag" %}
-                        {% endif %}
-                    </span>
-                </div>
-                <div class="card-body p-4">
-                    <form method="post" action="{% if edit_instance %}{% url 'jobcard_app:skill_tag_edit' edit_instance.pk %}{% else %}{% url 'jobcard_app:skill_tag_create' %}{% endif %}">
-                        {% csrf_token %}
-                        <div class="form-group mb-3">
-                            <label class="font-weight-bold text-dark" style="font-size: 14px;">{{ form.name.label }} <span class="text-danger">*</span></label>
-                            {{ form.name }}
-                            {% if form.name.errors %}
-                                <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label class="font-weight-bold text-dark" style="font-size: 14px;">{{ form.description.label }}</label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                                <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="form-group mb-4">
-                            <div class="custom-control custom-checkbox">
-                                {{ form.is_active }}
-                                <label class="font-weight-bold text-dark ml-2" for="{{ form.is_active.id_for_label }}" style="font-size: 14px; cursor: pointer;">
-                                    {{ form.is_active.label }}
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between align-items-center">
-                            <button type="submit" class="btn custom-btn-primary">
-                                {% if edit_instance %}{% trans "Update Skill Tag" %}{% else %}{% trans "Save Skill Tag" %}{% endif %}
-                            </button>
-                            {% if edit_instance %}
-                                <a href="{% url 'jobcard_app:skill_tag_list' %}" class="btn btn-secondary px-3">
-                                    {% trans "Cancel" %}
-                                </a>
-                            {% endif %}
-                        </div>
+    <!-- Right: Table -->
+    <div class="col-lg-8">
+      <div class="jc-card">
+        <div class="jc-card-hdr">
+          <h2 class="jc-card-title">
+            <i class="bi bi-list-ul" style="color:#9f1045;"></i>
+            {% trans "Skill Tags List" %}
+            <span style="font-size:11px; color:#94a3b8; font-weight:400;">— {{ skills|length }} {% trans "total" %}</span>
+          </h2>
+          <div class="search-wrap">
+            <i class="bi bi-search si"></i>
+            <input type="text" id="skillSearch" placeholder="{% trans 'Search tags...' %}">
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="stbl" id="skillTable">
+            <thead>
+              <tr>
+                <th>{% trans "Skill Name" %}</th>
+                <th>{% trans "Description" %}</th>
+                <th class="text-center">{% trans "Status" %}</th>
+                <th class="text-center" style="width:120px;">{% trans "Actions" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for skill in skills %}
+              <tr>
+                <td><span class="skill-pill-preview">🔧 {{ skill.name }}</span></td>
+                <td style="color:#64748b; font-size:12px;">{{ skill.description|default:"—" }}</td>
+                <td style="text-align:center;">
+                  <a href="{% url 'jobcard_app:skill_tag_toggle' skill.pk %}"
+                     class="{% if skill.is_active %}badge-active{% else %}badge-inactive{% endif %}"
+                     title="{% trans 'Click to toggle status' %}">
+                    {% if skill.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
+                  </a>
+                </td>
+                <td style="text-align:center;">
+                  <div style="display:flex; gap:5px; justify-content:center;">
+                    <a href="{% url 'jobcard_app:skill_tag_list' %}?edit={{ skill.pk }}" class="btn-act-edit">
+                      <i class="bi bi-pencil"></i> {% trans "Edit" %}
+                    </a>
+                    <form method="post" action="{% url 'jobcard_app:skill_tag_delete' skill.pk %}"
+                          onsubmit="return confirm('{% trans "Delete" %} {{ skill.name }}?')" style="display:inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="btn-act-del"><i class="bi bi-trash"></i></button>
                     </form>
-                </div>
-            </div>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" style="text-align:center; padding:40px 20px; color:#94a3b8; font-size:13px;">
+                  <i class="bi bi-tools" style="font-size:2rem; display:block; margin-bottom:8px; opacity:0.4;"></i>
+                  {% trans "No skill tags found. Create your first skill tag using the form on the left." %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-
-        <!-- Table Column (Right) -->
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0" style="border-radius: 8px; overflow: hidden; background: #ffffff;">
-                <div class="card-header card-banner-header d-flex justify-content-between align-items-center">
-                    <span class="card-banner-title">{% trans "Skill Tags List" %}</span>
-                    <span style="color: #7b8b9a; font-size: 13.5px;">{% trans "Total Tags:" %} {{ skills|length }}</span>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-bordered mb-0">
-                            <thead>
-                                <tr class="table-custom-header">
-                                    <th>{% trans "Skill Name" %}</th>
-                                    <th>{% trans "Description" %}</th>
-                                    <th class="text-center">{% trans "Status" %}</th>
-                                    <th style="width: 180px;" class="text-center">{% trans "Actions" %}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for skill in skills %}
-                                <tr>
-                                    <td class="align-middle">
-                                        <span class="skill-pill-preview">
-                                            🔧 {{ skill.name }}
-                                        </span>
-                                    </td>
-                                    <td class="align-middle text-muted">{{ skill.description|default:"—" }}</td>
-                                    <td class="align-middle text-center">
-                                        <a href="{% url 'jobcard_app:skill_tag_toggle' skill.pk %}"
-                                           class="badge {% if skill.is_active %}badge-success{% else %}badge-secondary{% endif %} px-3 py-2 text-decoration-none"
-                                           title="{% trans "Click to toggle status" %}">
-                                            {% if skill.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
-                                        </a>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <a href="{% url 'jobcard_app:skill_tag_list' %}?edit={{ skill.pk }}" class="btn btn-sm btn-warning mr-1" style="border-radius: 4px; font-size: 13px;">
-                                            {% trans "Edit" %}
-                                        </a>
-                                        <form method="post" action="{% url 'jobcard_app:skill_tag_delete' skill.pk %}"
-                                              onsubmit="return confirm('{% trans "Are you sure you want to delete" %} {{ skill.name }}?')" style="display:inline">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-danger" style="border-radius: 4px; font-size: 13px;">
-                                                {% trans "Delete" %}
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="4" class="text-center py-4 text-muted" style="font-size: 14px;">
-                                        {% trans "No skill tags found. Create your first skill tag using the form on the left." %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 
 </div>
+
+<script>
+// Apply .fi to form inputs
+document.querySelectorAll('.jc-card-body input:not([type="checkbox"]), .jc-card-body select, .jc-card-body textarea').forEach(function(el) {
+  el.classList.add('fi');
+});
+// Live search
+document.getElementById('skillSearch').addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#skillTable tbody tr').forEach(function (row) {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+
 {% endblock %}

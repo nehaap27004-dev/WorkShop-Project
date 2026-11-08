@@ -164,7 +164,7 @@
                             <th class="text-right" style="width:10%">{% trans "Grand Total" %}</th>
                             <th class="text-right" style="width:10%">{% trans "Balance Due" %}</th>
                             <th class="text-center" style="width:8%">{% trans "Status" %}</th>
-                            <th class="text-right" style="width:6%">{% trans "Actions" %}</th>
+                            <th class="text-right" style="width:10%">{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -246,17 +246,23 @@
                             </td>
                             <td class="text-right">
                                 <div class="btn-group">
+                                    <a href="{% url 'jobcard_app:invoice_detail' inv.pk %}"
+                                        class="btn btn-sm btn-outline-info"
+                                        title="{% trans 'View Invoice' %}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
                                     <a href="{% url 'jobcard_app:invoice_edit' inv.pk %}"
                                        class="btn btn-sm btn-outline-secondary"
                                        title="{% trans 'Edit Invoice' %}">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a href="{% url 'jobcard_app:invoice_delete' inv.pk %}"
-                                       class="btn btn-sm btn-outline-danger"
-                                       title="{% trans 'Delete' %}"
-                                       onclick="return confirm('{% trans "Delete this invoice? This cannot be undone." %}');">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
+                                    <form method="post" action="{% url 'jobcard_app:invoice_delete' inv.pk %}" class="d-inline"
+                                        onsubmit="return confirm('{% trans "Delete this invoice? This cannot be undone." as msg %}{{ msg|escapejs }}');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete' %}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>

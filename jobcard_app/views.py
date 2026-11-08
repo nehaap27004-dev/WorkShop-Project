@@ -337,6 +337,7 @@ def ajax_get_categories(request):
         is_active=True
     ).order_by('name').values('id', 'name')
     return JsonResponse({'categories': list(categories)})
+
 def _inspection_context():
     return {
         'interior_items': [
@@ -364,6 +365,19 @@ def _inspection_context():
             ('brake_pad',  'Brake Pad Condition'),
             ('brake_disc', 'Brake Disc Condition'),
         ],
+        'tyre_items': [
+            ('tyre_fl',    'Front Left Tyre'),
+            ('tyre_fr',    'Front Right Tyre'),
+            ('tyre_rl',    'Rear Left Tyre'),
+            ('tyre_rr',    'Rear Right Tyre'),
+            ('tyre_spare', 'Spare Tyre'),
+        ],
+        'fluid_items': [
+            ('brake_fluid',    'Brake Fluid Level'),
+            ('steering_fluid', 'Power Steering Fluid'),
+            ('washer_fluid',   'Washer Fluid Level'),
+            ('exhaust_system', 'Exhaust System'),
+        ],
         'electrical_items': [
             ('battery', 'Battery'),
             ('starter', 'Starter'),
@@ -380,6 +394,7 @@ def _inspection_context():
             ('fire_extinguisher', 'Fire Extinguisher'),
             ('first_aid_kit',     'First Aid Kit'),
         ],
+        
     }
  
  
@@ -684,8 +699,38 @@ def inspection_edit(request, pk):
         'today':       timezone.now().date(),
     })
     return render(request, 'jobcard_app/inspection_form.html', ctx)
- 
- 
+# ─────────────────────────────────────────────────────────────
+# VIEW (same form, read-only)
+# ─────────────────────────────────────────────────────────────
+@login_required
+def inspection_view(request, pk):
+    insp = get_object_or_404(VehicleInspection, pk=pk)
+
+    interior    = getattr(insp, 'interior', None)
+    mechanical  = getattr(insp, 'mechanical', None)
+    accessories = getattr(insp, 'accessories', None)
+
+    ctx = _inspection_context()
+    ctx.update({
+        'vehicle_types':        VehicleCategory.objects.all().order_by('category_name'),
+        'vehicle_fuel_choices': WorkshopVehicle.FUEL_CHOICES,
+        'insp':        insp,
+        'interior':    interior,
+        'mechanical':  mechanical,
+        'accessories': accessories,
+        'complaints':  insp.findings.filter(finding_type='complaint').order_by('order'),
+        'findings':    insp.findings.filter(finding_type='finding').order_by('order'),
+        'customers':   LedgerCreation.objects.filter(groups_id=29).order_by('ledger_name'),
+        'inspectors':  Staff.objects.filter(
+                            status='Active',
+                            staff_category__name__in=['Inspector', 'Technician']
+                       ).order_by('full_name'),
+        'vehicles':    WorkshopVehicle.objects.filter(is_active=True),
+        'edit_mode':   True,   # makes the template load the saved data
+        'view_mode':   True,   # makes the template read-only
+        'today':       timezone.now().date(),
+    })
+    return render(request, 'jobcard_app/inspection_form.html', ctx)
 # ─────────────────────────────────────────────────────────────
 # DELETE
 # ─────────────────────────────────────────────────────────────
@@ -2024,7 +2069,37 @@ def _vehicle_mm_label(v):
     model = v.vehicle_model.model_name if v.vehicle_model else ''
     return f"{mfr} {model}".strip()
  
- 
+# ─────────────────────────────────────────────────────────────
+# VIEW (same form, read-only)
+# ─────────────────────────────────────────────────────────────
+@login_required
+def estimate_view(request, pk):
+    est         = get_object_or_404(Estimate, pk=pk)
+    customers   = LedgerCreation.objects.filter(groups_id=29).order_by('ledger_name')
+    technicians = Staff.objects.filter(status='Active', staff_category__name='Technician').order_by('full_name')
+    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
+    categories  = ServiceCategory.objects.filter(is_active=True).order_by('name')
+
+    parts      = est.items.filter(item_type='part')
+    labour     = est.items.filter(item_type='labour')
+    complaints = est.complaints.filter(complaint_type='customer')
+    findings   = est.complaints.filter(complaint_type='technician')
+
+    return render(request, 'jobcard_app/estimate_form.html', {
+        'estimate':    est,
+        'customers':   customers,
+        'technicians': technicians,
+        'advisors':    advisors,
+        'categories':  categories,
+        'relational_mapping_json': json.dumps(_get_relational_mapping_dict()),
+        'parts':       parts,
+        'labour':      labour,
+        'complaints':  complaints,
+        'findings':    findings,
+        'edit_mode':   True,   # loads the saved data
+        'view_mode':   True,   # makes the form read-only
+        'today':       timezone.now().date(),
+    })
 @login_required
 def ajax_customer_jobcards(request):
     """Job cards of one customer, for the 'Job Card' dropdown on the estimate form."""
@@ -2762,21 +2837,31 @@ def quotation_create(request):
 # DETAIL
 # ─────────────────────────────────────────────────────────────────────────────
 @login_required
-def quotation_detail(request, pk):
-    quot = get_object_or_404(
-        Quotation.objects.select_related(
-            'customer', 'vehicle', 'estimate', 'jobcard', 'advisor'
-        ).prefetch_related('vehicles__vehicle', 'items__technician', 'items__vehicle', 'complaints__vehicle', 'complaints__technician', 'complaints__service_category'),
-        pk=pk
-    )
-    return render(request, 'jobcard_app/quotation_detail.html', {
-        'quotation':  quot,
-        'parts':      quot.parts(),
-        'labour':     quot.labour(),
-        'complaints': quot.complaints_customer(),
-        'findings':   quot.findings_technician(),
-    })
+def quotation_view(request, pk):
+    qt          = get_object_or_404(Quotation, pk=pk)
+    customers   = LedgerCreation.objects.filter(groups_id=29).order_by('ledger_name')
+    technicians = Staff.objects.filter(status='Active', staff_category__name='Technician').order_by('full_name')
+    advisors    = Staff.objects.filter(status='Active').order_by('full_name')
+    categories  = ServiceCategory.objects.filter(is_active=True).order_by('name')
 
+    parts      = qt.items.filter(item_type='part')
+    labour     = qt.items.filter(item_type='labour')
+    complaints = qt.complaints.filter(complaint_type='customer')
+
+    return render(request, 'jobcard_app/quotation_form.html', {
+        'quotation':   qt,
+        'customers':   customers,
+        'technicians': technicians,
+        'advisors':    advisors,
+        'categories':  categories,
+        'relational_mapping_json': json.dumps(_get_relational_mapping_dict()),
+        'parts':       parts,
+        'labour':      labour,
+        'complaints':  complaints,
+        'edit_mode':   True,   # loads the saved data
+        'view_mode':   True,   # makes the form read-only
+        'today':       timezone.now().date(),
+    })
 
 # ─────────────────────────────────────────────────────────────────────────────
 # EDIT
@@ -3635,7 +3720,26 @@ def delivery_edit(request, pk):
         'dn_voucher_type_id':  DELIVERY_NOTE_VOUCHER_ID,
     })
  
- 
+@login_required
+def delivery_view(request, pk):
+    dn = get_object_or_404(
+        DeliveryNote.objects.prefetch_related('vehicles__vehicle', 'services', 'parts', 'labours'),
+        pk=pk
+    )
+    return render(request, 'jobcard_app/delivery_form.html', {
+        'dn':                  dn,
+        'customers':           LedgerCreation.objects.filter(groups_id=29).order_by('ledger_name'),
+        'advisors':            Staff.objects.filter(status='Active').order_by('full_name'),
+        'technicians':         Staff.objects.filter(status='Active', staff_category__name='Technician').order_by('full_name'),
+        'checklist_items':     _checklist_items(),
+        'services':            dn.services.all(),
+        'parts':               dn.parts.all(),
+        'labour':              dn.labours.all(),
+        'edit_mode':           True,
+        'view_mode':           True,
+        'today':               timezone.now().date(),
+        'dn_voucher_type_id':  DELIVERY_NOTE_VOUCHER_ID,
+    })
 
 # ─────────────────────────────────────────────────────────────
 # DELETE
@@ -4542,9 +4646,18 @@ def invoice_create(request):
  
 @login_required
 def invoice_detail(request, pk):
-    return redirect('jobcard_app:invoice_edit', pk=pk)
- 
- 
+    inv = get_object_or_404(Invoice, pk=pk)
+    ctx = _form_context()
+    ctx.update({
+        'invoice':       inv,
+        'parts':         inv.parts,
+        'labour':        inv.labours,
+        'other_charges': inv.other_charges,
+        'edit_mode':     True,
+        'view_mode':     True,
+        'posted_data':   None,
+    })
+    return render(request, 'jobcard_app/invoice_form.html', ctx)
 @login_required
 def invoice_edit(request, pk):
     inv = get_object_or_404(Invoice, pk=pk)
@@ -4569,10 +4682,11 @@ def invoice_edit(request, pk):
     })
     return render(request, 'jobcard_app/invoice_form.html', ctx)
  
- 
 @login_required
+@require_POST
 def invoice_delete(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
+    number = invoice.invoice_number or invoice.voucher_number or invoice.pk
     try:
         with transaction.atomic():
             from item_master.models import Stock
@@ -4580,15 +4694,17 @@ def invoice_delete(request, pk):
             vt = _invoice_voucher_type(invoice)
             if vt:
                 Stock.objects.filter(voucherType=vt, voucherNo=invoice.id).delete()
-                BillWiseOpening.objects.filter(voucherType=vt, InvNo=invoice.invoice_number).delete()
-            unpost_invoice(invoice, vt)
+                if invoice.invoice_number:   # never filter on None, it would match every row with an empty InvNo
+                    BillWiseOpening.objects.filter(
+                        voucherType=vt, InvNo=invoice.invoice_number).delete()
             invoice.delete()
-        messages.success(request, 'Invoice deleted.')
-    except Exception:
+        messages.success(request, f'Invoice {number} deleted.')
+    except ProtectedError:
+        messages.error(request, f'Invoice {number} is linked to other records and cannot be deleted.')
+    except Exception as e:
         log.exception('Invoice delete failed')
-        messages.error(request, 'Could not delete the invoice.')
+        messages.error(request, f'Could not delete invoice {number}: {e}')
     return redirect('jobcard_app:invoice_list')
- 
  
 # ═════════════════════════════════════════════════════════════
 # AJAX

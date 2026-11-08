@@ -1,130 +1,313 @@
 {% extends "fleet_base1.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "User Roles" %}{% endblock %}
+
 {% block content %}
-
 <style>
-    /* 1. Only apply 100% width to text/select inputs, NOT checkboxes */
-    .small-input input[type="text"],
-    .small-input select,
-    .small-input textarea {
-        max-width: 250px;
-        width: 100%;
-        padding: 5px 8px;
-        font-size: 14px;
-        display: block;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
     }
 
-    /* 2. Specific Checkbox Styling to ensure visibility */
-    .small-input .form-check-input {
-        width: 18px;
-        height: 18px;
-        margin-top: 0; /* Align vertically with text */
-        cursor: pointer;
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
     }
 
-    .small-label {
-        font-weight: 600;
-        margin-bottom: 4px;
-        display: block;
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
     }
 
-    /* Override display:block for labels next to checkboxes */
-    .form-check-label {
-        font-weight: 600;
-        font-size: 14px;
-        margin-left: 8px;
-        cursor: pointer;
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
-    .role-card {
-        max-width: 600px;
-        padding: 20px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
         background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 0.55rem 1.35rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+    }
+
+    .btn-custom-outline {
+        color: var(--primary-burgundy) !important;
+        border: 1px solid var(--primary-burgundy) !important;
+        background-color: transparent !important;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-custom-outline:hover {
+        background-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+    }
+
+    .form-label {
+        font-size: 0.85rem;
+        color: #475569;
+        margin-bottom: 0.4rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    input[type="text"],
+    select,
+    textarea,
+    .form-control {
+        width: 100% !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        padding: 0.55rem 0.85rem !important;
+        font-size: 0.9rem !important;
+        min-height: 40px !important;
+        color: #1e293b !important;
+        background-color: #ffffff !important;
+        display: block !important;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus,
+    .form-control:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none !important;
+    }
+
+    .form-check-input {
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+        min-height: 1.25rem !important;
+        accent-color: var(--primary-burgundy);
+        cursor: pointer;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #475569;
+        border-top: none;
+        padding: 0.75rem 1rem;
+    }
+
+    .table td {
+        font-size: 0.88rem;
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: var(--primary-burgundy-light);
     }
 </style>
 
-<h2 class="mb-3">User Roles</h2>
-
-<table class="table table-bordered table-sm">
-    <thead class="table-light">
-        <tr>
-            <th>Role</th>
-            <th>Admin</th>
-            <th width="170">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for role in roles %}
-        <tr>
-            <td>{{ role.name }}</td>
-            <td>{{ role.is_admin|yesno:"Yes,No" }}</td>
-            <td>
-                <a href="{% url 'accounts_app:role_edit_inline' role.pk %}" class="btn btn-sm btn-warning">Edit</a>
-                <form method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="delete_id" value="{{ role.pk }}">
-                    <button type="submit" class="btn btn-sm btn-danger"
-                            onclick="return confirm('Delete this role?');">
-                        Delete
-                    </button>
-                </form>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="3" class="text-center text-muted">No roles found.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<hr>
-
-<h3 class="mt-4">
-    {% if edit_role %}
-        Edit Role: {{ edit_role.name }}
-    {% else %}
-        Add New Role
-    {% endif %}
-</h3>
-
-<div class="role-card mt-3">
-    <form method="post">
-        {% csrf_token %}
-
-        <div class="small-input">
-            <div class="mb-3">
-                <label for="{{ form.name.id_for_label }}" class="small-label">
-                    {{ form.name.label }}
-                </label>
-                {{ form.name }}
-                {% if form.name.errors %}
-                    <div class="text-danger small">{{ form.name.errors }}</div>
-                {% endif %}
+<div class="voucher-container">
+    <!-- Header Banner -->
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Admin Master" %}
+                    </span>
+                </div>
+                <h3 class="font-weight-bold text-dark mb-1">{% trans "User Roles" %}</h3>
+                <p class="text-muted small mb-0">{% trans "Configure security access profiles, role definitions, and administrative permission levels." %}</p>
             </div>
-
-            <div class="mb-3 d-flex align-items-center">
-                {{ form.is_admin }}
-                <label class="form-check-label" for="{{ form.is_admin.id_for_label }}">
-                    {{ form.is_admin.label }}
-                </label>
-                {% if form.is_admin.errors %}
-                    <div class="text-danger small ms-2">{{ form.is_admin.errors }}</div>
-                {% endif %}
+            <div>
+                <a href="{% url 'accounts_app:manage_privileges' %}" class="btn-custom-outline">
+                    <i class="bi bi-shield-lock"></i> {% trans "Manage Privileges" %}
+                </a>
             </div>
         </div>
+    </div>
 
-        <div class="mt-4">
-            <button type="submit" class="btn btn-success">
-                {% if edit_role %}Update{% else %}Save{% endif %}
-            </button>
+    <!-- Messages -->
+    {% for msg in messages %}
+    <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm mb-4" style="border-radius: 8px;">
+        {{ msg }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
 
+    <!-- Role Form Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="bi bi-person-badge text-burgundy mr-2"></i>
+                {% if edit_role %}{% trans "Edit Role" %}: {{ edit_role.name }}{% else %}{% trans "Add New Role" %}{% endif %}
+            </h5>
             {% if edit_role %}
-                <a href="{% url 'accounts_app:role_management' %}" class="btn btn-secondary">Cancel</a>
+            <a href="{% url 'accounts_app:role_management' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x"></i> {% trans "Cancel Edit" %}
+            </a>
             {% endif %}
         </div>
-    </form>
-</div>
+        <div class="p-4">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-5">
+                        <label class="form-label" for="{{ form.name.id_for_label }}">
+                            <i class="bi bi-tag text-burgundy"></i>
+                            <span>{{ form.name.label }}</span>
+                            <span class="text-danger">*</span>
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
 
+                    <div class="col-md-3">
+                        <label class="form-label d-block text-muted">{% trans "Access Level" %}</label>
+                        <div class="d-flex align-items-center gap-2 mt-2" style="min-height: 40px;">
+                            {{ form.is_admin }}
+                            <label class="form-check-label mb-0 font-weight-bold text-dark" for="{{ form.is_admin.id_for_label }}" style="cursor: pointer;">
+                                {{ form.is_admin.label }}
+                            </label>
+                        </div>
+                        {% if form.is_admin.errors %}
+                            <div class="text-danger small mt-1">{{ form.is_admin.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 d-flex align-items-end gap-2" style="min-height: 68px;">
+                        <button type="submit" class="btn-custom-primary">
+                            <i class="bi bi-{% if edit_role %}check-circle{% else %}plus-circle{% endif %}"></i>
+                            {% if edit_role %}{% trans "Update Role" %}{% else %}{% trans "Save Role" %}{% endif %}
+                        </button>
+                        {% if edit_role %}
+                        <a href="{% url 'accounts_app:role_management' %}" class="btn btn-outline-secondary px-3">
+                            {% trans "Cancel" %}
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Roles Table Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="bi bi-list-check text-burgundy mr-2"></i>
+                {% trans "Existing User Roles" %}
+            </h5>
+            <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); border: 1px solid var(--primary-burgundy-border); font-weight: 600; padding: 0.35rem 0.65rem;">
+                {{ roles.count }} {% trans "Roles" %}
+            </span>
+        </div>
+        <div class="p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead>
+                        <tr>
+                            <th class="text-left">{% trans "Role Name" %}</th>
+                            <th>{% trans "Administrator Privilege" %}</th>
+                            <th>{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for role in roles %}
+                        <tr>
+                            <td class="text-left font-weight-bold text-dark">
+                                <i class="bi bi-shield-check text-burgundy mr-2"></i>
+                                {{ role.name }}
+                            </td>
+                            <td>
+                                {% if role.is_admin %}
+                                    <span class="badge" style="background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-weight: 600; padding: 0.35rem 0.75rem;">
+                                        <i class="bi bi-check-circle-fill mr-1"></i>{% trans "Administrator" %}
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-light border text-muted" style="padding: 0.35rem 0.75rem;">
+                                        {% trans "Standard User" %}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-inline-flex gap-1">
+                                    <a href="{% url 'accounts_app:role_edit_inline' role.pk %}" class="btn btn-sm btn-outline-secondary px-2 py-1" title="{% trans 'Edit Role' %}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="post" style="display:inline; margin:0;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="delete_id" value="{{ role.pk }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1" onclick="return confirm('{% trans "Are you sure you want to delete this role?" %}');" title="{% trans 'Delete Role' %}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-5">
+                                <i class="bi bi-shield-x fs-1 d-block mb-2 text-muted" style="font-size: 2rem;"></i>
+                                {% trans "No roles found. Create your first role above." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

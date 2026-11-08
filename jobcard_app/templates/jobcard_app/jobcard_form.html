@@ -132,10 +132,11 @@
         </div>
         <div>
           <label class="fl">{% trans "Customer" %} <span class="req">*</span></label>
-          <select name="customer" class="fi" required id="custSel" {% if edit_mode %}disabled{% endif %} onchange="loadVehicles(this.value)">
+          <select name="customer" class="fi" required id="custSel" {% if edit_mode %}disabled{% endif %} onchange="onCustomerChange(this)">
             <option value="">— Select Customer —</option>
             {% for c in customers %}
             <option value="{{ c.id }}"
+              data-phone="{{ c.mobile_number|default:c.mobile|default:'' }}"
               {% if edit_mode and job.customer_id == c.id %}selected{% endif %}
               {% if inspection and inspection.customer_id == c.id %}selected{% endif %}>{{ c.ledger_name }}</option>
             {% endfor %}
@@ -183,6 +184,7 @@
       <h2 class="jc-card-title"><i class="bi bi-truck text-burgundy"></i> {% trans "Assigned Vehicles" %}</h2>
       <button type="button" class="btn-add" onclick="addVehicleRow()"><i class="bi bi-plus"></i> {% trans "Add Vehicle" %}</button>
     </div>
+    <div id="vehEmpty" style="display:none"></div>
     <div class="stbl-container">
       <table class="stbl" id="vehTbl">
         <thead>
@@ -242,9 +244,7 @@
           {% endif %}
         </tbody>
       </table>
-      <div id="vehEmpty" style="{% if edit_mode and job.vehicles.exists or inspection and inspection.vehicle %}display:none{% else %}display:block{% endif %}; text-align:center; padding:20px; color:#94a3b8; font-size:12.5px">
-        <i class="bi bi-info-circle text-muted mr-1"></i> {% trans "No vehicles added yet. Select a customer above, then click Add Vehicle." %}
-      </div>
+      <div id="vehEmpty" style="display:none"></div>
     </div>
   </div>
 
@@ -576,7 +576,6 @@
     </div>
   </div>
 </div>
-
 <script>
 const VEH_URL       = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
 const INSP_URL      = "{% url 'jobcard_app:ajax_get_inspections' %}";
@@ -616,14 +615,51 @@ function loadVehicles(cid, callback) {
         if (mm && o && o.dataset.mm) mm.value = o.dataset.mm;
       });
       const tbody = document.getElementById('vehBody');
-      if (tbody && tbody.querySelectorAll('tr').length === 0 && customerVehicleCache.length > 0) addVehicleRow();
+      // CHANGED: always start with one blank row if the table is empty
+      if (tbody && tbody.querySelectorAll('tr').length === 0) {
+        if (customerVehicleCache.length) customerVehicleCache.forEach(v => addVehicleRow(v.id, '', '', true));
+        else addVehicleRow('', '', '', true);
+      }
       checkVehEmpty();
       refreshAllVehicleDropdowns();
       if (typeof callback === 'function') callback();
     })
     .catch(err => console.error('Error loading customer vehicles:', err));
 }
+function onCustomerChange(sel) {
+  const cid      = sel.value;
+  const opt      = sel.options[sel.selectedIndex];
+  const phoneInp = document.getElementById('customerPhone');
 
+  if (phoneInp) phoneInp.value = (opt && opt.dataset.phone) || '';
+
+  customerVehicleCache = [];
+  document.getElementById('vehBody').innerHTML = '';
+
+  if (!cid) {                          // customer cleared: back to one blank row
+    addVehicleRow('', '', '', true);
+    refreshAllVehicleDropdowns();
+    return;
+  }
+
+  fetch(VEH_URL + '?customer_id=' + cid)
+    .then(r => r.json())
+    .then(d => {
+      if (sel.value !== cid) return;   // customer changed again while loading
+      customerVehicleCache = d.vehicles || [];
+      if (phoneInp && !phoneInp.value && d.customer_phone) phoneInp.value = d.customer_phone;
+
+      document.getElementById('vehBody').innerHTML = '';
+      if (customerVehicleCache.length) {
+        customerVehicleCache.forEach(v => addVehicleRow(v.id, '', '', true));   // one row per vehicle, filled
+      } else {
+        addVehicleRow('', '', '', true);                                        // none assigned: blank row
+      }
+      checkVehEmpty();
+      refreshAllVehicleDropdowns();
+    })
+    .catch(err => console.error('Error loading customer vehicles:', err));
+}
 function populateVehSelect(sel) {
   const currentVal  = sel.value;
   const currentOpt  = sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
@@ -650,9 +686,10 @@ function populateVehSelect(sel) {
   // no onVehRowChange() here: callers refresh once after all rows are populated
 }
 
-function addVehicleRow(vehicleIdToSelect, mileageVal, fuelVal) {
+// CHANGED: new 4th parameter "blank" stops the auto-select of a customer's only vehicle
+function addVehicleRow(vehicleIdToSelect, mileageVal, fuelVal, blank) {
   const custSel = document.getElementById('custSel');
-  if (!custSel || !custSel.value) {
+  if (!blank && (!custSel || !custSel.value)) {
     alert('Please select a customer first.');
     if (custSel) custSel.focus();
     return null;
@@ -678,7 +715,7 @@ function addVehicleRow(vehicleIdToSelect, mileageVal, fuelVal) {
   const sel = tr.querySelector('.veh-select');
   populateVehSelect(sel);
   if (vehicleIdToSelect) sel.value = vehicleIdToSelect;
-  else if (customerVehicleCache.length === 1) sel.value = customerVehicleCache[0].id;
+  else if (!blank && customerVehicleCache.length === 1) sel.value = customerVehicleCache[0].id;
 
   if (mileageVal !== null && mileageVal !== undefined && mileageVal !== '') {
     const mInp = tr.querySelector('input[name="jc_vehicle_mileage[]"]');
@@ -1287,7 +1324,12 @@ document.addEventListener('DOMContentLoaded', function () {
     .then(r => r.json())
     .then(data => { allJcItems = data.items || []; buildItemDropdown(); calcPartsTotal(); })
     .catch(e => console.error('Items load error:', e));
-
+    // new job card with no customer yet: show one blank vehicle row
+  const vehBodyEl = document.getElementById('vehBody');
+  const custEl = document.getElementById('custSel');
+  if (vehBodyEl && vehBodyEl.querySelectorAll('tr').length === 0 && !(custEl && custEl.value)) {
+    addVehicleRow('', '', '', true);
+  }
   const customerSelect = document.getElementById('custSel');
   if (customerSelect && customerSelect.value) loadVehicles(customerSelect.value);
 });

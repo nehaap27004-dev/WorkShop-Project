@@ -2,448 +2,441 @@
 {% load i18n %}
 
 {% block content %}
-<!-- Custom CSS -->
 <style>
-    h2, h3, h4, h5 {
-        font-family: 'Segoe UI', sans-serif;
-    }
-
-    form label {
-        font-weight: 500;
-        color: #444;
-    }
-
-    input, select, textarea {
-        width: 100% !important;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        padding: 6px 10px;
-        font-size: 0.95rem;
-    }
-
-    input:focus, select:focus, textarea:focus {
-        border-color: #5A8DEE;
-        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
-        outline: none;
-    }
-
-    .btn-primary {
-        background-color: #5A8DEE !important;
-        border-color: #5A8DEE !important;
-    }
-
-    .btn-danger {
-        background-color: #dc3545 !important;
-        border-color: #dc3545 !important;
-    }
-
-    .btn-secondary {
-        background-color: #6c757d !important;
-        border-color: #6c757d !important;
-    }
-
-    .card {
-        border-radius: 12px;
-    }
-
-    .card-header {
-        background-color: #f8fafc !important;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .card-header h5 {
-        color: #1e293b !important;
-        font-weight: 700 !important;
-    }
-
-    .table th {
-        background-color: #343a40;
-        color: white;
-        font-weight: 600;
-    }
-
-    .btn:hover {
-        opacity: 0.9;
-        transition: 0.2s ease-in-out;
-    }
-
-    /* ── Skill pill base ── */
-    .skill-pill-label {
-        display: inline-flex;
-        align-items: center;
-        background: #ffffff;
-        border: 1.5px solid #cbd5e1;
-        border-radius: 20px;
-        padding: 6px 14px;
-        cursor: pointer;
-        transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        user-select: none;
-    }
-    .skill-pill-label:hover {
-        border-color: #5A8DEE;
-        background: #f0f5ff;
-        transform: translateY(-1px);
-    }
-    /* ── SELECTED state ── */
-    .skill-pill-label.selected {
-        background: linear-gradient(135deg, #5A8DEE 0%, #4a7dd8 100%);
-        border-color: #4a7dd8;
-        box-shadow: 0 3px 10px rgba(90,141,238,0.35);
-        transform: translateY(-1px);
-    }
-    .skill-pill-label.selected .skill-pill-text {
-        color: #ffffff;
-    }
-    /* ── hide the raw checkbox – the pill is the visual control ── */
-    .skill-pill-label input[type="checkbox"] {
-        position: absolute;
-        opacity: 0;
-        width: 0;
-        height: 0;
-        pointer-events: none;
-    }
-    .skill-pill-text {
-        font-size: 13px;
-        font-weight: 600;
-        color: #1e293b;
-    }
+  .sf-wrapper { max-width: 1140px; margin: 0 auto; padding-bottom: 90px; }
+  /* ── Page Header ── */
+  .jc-page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .jc-page-hdr-left { display:flex; align-items:center; gap:10px; }
+  .jc-page-icon { width:38px; height:38px; background:#fdf2f5; border:1px solid #f9c9d5; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:20px; color:#9f1045; }
+  .jc-page-title { font-size:20px; font-weight:700; color:#0f172a; margin:0; line-height:1.2; letter-spacing:-0.3px; }
+  .jc-page-sub { font-size:12px; color:#64748b; margin-top:2px; }
+  .jc-btn-back { background:#fff; color:#334155; border:1px solid #cbd5e1; border-radius:6px; padding:7px 14px; font-size:12.5px; font-weight:600; text-decoration:none !important; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; }
+  .jc-btn-back:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
+  /* ── Cards ── */
+  .jc-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:16px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,.04); }
+  .jc-card-hdr { background:#ffffff; border-bottom:1px solid #f1f5f9; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .jc-card-title { font-size:13.5px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px; margin:0; }
+  .jc-card-body { padding:18px; }
+  /* ── Form labels & inputs ── */
+  .fl { display:block; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+  .req { color:#ef4444; margin-left:2px; }
+  .fi { width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 10px; font-size:12.5px; color:#0f172a; background:#fff; outline:none; transition:all .15s ease-in-out; font-family:inherit; box-sizing:border-box; }
+  .fi:focus { border-color:#9f1045; box-shadow:0 0 0 3px rgba(159,16,69,.12); }
+  .fi::placeholder { color:#94a3b8; }
+  .fi[readonly] { background:#f8fafc; color:#475569; border-color:#e2e8f0; }
+  select.fi { cursor:pointer; background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 10px center; background-size:12px 10px; padding-right:28px; -webkit-appearance:none; -moz-appearance:none; appearance:none; }
+  textarea.fi { resize:vertical; min-height:60px; }
+  /* File input */
+  input[type="file"].fi { padding:5px 10px; }
+  /* Checkbox */
+  .check-row { display:flex; align-items:center; gap:8px; margin-top:4px; }
+  .check-row input[type="checkbox"] { width:16px; height:16px; accent-color:#9f1045; cursor:pointer; }
+  .check-row label { font-size:12.5px; color:#374151; cursor:pointer; margin:0; }
+  /* ── Grid layouts ── */
+  .g6 { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; }
+  .g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .g3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .mb { margin-bottom:14px; }
+  @media (max-width:1199px) { .g6 { grid-template-columns:repeat(4,1fr); } }
+  @media (max-width:991px)  { .g6 { grid-template-columns:repeat(3,1fr); } .g4 { grid-template-columns:repeat(2,1fr); } .g3 { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:576px)  { .g6,.g4,.g3,.g2 { grid-template-columns:1fr; } }
+  /* ── Buttons ── */
+  .btn-save { background:#9f1045; color:#fff; border:none; border-radius:6px; padding:8px 20px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .15s ease; }
+  .btn-save:hover { background:#830d38; }
+  .btn-cancel { background:#fff; color:#475569; border:1px solid #cbd5e1; border-radius:6px; padding:8px 16px; font-size:13px; font-weight:600; text-decoration:none !important; transition:all .15s ease; display:inline-flex; align-items:center; gap:5px; }
+  .btn-cancel:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
+  .btn-secondary-sm { background:#fff; color:#334155; border:1px solid #cbd5e1; border-radius:6px; padding:6px 13px; font-size:12px; font-weight:600; text-decoration:none !important; display:inline-flex; align-items:center; gap:5px; transition:all .15s ease; }
+  .btn-secondary-sm:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
+  /* ── Save bar ── */
+  .save-bar { position:sticky; bottom:16px; z-index:100; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; padding:12px 20px; display:flex; align-items:center; justify-content:flex-end; gap:10px; box-shadow:0 4px 16px rgba(0,0,0,.08); margin-top:20px; }
+  /* ── Staff table ── */
+  .stbl { width:100%; border-collapse:collapse; }
+  .stbl thead th { background:#ffffff; color:#64748b; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; padding:9px 12px; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+  .stbl tbody td { padding:8px 12px; border-bottom:1px solid #f1f5f9; vertical-align:middle; font-size:12.5px; color:#1e293b; }
+  .stbl tbody tr:last-child td { border-bottom:none; }
+  .stbl tbody tr:hover { background:#fafafa; }
+  /* ── Skill pills ── */
+  .skill-pill-label { display:inline-flex; align-items:center; background:#fff; border:1.5px solid #d1d5db; border-radius:20px; padding:4px 13px; cursor:pointer; transition:background .15s, border-color .15s; user-select:none; margin:0 5px 5px 0; }
+  .skill-pill-label:hover { border-color:#9f1045; background:#fdf2f5; }
+  .skill-pill-label.selected { background:#9f1045; border-color:#830d38; }
+  .skill-pill-label.selected .pill-text { color:#fff; }
+  .skill-pill-label input[type="checkbox"] { position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+  .pill-text { font-size:12.5px; font-weight:600; color:#374151; }
+  .pills-box { display:flex; flex-wrap:wrap; padding:12px; border:1px solid #e2e8f0; border-radius:8px; background:#fafafa; min-height:52px; max-height:200px; overflow-y:auto; }
+  /* ── Status / skill badges in table ── */
+  .skill-badge { display:inline-block; background:#fdf2f5; color:#9f1045; border:1px solid #f9c9d5; border-radius:20px; padding:2px 9px; font-size:11px; font-weight:600; margin:1px; }
+  .status-active   { display:inline-block; background:#dcfce7; color:#15803d; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:700; text-transform:uppercase; }
+  .status-inactive { display:inline-block; background:#fee2e2; color:#b91c1c; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:700; text-transform:uppercase; }
+  /* ── Action buttons ── */
+  .btn-act-edit   { background:#fdf2f5; border:1px solid #f9c9d5; color:#9f1045; border-radius:5px; font-size:11.5px; font-weight:600; padding:4px 10px; transition:all .15s; white-space:nowrap; }
+  .btn-act-edit:hover   { background:#9f1045; color:#fff; border-color:#9f1045; }
+  .btn-act-del    { background:#fff5f5; border:1px solid #fecaca; color:#dc2626; border-radius:5px; font-size:11.5px; font-weight:600; padding:4px 8px; transition:all .15s; }
+  .btn-act-del:hover    { background:#dc2626; color:#fff; border-color:#dc2626; }
+  /* ── Search ── */
+  .search-wrap { position:relative; }
+  .search-wrap .si { position:absolute; left:9px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:13px; }
+  .search-wrap input { padding-left:28px; border:1px solid #e2e8f0; border-radius:6px; font-size:12.5px; padding-top:6px; padding-bottom:6px; outline:none; }
+  .search-wrap input:focus { border-color:#9f1045; box-shadow:0 0 0 2px rgba(159,16,69,.1); }
+  /* edit mode banner */
+  .edit-banner { background:#fffbeb; border:1px solid #fcd34d; border-radius:7px; padding:8px 14px; font-size:12.5px; color:#92400e; display:flex; align-items:center; gap:7px; margin-bottom:14px; }
 </style>
 
-<div class="container mt-4 mb-5">
-    <h2 class="mb-4 text-center fw-bold text-primary">
-        {% if edit_id %}{% trans "Update" %}{% else %}{% trans "Add" %}{% endif %} {% trans "Staff" %}
-    </h2>
+<div class="container-fluid p-0 sf-wrapper">
 
-    <!-- Add/Edit Form -->
-    <form method="post" enctype="multipart/form-data" class="needs-validation">
-        {% csrf_token %}
-        
-        <!-- Personal Information -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">{% trans "Personal Information" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <!-- Row 1 -->
-                    <div class="col-md-2">
-                        {{ form.staff_category.label_tag }}
-                        {{ form.staff_category }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.staff_id.label_tag }}
-                        {{ form.staff_id }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.full_name.label_tag }}
-                        {{ form.full_name }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.staff_image.label_tag }}
-                        {{ form.staff_image }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.gender.label_tag }}
-                        {{ form.gender }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.date_of_birth.label_tag }}
-                        {{ form.date_of_birth }}
-                    </div>
-
-                    <!-- Row 2 -->
-                    <div class="col-md-2">
-                        {{ form.nationality.label_tag }}
-                        {{ form.nationality }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.civil_id_or_passport_no.label_tag }}
-                        {{ form.civil_id_or_passport_no }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.marital_status.label_tag }}
-                        {{ form.marital_status }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.contact_number.label_tag }}
-                        {{ form.contact_number }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.email.label_tag }}
-                        {{ form.email }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.address.label_tag }}
-                        {{ form.address }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Employment Information -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">{% trans "Employment Information" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <!-- Row 1 -->
-                    <div class="col-md-2">
-                        {{ form.department.label_tag }}
-                        {{ form.department }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.job_title.label_tag }}
-                        {{ form.job_title }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.joining_date.label_tag }}
-                        {{ form.joining_date }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.employment_type.label_tag }}
-                        {{ form.employment_type }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.basic_salary.label_tag }}
-                        {{ form.basic_salary }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.allowances.label_tag }}
-                        {{ form.allowances }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bank & Emergency Contact -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">{% trans "Bank & Emergency Contact" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-2">
-                        {{ form.bank_account_no.label_tag }}
-                        {{ form.bank_account_no }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.bank_name.label_tag }}
-                        {{ form.bank_name }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.emergency_contact_name.label_tag }}
-                        {{ form.emergency_contact_name }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.emergency_contact_number.label_tag }}
-                        {{ form.emergency_contact_number }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Documents & Licenses -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">{% trans "Documents & Licenses" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <!-- Row 1 -->
-                    <div class="col-md-2">
-                        {{ form.visa_expiry_date.label_tag }}
-                        {{ form.visa_expiry_date }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.contract_end_date.label_tag }}
-                        {{ form.contract_end_date }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.passport_expiry_date.label_tag }}
-                        {{ form.passport_expiry_date }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.resident_id_number.label_tag }}
-                        {{ form.resident_id_number }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.resident_id_expiry_date.label_tag }}
-                        {{ form.resident_id_expiry_date }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.license_type.label_tag }}
-                        {{ form.license_type }}
-                    </div>
-
-                    <!-- Row 2 -->
-                    <div class="col-md-2">
-                        {{ form.license_number.label_tag }}
-                        {{ form.license_number }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.license_expiry_date.label_tag }}
-                        {{ form.license_expiry_date }}
-                    </div>
-                    <div class="col-md-2">
-                        {{ form.status.label_tag }}
-                        {{ form.status }}
-                    </div>
-                    <div class="col-md-6">
-                        {{ form.remarks.label_tag }}
-                        {{ form.remarks }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Technical Skills & Qualifications -->
-        <div class="card shadow-sm mb-4 border-0">
-            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap">
-                <div>
-                    <h5 class="mb-0 font-weight-bold" style="color: #2c3e50;">
-                        <i class="bi bi-tools text-primary mr-2"></i>{% trans "Technical Skills & Qualifications" %}
-                    </h5>
-                    <small class="text-muted font-weight-bold">{% trans "Assign skill tags for job card technician matching" %}</small>
-                </div>
-                <a href="{% url 'jobcard_app:skill_tag_list' %}" class="btn btn-sm btn-outline-primary font-weight-bold">
-                    ⚙️ {% trans "Manage Skill Tags" %}
-                </a>
-            </div>
-            <div class="card-body p-4">
-                {% if form.skills %}
-                <div class="row">
-                    <div class="col-12">
-                        <label class="font-weight-bold mb-2 text-dark" style="font-size: 14px;">{{ form.skills.label }}</label>
-                        <div class="d-flex flex-wrap p-3 rounded" style="background-color: #f8fafc; border: 1px solid #e2e8f0; max-height: 220px; overflow-y: auto;">
-                            {% for checkbox in form.skills %}
-                                <label class="skill-pill-label mb-2 mr-2" for="{{ checkbox.id_for_label }}">
-                                    {{ checkbox.tag }}
-                                    <span class="skill-pill-text">🔧 {{ checkbox.choice_label }}</span>
-                                </label>
-                            {% empty %}
-                                <div class="d-flex align-items-center justify-content-between w-100 p-2">
-                                    <span class="text-muted font-italic">{% trans "No active skill tags available." %}</span>
-                                    <a href="{% url 'jobcard_app:skill_tag_list' %}" class="btn btn-sm btn-primary">
-                                        + {% trans "Create Skill Tags" %}
-                                    </a>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
-
-        <div class="d-flex justify-content-between align-items-center mt-4">
-            <div>
-                <button type="submit" class="btn text-white px-4 py-2" style="background-color:#5A8DEE;">
-                    {% if edit_id %}{% trans "Update" %}{% else %}{% trans "Save" %}{% endif %}
-                </button>
-                {% if edit_id %}
-                    <a href="{% url 'fleet_app:staff_manage' %}" class="btn btn-secondary px-4 py-2">{% trans "Cancel" %}</a>
-                {% endif %}
-            </div>
-            <a href="{% url 'fleet_app:document_crud' %}" class="btn btn-secondary px-4 py-2">{% trans "Add Staff Documents" %}</a>
-        </div>
-    </form>
-
-    <!-- Staff List -->
-    <div class="card shadow-sm mt-5">
-        <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold text-secondary">{% trans "Staff List" %}</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle text-center">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>{% trans "ID" %}</th>
-                            <th>{% trans "Staff ID" %}</th>
-                            <th>{% trans "Name" %}</th>
-                            <th>{% trans "Category" %}</th>
-                            <th>{% trans "Department" %}</th>
-                            <th>{% trans "Assigned Skills" %}</th>
-                            <th>{% trans "Status" %}</th>
-                            <th>{% trans "Actions" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for staff in staffs %}
-                            <tr>
-                                <td>{{ staff.id }}</td>
-                                <td>{{ staff.staff_id }}</td>
-                                <td>{{ staff.full_name }}</td>
-                                <td>{{ staff.staff_category }}</td>
-                                <td>{{ staff.department }}</td>
-                                <td>
-                                    {% for s in staff.skills.all %}
-                                        <span class="badge badge-info me-1 mb-1" style="background-color: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">{{ s.name }}</span>
-                                    {% empty %}
-                                        <span class="text-muted" style="font-size: 0.85rem;">—</span>
-                                    {% endfor %}
-                                </td>
-                                <td>{{ staff.status }}</td>
-                                <td>
-                                    <a href="{% url 'fleet_app:staff_edit' staff.pk %}" class="btn btn-sm btn-primary">{% trans "Edit" %}</a>
-                                    <form method="post" style="display:inline;">
-                                        {% csrf_token %}
-                                        {% if form.errors %}
-                                        <div class="alert alert-danger">
-                                            <strong>{% trans "Please fix the following errors:" %}</strong>
-                                            <ul class="mb-0">
-                                                {% for field in form %}
-                                                    {% for error in field.errors %}
-                                                        <li>{{ field.label }}: {{ error }}</li>
-                                                    {% endfor %}
-                                                {% endfor %}
-                                                {% for error in form.non_field_errors %}
-                                                    <li>{{ error }}</li>
-                                                {% endfor %}
-                                            </ul>
-                                        </div>
-                                        {% endif %}
-                                        <input type="hidden" name="delete" value="{{ staff.pk }}">
-                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('{% trans 'Are you sure to delete?' %}')">{% trans "Delete" %}</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr><td colspan="8" class="text-center text-muted">{% trans "No staff found." %}</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <!-- Page Header -->
+  <div class="jc-page-hdr">
+    <div class="jc-page-hdr-left">
+      <div class="jc-page-icon"><i class="bi bi-person-badge-fill"></i></div>
+      <div>
+        <h1 class="jc-page-title">{% trans "Staff Directory" %}</h1>
+        <div class="jc-page-sub">{% trans "Manage workshop staff, technicians and their skill assignments" %}</div>
+      </div>
     </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      {% if edit_id %}
+        <a href="{% url 'fleet_app:staff_manage' %}" class="jc-btn-back">
+          <i class="bi bi-plus-circle"></i>{% trans "Add New" %}
+        </a>
+      {% endif %}
+      <a href="{% url 'fleet_app:document_crud' %}" class="jc-btn-back">
+        <i class="bi bi-file-earmark-text"></i>{% trans "Staff Documents" %}
+      </a>
+    </div>
+  </div>
+
+  <!-- Add / Edit Form -->
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    {% if edit_id %}
+    <div class="edit-banner">
+      <i class="bi bi-pencil-square"></i>
+      {% trans "Editing staff record — ID:" %} <strong>{{ edit_id }}</strong>
+    </div>
+    {% endif %}
+
+    <!-- Personal Information -->
+    <div class="jc-card">
+      <div class="jc-card-hdr">
+        <h2 class="jc-card-title"><i class="bi bi-person-fill" style="color:#9f1045;"></i> {% trans "Personal Information" %}</h2>
+      </div>
+      <div class="jc-card-body">
+        <div class="g6 mb">
+          <div>
+            <label class="fl">{{ form.staff_category.label }}</label>
+            {{ form.staff_category }}
+          </div>
+          <div>
+            <label class="fl">{{ form.staff_id.label }}</label>
+            {{ form.staff_id }}
+          </div>
+          <div>
+            <label class="fl">{{ form.full_name.label }}</label>
+            {{ form.full_name }}
+          </div>
+          <div>
+            <label class="fl">{{ form.staff_image.label }}</label>
+            {{ form.staff_image }}
+          </div>
+          <div>
+            <label class="fl">{{ form.gender.label }}</label>
+            {{ form.gender }}
+          </div>
+          <div>
+            <label class="fl">{{ form.date_of_birth.label }}</label>
+            {{ form.date_of_birth }}
+          </div>
+        </div>
+        <div class="g6">
+          <div>
+            <label class="fl">{{ form.nationality.label }}</label>
+            {{ form.nationality }}
+          </div>
+          <div>
+            <label class="fl">{{ form.civil_id_or_passport_no.label }}</label>
+            {{ form.civil_id_or_passport_no }}
+          </div>
+          <div>
+            <label class="fl">{{ form.marital_status.label }}</label>
+            {{ form.marital_status }}
+          </div>
+          <div>
+            <label class="fl">{{ form.contact_number.label }}</label>
+            {{ form.contact_number }}
+          </div>
+          <div>
+            <label class="fl">{{ form.email.label }}</label>
+            {{ form.email }}
+          </div>
+          <div>
+            <label class="fl">{{ form.address.label }}</label>
+            {{ form.address }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Employment Information -->
+    <div class="jc-card">
+      <div class="jc-card-hdr">
+        <h2 class="jc-card-title"><i class="bi bi-briefcase-fill" style="color:#9f1045;"></i> {% trans "Employment Information" %}</h2>
+      </div>
+      <div class="jc-card-body">
+        <div class="g6">
+          <div>
+            <label class="fl">{{ form.department.label }}</label>
+            {{ form.department }}
+          </div>
+          <div>
+            <label class="fl">{{ form.job_title.label }}</label>
+            {{ form.job_title }}
+          </div>
+          <div>
+            <label class="fl">{{ form.joining_date.label }}</label>
+            {{ form.joining_date }}
+          </div>
+          <div>
+            <label class="fl">{{ form.employment_type.label }}</label>
+            {{ form.employment_type }}
+          </div>
+          <div>
+            <label class="fl">{{ form.basic_salary.label }}</label>
+            {{ form.basic_salary }}
+          </div>
+          <div>
+            <label class="fl">{{ form.allowances.label }}</label>
+            {{ form.allowances }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bank & Emergency Contact -->
+    <div class="jc-card">
+      <div class="jc-card-hdr">
+        <h2 class="jc-card-title"><i class="bi bi-bank2" style="color:#9f1045;"></i> {% trans "Bank & Emergency Contact" %}</h2>
+      </div>
+      <div class="jc-card-body">
+        <div class="g4">
+          <div>
+            <label class="fl">{{ form.bank_account_no.label }}</label>
+            {{ form.bank_account_no }}
+          </div>
+          <div>
+            <label class="fl">{{ form.bank_name.label }}</label>
+            {{ form.bank_name }}
+          </div>
+          <div>
+            <label class="fl">{{ form.emergency_contact_name.label }}</label>
+            {{ form.emergency_contact_name }}
+          </div>
+          <div>
+            <label class="fl">{{ form.emergency_contact_number.label }}</label>
+            {{ form.emergency_contact_number }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents & Licenses -->
+    <div class="jc-card">
+      <div class="jc-card-hdr">
+        <h2 class="jc-card-title"><i class="bi bi-file-earmark-lock2-fill" style="color:#9f1045;"></i> {% trans "Documents & Licenses" %}</h2>
+      </div>
+      <div class="jc-card-body">
+        <div class="g6 mb">
+          <div>
+            <label class="fl">{{ form.visa_expiry_date.label }}</label>
+            {{ form.visa_expiry_date }}
+          </div>
+          <div>
+            <label class="fl">{{ form.contract_end_date.label }}</label>
+            {{ form.contract_end_date }}
+          </div>
+          <div>
+            <label class="fl">{{ form.passport_expiry_date.label }}</label>
+            {{ form.passport_expiry_date }}
+          </div>
+          <div>
+            <label class="fl">{{ form.resident_id_number.label }}</label>
+            {{ form.resident_id_number }}
+          </div>
+          <div>
+            <label class="fl">{{ form.resident_id_expiry_date.label }}</label>
+            {{ form.resident_id_expiry_date }}
+          </div>
+          <div>
+            <label class="fl">{{ form.license_type.label }}</label>
+            {{ form.license_type }}
+          </div>
+        </div>
+        <div class="g4">
+          <div>
+            <label class="fl">{{ form.license_number.label }}</label>
+            {{ form.license_number }}
+          </div>
+          <div>
+            <label class="fl">{{ form.license_expiry_date.label }}</label>
+            {{ form.license_expiry_date }}
+          </div>
+          <div>
+            <label class="fl">{{ form.status.label }}</label>
+            {{ form.status }}
+          </div>
+          <div>
+            <label class="fl">{{ form.remarks.label }}</label>
+            {{ form.remarks }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technical Skills & Qualifications -->
+    <div class="jc-card">
+      <div class="jc-card-hdr">
+        <h2 class="jc-card-title"><i class="bi bi-tools" style="color:#9f1045;"></i> {% trans "Technical Skills & Qualifications" %}</h2>
+        <a href="{% url 'jobcard_app:skill_tag_list' %}" class="btn-secondary-sm">
+          <i class="bi bi-gear"></i>{% trans "Manage Skill Tags" %}
+        </a>
+      </div>
+      <div class="jc-card-body">
+        <p style="font-size:11.5px; color:#64748b; margin-bottom:10px;">{% trans "Assign skill tags for job card technician matching. Click to select / deselect." %}</p>
+        {% if form.skills %}
+        <div class="pills-box">
+          {% for checkbox in form.skills %}
+            <label class="skill-pill-label" for="{{ checkbox.id_for_label }}">
+              {{ checkbox.tag }}
+              <span class="pill-text">🔧 {{ checkbox.choice_label }}</span>
+            </label>
+          {% empty %}
+            <div style="display:flex; align-items:center; justify-content:space-between; width:100%; padding:4px;">
+              <span style="font-size:12px; color:#94a3b8; font-style:italic;">{% trans "No active skill tags available." %}</span>
+              <a href="{% url 'jobcard_app:skill_tag_list' %}" class="btn-secondary-sm">
+                <i class="bi bi-plus-circle"></i>{% trans "Create Skill Tags" %}
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Sticky Save Bar -->
+    <div class="save-bar">
+      {% if edit_id %}
+        <a href="{% url 'fleet_app:staff_manage' %}" class="btn-cancel">
+          <i class="bi bi-x-circle"></i>{% trans "Cancel" %}
+        </a>
+      {% endif %}
+      <button type="submit" class="btn-save">
+        <i class="bi bi-{% if edit_id %}check2{% else %}plus-circle{% endif %}"></i>
+        {% if edit_id %}{% trans "Update Staff" %}{% else %}{% trans "Save Staff" %}{% endif %}
+      </button>
+    </div>
+  </form>
+
+  <!-- Staff List -->
+  <div class="jc-card" style="margin-top:8px;">
+    <div class="jc-card-hdr">
+      <h2 class="jc-card-title"><i class="bi bi-people-fill" style="color:#9f1045;"></i> {% trans "Staff List" %}</h2>
+      <div class="search-wrap">
+        <i class="bi bi-search si"></i>
+        <input type="text" id="staffSearch" placeholder="{% trans 'Search staff...' %}">
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="stbl" id="staffTable">
+        <thead>
+          <tr>
+            <th>{% trans "Staff ID" %}</th>
+            <th>{% trans "Name" %}</th>
+            <th>{% trans "Category" %}</th>
+            <th>{% trans "Department" %}</th>
+            <th>{% trans "Assigned Skills" %}</th>
+            <th>{% trans "Status" %}</th>
+            <th style="width:110px;">{% trans "Actions" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for staff in staffs %}
+          <tr>
+            <td><code style="font-size:11.5px; color:#9f1045; font-weight:700;">{{ staff.staff_id }}</code></td>
+            <td><strong style="font-size:12.5px;">{{ staff.full_name }}</strong></td>
+            <td style="font-size:12px; color:#475569;">{{ staff.staff_category }}</td>
+            <td style="font-size:12px; color:#475569;">{{ staff.department }}</td>
+            <td>
+              {% for s in staff.skills.all %}
+                <span class="skill-badge">🔧 {{ s.name }}</span>
+              {% empty %}
+                <span style="font-size:11.5px; color:#94a3b8;">—</span>
+              {% endfor %}
+            </td>
+            <td>
+              {% if staff.status == 'Active' or staff.status == 'active' %}
+                <span class="status-active">{{ staff.status }}</span>
+              {% else %}
+                <span class="status-inactive">{{ staff.status }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display:flex; gap:5px;">
+                <a href="{% url 'fleet_app:staff_edit' staff.pk %}" class="btn-act-edit">
+                  <i class="bi bi-pencil"></i> {% trans "Edit" %}
+                </a>
+                <form method="post" style="display:inline;" onsubmit="return confirm('{% trans "Are you sure to delete?" %}')">
+                  {% csrf_token %}
+                  <input type="hidden" name="delete" value="{{ staff.pk }}">
+                  <button type="submit" class="btn-act-del"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" style="text-align:center; padding:40px 20px; color:#94a3b8; font-size:13px;">
+              <i class="bi bi-people" style="font-size:2rem; display:block; margin-bottom:8px; opacity:0.4;"></i>
+              {% trans "No staff found. Add your first staff member using the form above." %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <script>
+// Live search
+document.getElementById('staffSearch').addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#staffTable tbody tr').forEach(function (row) {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+
+// Apply .fi class to all form inputs/selects/textareas rendered by Django
+document.querySelectorAll('.jc-card-body input:not([type="checkbox"]):not([type="file"]), .jc-card-body select, .jc-card-body textarea').forEach(function(el) {
+  el.classList.add('fi');
+});
+document.querySelectorAll('.jc-card-body input[type="file"]').forEach(function(el) {
+  el.classList.add('fi');
+});
+
+// Skill pill toggle
 (function () {
-    // Initialise + toggle the visual ".selected" class on skill pills
-    var pills = document.querySelectorAll('.skill-pill-label');
-    pills.forEach(function (label) {
-        var cb = label.querySelector('input[type="checkbox"]');
-        if (!cb) return;
-
-        // Set initial state on page load (e.g. editing an existing staff member)
-        if (cb.checked) label.classList.add('selected');
-
-        label.addEventListener('click', function (e) {
-            // Let the browser toggle the checkbox first
-            setTimeout(function () {
-                if (cb.checked) {
-                    label.classList.add('selected');
-                } else {
-                    label.classList.remove('selected');
-                }
-            }, 0);
-        });
+  document.querySelectorAll('.skill-pill-label').forEach(function (label) {
+    var cb = label.querySelector('input[type="checkbox"]');
+    if (!cb) return;
+    if (cb.checked) label.classList.add('selected');
+    label.addEventListener('click', function () {
+      setTimeout(function () {
+        label.classList.toggle('selected', cb.checked);
+      }, 0);
     });
+  });
 })();
 </script>
 
-{% endblock %}
+{% endblock %}

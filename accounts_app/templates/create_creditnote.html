@@ -5,13 +5,56 @@
 {% block content %}
 <!-- Custom CSS -->
 <style>
-    h2, h3, h4, h5 {
-        font-family: 'Segoe UI', sans-serif;
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
+
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
+
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .btn-custom-outline {
+        color: var(--primary-burgundy) !important;
+        border: 1px solid var(--primary-burgundy) !important;
+        background-color: transparent !important;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-custom-outline:hover {
+        background-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
     }
 
     form label {
-        font-weight: 500;
-        color: #444;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.85rem;
+        margin-bottom: 0.35rem;
     }
 
     input, select, textarea {
@@ -19,31 +62,49 @@
         border: 1px solid #ced4da;
         border-radius: 6px;
         padding: 6px 10px;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
 
     input:focus, select:focus, textarea:focus {
-        border-color: #5A8DEE;
-        box-shadow: 0 0 4px rgba(90, 141, 238, 0.4);
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
         outline: none;
     }
 
     .btn-success {
-        background-color: #28a745 !important;
-        border-color: #28a745 !important;
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #fff !important;
+        font-weight: 600;
+        border-radius: 6px;
+    }
+
+    .btn-success:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
     }
 
     .card {
         border-radius: 12px;
+        border: 1px solid #e9ecef;
     }
 
     .card-header {
         border-bottom: 1px solid #e9ecef;
+        background-color: #ffffff !important;
+        padding: 1rem 1.25rem;
     }
 
     .table th {
         background-color: #f8f9fa;
         font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #495057;
+    }
+
+    .table td {
+        font-size: 0.88rem;
     }
 
     .btn:hover {
@@ -56,10 +117,11 @@
     }
 
     .filter-section {
-        background-color: #f8f9fa;
-        padding: 15px;
+        background-color: #fff5f8;
+        padding: 12px 18px;
         border-radius: 8px;
         margin-bottom: 15px;
+        border: 1px solid #f1d6df;
     }
 
     .form-check-inline {
@@ -69,50 +131,67 @@
     .form-check-input {
         width: auto !important;
         margin-right: 5px;
+        accent-color: var(--primary-burgundy);
     }
 
     .badge-hire {
-        background-color: #007bff;
+        background-color: #0284c7;
         color: white;
-        padding: 3px 8px;
+        padding: 4px 9px;
         border-radius: 4px;
         font-size: 0.75rem;
+        font-weight: 600;
     }
 
     .badge-opening {
-        background-color: #28a745;
+        background-color: #10b981;
         color: white;
-        padding: 3px 8px;
+        padding: 4px 9px;
         border-radius: 4px;
         font-size: 0.75rem;
+        font-weight: 600;
     }
     .badge-purchase {
-        background-color: #cec32b;
+        background-color: #f59e0b;
         color: white;
-        padding: 3px 8px;
+        padding: 4px 9px;
         border-radius: 4px;
         font-size: 0.75rem;
+        font-weight: 600;
     }
     .badge-asset-purchase {
-        background-color: #dc3545;
+        background-color: #8b5cf6;
         color: white;
-        padding: 3px 8px;
+        padding: 4px 9px;
         border-radius: 4px;
         font-size: 0.75rem;
+        font-weight: 600;
     }
 </style>
 
-<div class="container mt-4 mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-primary mb-0">
-            {% if edit_mode %}{% trans "Edit" %}{% else %}{% trans "Create" %}{% endif %} {% trans "Credit Note" %}
-        </h2>
-        {% has_priv request.user 12 "can_read" as can_read_creditnote %}
-        {% if can_read_creditnote %}
-        <a href="{% url 'accounts_app:list_creditnote' %}" class="btn btn-primary">
-            <i class="bi bi-list-ul"></i> {% trans "View List" %}
-        </a>
-        {% endif %}
+<div class="voucher-container">
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Accounting Ledgers" %}
+                    </span>
+                </div>
+                <h3 class="font-weight-bold text-dark mb-1">
+                    {% if edit_mode %}{% trans "Edit" %}{% else %}{% trans "Create" %}{% endif %} {% trans "Credit Note" %}
+                </h3>
+                <p class="text-muted small mb-0">{% trans "Credit client accounts for vehicle service returns, overcharges, or trade allowances." %}</p>
+            </div>
+            <div>
+                {% has_priv request.user 12 "can_read" as can_read_creditnote %}
+                {% if can_read_creditnote %}
+                <a href="{% url 'accounts_app:list_creditnote' %}" class="btn-custom-outline">
+                    <i class="bi bi-list-ul"></i> {% trans "Credit Note List" %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <form method="POST" id="creditNoteForm" class="needs-validation">
@@ -120,44 +199,52 @@
 
         <!-- Payment Information -->
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0 fw-bold text-secondary">
+            <div class="card-header" style="background:#fff; border-bottom: 1px solid #f1f3f5;">
+                <h5 class="mb-0 font-weight-bold text-dark">
+                    <i class="bi bi-file-earmark-plus text-burgundy mr-2"></i>
                     {% trans "Credit Note Information" %}
                 </h5>
             </div>
 
             <div class="card-body">
                 <div class="row g-3">
-                    <!-- Row 1 -->
-                    <div class="col-md-2">
+                    <!-- Voucher No -->
+                    <div class="col-md-3">
                         <label class="form-label">{% trans "Voucher No" %}</label>
                         {{ master_form.voucher_no }}
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">{% trans "Voucher Type" %}</label>
+
+                    <!-- Voucher Type (hidden — for JS/submit only) -->
+                    <div class="d-none">
                         {{ master_form.voucherType }}
                     </div>
-                    <div class="col-md-2">
+
+                    <!-- Date -->
+                    <div class="col-md-3">
                         <label class="form-label">{% trans "Date" %}</label>
                         {{ master_form.date }}
                     </div>
 
-                    <div class="col-md-2">
-                        <label class="form-label">{% trans "Client" %}</label><span class="text-danger">*</span>
+                    <!-- Client -->
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "Client" %} <span class="text-danger">*</span></label>
                         {{ master_form.client }}
                     </div>
 
-                    <div class="col-md-2">
-                        <label class="form-label">{% trans "Ledger" %}</label><span class="text-danger">*</span>
+                    <!-- Ledger -->
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "Ledger" %} <span class="text-danger">*</span></label>
                         {{ master_form.ledger }}
                     </div>
-                    
-                    <div class="col-md-2">
+
+                    <!-- Ref No -->
+                    <div class="col-md-3">
                         <label class="form-label">{% trans "Ref No" %}</label>
                         {{ master_form.ref_no }}
                     </div>
 
-                    <div class="col-md-2">
+                    <!-- Remark (full width) -->
+                    <div class="col-12">
                         <label class="form-label">{% trans "Remark" %}</label>
                         {{ master_form.remark }}
                     </div>

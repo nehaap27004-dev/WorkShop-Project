@@ -1,178 +1,391 @@
 {% extends 'fleet_base1.html' %}
+{% load i18n %}
+{% load static %}
+
 {% block title %}{% if is_edit %}Edit Contra{% else %}New Contra{% endif %}{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<style>
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
 
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0">
-      <i class="fas fa-exchange-alt mr-2"></i>
-      {% if is_edit %}Edit Contra — {{ instance.voucher_no }}{% else %}New Contra Voucher{% endif %}
-    </h4>
-    <a href="{% url 'accounts_app:contra_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="fas fa-list mr-1"></i> View List
-    </a>
-  </div>
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
 
-  <!-- Alerts -->
-  {% for msg in messages %}
-    <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show">
-      {{ msg }}
-      <button type="button" class="close" data-dismiss="alert">&times;</button>
-    </div>
-  {% endfor %}
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
 
-  <form method="post">
-    {% csrf_token %}
+    /* Page Header Card */
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
 
-    <!-- ── Section 1 : Voucher Info ── -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-primary text-white py-2">
-        <strong><i class="fas fa-file-invoice mr-1"></i> Voucher Information</strong>
-      </div>
-      <div class="card-body">
-        <div class="row">
+    /* Standard Outer Content Card */
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
 
-          <div class="col-md-3 form-group">
-            <label>Voucher No <span class="text-danger">*</span></label>
-            {{ form.voucher_no }}
-            {% if form.voucher_no.errors %}
-              <small class="text-danger">{{ form.voucher_no.errors.0 }}</small>
-            {% endif %}
-          </div>
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
 
-          <div class="col-md-3 form-group" hidden>
-            <label>Voucher Type <span class="text-danger"></span></label>
-            {{ form.voucherType }}
-            {% if form.voucherType.errors %}
-              <small class="text-danger">{{ form.voucherType.errors.0 }}</small>
-            {% endif %}
-          </div>
+    .content-card-header h5 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-          <div class="col-md-3 form-group">
-            <label>Date <span class="text-danger">*</span></label>
-            {{ form.date }}
-            {% if form.date.errors %}
-              <small class="text-danger">{{ form.date.errors.0 }}</small>
-            {% endif %}
-          </div>
+    /* Buttons */
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 0.5rem 1.35rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
 
-          <div class="col-md-3 form-group">
-            <label>Cost Center <span class="text-danger">*</span></label>
-            {{ form.cost_center }}
-            {% if form.cost_center.errors %}
-              <small class="text-danger">{{ form.cost_center.errors.0 }}</small>
-            {% endif %}
-          </div>
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+    }
 
-        </div>
-      </div>
-    </div>
+    .btn-custom-outline {
+        color: var(--primary-burgundy) !important;
+        border: 1px solid var(--primary-burgundy) !important;
+        background-color: transparent !important;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
 
-    <!-- ── Section 2 : Transfer Details ── -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-dark text-white py-2">
-        <strong><i class="fas fa-random mr-1"></i> Transfer Details</strong>
-      </div>
-      <div class="card-body">
+    .btn-custom-outline:hover {
+        background-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+    }
 
-        <!-- Transfer From / To visual block -->
-        <div class="row justify-content-center align-items-center">
+    /* Form Fields */
+    .form-label {
+        font-size: 0.82rem;
+        color: #475569;
+        margin-bottom: 0.35rem;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
 
-          <!-- Transfer To -->
-          <div class="col-md-5">
-            <div class="card border-success h-100">
-              <div class="card-header bg-success text-white py-2 text-center">
-                <i class="fas fa-arrow-circle-down mr-1"></i>
-                <strong>Transfer To (DR)</strong>
-              </div>
-              <div class="card-body">
-                <label class="small text-muted">Destination Account <span class="text-danger">*</span></label>
-                {{ form.transfer_to }}
-                {% if form.transfer_to.errors %}
-                  <small class="text-danger">{{ form.transfer_to.errors.0 }}</small>
-                {% endif %}
-                <small class="form-text text-muted mt-1">
-                  <i class="fas fa-info-circle mr-1"></i>Funds will be credited to this ledger.
-                </small>
-              </div>
-            </div>
-          </div>
+    .form-control, select {
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        width: 100%;
+        color: #1e293b;
+        background-color: #ffffff;
+    }
 
-          <!-- Arrow -->
-          <div class="col-md-2 text-center my-3 my-md-0">
-            <div class="d-flex flex-column align-items-center">
-              <div class="bg-light border rounded-circle p-3 mb-2" style="width:56px;height:56px;">
-                <i class="fas fa-arrow-right text-primary" style="font-size:1.4rem;"></i>
-              </div>
-              <small class="text-muted font-weight-bold">TRANSFER</small>
-            </div>
-          </div>
+    .form-control:focus, select:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
+    }
 
-          <!-- Transfer From -->
-          <div class="col-md-5">
-            <div class="card border-danger h-100">
-              <div class="card-header bg-danger text-white py-2 text-center">
-                <i class="fas fa-arrow-circle-up mr-1"></i>
-                <strong>Transfer From (CR)</strong>
-              </div>
-              <div class="card-body">
-                <label class="small text-muted">Source Account <span class="text-danger">*</span></label>
-                {{ form.transfer_from }}
-                {% if form.transfer_from.errors %}
-                  <small class="text-danger">{{ form.transfer_from.errors.0 }}</small>
-                {% endif %}
-                <small class="form-text text-muted mt-1">
-                  <i class="fas fa-info-circle mr-1"></i>Funds will be deducted from this ledger.
-                </small>
-              </div>
-            </div>
-          </div>
+    /* ── The Two Visual Transfer Cards ── */
+    .transfer-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        height: 100%;
+        transition: border-color 0.2s;
+    }
 
-          
+    .transfer-box:hover {
+        border-color: #cbd5e1;
+    }
 
-        </div>
+    .transfer-box-header {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.88rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        letter-spacing: 0.3px;
+    }
 
-        <!-- Amount -->
-        <div class="row justify-content-center mt-4">
-          <div class="col-md-4">
-            <div class="card border-primary">
-              <div class="card-header bg-primary text-white py-2 text-center">
-                <i class="fas fa-coins mr-1"></i>
-                <strong>Transfer Amount</strong>
-              </div>
-              <div class="card-body text-center">
-                <label class="small text-muted">Amount <span class="text-danger">*</span></label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <span class="input-group-text bg-white font-weight-bold">OMR</span>
-                  </div>
-                  {{ form.amount }}
+    .transfer-box-header.dr {
+        background-color: #ecfdf5;
+        color: #065f46;
+        border-bottom: 1px solid #a7f3d0;
+    }
+
+    .transfer-box-header.cr {
+        background-color: #fff1f2;
+        color: #9f1239;
+        border-bottom: 1px solid #fecdd3;
+    }
+
+    .transfer-box-body {
+        padding: 1.25rem;
+    }
+
+    .transfer-circle-divider {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background-color: var(--primary-burgundy-light);
+        border: 1.5px solid var(--primary-burgundy-border);
+        color: var(--primary-burgundy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        margin: 0 auto 0.4rem;
+        box-shadow: 0 2px 6px rgba(159, 16, 69, 0.08);
+    }
+
+    /* Centered Amount Card */
+    .amount-box {
+        background-color: #ffffff;
+        border: 1px solid var(--primary-burgundy-border);
+        border-radius: 10px;
+        max-width: 480px;
+        margin: 1.5rem auto 0;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(159, 16, 69, 0.05);
+    }
+
+    .amount-box-header {
+        background-color: var(--primary-burgundy-light);
+        color: var(--primary-burgundy);
+        border-bottom: 1px solid var(--primary-burgundy-border);
+        padding: 0.65rem 1rem;
+        font-weight: 700;
+        font-size: 0.88rem;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+    }
+
+    .amount-box-body {
+        padding: 1.25rem 1.5rem;
+    }
+</style>
+
+<div class="voucher-container">
+    <!-- Header Banner -->
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Accounting Ledgers" %}
+                    </span>
                 </div>
-                {% if form.amount.errors %}
-                  <small class="text-danger">{{ form.amount.errors.0 }}</small>
-                {% endif %}
-              </div>
+                <h3 class="font-weight-bold text-dark mb-1">
+                    {% if is_edit %}{% trans "Edit Contra Voucher" %}: {{ instance.voucher_no }}{% else %}{% trans "New Contra Voucher" %}{% endif %}
+                </h3>
+                <p class="text-muted small mb-0">{% trans "Record internal funds transfers between bank accounts and cash registers." %}</p>
             </div>
-          </div>
+            <div>
+                <a href="{% url 'accounts_app:contra_list' %}" class="btn-custom-outline">
+                    <i class="bi bi-list"></i> {% trans "Contra List" %}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% for msg in messages %}
+    <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm" style="border-radius: 8px;">
+        {{ msg }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+
+    <form method="post" id="contraForm">
+        {% csrf_token %}
+
+        <!-- ── Section 1 : Voucher Information ── -->
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5>
+                    <i class="bi bi-file-earmark-text text-burgundy"></i>
+                    {% trans "Voucher Information" %}
+                </h5>
+            </div>
+            <div class="p-4">
+                <div class="row g-3">
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">{{ form.voucher_no.label }} <span class="text-danger">*</span></label>
+                        {{ form.voucher_no }}
+                        {% if form.voucher_no.errors %}
+                            <small class="text-danger d-block mt-1">{{ form.voucher_no.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-3 mb-2" style="display: none;">
+                        <label class="form-label">{{ form.voucherType.label }}</label>
+                        {{ form.voucherType }}
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">{{ form.date.label }} <span class="text-danger">*</span></label>
+                        {{ form.date }}
+                        {% if form.date.errors %}
+                            <small class="text-danger d-block mt-1">{{ form.date.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">{{ form.cost_center.label }} <span class="text-danger">*</span></label>
+                        {{ form.cost_center }}
+                        {% if form.cost_center.errors %}
+                            <small class="text-danger d-block mt-1">{{ form.cost_center.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
 
-      </div>
-    </div>
+        <!-- ── Section 2 : Visual Transfer Details ── -->
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5>
+                    <i class="bi bi-arrow-left-right text-burgundy"></i>
+                    {% trans "Transfer Details" %}
+                </h5>
+            </div>
+            <div class="p-4">
+                <!-- Two Visual Accounts with Arrow -->
+                <div class="row align-items-center justify-content-center">
+                    <!-- Transfer To (DR) -->
+                    <div class="col-lg-5 col-md-5 mb-3 mb-md-0">
+                        <div class="transfer-box">
+                            <div class="transfer-box-header dr">
+                                <i class="bi bi-arrow-down-circle-fill"></i>
+                                <span>{% trans "Transfer To (DR)" %}</span>
+                            </div>
+                            <div class="transfer-box-body">
+                                <label class="form-label">{% trans "Destination Account" %} <span class="text-danger">*</span></label>
+                                {{ form.transfer_to }}
+                                {% if form.transfer_to.errors %}
+                                    <small class="text-danger d-block mt-1">{{ form.transfer_to.errors.0 }}</small>
+                                {% endif %}
+                                <div class="text-muted small mt-2">
+                                    <i class="bi bi-info-circle mr-1 text-success"></i>{% trans "Funds will be deposited into this ledger." %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- Save / Cancel -->
-    <div class="d-flex justify-content-end">
-      <a href="{% url 'accounts_app:contra_list' %}" class="btn btn-secondary mr-2">
-        <i class="fas fa-times mr-1"></i> Cancel
-      </a>
-      <button type="submit" class="btn btn-primary">
-        <i class="fas fa-save mr-1"></i>
-        {% if is_edit %}Update Contra{% else %}Save Contra{% endif %}
-      </button>
-    </div>
+                    <!-- Transfer Arrow Indicator -->
+                    <div class="col-lg-2 col-md-2 text-center my-2 my-md-0">
+                        <div class="d-flex flex-column align-items-center justify-content-center">
+                            <div class="transfer-circle-divider">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                            <span class="text-muted font-weight-bold" style="font-size: 0.72rem; letter-spacing: 1px;">{% trans "TRANSFER" %}</span>
+                        </div>
+                    </div>
 
-  </form>
+                    <!-- Transfer From (CR) -->
+                    <div class="col-lg-5 col-md-5 mb-3 mb-md-0">
+                        <div class="transfer-box">
+                            <div class="transfer-box-header cr">
+                                <i class="bi bi-arrow-up-circle-fill"></i>
+                                <span>{% trans "Transfer From (CR)" %}</span>
+                            </div>
+                            <div class="transfer-box-body">
+                                <label class="form-label">{% trans "Source Account" %} <span class="text-danger">*</span></label>
+                                {{ form.transfer_from }}
+                                {% if form.transfer_from.errors %}
+                                    <small class="text-danger d-block mt-1">{{ form.transfer_from.errors.0 }}</small>
+                                {% endif %}
+                                <div class="text-muted small mt-2">
+                                    <i class="bi bi-info-circle mr-1 text-danger"></i>{% trans "Funds will be deducted from this ledger." %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Centered Transfer Amount -->
+                <div class="amount-box">
+                    <div class="amount-box-header">
+                        <i class="bi bi-cash-coin"></i>
+                        <span>{% trans "Transfer Amount" %}</span>
+                    </div>
+                    <div class="amount-box-body">
+                        <label class="form-label text-center d-block">{% trans "Amount" %} <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-burgundy font-weight-bold" style="border: 1px solid #cbd5e1; border-right: none; border-radius: 6px 0 0 6px;">OMR</span>
+                            {{ form.amount }}
+                        </div>
+                        {% if form.amount.errors %}
+                            <small class="text-danger d-block mt-1 text-center">{{ form.amount.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex justify-content-end gap-2 mb-4">
+            <a href="{% url 'accounts_app:contra_list' %}" class="btn btn-outline-secondary px-4">
+                {% trans "Cancel" %}
+            </a>
+            <button type="submit" class="btn-custom-primary px-4">
+                <i class="bi bi-save"></i>
+                {% if is_edit %}{% trans "Update Contra" %}{% else %}{% trans "Save Contra" %}{% endif %}
+            </button>
+        </div>
+    </form>
 </div>
 
 <!-- Get Next Voucher_no -->

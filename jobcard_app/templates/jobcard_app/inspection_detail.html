@@ -1,0 +1,164 @@
+{% extends 'fleet_base1.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block content %}
+<div class="container-fluid p-0 mb-5">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <div>
+      <h2 class="module-title mb-1">
+        <i class="bi bi-clipboard2-check text-burgundy mr-2"></i>
+        {% trans "Inspection" %} {{ insp.inspection_number }}
+      </h2>
+      <div class="text-muted small">{{ insp.vehicle.registration_number }} · {{ insp.inspection_date|date:"d M Y" }}</div>
+    </div>
+    <div>
+      <a href="{% url 'jobcard_app:inspection_list' %}" class="btn btn-outline-secondary btn-sm mr-1">
+        <i class="bi bi-arrow-left"></i> {% trans "Back" %}
+      </a>
+      <button onclick="window.print()" class="btn btn-outline-secondary btn-sm mr-1">
+        <i class="bi bi-printer"></i> {% trans "Print" %}
+      </button>
+      <a href="{% url 'jobcard_app:inspection_edit' insp.pk %}" class="btn btn-custom-primary btn-sm">
+        <i class="bi bi-pencil"></i> {% trans "Edit" %}
+      </a>
+    </div>
+  </div>
+
+  <!-- General Info -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header card-banner-header">
+      <span class="card-banner-title"><i class="bi bi-info-circle text-burgundy mr-1"></i> {% trans "General Information" %}</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4 mb-3"><div class="small text-muted">{% trans "Customer" %}</div><div class="font-weight-bold">{{ insp.customer.ledger_name }}</div></div>
+        <div class="col-md-4 mb-3"><div class="small text-muted">{% trans "Vehicle" %}</div><div class="font-weight-bold">{{ insp.vehicle.vehicle_number }} ({{ insp.vehicle.registration_number }})</div></div>
+        <div class="col-md-4 mb-3"><div class="small text-muted">{% trans "Inspector" %}</div><div class="font-weight-bold">{{ insp.inspector.full_name|default:"—" }}</div></div>
+        <div class="col-md-4 mb-3"><div class="small text-muted">{% trans "Driver / User" %}</div><div class="font-weight-bold">{{ insp.driver_name|default:"—" }}</div></div>
+        <div class="col-md-4 mb-3"><div class="small text-muted">{% trans "Odometer" %}</div><div class="font-weight-bold">{{ insp.odometer|default:"—" }} {% if insp.odometer %}KM{% endif %}</div></div>
+        <div class="col-md-4 mb-3"><div class="small text-muted">{% trans "Fuel Level" %}</div><div class="font-weight-bold">{{ insp.get_fuel_level_display }}</div></div>
+        <div class="col-md-4 mb-3">
+          <div class="small text-muted">{% trans "Overall Status" %}</div>
+          {% if insp.overall_status == 'pass' %}<span class="badge badge-success">Pass / Safe</span>
+          {% elif insp.overall_status == 'attention' %}<span class="badge badge-warning">Needs Attention</span>
+          {% else %}<span class="badge badge-danger">Failed / Unsafe</span>{% endif %}
+        </div>
+        <div class="col-md-4 mb-3">
+          <div class="small text-muted">{% trans "Job Card" %}</div>
+          <div class="font-weight-bold">{% if insp.jobcard %}{{ insp.jobcard }}{% else %}—{% endif %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exterior -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header card-banner-header">
+      <span class="card-banner-title"><i class="bi bi-car-front text-burgundy mr-1"></i> {% trans "Exterior Damage" %}</span>
+    </div>
+    <div class="card-body">
+      {% for d in damages %}
+        <span class="badge badge-light border text-dark p-2 mr-1 mb-1">{{ d.get_zone_display }} — {{ d.get_damage_type_display }}</span>
+      {% empty %}
+        <span class="text-muted">{% trans "No exterior damage recorded." %}</span>
+      {% endfor %}
+      {% if insp.exterior_remarks %}
+        <hr><div class="small text-muted">{% trans "Remarks" %}</div>
+        <div>{{ insp.exterior_remarks|linebreaksbr }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Interior -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header card-banner-header">
+      <span class="card-banner-title"><i class="bi bi-speedometer2 text-burgundy mr-1"></i> {% trans "Interior Inspection" %}</span>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        {% for label, text, cls in interior_rows %}
+        <tr><td class="pl-3">{{ label }}</td><td class="text-right pr-3"><span class="badge badge-{{ cls }}">{{ text }}</span></td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <!-- Mechanical -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header card-banner-header">
+      <span class="card-banner-title"><i class="bi bi-gear-wide-connected text-burgundy mr-1"></i> {% trans "Mechanical, Tyres & Fluids" %}</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="font-weight-bold">Engine</h6>
+          <table class="table table-sm">{% for label, text, cls in engine_rows %}<tr><td>{{ label }}</td><td class="text-right"><span class="badge badge-{{ cls }}">{{ text }}</span></td></tr>{% endfor %}</table>
+          <h6 class="font-weight-bold mt-3">Tyres</h6>
+          <table class="table table-sm">{% for label, text, cls in tyre_rows %}<tr><td>{{ label }}</td><td class="text-right"><span class="badge badge-{{ cls }}">{{ text }}</span></td></tr>{% endfor %}</table>
+          <h6 class="font-weight-bold mt-3">Suspension</h6>
+          <table class="table table-sm">{% for label, text, cls in suspension_rows %}<tr><td>{{ label }}</td><td class="text-right"><span class="badge badge-{{ cls }}">{{ text }}</span></td></tr>{% endfor %}</table>
+        </div>
+        <div class="col-md-6">
+          <h6 class="font-weight-bold">Fluids & Exhaust</h6>
+          <table class="table table-sm">{% for label, text, cls in fluid_rows %}<tr><td>{{ label }}</td><td class="text-right"><span class="badge badge-{{ cls }}">{{ text }}</span></td></tr>{% endfor %}</table>
+          <h6 class="font-weight-bold mt-3">Brakes</h6>
+          <table class="table table-sm">{% for label, text, cls in brake_rows %}<tr><td>{{ label }}</td><td class="text-right"><span class="badge badge-{{ cls }}">{{ text }}</span></td></tr>{% endfor %}</table>
+          <h6 class="font-weight-bold mt-3">Electrical</h6>
+          <table class="table table-sm">{% for label, text, cls in electrical_rows %}<tr><td>{{ label }}</td><td class="text-right"><span class="badge badge-{{ cls }}">{{ text }}</span></td></tr>{% endfor %}</table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accessories -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header card-banner-header d-flex justify-content-between">
+      <span class="card-banner-title"><i class="bi bi-tools text-burgundy mr-1"></i> {% trans "Accessories" %}</span>
+      <span>
+        <span class="badge badge-success">{{ acc_available }} Available</span>
+        <span class="badge badge-danger">{{ acc_missing }} Missing</span>
+        <span class="badge badge-warning">{{ acc_damaged }} Damaged</span>
+      </span>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        {% for label, text, cls in accessory_rows %}
+        <tr><td class="pl-3">{{ label }}</td><td class="text-right pr-3"><span class="badge badge-{{ cls }}">{{ text }}</span></td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <!-- Findings -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header card-banner-header">
+      <span class="card-banner-title"><i class="bi bi-journal-text text-burgundy mr-1"></i> {% trans "Findings & Sign-off" %}</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="font-weight-bold">Customer Complaints</h6>
+          <ol class="pl-3">{% for c in complaints %}<li>{{ c.description }}</li>{% empty %}<li class="text-muted list-unstyled">—</li>{% endfor %}</ol>
+        </div>
+        <div class="col-md-6">
+          <h6 class="font-weight-bold">Technician Findings</h6>
+          <ol class="pl-3">{% for f in findings %}<li>{{ f.description }}</li>{% empty %}<li class="text-muted list-unstyled">—</li>{% endfor %}</ol>
+        </div>
+      </div>
+      <hr>
+      <div>
+        {% if insp.customer_signed %}
+          <span class="badge badge-success"><i class="bi bi-check-circle"></i> Customer agreed</span>
+        {% else %}
+          <span class="badge badge-secondary">Not signed</span>
+        {% endif %}
+        {% if insp.customer_signature_note %}<span class="ml-2 text-muted">{{ insp.customer_signature_note }}</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,129 +1,316 @@
 {% extends 'fleet_base1.html' %}
+{% load i18n %}
+{% load static %}
+
 {% block title %}Contra Vouchers{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<style>
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
 
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0">
-      <i class="fas fa-exchange-alt mr-2"></i> Contra Vouchers
-    </h4>
-    <a href="{% url 'accounts_app:contra_create' %}" class="btn btn-primary btn-sm">
-      <i class="fas fa-plus mr-1"></i> New Contra
-    </a>
-  </div>
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
 
-  {% for msg in messages %}
-    <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show">
-      {{ msg }}
-      <button type="button" class="close" data-dismiss="alert">&times;</button>
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
+
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        border-radius: 8px;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+    }
+
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .search-wrapper {
+        position: relative;
+        min-width: 280px;
+    }
+
+    .search-wrapper input {
+        padding-left: 2.35rem;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        font-size: 0.88rem;
+    }
+
+    .search-wrapper input:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
+    }
+
+    .search-wrapper i {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+    }
+
+    .table-modern {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top: none;
+        white-space: nowrap;
+    }
+
+    .table-modern tbody td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        border-top: 1px solid #f1f3f5;
+        color: #212529;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: var(--primary-burgundy-light);
+    }
+
+    .voucher-badge {
+        font-family: monospace;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        background-color: #f1f5f9;
+        color: #1e293b;
+        border: 1px solid #cbd5e1;
+        display: inline-block;
+    }
+
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: #64748b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+        background: #ffffff;
+        color: var(--primary-burgundy);
+        border-color: var(--primary-burgundy);
+    }
+
+    .btn-action-delete:hover {
+        color: #ef4444;
+        border-color: #ef4444;
+    }
+
+    .btn-action-pdf:hover {
+        color: #0284c7;
+        border-color: #0284c7;
+    }
+
+    .btn-action-csv:hover {
+        color: #10b981;
+        border-color: #10b981;
+    }
+</style>
+
+<div class="voucher-container">
+    <!-- Header Banner -->
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Accounting Ledgers" %}
+                    </span>
+                </div>
+                <h3 class="font-weight-bold text-dark mb-1">{% trans "Contra Vouchers" %}</h3>
+                <p class="text-muted small mb-0">{% trans "Record and monitor cash-to-bank and inter-account funds transfers." %}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'accounts_app:contra_create' %}" class="btn-custom-primary">
+                    <i class="bi bi-plus-lg"></i> {% trans "New Contra" %}
+                </a>
+            </div>
+        </div>
     </div>
-  {% endfor %}
 
-  <div class="card shadow-sm">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover table-bordered mb-0">
-          <thead class="thead-dark">
-            <tr>
-              <th>#</th>
-              <th>Voucher No</th>
-              <th>Type</th>
-              <th>Date</th>
-              <th>Cost Center</th>
-              <th>Transfer From</th>
-              <th>Transfer To</th>
-              <th class="text-right">Amount</th>
-              <th class="text-center" style="width: 180px;">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for c in contras %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td><strong>{{ c.voucher_no }}</strong></td>
-              <td><span class="badge badge-secondary">{{ c.voucherType }}</span></td>
-              <td>{{ c.date|date:"d-m-Y" }}</td>
-              <td>{{ c.cost_center }}</td>
-              <td>
-                <span class="text-danger">
-                  <i class="fas fa-arrow-up mr-1"></i>
-                </span>{{ c.transfer_from }}
-              </td>
-              <td>
-                <span class="text-success">
-                  <i class="fas fa-arrow-down mr-1"></i>
-                </span>{{ c.transfer_to }}
-              </td>
-              <td class="text-right font-weight-bold">{{ c.amount|floatformat:3 }}</td>
-              <td class="text-center">
-
-                <!-- Edit -->
-                <a href="{% url 'accounts_app:contra_edit' c.pk %}"
-                   class="btn btn-xs btn-warning mr-1" title="Edit">
-                  Edit
-                </a>
-
-                <!-- PDF -->
-                <a href="{% url 'accounts_app:contra_pdf' c.pk %}"
-                   class="btn btn-xs btn-danger mr-1" title="Export PDF" target="_blank">
-                  PDF
-                </a>
-
-                <!-- CSV -->
-                <a href="{% url 'accounts_app:contra_csv' c.pk %}"
-                   class="btn btn-xs btn-success mr-1" title="Export CSV">
-                  CSV
-                </a>
-
-                <!-- Delete -->
-                <button type="button"
-                        class="btn btn-xs btn-outline-danger"
-                        title="Delete"
-                        data-toggle="modal"
-                        data-target="#deleteModal"
-                        data-pk="{{ c.pk }}"
-                        data-voucher="{{ c.voucher_no }}">
-                  <i class="fas fa-trash"></i>
-                </button>
-
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="9" class="text-center text-muted py-4">
-                <i class="fas fa-inbox mr-1"></i> No contra vouchers found.
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+    <!-- Messages -->
+    {% for msg in messages %}
+    <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm" style="border-radius: 8px;">
+        {{ msg }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
-  </div>
+    {% endfor %}
+
+    <!-- Main Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-arrow-left-right text-burgundy font-weight-bold"></i>
+                <h5 class="font-weight-bold mb-0 text-dark">{% trans "Contra Records" %}</h5>
+                <span class="badge badge-light border text-muted ml-2">{{ contras|length }} {% trans "Total" %}</span>
+            </div>
+            <div class="search-wrapper">
+                <i class="bi bi-search"></i>
+                <input type="text" id="contraSearch" class="form-control" placeholder="{% trans 'Search Voucher No...' %}">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table-modern" id="contraTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>{% trans "Voucher No" %}</th>
+                        <th>{% trans "Type" %}</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Cost Center" %}</th>
+                        <th>{% trans "Transfer From" %}</th>
+                        <th>{% trans "Transfer To" %}</th>
+                        <th class="text-right">{% trans "Amount" %}</th>
+                        <th style="width: 160px;" class="text-center">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in contras %}
+                    <tr>
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td><span class="voucher-badge">{{ c.voucher_no }}</span></td>
+                        <td><span class="badge badge-light border font-weight-normal">{{ c.voucherType }}</span></td>
+                        <td>{{ c.date|date:"d M Y" }}</td>
+                        <td>{{ c.cost_center|default:"-" }}</td>
+                        <td>
+                            <span class="text-danger mr-1"><i class="bi bi-arrow-up-right"></i></span>
+                            <strong>{{ c.transfer_from }}</strong>
+                        </td>
+                        <td>
+                            <span class="text-success mr-1"><i class="bi bi-arrow-down-left"></i></span>
+                            <strong>{{ c.transfer_to }}</strong>
+                        </td>
+                        <td class="text-right font-weight-bold text-dark">{{ c.amount|floatformat:3 }}</td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{% url 'accounts_app:contra_edit' c.pk %}" class="btn-action" title="{% trans 'Edit' %}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'accounts_app:contra_pdf' c.pk %}" class="btn-action btn-action-pdf" title="{% trans 'Export PDF' %}" target="_blank">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </a>
+                                <a href="{% url 'accounts_app:contra_csv' c.pk %}" class="btn-action btn-action-csv" title="{% trans 'Export CSV' %}">
+                                    <i class="bi bi-file-earmark-spreadsheet"></i>
+                                </a>
+                                <button type="button" class="btn-action btn-action-delete"
+                                        title="{% trans 'Delete' %}"
+                                        data-toggle="modal"
+                                        data-target="#deleteModal"
+                                        data-pk="{{ c.pk }}"
+                                        data-voucher="{{ c.voucher_no }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-arrow-left-right" style="font-size: 2.5rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>
+                            {% trans "No contra vouchers found." %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fas fa-exclamation-triangle text-danger mr-2"></i> Confirm Delete
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+      <div class="modal-header text-white" style="background-color: var(--primary-burgundy);">
+        <h5 class="modal-title font-weight-bold" id="deleteModalLabel" style="font-size: 1.1rem;">
+          <i class="bi bi-exclamation-triangle mr-2"></i>{% trans "Confirm Delete" %}
         </h5>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.9;">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
-      <div class="modal-body">
-        Are you sure you want to delete contra voucher
-        <strong id="modalVoucher"></strong>?
-        This action cannot be undone.
+      <div class="modal-body p-4">
+        {% trans "Are you sure you want to delete contra voucher" %} <strong id="modalVoucher"></strong>?
+        <div class="text-muted small mt-2">{% trans "This action will reverse the ledger balances and delete the voucher." %}</div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-        <form method="post" id="deleteForm">
+      <div class="modal-footer bg-light border-top">
+        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" style="border-radius: 6px;">{% trans "Cancel" %}</button>
+        <form method="post" id="deleteForm" style="display: inline;">
           {% csrf_token %}
-          <button type="submit" class="btn btn-danger">
-            <i class="fas fa-trash mr-1"></i> Delete
+          <button type="submit" class="btn btn-danger btn-sm" style="border-radius: 6px;">
+            <i class="bi bi-trash mr-1"></i>{% trans "Delete Voucher" %}
           </button>
         </form>
       </div>
@@ -132,12 +319,32 @@
 </div>
 
 <script>
-$('#deleteModal').on('show.bs.modal', function (e) {
-  const btn     = $(e.relatedTarget);
-  const pk      = btn.data('pk');
-  const voucher = btn.data('voucher');
-  $('#modalVoucher').text(voucher);
-  $('#deleteForm').attr('action', '/contra/' + pk + '/delete/');
+document.addEventListener("DOMContentLoaded", function () {
+    $('#deleteModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var pk = button.data('pk');
+        var voucher = button.data('voucher');
+        var modal = $(this);
+        modal.find('#modalVoucher').text(voucher);
+        modal.find('#deleteForm').attr('action', "{% url 'accounts_app:contra_delete' 0 %}".replace('/0/', '/' + pk + '/'));
+    });
+
+    document.getElementById("contraSearch").addEventListener("keyup", function () {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll("#contraTable tbody tr");
+
+        rows.forEach(function(row) {
+            if (row.children.length <= 1) return;
+            let voucher = row.cells[1].textContent.toLowerCase();
+            let fromAcc = row.cells[5].textContent.toLowerCase();
+            let toAcc = row.cells[6].textContent.toLowerCase();
+            if (voucher.includes(filter) || fromAcc.includes(filter) || toAcc.includes(filter)) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    });
 });
 </script>
 {% endblock %}

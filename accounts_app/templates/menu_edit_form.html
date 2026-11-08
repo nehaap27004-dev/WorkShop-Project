@@ -1,52 +1,200 @@
 {% extends 'fleet_base1.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Edit Menu{% endblock %}
+{% block title %}{% trans "Edit Menu" %}: {{ menu.name }}{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8 col-md-10">
+<style>
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
 
-            <!-- Edit Menu Form -->
-            <div class="card shadow-sm border-0 rounded-4">
-                <div class="card-header bg-primary text-white rounded-top-4">
-                    <h4 class="mb-0">
-                        <i class="bi bi-pencil-square me-2"></i> Edit Menu
-                    </h4>
+    .voucher-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
+
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 0.55rem 1.4rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+    }
+
+    .btn-custom-outline {
+        color: var(--primary-burgundy) !important;
+        border: 1px solid var(--primary-burgundy) !important;
+        background-color: transparent !important;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-custom-outline:hover {
+        background-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+    }
+
+    .form-label {
+        font-size: 0.85rem;
+        color: #475569;
+        margin-bottom: 0.4rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    input,
+    select,
+    textarea,
+    .form-control {
+        width: 100% !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        padding: 0.55rem 0.85rem !important;
+        font-size: 0.9rem !important;
+        min-height: 40px !important;
+        color: #1e293b !important;
+        background-color: #ffffff !important;
+        display: block !important;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus,
+    .form-control:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none !important;
+    }
+</style>
+
+<div class="voucher-container">
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Admin Master" %}
+                    </span>
                 </div>
-                <div class="card-body">
-                    <form method="POST" class="row g-3 align-items-center">
-                        {% csrf_token %}
-                        <div class="col-md-6">
-                        <label class="form-label fw-semibold">{{ form.name.label }}</label>
+                <h3 class="font-weight-bold text-dark mb-1">{% trans "Edit Menu" %}: {{ menu.name }}</h3>
+                <p class="text-muted small mb-0">{% trans "Modify navigation display title and mapped URL endpoint." %}</p>
+            </div>
+            <div>
+                <a href="{% url 'accounts_app:menu_list_create' %}" class="btn-custom-outline">
+                    <i class="bi bi-arrow-left"></i> {% trans "Back to Menus" %}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Form Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="bi bi-pencil-square text-burgundy mr-2"></i>
+                {% trans "Menu Information" %}
+            </h5>
+            <span class="badge badge-light border text-muted">ID: #{{ menu.id }}</span>
+        </div>
+        <div class="p-4">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-menu-button-wide text-burgundy"></i>
+                            <span>{{ form.name.label }}</span>
+                            <span class="text-danger">*</span>
+                        </label>
                         <input type="text" 
                             name="{{ form.name.name }}" 
                             value="{{ form.name.value|default:'' }}" 
                             class="form-control" 
-                            placeholder="Enter menu name" required>
+                            placeholder="{% trans 'Enter menu display title' %}" required>
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">{{ form.url.label }}</label>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-link-45deg text-burgundy"></i>
+                            <span>{{ form.url.label }}</span>
+                        </label>
                         <input type="text" 
                             name="{{ form.url.name }}" 
                             value="{{ form.url.value|default:'' }}" 
                             class="form-control" 
-                            placeholder="Enter menu URL (e.g., sales/, purchase/)" required>
+                            placeholder="{% trans 'Enter URL endpoint' %}">
                     </div>
-                        <div class="col-md-6 d-flex align-items-end gap-2">
-                            <button class="btn btn-success w-50" type="submit">
-                                <i class="bi bi-save me-1"></i> Update
-                            </button>
-                            <a href="{% url 'accounts_app:menu_list_create' %}" class="btn btn-secondary w-50">
-                                <i class="bi bi-arrow-left me-1"></i> Cancel
-                            </a>
-                        </div>
-                    </form>
                 </div>
-            </div>
 
+                <div class="d-flex justify-content-end gap-2 mt-3 pt-3 border-top">
+                    <a href="{% url 'accounts_app:menu_list_create' %}" class="btn btn-outline-secondary px-3">
+                        {% trans "Cancel" %}
+                    </a>
+                    <button type="submit" class="btn-custom-primary">
+                        <i class="bi bi-check-circle"></i> {% trans "Update Menu" %}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

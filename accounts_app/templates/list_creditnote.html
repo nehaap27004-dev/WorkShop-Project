@@ -1,142 +1,289 @@
 {% extends "fleet_base1.html" %}
 {% load privilege_tags %}
+{% load i18n %}
+{% load static %}
+
 {% block content %}
+<style>
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
 
-<div class="container mt-4">
-    <h3 class="mb-4">Credit Note List</h3>
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
 
-    <div class="mb-3">
-        <a href="{% url 'accounts_app:create_creditnote' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Create New Credit Note
-        </a>
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
+
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        border-radius: 8px;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+    }
+
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .search-wrapper {
+        position: relative;
+        min-width: 280px;
+    }
+
+    .search-wrapper input {
+        padding-left: 2.35rem;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        font-size: 0.88rem;
+    }
+
+    .search-wrapper input:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
+    }
+
+    .search-wrapper i {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+    }
+
+    .table-modern {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top: none;
+        white-space: nowrap;
+    }
+
+    .table-modern tbody td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        border-top: 1px solid #f1f3f5;
+        color: #212529;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: var(--primary-burgundy-light);
+    }
+
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: #64748b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+        background: #ffffff;
+        color: var(--primary-burgundy);
+        border-color: var(--primary-burgundy);
+    }
+
+    .btn-action-delete:hover {
+        color: #ef4444;
+        border-color: #ef4444;
+    }
+
+    .btn-action-pdf:hover {
+        color: #0284c7;
+        border-color: #0284c7;
+    }
+</style>
+
+<div class="voucher-container">
+    {% csrf_token %}
+
+    <!-- Header Banner -->
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Accounting Ledgers" %}
+                    </span>
+                </div>
+                <h3 class="font-weight-bold text-dark mb-1">{% trans "Credit Notes" %}</h3>
+                <p class="text-muted small mb-0">{% trans "Record customer credits, returns allowances, and balance write-downs." %}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'accounts_app:create_creditnote' %}" class="btn-custom-primary">
+                    <i class="bi bi-plus-lg"></i> {% trans "Create Credit Note" %}
+                </a>
+            </div>
+        </div>
     </div>
 
+    <!-- Main Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-plus text-burgundy font-weight-bold"></i>
+                <h5 class="font-weight-bold mb-0 text-dark">{% trans "Credit Note Records" %}</h5>
+                <span class="badge badge-light border text-muted ml-2">{{ creditnotes|length }} {% trans "Total" %}</span>
+            </div>
+            <div class="search-wrapper">
+                <i class="bi bi-search"></i>
+                <input type="text" id="billSearch" class="form-control" placeholder="{% trans 'Search Customer or Ledger...' %}">
+            </div>
+        </div>
 
-    <!-- search -->
-<div style="margin-bottom:15px;">
-    <input type="text" id="billSearch"
-        placeholder="Search Customer..."
-        style="width:100%; padding:8px; border:1px solid #ccc; border-radius:5px;">
+        <div class="table-responsive">
+            <table class="table-modern" id="creditnoteTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Customer / Party" %}</th>
+                        <th>{% trans "Ledger" %}</th>
+                        <th class="text-right">{% trans "Total Amount" %}</th>
+                        <th class="text-center" style="width: 140px;">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in creditnotes %}
+                    <tr>
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td>{{ bill.date|date:"d M Y"|default:bill.date }}</td>
+                        <td><strong>{{ bill.client.ledger_name|default:"-" }}</strong></td>
+                        <td>{{ bill.ledger.ledger_name|default:"-" }}</td>
+                        <td class="text-right font-weight-bold text-dark">{{ bill.total_amount|floatformat:3 }}</td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{% url 'accounts_app:view_creditnote' bill.id %}" class="btn-action" title="{% trans 'View' %}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'accounts_app:creditnote_pdf' bill.id %}" target="_blank" class="btn-action btn-action-pdf" title="{% trans 'Print PDF' %}">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </a>
+                                <button type="button" onclick="deleteCreditNote({{ bill.id }}, '{{ bill.voucher_no|default:bill.id|escapejs }}', this)" class="btn-action btn-action-delete" title="{% trans 'Delete' %}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-file-earmark-plus" style="font-size: 2.5rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>
+                            {% trans "No credit notes found." %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-    <table class="table table-bordered table-striped table-hover" id="creditnoteTable">
-        <thead class="table-dark">
-            <tr>
 
-                <th>Date</th>
-                <th>Customer</th>
-                <th>Ledger</th>
-                <th>Total Amount</th>
-
-                <th>Actions</th>
-            </tr>
-        </thead>
-
-        <tbody>
-        {% for bill in creditnotes %}
-            <tr>
-
-                <td>{{ bill.date }}</td>
-                <td>{{ bill.client.ledger_name|default:"-" }}</td>
-                <td>{{ bill.ledger.ledger_name|default:"-" }}</td>
-                <td>{{ bill.total_amount|floatformat:3 }}</td>
-
-                <td>
-    <a href="{% url 'accounts_app:view_creditnote' bill.id %}" class="btn btn-sm btn-warning">
-                <i class="bi bi-eye"></i> View
-            </a>
-
-    <a href="{% url 'accounts_app:creditnote_pdf' bill.id %}" target="_blank" class="btn btn-sm btn-info">
-        <i class="bi bi-file-earmark-pdf"></i> PDF
-    </a>
-
-    <button type="button" onclick="deleteCreditNote({{ bill.id }}, '{{ bill.voucher_no|default:bill.id|escapejs }}', this)" class="btn btn-sm btn-danger">
-        Delete
-    </button>
-</td>
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="10" class="text-center">No credit notes found.</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
 <script>
-// ✅ Name now matches the button's onclick (was deleteReceiptBill)
 function deleteCreditNote(id, voucherNo, btn) {
-
-    if (!confirm(`Delete Credit Note ${voucherNo}?`)) {
+    if (!confirm(`{% trans "Delete Credit Note" %} ${voucherNo}?`)) {
         return;
     }
 
-    // Double-click guard
-    if (btn) {
-        if (btn.disabled) return;
-        btn.disabled = true;
-    }
-
-    // ✅ STORE DELETE URL
-    window.pendingDeleteId = "{% url 'accounts_app:delete_creditnote' 0 %}".replace('/0/', `/${id}/`);
+    let url = "{% url 'accounts_app:delete_creditnote' 0 %}".replace('/0/', '/' + id + '/');
 
     $.ajax({
-        url: window.pendingDeleteId,
+        url: url,
         type: "POST",
         headers: {
             "X-CSRFToken": "{{ csrf_token }}",
             "X-Requested-With": "XMLHttpRequest"
         },
         dataType: 'json',
-
         success: function (response) {
-            console.log("DELETE SUCCESS:", response);
-
-            if (response.admin_required) {
-                if (btn) btn.disabled = false;
-                $("#admin_error").text(response.message || "");
-                $("#adminOverrideModal").modal("show");
-                return;
-            }
-
             if (response.success) {
                 alert(response.message);
                 location.reload();
             } else {
-                if (btn) btn.disabled = false;
-                alert(response.message || "Delete failed");
+                alert(response.message || "{% trans 'Delete failed' %}");
             }
         },
-
         error: function (xhr) {
-            console.log("DELETE ERROR:", xhr.status, xhr.responseJSON);
-            if (btn) btn.disabled = false;
-
-            if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
-                $("#admin_error").text(xhr.responseJSON.message || "");
-                $("#adminOverrideModal").modal("show");
-            } else {
-                alert(xhr.responseJSON?.message || "Delete failed");
-            }
+            alert(xhr.responseJSON?.message || "{% trans 'Delete failed' %}");
         }
     });
 }
-</script>
 
-<!-- search -->
-<script>
 document.getElementById("billSearch").addEventListener("keyup", function () {
-
     let filter = this.value.toLowerCase();
-    // ✅ Table id fixed (was #receiptbillTable)
-    let rows     = document.querySelectorAll("#creditnoteTable tbody tr");
+    let rows = document.querySelectorAll("#creditnoteTable tbody tr");
 
     rows.forEach(function(row) {
-
         if (row.children.length <= 1) return;
-
-        let customer  = row.cells[1].textContent.toLowerCase();   // Customer column
-
-        if (customer.includes(filter)) {
+        let customer = row.cells[2].textContent.toLowerCase();
+        let ledger = row.cells[3].textContent.toLowerCase();
+        if (customer.includes(filter) || ledger.includes(filter)) {
             row.style.display = "";
         } else {
             row.style.display = "none";
@@ -144,6 +291,4 @@ document.getElementById("billSearch").addEventListener("keyup", function () {
     });
 });
 </script>
-
-
 {% endblock %}

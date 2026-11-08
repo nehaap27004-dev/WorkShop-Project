@@ -1,25 +1,203 @@
 {% extends 'fleet_base1.html' %}
+{% load i18n %}
+{% load static %}
+
 {% block title %}{% if is_edit %}Edit Journal{% else %}Create Journal{% endif %}{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<style>
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
 
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0">
-      <i class="fas fa-book mr-2"></i>
-      {% if is_edit %}Edit Journal — {{ instance.voucher_no }}{% else %}New Journal Entry{% endif %}
-    </h4>
-    <a href="{% url 'accounts_app:journal_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="fas fa-list mr-1"></i> View List
-    </a>
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    .text-burgundy {
+        color: var(--primary-burgundy) !important;
+    }
+
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 10px rgba(159, 16, 69, 0.2);
+    }
+
+    .btn-custom-outline {
+        color: var(--primary-burgundy) !important;
+        border: 1px solid var(--primary-burgundy) !important;
+        background-color: transparent !important;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-custom-outline:hover {
+        background-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+    }
+
+    form label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.85rem;
+        margin-bottom: 0.35rem;
+    }
+
+    input, select, textarea {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.9rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
+    }
+
+    .table-modern {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top: none;
+        white-space: nowrap;
+    }
+
+    .table-modern tbody td {
+        padding: 0.8rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        border-top: 1px solid #f1f3f5;
+        color: #212529;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: var(--primary-burgundy-light);
+    }
+
+    .btn-action {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: #64748b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+        background: #ffffff;
+        color: var(--primary-burgundy);
+        border-color: var(--primary-burgundy);
+    }
+
+    .btn-action-delete:hover {
+        color: #ef4444;
+        border-color: #ef4444;
+    }
+</style>
+
+<div class="voucher-container">
+  <!-- Header Banner -->
+  <div class="page-header-card">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+            {% trans "Accounting Ledgers" %}
+          </span>
+        </div>
+        <h3 class="font-weight-bold text-dark mb-1">
+          {% if is_edit %}{% trans "Edit Journal Entry" %}: {{ instance.voucher_no }}{% else %}{% trans "Create Journal Entry" %}{% endif %}
+        </h3>
+        <p class="text-muted small mb-0">{% trans "Record multi-line debits, credits, and inter-ledger general journal adjustments." %}</p>
+      </div>
+      <div>
+        <a href="{% url 'accounts_app:journal_list' %}" class="btn-custom-outline">
+          <i class="bi bi-list"></i> {% trans "Journal List" %}
+        </a>
+      </div>
+    </div>
   </div>
 
   <!-- Messages -->
   {% for msg in messages %}
-  <div
-    class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show">
-    {{ msg }} <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm" style="border-radius: 8px;">
+    {{ msg }}
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
   </div>
   {% endfor %}
 
@@ -27,42 +205,44 @@
     {% csrf_token %}
 
     <!-- ── Master Fields ── -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-primary text-white py-2">
-        <strong><i class="fas fa-file-alt mr-1"></i> Voucher Details</strong>
+    <div class="content-card mb-4">
+      <div class="content-card-header">
+        <h5 class="mb-0 font-weight-bold text-dark">
+          <i class="bi bi-file-earmark-text text-burgundy mr-2"></i>{% trans "Voucher Details" %}
+        </h5>
       </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-3 form-group">
-            <label>Voucher No <span class="text-danger">*</span></label>
+      <div class="p-4">
+        <div class="row g-3">
+          <div class="col-md-3 form-group mb-2">
+            <label>{{ form.voucher_no.label }} <span class="text-danger">*</span></label>
             {{ form.voucher_no }}
             {% if form.voucher_no.errors %}
-            <small class="text-danger">{{ form.voucher_no.errors.0 }}</small>
+            <small class="text-danger d-block mt-1">{{ form.voucher_no.errors.0 }}</small>
             {% endif %}
           </div>
-          <div class="col-md-3 form-group">
-            <label>Voucher Type <span class="text-danger">*</span></label>
+          <div class="col-md-3 form-group mb-2">
+            <label>{{ form.voucherType.label }} <span class="text-danger">*</span></label>
             {{ form.voucherType }}
             {% if form.voucherType.errors %}
-            <small class="text-danger">{{ form.voucherType.errors.0 }}</small>
+            <small class="text-danger d-block mt-1">{{ form.voucherType.errors.0 }}</small>
             {% endif %}
           </div>
-          <div class="col-md-2 form-group">
-            <label>Date <span class="text-danger">*</span></label>
+          <div class="col-md-2 form-group mb-2">
+            <label>{{ form.date.label }} <span class="text-danger">*</span></label>
             {{ form.date }}
             {% if form.date.errors %}
-            <small class="text-danger">{{ form.date.errors.0 }}</small>
+            <small class="text-danger d-block mt-1">{{ form.date.errors.0 }}</small>
             {% endif %}
           </div>
-          <div class="col-md-2 form-group">
-            <label>Cost Center <span class="text-danger">*</span></label>
+          <div class="col-md-2 form-group mb-2">
+            <label>{{ form.cost_center.label }} <span class="text-danger">*</span></label>
             {{ form.cost_center }}
             {% if form.cost_center.errors %}
-            <small class="text-danger">{{ form.cost_center.errors.0 }}</small>
+            <small class="text-danger d-block mt-1">{{ form.cost_center.errors.0 }}</small>
             {% endif %}
           </div>
-          <div class="col-md-2 form-group">
-            <label>Staff</label>
+          <div class="col-md-2 form-group mb-2">
+            <label>{{ form.staff.label }}</label>
             {{ form.staff }}
           </div>
         </div>
@@ -70,43 +250,44 @@
     </div>
 
     <!-- ── Detail Entry Row ── -->
-    <div class="card shadow-sm mb-3">
-      <div class="card-header bg-secondary text-white py-2">
-        <strong><i class="fas fa-plus-circle mr-1"></i> Add Detail Line</strong>
+    <div class="content-card mb-4">
+      <div class="content-card-header">
+        <h5 class="mb-0 font-weight-bold text-dark">
+          <i class="bi bi-plus-circle text-burgundy mr-2"></i>{% trans "Add Detail Line" %}
+        </h5>
       </div>
-      <div class="card-body">
-        <div class="row align-items-end">
+      <div class="p-4">
+        <div class="row align-items-end g-3">
           <div class="col-md-3 form-group mb-0">
-            <label class="small">Debit Ledger</label>
+            <label class="small font-weight-bold text-dark">{% trans "Debit Ledger" %}</label>
             <select id="inp_debit" class="form-control form-control-sm">
-              <option value="">— Select Debit —</option>
+              <option value="">— {% trans "Select Debit" %} —</option>
               {% for l in ledgers %}
               <option value="{{ l.pk }}">{{ l }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="col-md-3 form-group mb-0">
-            <label class="small">Credit Ledger</label>
+            <label class="small font-weight-bold text-dark">{% trans "Credit Ledger" %}</label>
             <select id="inp_credit" class="form-control form-control-sm">
-              <option value="">— Select Credit —</option>
+              <option value="">— {% trans "Select Credit" %} —</option>
               {% for l in ledgers %}
               <option value="{{ l.pk }}">{{ l }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="col-md-2 form-group mb-0">
-            <label class="small">Amount <span class="text-danger">*</span></label>
-            <input type="number" id="inp_amount" class="form-control form-control-sm" step="0.001" min="0"
-              placeholder="0.000">
+            <label class="small font-weight-bold text-dark">{% trans "Amount" %} <span class="text-danger">*</span></label>
+            <input type="number" id="inp_amount" class="form-control form-control-sm" step="0.001" min="0" placeholder="0.000">
           </div>
           <div class="col-md-3 form-group mb-0">
-            <label class="small">Narration</label>
-            <input type="text" id="inp_narration" class="form-control form-control-sm" placeholder="Optional note">
+            <label class="small font-weight-bold text-dark">{% trans "Narration" %}</label>
+            <input type="text" id="inp_narration" class="form-control form-control-sm" placeholder="{% trans 'Optional note' %}">
           </div>
           <div class="col-md-1 form-group mb-0">
             <label class="small d-block">&nbsp;</label>
-            <button type="button" class="btn btn-success btn-sm btn-block" id="btnAdd">
-              <i class="fas fa-plus"></i> Add
+            <button type="button" class="btn btn-custom-primary btn-sm btn-block" id="btnAdd">
+              <i class="bi bi-plus-lg"></i> {% trans "Add" %}
             </button>
           </div>
         </div>
@@ -114,46 +295,48 @@
     </div>
 
     <!-- ── Detail Table ── -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-header py-2 d-flex justify-content-between align-items-center">
-        <strong><i class="fas fa-table mr-1"></i> Detail Lines</strong>
-        <span class="badge badge-primary" id="rowCount">0 row(s)</span>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-bordered table-hover table-sm mb-0" id="detailTable">
-            <thead class="thead-dark">
-              <tr>
-                <th style="width:40px;">#</th>
-                <th>Debit Ledger</th>
-                <th>Credit Ledger</th>
-                <th style="width:130px;">Amount</th>
-                <th>Narration</th>
-                <th style="width:110px;" class="text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="detailBody">
-              <tr id="emptyRow">
-                <td colspan="6" class="text-center text-muted py-3">
-                  <i class="fas fa-inbox mr-1"></i> No detail lines added yet.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+    <div class="content-card mb-4">
+      <div class="content-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-table text-burgundy font-weight-bold"></i>
+          <h5 class="mb-0 font-weight-bold text-dark">{% trans "Detail Lines" %}</h5>
         </div>
+        <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); border: 1px solid var(--primary-burgundy-border);" id="rowCount">0 row(s)</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table-modern" id="detailTable">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>{% trans "Debit Ledger" %}</th>
+              <th>{% trans "Credit Ledger" %}</th>
+              <th style="width:140px;" class="text-right">{% trans "Amount" %}</th>
+              <th>{% trans "Narration" %}</th>
+              <th style="width:110px;" class="text-center">{% trans "Actions" %}</th>
+            </tr>
+          </thead>
+          <tbody id="detailBody">
+            <tr id="emptyRow">
+              <td colspan="6" class="text-center text-muted py-4">
+                <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>
+                {% trans "No detail lines added yet." %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
     <!-- Hidden inputs container -->
     <div id="hiddenInputs"></div>
 
-    <!-- Save / Cancel -->
-    <div class="d-flex justify-content-end">
-      <a href="{% url 'accounts_app:journal_list' %}" class="btn btn-secondary mr-2">
-        <i class="fas fa-times mr-1"></i> Cancel
+    <!-- Save / Cancel Actions -->
+    <div class="d-flex justify-content-end gap-2 mb-4">
+      <a href="{% url 'accounts_app:journal_list' %}" class="btn btn-outline-secondary px-4">
+        {% trans "Cancel" %}
       </a>
-      <button type="submit" class="btn btn-primary" id="btnSave">
-        <i class="fas fa-save mr-1"></i> Save Journal
+      <button type="submit" class="btn-custom-primary px-4" id="btnSave">
+        <i class="bi bi-save"></i> {% trans "Save Journal" %}
       </button>
     </div>
 
@@ -184,161 +367,180 @@
 </script>
 {% endif %}
 
-
 <script>
   (function () {
-    // ── State ──────────────────────────────────────────────────────
-    let rows = [];        // [{id, debit_id, debit_name, credit_id, credit_name, amount, narration}]
+    let rows = [];
     let editingIdx = null;
 
-    // Pre-load existing details on edit
-    const existing = {{ existing_details| safe
-  }};
-  existing.forEach(d => rows.push({
-    id: d.id,
-    debit_id: d.debit_id,
-    debit_name: d.debit_name,
-    credit_id: d.credit_id,
-    credit_name: d.credit_name,
-    amount: d.amount,
-    narration: d.narration,
-  }));
+    const existing = {{ existing_details|safe }};
+    existing.forEach(d => rows.push({
+      id: d.id,
+      debit_id: d.debit_id,
+      debit_name: d.debit_name,
+      credit_id: d.credit_id,
+      credit_name: d.credit_name,
+      amount: parseFloat(d.amount).toFixed(3),
+      narration: d.narration,
+    }));
 
-  // ── Helpers ────────────────────────────────────────────────────
-  function selectedText(selectEl) {
-    const opt = selectEl.options[selectEl.selectedIndex];
-    return opt ? opt.text : '—';
-  }
-
-  function renderTable() {
-    const tbody = document.getElementById('detailBody');
-    const counter = document.getElementById('rowCount');
-    tbody.innerHTML = '';
-
-    if (rows.length === 0) {
-      tbody.innerHTML = `<tr id="emptyRow"><td colspan="6" class="text-center text-muted py-3">
-        <i class="fas fa-inbox mr-1"></i> No detail lines added yet.</td></tr>`;
-      counter.textContent = '0 row(s)';
-      return;
+    function selectedText(sel) {
+      return sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '—';
     }
 
-    counter.textContent = rows.length + ' row(s)';
-    rows.forEach((r, idx) => {
-      const isEditing = (editingIdx === idx);
-      const tr = document.createElement('tr');
-      if (isEditing) tr.classList.add('table-warning');
-      tr.innerHTML = `
-        <td>${idx + 1}</td>
-        <td>${r.debit_name || '<span class="text-muted">—</span>'}</td>
-        <td>${r.credit_name || '<span class="text-muted">—</span>'}</td>
-        <td class="text-right">${parseFloat(r.amount).toFixed(3)}</td>
-        <td>${r.narration || ''}</td>
-        <td class="text-center">
-          <button type="button" class="btn btn-xs btn-warning mr-1" onclick="startEdit(${idx})"
-                  title="Edit"><i class="fas fa-edit"></i></button>
-          <button type="button" class="btn btn-xs btn-danger" onclick="removeRow(${idx})"
-                  title="Remove"><i class="fas fa-trash"></i></button>
-        </td>`;
-      tbody.appendChild(tr);
-    });
-  }
+    function renderTable() {
+      const tbody = document.getElementById('detailBody');
+      const emptyRow = document.getElementById('emptyRow');
+      const rowCountBadge = document.getElementById('rowCount');
 
-  function buildHiddenInputs() {
-    const container = document.getElementById('hiddenInputs');
-    container.innerHTML = '';
-    rows.forEach(r => {
-      const add = (name, val) => {
-        const inp = document.createElement('input');
-        inp.type = 'hidden';
-        inp.name = name;
-        inp.value = val ?? '';
-        container.appendChild(inp);
+      tbody.querySelectorAll('tr:not(#emptyRow)').forEach(r => r.remove());
+
+      if (rows.length === 0) {
+        if (emptyRow) emptyRow.style.display = '';
+        rowCountBadge.textContent = '0 row(s)';
+        return;
+      }
+
+      if (emptyRow) emptyRow.style.display = 'none';
+      rowCountBadge.textContent = rows.length + ' row(s)';
+
+      rows.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="text-muted">${idx + 1}</td>
+          <td><strong>${r.debit_name}</strong></td>
+          <td><strong>${r.credit_name}</strong></td>
+          <td class="text-right font-weight-bold text-dark">${r.amount}</td>
+          <td class="text-muted">${r.narration || '—'}</td>
+          <td class="text-center">
+            <div class="d-flex justify-content-center gap-1">
+              <button type="button" class="btn-action btn-edit-row" data-idx="${idx}" title="{% trans 'Edit' %}">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button type="button" class="btn-action btn-action-delete btn-del-row" data-idx="${idx}" title="{% trans 'Delete' %}">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll('.btn-edit-row').forEach(btn => {
+        btn.addEventListener('click', function () {
+          startEditRow(parseInt(this.dataset.idx));
+        });
+      });
+
+      tbody.querySelectorAll('.btn-del-row').forEach(btn => {
+        btn.addEventListener('click', function () {
+          deleteRow(parseInt(this.dataset.idx));
+        });
+      });
+    }
+
+    function startEditRow(idx) {
+      const r = rows[idx];
+      editingIdx = idx;
+
+      document.getElementById('inp_debit').value = r.debit_id;
+      document.getElementById('inp_credit').value = r.credit_id;
+      document.getElementById('inp_amount').value = r.amount;
+      document.getElementById('inp_narration').value = r.narration;
+
+      const btnAdd = document.getElementById('btnAdd');
+      btnAdd.innerHTML = '<i class="bi bi-check2"></i> {% trans "Update" %}';
+      btnAdd.classList.remove('btn-custom-primary');
+      btnAdd.classList.add('btn-warning');
+    }
+
+    function deleteRow(idx) {
+      if (editingIdx === idx) clearInputRow();
+      rows.splice(idx, 1);
+      renderTable();
+    }
+
+    function clearInputRow() {
+      document.getElementById('inp_debit').value = '';
+      document.getElementById('inp_credit').value = '';
+      document.getElementById('inp_amount').value = '';
+      document.getElementById('inp_narration').value = '';
+
+      editingIdx = null;
+      const btnAdd = document.getElementById('btnAdd');
+      btnAdd.innerHTML = '<i class="bi bi-plus-lg"></i> {% trans "Add" %}';
+      btnAdd.classList.add('btn-custom-primary');
+      btnAdd.classList.remove('btn-warning');
+    }
+
+    function buildHiddenInputs() {
+      const container = document.getElementById('hiddenInputs');
+      container.innerHTML = '';
+
+      rows.forEach(r => {
+        const fId = document.createElement('input');
+        fId.type = 'hidden'; fId.name = 'detail_id[]'; fId.value = r.id;
+        container.appendChild(fId);
+
+        const fDeb = document.createElement('input');
+        fDeb.type = 'hidden'; fDeb.name = 'detail_debit[]'; fDeb.value = r.debit_id;
+        container.appendChild(fDeb);
+
+        const fCrd = document.createElement('input');
+        fCrd.type = 'hidden'; fCrd.name = 'detail_credit[]'; fCrd.value = r.credit_id;
+        container.appendChild(fCrd);
+
+        const fAmt = document.createElement('input');
+        fAmt.type = 'hidden'; fAmt.name = 'detail_amount[]'; fAmt.value = r.amount;
+        container.appendChild(fAmt);
+
+        const fNar = document.createElement('input');
+        fNar.type = 'hidden'; fNar.name = 'detail_narration[]'; fNar.value = r.narration;
+        container.appendChild(fNar);
+      });
+    }
+
+    document.getElementById('btnAdd').addEventListener('click', function () {
+      const debitSel = document.getElementById('inp_debit');
+      const creditSel = document.getElementById('inp_credit');
+      const amount = document.getElementById('inp_amount').value.trim();
+      const narration = document.getElementById('inp_narration').value.trim();
+
+      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        document.getElementById('inp_amount').focus();
+        alert('{% trans "Please enter a valid amount." %}');
+        return;
+      }
+
+      const rowData = {
+        id: (editingIdx !== null) ? rows[editingIdx].id : '',
+        debit_id: debitSel.value,
+        debit_name: debitSel.value ? selectedText(debitSel) : '—',
+        credit_id: creditSel.value,
+        credit_name: creditSel.value ? selectedText(creditSel) : '—',
+        amount: parseFloat(amount).toFixed(3),
+        narration: narration,
       };
-      add('detail_id[]', r.id || '');
-      add('detail_debit[]', r.debit_id || '');
-      add('detail_credit[]', r.credit_id || '');
-      add('detail_amount[]', r.amount);
-      add('detail_narration[]', r.narration || '');
+
+      if (editingIdx !== null) {
+        rows[editingIdx] = rowData;
+      } else {
+        rows.push(rowData);
+      }
+
+      clearInputRow();
+      renderTable();
     });
-  }
 
-  function clearInputRow() {
-    document.getElementById('inp_debit').value = '';
-    document.getElementById('inp_credit').value = '';
-    document.getElementById('inp_amount').value = '';
-    document.getElementById('inp_narration').value = '';
-    document.getElementById('btnAdd').innerHTML = '<i class="fas fa-plus"></i> Add';
-    document.getElementById('btnAdd').className = 'btn btn-success btn-sm btn-block';
-    editingIdx = null;
-  }
+    document.getElementById('journalForm').addEventListener('submit', function (e) {
+      if (rows.length === 0) {
+        e.preventDefault();
+        alert('{% trans "Please add at least one detail line before saving." %}');
+        return;
+      }
+      buildHiddenInputs();
+    });
 
-  // ── Exposed globals ────────────────────────────────────────────
-  window.removeRow = function (idx) {
-    rows.splice(idx, 1);
-    if (editingIdx === idx) clearInputRow();
     renderTable();
-  };
-
-  window.startEdit = function (idx) {
-    const r = rows[idx];
-    editingIdx = idx;
-    document.getElementById('inp_debit').value = r.debit_id || '';
-    document.getElementById('inp_credit').value = r.credit_id || '';
-    document.getElementById('inp_amount').value = r.amount;
-    document.getElementById('inp_narration').value = r.narration || '';
-    document.getElementById('btnAdd').innerHTML = '<i class="fas fa-check"></i> Update';
-    document.getElementById('btnAdd').className = 'btn btn-primary btn-sm btn-block';
-    renderTable();
-    document.getElementById('inp_amount').focus();
-  };
-
-  // ── Add / Update ───────────────────────────────────────────────
-  document.getElementById('btnAdd').addEventListener('click', function () {
-    const debitSel = document.getElementById('inp_debit');
-    const creditSel = document.getElementById('inp_credit');
-    const amount = document.getElementById('inp_amount').value.trim();
-    const narration = document.getElementById('inp_narration').value.trim();
-
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      document.getElementById('inp_amount').focus();
-      alert('Please enter a valid amount.');
-      return;
-    }
-
-    const rowData = {
-      id: (editingIdx !== null) ? rows[editingIdx].id : '',
-      debit_id: debitSel.value,
-      debit_name: debitSel.value ? selectedText(debitSel) : '—',
-      credit_id: creditSel.value,
-      credit_name: creditSel.value ? selectedText(creditSel) : '—',
-      amount: parseFloat(amount).toFixed(3),
-      narration: narration,
-    };
-
-    if (editingIdx !== null) {
-      rows[editingIdx] = rowData;
-    } else {
-      rows.push(rowData);
-    }
-
-    clearInputRow();
-    renderTable();
-  });
-
-  // ── Submit ─────────────────────────────────────────────────────
-  document.getElementById('journalForm').addEventListener('submit', function (e) {
-    if (rows.length === 0) {
-      e.preventDefault();
-      alert('Please add at least one detail line before saving.');
-      return;
-    }
-    buildHiddenInputs();
-  });
-
-  // ── Init ───────────────────────────────────────────────────────
-  renderTable();
-}) ();
+  })();
 </script>
-
-
 {% endblock %}
