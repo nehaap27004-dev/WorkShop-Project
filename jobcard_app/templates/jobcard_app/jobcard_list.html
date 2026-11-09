@@ -3,6 +3,18 @@
 {% load i18n %}
 {% load privilege_tags %}
 {% block content %}
+<style>
+.jc-act-btn{background:#9f1045;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600}
+.jc-act-btn:hover,.jc-act-btn:focus{background:#830d38;color:#fff;box-shadow:0 0 0 3px rgba(159,16,69,.2)}
+.jc-act-menu{border:none;border-radius:12px;box-shadow:0 8px 24px rgba(15,23,42,.15);padding:6px;min-width:170px;text-align:left}
+.jc-act-menu .dropdown-item{border-radius:8px;padding:9px 12px;font-size:13.5px;font-weight:500}
+.jc-act-menu .dropdown-item:hover{background:#f8fafc}
+@media (min-width: 992px) {
+  #jcCard,
+  #jcCard .table-responsive { overflow: visible !important; }
+}
+</style>
+
 <div class="container-fluid p-0 mb-5">
 
     <!-- Top Bar: Title + New Job Card Button -->
@@ -18,7 +30,7 @@
         <a href="{% url 'jobcard_app:jobcard_create' %}" class="btn btn-custom-primary shadow-sm">
             <i class="bi bi-plus-lg mr-1"></i> {% trans "New Job Card" %}
         </a>
-        {% endif %}  <!-- 👈 Add this line -->
+        {% endif %}
     </div>
 
     <!-- Alert Messages -->
@@ -113,7 +125,7 @@
     </div>
 
     <!-- Job Cards Directory -->
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0" id="jcCard">
         <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span class="card-banner-title">
                 <i class="bi bi-list-task mr-1 text-burgundy"></i> {% trans "Job Cards Directory" %}
@@ -136,7 +148,7 @@
                                 <th>{% trans "Priority" %}</th>
                                 <th>{% trans "Status" %}</th>
                                 <th class="text-right">{% trans "Grand Total" %}</th>
-                                <th style="width: 170px;" class="text-center">{% trans "Action" %}</th>
+                                <th style="width: 150px;" class="text-center">{% trans "Action" %}</th>
                             </tr>
                         </thead>
 
@@ -203,40 +215,40 @@
                                         {{ job.total_amount|floatformat:2 }}
                                     </td>
 
-                                    <!-- All action buttons belong inside this table cell -->
+                                    <!-- Action dropdown -->
                                     <td class="align-middle text-center text-nowrap">
                                         {# 🔐 Query permissions for this user and menu #}
                                         {% has_priv request.user 23 "can_read" as can_read_jc %}
                                         {% has_priv request.user 23 "can_edit" as can_edit_jc %}
                                         {% has_priv request.user 23 "can_delete" as can_delete_jc %}
 
-                                        {# 👁️ View Button #}
-                                        {% if can_read_jc %}
-                                        <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}"
-                                        class="btn btn-sm btn-outline-primary mr-1"
-                                        title="{% trans 'View Job Card' %}">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        {% endif %}
-
-                                        {# ✏️ Edit Button #}
-                                        {% if can_edit_jc %}
-                                        <a href="{% url 'jobcard_app:jobcard_edit' job.pk %}"
-                                        class="btn btn-sm btn-outline-secondary mr-1"
-                                        title="{% trans 'Edit Job Card' %}">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        {% endif %}
-
-                                        {# 🗑️ Delete Button #}
-                                        {% if can_delete_jc %}
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-danger"
-                                                title="{% trans 'Delete Job Card' %}"
-                                                onclick="confirmDeleteJobCard({{ job.pk }}, '{{ job.voucher_number }}')">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                        {% endif %}
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm jc-act-btn dropdown-toggle" type="button"
+                                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <i class="bi bi-gear-fill mr-1"></i> {% trans "Action" %}
+                                            </button>
+                                            <div class="dropdown-menu dropdown-menu-right jc-act-menu">
+                                                {% if can_edit_jc %}
+                                                <a class="dropdown-item" href="{% url 'jobcard_app:jobcard_edit' job.pk %}" style="color:#9f1045">
+                                                    <i class="bi bi-pencil-fill mr-2"></i> {% trans "Edit" %}
+                                                </a>
+                                                {% endif %}
+                                                {% if can_read_jc %}
+                                                <a class="dropdown-item" href="{% url 'jobcard_app:jobcard_edit' job.pk %}?view=1" style="color:#475569">
+                                                    <i class="bi bi-eye-fill mr-2"></i> {% trans "View" %}
+                                                </a>
+                                                {% endif %}
+                                                <a class="dropdown-item" href="{% url 'jobcard_app:invoice_create' %}?from_jobcard={{ job.pk }}" style="color:#1d6fb8">
+                                                    <i class="bi bi-receipt mr-2"></i> {% trans "Create Invoice" %}
+                                                </a>
+                                                {% if can_delete_jc %}
+                                                <a class="dropdown-item" href="#" style="color:#dc2626"
+                                                   onclick="confirmDeleteJobCard({{ job.pk }}, '{{ job.voucher_number }}'); return false;">
+                                                    <i class="bi bi-trash-fill mr-2"></i> {% trans "Delete" %}
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
                                     </td>
 
                                 </tr>
@@ -324,6 +336,7 @@
             }
         });
     }
+
     function executeAdminOverride() {
         const adminUser = $('#admin_override_username').val().trim();
         const adminPass = $('#admin_override_password').val().trim();
@@ -358,6 +371,6 @@
                 $('#admin_override_error').text(err);
             }
         });
- }
+    }
 </script>
 {% endblock %}

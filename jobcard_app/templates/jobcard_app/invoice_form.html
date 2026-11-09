@@ -4,6 +4,7 @@
 {% if posted_data %}
 {{ posted_data|json_script:"posted-invoice-data" }}
 {% endif %}
+{% if prefill_jc_data %}{{ prefill_jc_data|json_script:"prefill-jc-data" }}{% endif %}
 <style>
 *{box-sizing:border-box}
 body,input,select,textarea,button{font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
@@ -1885,6 +1886,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (posted) applyPostedParts(posted); else renderInvExistingParts();
     syncRowVehicleDropdowns();
     calcAll();
+    if (!posted) autoLoadPrefillJobCard(); 
   };
   fetch(INV_ALL_ITEMS_URL)
     .then(r => r.json())
@@ -1932,5 +1934,23 @@ function markUnsaved() {
 document.getElementById('invForm').querySelectorAll('input,select,textarea').forEach(el => {
   el.addEventListener('change', markUnsaved);
 });
+function autoLoadPrefillJobCard() {
+  const tag = document.getElementById('prefill-jc-data');
+  if (!tag) return;
+  let jc;
+  try { jc = JSON.parse(tag.textContent); } catch (e) { console.error('Bad prefill data', e); return; }
+
+  // match parts to the item master by part code, then by name
+  (jc.parts || []).forEach(p => {
+    const code = String(p.part_code || '').trim().toLowerCase();
+    const name = String(p.description || '').trim().toLowerCase();
+    const hit = invAllItems.find(i => code && String(i.code || '').trim().toLowerCase() === code)
+             || invAllItems.find(i => name && String(i.name || '').trim().toLowerCase() === name);
+    if (hit) { p.item_id = hit.id; if (!p.part_code) p.part_code = hit.code || ''; }
+  });
+
+  populateFromJobCard(jc);
+  document.getElementById('loadedJC').value = jc.id;
+}
 </script>
 {% endblock %}

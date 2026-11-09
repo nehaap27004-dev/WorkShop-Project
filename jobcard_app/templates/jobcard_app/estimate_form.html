@@ -110,6 +110,20 @@
   .view-mode .btn-rm,
   .view-mode .jc-banner,
   .view-mode .jc-card-actions { display:none !important; }
+  .cust-group { display:flex; align-items:stretch; }
+  .cust-group select.fi { flex:1; min-width:0; border-top-right-radius:0; border-bottom-right-radius:0; }
+  .btn-plus {
+    flex:0 0 38px; width:38px;
+    background:#9f1045; color:#fff;
+    border:1px solid #9f1045;
+    border-radius:0 6px 6px 0;
+    cursor:pointer; font-size:14px;
+    display:inline-flex; align-items:center; justify-content:center;
+    transition:background .15s ease;
+  }
+  .btn-plus:hover { background:#830d38; border-color:#830d38; }
+  .btn-plus:focus { outline:none; box-shadow:0 0 0 3px rgba(159,16,69,.18); }
+  .view-mode .btn-plus { display:none !important; }
 </style>
 
 <div class="container-fluid p-0 jc-wrapper {% if view_mode %}view-mode{% endif %}">
@@ -169,20 +183,24 @@
         </div>
         <div>
           <label class="fl">{% trans "Customer" %} <span class="req">*</span></label>
-          <select name="customer" class="fi" required id="custSel"
-                  {% if edit_mode %}disabled{% endif %}
-                  onchange="loadVehicles(this.value);loadPhone(this);loadCustomerJobcards(this.value)">
-            <option value="">— Select Customer —</option>
-            {% for c in customers %}
-            <option value="{{ c.id }}"
-              data-phone="{{ c.mobile_number|default:'' }}"
-              {% if edit_mode and estimate.customer_id == c.id %}selected{% endif %}
-              {% if prefill_job and prefill_job.customer_id == c.id %}selected{% endif %}>
-              {{ c.ledger_name }}
-            </option>
-            {% endfor %}
-          </select>
-          {% if edit_mode %}<input type="hidden" name="customer" value="{{ estimate.customer_id }}">{% endif %}
+          <div class="cust-group">
+            <select name="customer" class="fi" required id="custSel"
+                    onchange="onCustomerChange(this)"
+                    data-original="{% if edit_mode %}{{ estimate.customer_id }}{% endif %}">
+              <option value="">— Select Customer —</option>
+              {% for c in customers %}
+              <option value="{{ c.id }}"
+                data-phone="{{ c.mobile_number|default:c.mobile|default:'' }}"
+                {% if edit_mode and estimate.customer_id == c.id %}selected{% endif %}
+                {% if prefill_job and prefill_job.customer_id == c.id %}selected{% endif %}>
+                {{ c.ledger_name }}
+              </option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn-plus" onclick="openNewCustomer()" title="{% trans 'Add new customer' %}">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
         </div>
         <div>
           <label class="fl">{% trans "Customer Phone" %}</label>
@@ -233,8 +251,11 @@
   <!-- ════════ 2. VEHICLES ════════ -->
   <div class="jc-card">
     <div class="jc-card-hdr">
-      <h2 class="jc-card-title"><i class="bi bi-truck text-burgundy"></i> {% trans "Vehicles" %}</h2>
-      <div class="jc-card-actions">
+      <h2 class="jc-card-title"><i class="bi bi-truck text-burgundy"></i> {% trans "Assigned Vehicles" %}</h2>
+      <div class="d-flex align-items-center" style="gap:8px">
+        <button type="button" class="btn-insp-load" onclick="openRegisterVehicle()">
+          <i class="bi bi-car-front"></i> {% trans "Register Vehicle" %}
+        </button>
         <button type="button" class="btn-add" onclick="addVehicleRow()"><i class="bi bi-plus"></i> {% trans "Add Vehicle" %}</button>
       </div>
     </div>
@@ -658,7 +679,70 @@ function populateVehSelect(sel) {
   }
   onVehRowChange(sel, false);
 }
+function onCustomerChange(sel) {
+  const cid = sel.value;
+  const opt = sel.options[sel.selectedIndex];
 
+  // phone: always replace with the new customer's number (still editable)
+  const ph = document.getElementById('custPhone');
+  if (ph) ph.value = (opt && opt.dataset.phone) || '';
+
+  const changedFromSaved = sel.dataset.original && cid !== sel.dataset.original;
+
+  // old customer's vehicles no longer apply
+  document.getElementById('vehBody').innerHTML = '';
+  checkVehEmpty();
+
+  if (changedFromSaved) {
+    // saved complaints / parts / labour were for the old customer's vehicles: reset them
+    document.getElementById('estComplaintBody').innerHTML = '';
+    addEstComplaint();
+    document.getElementById('partsTbody').innerHTML = '';
+    addPartRow();
+    document.getElementById('labourTbody').innerHTML = '';
+    addLabour();
+    calcAll();
+  }
+
+  loadVehicles(cid);                 // loads this customer's vehicles (adds the first row)
+  loadCustomerJobcards(cid);         // resets the job card list for this customer
+  refreshAllVehicleDropdowns();
+}
+/* ══════════ ADD NEW CUSTOMER (opens in a new tab) ══════════ */
+var CUSTOMER_CREATE_URL = "{% url 'accounts_app:manage_customers' %}";
+var customerRefreshPending = false;
+
+function openNewCustomer() {
+  customerRefreshPending = true;
+  var w = window.open(CUSTOMER_CREATE_URL, '_blank');
+  if (!w) alert('The browser blocked the new tab. Please allow pop-ups for this site.');
+}
+
+window.addEventListener('focus', function () {
+  if (customerRefreshPending) refreshCustomers();
+});
+
+async function refreshCustomers() {
+  customerRefreshPending = false;
+  try {
+    const html  = await (await fetch(window.location.href, { credentials: 'same-origin' })).text();
+    const doc   = new DOMParser().parseFromString(html, 'text/html');
+    const fresh = doc.getElementById('custSel');
+    const sel   = document.getElementById('custSel');
+    if (!fresh || !sel) return;
+
+    let newest = null;
+    fresh.querySelectorAll('option').forEach(o => {
+      if (o.value && ![...sel.options].some(x => x.value === o.value)) {
+        const opt = new Option(o.textContent.trim(), o.value);
+        opt.dataset.phone = o.dataset.phone || '';
+        sel.add(opt);
+        newest = opt;
+      }
+    });
+    if (newest) { sel.value = newest.value; onCustomerChange(sel); }
+  } catch (e) { console.error('Customer refresh failed:', e); }
+}
 function addVehicleRow(vehicleIdToSelect, mileageVal) {
   const custSel = document.getElementById('custSel');
   if (!custSel || !custSel.value) {
@@ -746,7 +830,47 @@ function checkVehEmpty() {
     emptyDiv.style.display = (tbody.querySelectorAll('tr').length === 0) ? 'block' : 'none';
   }
 }
+/* ══════════ REGISTER A NEW VEHICLE FOR THE SELECTED CUSTOMER (opens in a new tab) ══════════ */
+var REGISTER_VEHICLE_TPL = "{% url 'jobcard_app:wv_create_for_customer' 0 %}";
+var vehicleRefreshPending = false;
 
+function openRegisterVehicle() {
+  var cid = document.getElementById('custSel') && document.getElementById('custSel').value;
+  if (!cid) { alert('Please select a customer first.'); return; }
+  vehicleRefreshPending = true;
+  var url = REGISTER_VEHICLE_TPL.replace(/\/0(\/?)$/, '/' + cid + '$1');
+  var w = window.open(url, '_blank');
+  if (!w) alert('The browser blocked the new tab. Please allow pop-ups for this site.');
+}
+
+/* coming back to this tab: pick up the vehicle that was just registered */
+window.addEventListener('focus', function () {
+  if (vehicleRefreshPending) refreshVehiclesAfterRegister();
+});
+
+async function refreshVehiclesAfterRegister() {
+  vehicleRefreshPending = false;
+  var cid = document.getElementById('custSel') && document.getElementById('custSel').value;
+  if (!cid) return;
+  try {
+    var oldIds = customerVehicleCache.map(function (v) { return String(v.id); });
+    var d = await (await fetch(VEH_URL + '?customer_id=' + cid, { credentials: 'same-origin' })).json();
+    customerVehicleCache = d.vehicles || [];
+
+    // refresh the options of the existing vehicle dropdowns
+    document.querySelectorAll('.veh-select').forEach(function (s) { populateVehSelect(s); });
+
+    // add each newly registered vehicle: fill an empty row, otherwise add a new row
+    customerVehicleCache.filter(function (v) { return oldIds.indexOf(String(v.id)) === -1; })
+      .forEach(function (v) {
+        var blankSel = Array.from(document.querySelectorAll('.veh-select')).find(function (s) { return !s.value; });
+        if (blankSel) { blankSel.value = v.id; onVehRowChange(blankSel, true); }
+        else addVehicleRow(v.id, '', '', true);
+      });
+    checkVehEmpty();
+    refreshAllVehicleDropdowns();
+  } catch (e) { console.error('Vehicle refresh failed:', e); }
+}
 /* ══════════ VEHICLE DROPDOWN SYNC ══════════ */
 function getEstVehicleOptions() {
   const opts = [];

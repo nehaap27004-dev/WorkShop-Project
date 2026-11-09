@@ -216,6 +216,13 @@
                                 </span>
                             </td>
                             <td class="align-middle text-center text-nowrap">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary mr-1"
+                                        title="View Model"
+                                        data-toggle="modal"
+                                        data-target="#viewModelModal{{ vehicle_model.id }}">
+                                    <i class="bi bi-eye"></i>
+                                </button>
                                 <a href="{% url 'fleet_app:update_vehicle_model' vehicle_model.id %}"
                                    class="btn btn-sm btn-outline-secondary mr-1"
                                    title="{% trans 'Edit Model' %}">

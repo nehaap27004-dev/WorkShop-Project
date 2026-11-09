@@ -8,7 +8,7 @@
     /* ── Azur Burgundy Module Standards ── */
     .text-burgundy { color: #9f1045 !important; }
     .bg-burgundy { background-color: #9f1045 !important; color: #fff !important; }
-    
+
     .btn-custom-primary {
         background-color: #9f1045 !important;
         border-color: #9f1045 !important;
@@ -21,7 +21,6 @@
         border-color: #830d38 !important;
         color: #fff !important;
     }
-
     .btn-outline-burgundy {
         color: #9f1045 !important;
         border-color: #9f1045 !important;
@@ -44,84 +43,42 @@
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         height: 100%;
     }
-    .kpi-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.07);
-    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.07); }
     .kpi-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.35rem;
-        margin-right: 1rem;
-        flex-shrink: 0;
+        width: 48px; height: 48px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.35rem; margin-right: 1rem; flex-shrink: 0;
     }
-    .kpi-content {
-        min-width: 0;
-    }
-    .kpi-label {
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.6px;
-        color: #6c757d;
-        text-transform: uppercase;
-        margin-bottom: 2px;
-    }
-    .kpi-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        line-height: 1.2;
-    }
+    .kpi-content { min-width: 0; }
+    .kpi-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.6px; color: #6c757d; text-transform: uppercase; margin-bottom: 2px; }
+    .kpi-value { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
 
     /* Card Banner Header */
-    .card-banner-header {
-        background-color: #ffffff;
-        border-bottom: 1px solid #edf2f7;
-        padding: 0.9rem 1.25rem;
-    }
-    .card-banner-title {
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: #2d3748;
-        display: inline-flex;
-        align-items: center;
-    }
+    .card-banner-header { background-color: #ffffff; border-bottom: 1px solid #edf2f7; padding: 0.9rem 1.25rem; }
+    .card-banner-title { font-size: 0.95rem; font-weight: 700; color: #2d3748; display: inline-flex; align-items: center; }
 
-    /* Form control focus ring */
     .form-control:focus, .form-select:focus {
         border-color: #9f1045 !important;
         box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
     }
 
-    /* Table styling */
+    /* Table */
     .table thead th {
-        background-color: #fafbfc;
-        color: #4a5568;
-        font-size: 0.78rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 1px solid #edf2f7;
-        padding: 0.75rem 1rem;
-        vertical-align: middle;
+        background-color: #fafbfc; color: #4a5568; font-size: 0.78rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        border-bottom: 1px solid #edf2f7; padding: 0.75rem 1rem; vertical-align: middle;
     }
-    .table tbody td {
-        padding: 0.85rem 1rem;
-        border-bottom: 1px solid #f1f5f9;
-        font-size: 0.875rem;
-    }
-    .table-hover tbody tr:hover {
-        background-color: #fdfafb;
-    }
+    .table tbody td { padding: 0.85rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; }
+    .table-hover tbody tr:hover { background-color: #fdfafb; }
     .plate-number {
         font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
-        font-weight: 700;
-        font-size: 0.95rem;
-        letter-spacing: 0.5px;
+        font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px;
     }
+
+    /* Action buttons: one tidy row */
+    .row-actions { display: inline-flex; align-items: center; gap: 4px; }
+    .row-actions form { margin: 0; display: inline-block; }
+    .row-actions .btn { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
 </style>
 
 <div class="container-fluid p-0 mb-5">
@@ -142,7 +99,7 @@
     <!-- Flash Messages -->
     {% if messages %}
         {% for m in messages %}
-            <div class="alert {% if 'error' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm" style="border-radius:8px;" role="alert">
+            <div class="alert {% if 'error' in m.tags or 'danger' in m.tags %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-4 shadow-sm" style="border-radius:8px;" role="alert">
                 {{ m }}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -155,9 +112,7 @@
     <div class="row mb-4">
         <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
             <div class="kpi-card">
-                <div class="kpi-icon" style="background:#fdf2f5 !important; color:#9f1045 !important;">
-                    <i class="bi bi-truck"></i>
-                </div>
+                <div class="kpi-icon" style="background:#fdf2f5 !important; color:#9f1045 !important;"><i class="bi bi-truck"></i></div>
                 <div class="kpi-content">
                     <div class="kpi-label">{% trans "TOTAL VEHICLES" %}</div>
                     <div class="kpi-value text-burgundy">{{ counts.total|default:0 }}</div>
@@ -166,9 +121,7 @@
         </div>
         <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
             <div class="kpi-card">
-                <div class="kpi-icon" style="background:#d1fae5 !important; color:#059669 !important;">
-                    <i class="bi bi-check-circle"></i>
-                </div>
+                <div class="kpi-icon" style="background:#d1fae5 !important; color:#059669 !important;"><i class="bi bi-check-circle"></i></div>
                 <div class="kpi-content">
                     <div class="kpi-label">{% trans "ACTIVE FLEET" %}</div>
                     <div class="kpi-value text-success">{{ counts.active|default:0 }}</div>
@@ -177,9 +130,7 @@
         </div>
         <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
             <div class="kpi-card">
-                <div class="kpi-icon" style="background:#fef3c7 !important; color:#d97706 !important;">
-                    <i class="bi bi-tools"></i>
-                </div>
+                <div class="kpi-icon" style="background:#fef3c7 !important; color:#d97706 !important;"><i class="bi bi-tools"></i></div>
                 <div class="kpi-content">
                     <div class="kpi-label">{% trans "SERVICE DUE" %}</div>
                     <div class="kpi-value text-warning">{{ counts.svc_due|default:0 }}</div>
@@ -188,9 +139,7 @@
         </div>
         <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
             <div class="kpi-card">
-                <div class="kpi-icon" style="background:#fee2e2 !important; color:#dc2626 !important;">
-                    <i class="bi bi-shield-exclamation"></i>
-                </div>
+                <div class="kpi-icon" style="background:#fee2e2 !important; color:#dc2626 !important;"><i class="bi bi-shield-exclamation"></i></div>
                 <div class="kpi-content">
                     <div class="kpi-label">{% trans "INSURANCE EXPIRING" %}</div>
                     <div class="kpi-value text-danger">{{ counts.ins_exp|default:0 }}</div>
@@ -234,12 +183,8 @@
                     </select>
                 </div>
                 <div class="col-md-2 d-flex justify-content-end align-items-end">
-                    <a href="{% url 'jobcard_app:wv_list' %}" class="btn btn-outline-secondary mr-2 w-50">
-                        {% trans "Clear" %}
-                    </a>
-                    <button type="submit" class="btn btn-custom-primary w-50">
-                        {% trans "Filter" %}
-                    </button>
+                    <a href="{% url 'jobcard_app:wv_list' %}" class="btn btn-outline-secondary mr-2 w-50">{% trans "Clear" %}</a>
+                    <button type="submit" class="btn btn-custom-primary w-50">{% trans "Filter" %}</button>
                 </div>
             </form>
         </div>
@@ -263,14 +208,14 @@
                             <th>{% trans "Year" %}</th>
                             <th>{% trans "Fuel Type" %}</th>
                             <th>{% trans "Insurance Status" %}</th>
-                            <th style="width: 130px;" class="text-center">{% trans "Action" %}</th>
+                            <th style="width: 150px;" class="text-center">{% trans "Action" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for v in vehicles %}
                         <tr>
                             <td class="align-middle">
-                                <a href="{% url 'jobcard_app:wv_edit' v.pk %}" class="font-weight-bold text-burgundy d-inline-block plate-number" style="font-size:14px;">
+                                <a href="{% url 'jobcard_app:wv_view' v.pk %}" class="font-weight-bold text-burgundy d-inline-block plate-number" style="font-size:14px;">
                                     <i class="bi bi-card-text mr-1"></i> {{ v.registration_number }}
                                 </a>
                                 <div class="mt-1">
@@ -285,9 +230,7 @@
                                 <div class="font-weight-600 text-dark">{{ v.customer.ledger_name|default:"—" }}</div>
                                 {% if v.customer.mobile %}<div class="small text-muted"><i class="bi bi-telephone mr-1"></i> {{ v.customer.mobile }}</div>{% endif %}
                             </td>
-                            <td class="align-middle font-weight-600 text-muted">
-                                {{ v.year|default:"—" }}
-                            </td>
+                            <td class="align-middle font-weight-600 text-muted">{{ v.year|default:"—" }}</td>
                             <td class="align-middle">
                                 {% if v.fuel_type == 'petrol' %}
                                     <span class="badge badge-light border text-dark">{% trans "Petrol" %}</span>
@@ -319,9 +262,21 @@
                                 {% endif %}
                             </td>
                             <td class="align-middle text-center text-nowrap">
-                                <a href="{% url 'jobcard_app:wv_edit' v.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'View / Edit Details' %}">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
+                                <div class="row-actions">
+                                    <a href="{% url 'jobcard_app:wv_view' v.pk %}" class="btn btn-sm btn-outline-info" title="{% trans 'View Vehicle' %}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'jobcard_app:wv_edit' v.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans 'Edit Vehicle' %}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'jobcard_app:wv_delete' v.pk %}"
+                                          onsubmit="return confirm('Delete vehicle {{ v.registration_number|escapejs }}? This cannot be undone.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete Vehicle' %}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}

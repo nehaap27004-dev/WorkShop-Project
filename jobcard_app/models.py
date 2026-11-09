@@ -577,6 +577,8 @@ class Estimate(models.Model):
         null=True, blank=True,
         related_name='estimates',
         verbose_name='Vehicle')
+    customer_phone = models.CharField(max_length=30, blank=True, default='')
+    remarks        = models.CharField(max_length=255, blank=True, default='')
 
     date       = models.DateField()
     status     = models.CharField(

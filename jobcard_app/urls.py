@@ -100,7 +100,7 @@ urlpatterns = [
     path('vehicles/create/',
          views.wv_create,
          name='wv_create'),
- 
+    path('vehicles/<int:pk>/view/', views.wv_view, name='wv_view'),
     # Pre-fill customer from customer list "Add Vehicle" button
     path('vehicles/create/customer/<int:customer_id>/',views.wv_create,name='wv_create_for_customer'),
     path('vehicles/<int:pk>/edit/',views.wv_edit, name='wv_edit'),

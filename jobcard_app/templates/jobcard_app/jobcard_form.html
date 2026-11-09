@@ -62,6 +62,19 @@
   .btn-save:hover { background:#830d38; }
   .btn-cancel { background:#fff; color:#475569; border:1px solid #cbd5e1; border-radius:6px; padding:8px 16px; font-size:13px; font-weight:600; text-decoration:none !important; transition:all .15s ease; }
   .btn-cancel:hover { background:#f8fafc; color:#0f172a; border-color:#94a3b8; }
+  .cust-group { display:flex; align-items:stretch; }
+  .cust-group select.fi { flex:1; min-width:0; border-top-right-radius:0; border-bottom-right-radius:0; }
+  .btn-plus {
+    flex:0 0 38px; width:38px;
+    background:#9f1045; color:#fff;
+    border:1px solid #9f1045;
+    border-radius:0 6px 6px 0;
+    cursor:pointer; font-size:14px;
+    display:inline-flex; align-items:center; justify-content:center;
+    transition:background .15s ease;
+  }
+  .btn-plus:hover { background:#830d38; border-color:#830d38; }
+  .btn-plus:focus { outline:none; box-shadow:0 0 0 3px rgba(159,16,69,.18); }
 </style>
 
 <div class="container-fluid p-0 jc-wrapper">
@@ -132,19 +145,24 @@
         </div>
         <div>
           <label class="fl">{% trans "Customer" %} <span class="req">*</span></label>
-          <select name="customer" class="fi" required id="custSel" {% if edit_mode %}disabled{% endif %} onchange="onCustomerChange(this)">
-            <option value="">— Select Customer —</option>
-            {% for c in customers %}
-            <option value="{{ c.id }}"
-              data-phone="{{ c.mobile_number|default:c.mobile|default:'' }}"
-              {% if edit_mode and job.customer_id == c.id %}selected{% endif %}
-              {% if inspection and inspection.customer_id == c.id %}selected{% endif %}>{{ c.ledger_name }}</option>
-            {% endfor %}
-          </select>
-          {% if edit_mode %}<input type="hidden" name="customer" value="{{ job.customer_id }}">{% endif %}
+          <div class="cust-group">
+            <select name="customer" class="fi" required id="custSel"
+                    onchange="onCustomerChange(this)"
+                    data-original="{% if edit_mode %}{{ job.customer_id }}{% endif %}">
+              <option value="">— Select Customer —</option>
+              {% for c in customers %}
+              <option value="{{ c.id }}"
+                data-phone="{{ c.mobile_number|default:c.mobile|default:'' }}"
+                {% if edit_mode and job.customer_id == c.id %}selected{% endif %}
+                {% if inspection and inspection.customer_id == c.id %}selected{% endif %}>{{ c.ledger_name }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn-plus" onclick="openNewCustomer()" title="{% trans 'Create new customer' %}">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
         </div>
       </div>
-
       <div class="g4">
         <div>
           <label class="fl">{% trans "Customer Phone" %}</label>
@@ -182,7 +200,12 @@
   <div class="jc-card">
     <div class="jc-card-hdr">
       <h2 class="jc-card-title"><i class="bi bi-truck text-burgundy"></i> {% trans "Assigned Vehicles" %}</h2>
-      <button type="button" class="btn-add" onclick="addVehicleRow()"><i class="bi bi-plus"></i> {% trans "Add Vehicle" %}</button>
+      <div class="d-flex align-items-center" style="gap:8px">
+        <button type="button" class="btn-insp-load" onclick="openRegisterVehicle()">
+          <i class="bi bi-car-front"></i> {% trans "Register Vehicle" %}
+        </button>
+        <button type="button" class="btn-add" onclick="addVehicleRow()"><i class="bi bi-plus"></i> {% trans "Add Vehicle" %}</button>
+      </div>
     </div>
     <div id="vehEmpty" style="display:none"></div>
     <div class="stbl-container">
@@ -244,7 +267,6 @@
           {% endif %}
         </tbody>
       </table>
-      <div id="vehEmpty" style="display:none"></div>
     </div>
   </div>
 
@@ -379,7 +401,12 @@
         </div>
         <div>
           <label class="fl">{% trans "Item" %}</label>
-          <select id="addPartItem" class="fi" onchange="onAddPartItemChange(this)"><option value="">— Select Item —</option></select>
+          <div class="cust-group">
+            <select id="addPartItem" class="fi" onchange="onAddPartItemChange(this)"><option value="">— Select Item —</option></select>
+            <button type="button" class="btn-plus" onclick="openNewItem()" title="{% trans 'Create new item' %}">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
         </div>
         <div>
           <label class="fl">{% trans "Part Number" %}</label>
@@ -659,6 +686,80 @@ function onCustomerChange(sel) {
       refreshAllVehicleDropdowns();
     })
     .catch(err => console.error('Error loading customer vehicles:', err));
+}
+/* ══════════ ADD NEW CUSTOMER (opens in a new tab) ══════════ */
+var CUSTOMER_CREATE_URL = "{% url 'accounts_app:manage_customers' %}";
+var customerRefreshPending = false;
+
+function openNewCustomer() {
+  customerRefreshPending = true;
+  var w = window.open(CUSTOMER_CREATE_URL, '_blank');
+  if (!w) alert('The browser blocked the new tab. Please allow pop-ups for this site.');
+}
+
+window.addEventListener('focus', function () {
+  if (customerRefreshPending) refreshCustomers();
+});
+
+async function refreshCustomers() {
+  customerRefreshPending = false;
+  try {
+    const html  = await (await fetch(window.location.href, { credentials: 'same-origin' })).text();
+    const doc   = new DOMParser().parseFromString(html, 'text/html');
+    const fresh = doc.getElementById('custSel');
+    const sel   = document.getElementById('custSel');
+    if (!fresh || !sel) return;
+
+    let newest = null;
+    fresh.querySelectorAll('option').forEach(o => {
+      if (o.value && ![...sel.options].some(x => x.value === o.value)) {
+        const opt = new Option(o.textContent.trim(), o.value);
+        opt.dataset.phone = o.dataset.phone || '';
+        sel.add(opt);
+        newest = opt;
+      }
+    });
+    if (newest) { sel.value = newest.value; onCustomerChange(sel); }
+  } catch (e) { console.error('Customer refresh failed:', e); }
+}
+/* ══════════ REGISTER A NEW VEHICLE FOR THE SELECTED CUSTOMER (opens in a new tab) ══════════ */
+var REGISTER_VEHICLE_TPL = "{% url 'jobcard_app:wv_create_for_customer' 0 %}";
+var vehicleRefreshPending = false;
+
+function openRegisterVehicle() {
+  var cs = document.getElementById('custSel');
+  var cid = cs && cs.value;
+  if (!cid) { alert('Please select a customer first.'); return; }
+  vehicleRefreshPending = true;
+  var url = REGISTER_VEHICLE_TPL.replace(/\/0(\/?)$/, '/' + cid + '$1');
+  var w = window.open(url, '_blank');
+  if (!w) alert('The browser blocked the new tab. Please allow pop-ups for this site.');
+}
+
+window.addEventListener('focus', function () {
+  if (vehicleRefreshPending) refreshVehiclesAfterRegister();
+});
+
+async function refreshVehiclesAfterRegister() {
+  vehicleRefreshPending = false;
+  var cs = document.getElementById('custSel');
+  var cid = cs && cs.value;
+  if (!cid) return;
+  try {
+    var oldIds = customerVehicleCache.map(function (v) { return String(v.id); });
+    var d = await (await fetch(VEH_URL + '?customer_id=' + cid, { credentials: 'same-origin' })).json();
+    customerVehicleCache = d.vehicles || [];
+    document.querySelectorAll('.veh-select').forEach(function (s) { populateVehSelect(s); });
+
+    customerVehicleCache.filter(function (v) { return oldIds.indexOf(String(v.id)) === -1; })
+      .forEach(function (v) {
+        var blankSel = Array.from(document.querySelectorAll('.veh-select')).find(function (s) { return !s.value; });
+        if (blankSel) { blankSel.value = v.id; onVehRowChange(blankSel, true); }
+        else addVehicleRow(v.id, '', '', true);
+      });
+    checkVehEmpty();
+    refreshAllVehicleDropdowns();
+  } catch (e) { console.error('Vehicle refresh failed:', e); }
 }
 function populateVehSelect(sel) {
   const currentVal  = sel.value;
@@ -1169,6 +1270,36 @@ function buildItemDropdown() {
     o.dataset.rate = item.unit_price;
     sel.appendChild(o);
   });
+}
+/* ══════════ ADD NEW ITEM (opens in a new tab) ══════════ */
+var ITEM_CREATE_URL = "{% url 'item_master:item_create_update' %}";
+var itemRefreshPending = false;
+
+function openNewItem() {
+  itemRefreshPending = true;
+  var w = window.open(ITEM_CREATE_URL, '_blank');
+  if (!w) alert('The browser blocked the new tab. Please allow pop-ups for this site.');
+}
+
+window.addEventListener('focus', function () {
+  if (itemRefreshPending) refreshItemsAfterCreate();
+});
+
+async function refreshItemsAfterCreate() {
+  itemRefreshPending = false;
+  try {
+    var oldIds = allJcItems.map(function (i) { return String(i.id); });
+    var data = await (await fetch(ALL_ITEMS_URL, { credentials: 'same-origin' })).json();
+    allJcItems = data.items || [];
+    buildItemDropdown();
+
+    var added = allJcItems.filter(function (i) { return oldIds.indexOf(String(i.id)) === -1; });
+    if (added.length) {
+      var sel = document.getElementById('addPartItem');
+      sel.value = String(added[added.length - 1].id);   // select the newest item
+      onAddPartItemChange(sel);                          // fills part number and rate
+    }
+  } catch (e) { console.error('Item refresh failed:', e); }
 }
 function onAddPartItemChange(sel) {
   const opt = sel.options[sel.selectedIndex];

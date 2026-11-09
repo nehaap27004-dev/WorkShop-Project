@@ -210,9 +210,41 @@ class ItemForm(forms.ModelForm):
         
         
     # Custom validation for item_code uniqueness
+    # Validate duplicate Item Name
+    def clean_item_name(self):
+        item_name = self.cleaned_data.get('item_name')
+
+        if item_name:
+            item_name = item_name.strip()
+
+            duplicate = Item.objects.filter(
+                item_name__iexact=item_name
+            ).exclude(pk=self.instance.pk).exists()
+
+            if duplicate:
+                raise forms.ValidationError(
+                    "This Item Name already exists."
+                )
+
+        return item_name
+
+
+    # Validate duplicate Item Code
     def clean_item_code(self):
         item_code = self.cleaned_data.get('item_code')
-        
+
+        if item_code:
+            item_code = item_code.strip()
+
+            duplicate = Item.objects.filter(
+                item_code__iexact=item_code
+            ).exclude(pk=self.instance.pk).exists()
+
+            if duplicate:
+                raise forms.ValidationError(
+                    "This Item Code already exists."
+                )
+
         return item_code
 
 

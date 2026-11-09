@@ -32,6 +32,8 @@ from .models import (
     MechanicalInspection, AccessoriesInspection,
     InspectionFinding
 )
+from django.db.models import ProtectedError
+
 from .models import JobCardVehicle
 from .models import (
     JobCard,
@@ -1728,7 +1730,7 @@ def _save_estimate(request, estimate=None):
     jid = request.POST.get('loaded_jobcard')
     aid = request.POST.get('advisor')
     date = request.POST.get('date') or timezone.now().date()
- 
+    
     if not cid:
         messages.error(request, 'Customer is required.')
         return None
@@ -1750,6 +1752,8 @@ def _save_estimate(request, estimate=None):
     estimate.tax_percent = request.POST.get('tax_percent') or 0
     estimate.discount    = request.POST.get('discount') or 0
     estimate.notes       = request.POST.get('notes', '')
+    estimate.customer_phone = request.POST.get('customer_phone', '').strip()
+    estimate.remarks        = request.POST.get('remarks', '').strip()
     estimate.save()
  
 
@@ -3280,20 +3284,36 @@ def wv_edit(request, pk):
         'edit_mode': True,
     })
 
+@login_required
+def wv_view(request, pk):
+    v = get_object_or_404(WorkshopVehicle, pk=pk)
+    form = WorkshopVehicleForm(instance=v)
+
+    return render(request, 'jobcard_app/wv_form.html', {
+        'form':      form,
+        'v':         v,
+        'today':     timezone.now().date(),
+        'edit_mode': True,    # loads the saved data
+        'view_mode': True,    # makes the page read-only
+    })
 
 # ─────────────────────────────────────────────────────────────
 # VEHICLE DELETE (soft delete) — unchanged
 # ─────────────────────────────────────────────────────────────
+@login_required
+@require_POST
 def wv_delete(request, pk):
     v = get_object_or_404(WorkshopVehicle, pk=pk)
-    if request.method == 'POST':
-        num = v.vehicle_number
-        reg = v.registration_number
-        v.is_active = False
-        v.save()
-        messages.success(request, f"Vehicle {num} — {reg} removed.")
-        return redirect('jobcard_app:wv_list')
-    return render(request, 'jobcard_app/wv_confirm_delete.html', {'v': v})
+    label = v.registration_number or v.vehicle_number
+    try:
+        with transaction.atomic():
+            v.delete()
+        messages.success(request, f'Vehicle {label} deleted.')
+    except ProtectedError:
+        messages.error(request, f'Vehicle {label} is used in inspections, job cards, estimates or invoices and cannot be deleted.')
+    except Exception as e:
+        messages.error(request, f'Could not delete vehicle {label}: {e}')
+    return redirect('jobcard_app:wv_list')
 
 
 # ─────────────────────────────────────────────────────────────
@@ -4593,7 +4613,51 @@ def invoice_list(request):
         },
     })
  
- 
+def _jobcard_prefill_payload(jc):
+    """Job card -> the dict the invoice page's populateFromJobCard() expects."""
+    cust = jc.customer
+    vehicles = []
+    for jv in jc.vehicles.select_related('vehicle__manufacturer', 'vehicle__vehicle_model').all():
+        v = jv.vehicle
+        vehicles.append({
+            'id': v.id,
+            'name': v.vehicle_number,
+            'model': f"{getattr(getattr(v, 'manufacturer', None), 'manufacturer_name', '') or ''} "
+                     f"{getattr(getattr(v, 'vehicle_model', None), 'model_name', '') or ''}".strip(),
+            'mileage': jv.mileage or '',
+        })
+    parts = [{
+        'item_id': '',
+        'part_code': p.part_number or '',
+        'description': p.description or '',
+        'quantity': float(p.quantity or 1),
+        'unit': 'Pcs',
+        'rate': float(p.unit_price or 0),
+        'discount_pct': 0,
+        'tax_percent': 8,
+        'vehicle_id': p.vehicle_id or '',
+    } for p in jc.parts.all()]
+    labours = [{
+        'description': l.description or '',
+        'technician_id': l.technician_id or '',
+        'hours': float(l.hours or 1),
+        'rate': float(l.rate or 0),
+        'tax_percent': 8,
+        'vehicle_id': l.vehicle_id or '',
+    } for l in jc.labours.all()]
+    return {
+        'id': jc.pk,
+        'number': jc.voucher_number or '',
+        'customer_id': jc.customer_id,
+        'customer_name': str(cust),
+        'customer_mobile': getattr(jc, 'customer_phone', '') or getattr(cust, 'mobile', '') or '',
+        'customer_address': getattr(cust, 'address1', '') or '',
+        'vehicles': vehicles,
+        'parts': parts,
+        'labours': labours,
+    }
+
+
 @login_required
 def invoice_create(request):
     ctx = _form_context()
@@ -4616,7 +4680,7 @@ def invoice_create(request):
     if request.GET.get('from_jobcard'):
         prefill_jc = JobCard.objects.select_related('customer', 'workshop_vehicle', 'advisor').prefetch_related(
             'parts', 'labours', 'complaints').filter(pk=request.GET['from_jobcard']).first()
-
+        ctx['prefill_jc_data'] = _jobcard_prefill_payload(prefill_jc) if prefill_jc else None
     prefill_dn = None
     if request.GET.get('from_delivery'):
         prefill_dn = DeliveryNote.objects.select_related('customer', 'vehicle', 'advisor').prefetch_related(

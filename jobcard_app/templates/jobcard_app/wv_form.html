@@ -156,10 +156,23 @@
         gap: 0.75rem;
         box-shadow: 0 2px 6px rgba(0,0,0,0.04);
     }
+    /* Read-only (view) mode */
+    .view-mode input:disabled,
+    .view-mode select:disabled,
+    .view-mode textarea:disabled {
+        color:#0f172a !important; -webkit-text-fill-color:#0f172a;
+        opacity:1; background-color:#f8fafc !important; cursor:default;
+    }
+    .view-mode select:disabled { background-image:none !important; }
+    .view-mode .select2-container--disabled .select2-selection--single {
+        background-color:#f8fafc !important; cursor:default;
+    }
+    .view-mode .select2-selection__clear,
+    .view-mode .select2-selection__arrow { display:none !important; }
+    .view-mode .btn-outline-burgundy { display:none !important; }   /* the small "+" / add-customer buttons */
 </style>
 
-<div class="container-fluid p-0 mb-5">
-
+<div class="container-fluid p-0 mb-5 {% if view_mode %}view-mode{% endif %}">
     <!-- Breadcrumb & Header -->
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
