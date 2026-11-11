@@ -23,15 +23,22 @@
     <div class="card-body">
       <form method="get" class="row g-3 align-items-end">
         <div class="col-md-4">
-          <label class="form-label text-muted small text-uppercase">Supplier</label>
-          <select name="supplier" class="form-select">
-            <option value="">All Suppliers</option>
-            {% for s in all_suppliers %}
-              <option value="{{ s.id }}" {% if selected_supplier|stringformat:"s" == s.id|stringformat:"s" %}selected{% endif %}>
-                {{ s.ledger_name }}
-              </option>
-            {% endfor %}
-          </select>
+            <label class="form-label text-muted small text-uppercase">
+                Supplier
+            </label>
+
+            <select name="supplier" class="form-control supplier-select">
+                <option value="">All Suppliers</option>
+
+                {% for s in all_suppliers %}
+                    <option value="{{ s.id }}"
+                        {% if selected_supplier|stringformat:"s" == s.id|stringformat:"s" %}
+                            selected
+                        {% endif %}>
+                        {{ s.ledger_name }}
+                    </option>
+                {% endfor %}
+            </select>
         </div>
         <div class="col-md-3">
           <label class="form-label text-muted small text-uppercase">From Date</label>

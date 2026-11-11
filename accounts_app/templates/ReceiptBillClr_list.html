@@ -1,105 +1,359 @@
 {% extends "fleet_base1.html" %}
 {% load privilege_tags %}
+{% load i18n %}
+{% load static %}
+
 {% block content %}
+<style>
+    :root {
+        --primary-burgundy: #9f1045;
+        --primary-burgundy-hover: #830d38;
+        --primary-burgundy-light: #fff5f8;
+        --primary-burgundy-border: #f1d6df;
+    }
 
-<div class="container mt-4">
-    <h3 class="mb-4">Receipt Bill Clearance List</h3>
+    .voucher-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
 
-    <div class="mb-3">
-        <a href="{% url 'accounts_app:create_receiptbill' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Create New Receipt Bill
-        </a>
+    .btn-custom-primary {
+        background-color: var(--primary-burgundy) !important;
+        border-color: var(--primary-burgundy) !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        border-radius: 8px;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: var(--primary-burgundy-hover) !important;
+        border-color: var(--primary-burgundy-hover) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(159, 16, 69, 0.2);
+    }
+
+    .page-header-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .search-wrapper {
+        position: relative;
+        min-width: 300px;
+    }
+
+    .search-wrapper input {
+        padding-left: 2.35rem;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        font-size: 0.88rem;
+        height: 38px;
+    }
+
+    .search-wrapper input:focus {
+        border-color: var(--primary-burgundy) !important;
+        box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
+        outline: none;
+    }
+
+    .search-wrapper i {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+    }
+
+    .table-modern {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top: none;
+        white-space: nowrap;
+    }
+
+    .table-modern tbody td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        border-top: 1px solid #f1f3f5;
+        color: #212529;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: var(--primary-burgundy-light);
+    }
+
+    .voucher-badge {
+        font-family: monospace;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        background-color: #f1f5f9;
+        color: #1e293b;
+        border: 1px solid #cbd5e1;
+        display: inline-block;
+    }
+
+    .actions-cell {
+        width: 160px;
+        min-width: 160px;
+        white-space: nowrap;
+        text-align: center;
+    }
+
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: #64748b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-action:hover {
+        background: #ffffff;
+        color: var(--primary-burgundy);
+        border-color: var(--primary-burgundy);
+    }
+
+    .btn-action-view:hover {
+        color: #2563eb;
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+
+    .btn-action-edit:hover {
+        color: #d97706;
+        border-color: #d97706;
+        background: #fffbeb;
+    }
+
+    .btn-action-pdf:hover {
+        color: #0284c7;
+        border-color: #0284c7;
+        background: #f0f9ff;
+    }
+
+    .btn-action-delete:hover {
+        color: #ef4444;
+        border-color: #ef4444;
+        background: #fef2f2;
+    }
+
+    .badge-status {
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        display: inline-block;
+    }
+
+    .badge-cleared {
+        background-color: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+    }
+
+    .badge-uncleared {
+        background-color: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+    }
+
+    .badge-pdc-yes {
+        background-color: #fffbeb;
+        color: #b45309;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-pdc-no {
+        background-color: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+    }
+
+    .badge-cheque {
+        background-color: #f0f9ff;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+    }
+</style>
+
+<div class="voucher-container">
+    {% csrf_token %}
+
+    <!-- Header Banner -->
+    <div class="page-header-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background-color: var(--primary-burgundy-light); color: var(--primary-burgundy); font-weight: 600; font-size: 0.75rem; border: 1px solid var(--primary-burgundy-border);">
+                        {% trans "Accounting Ledgers" %}
+                    </span>
+                </div>
+                <h3 class="font-weight-bold text-dark mb-1">{% trans "Receipt Bill Clearance List" %}</h3>
+                <p class="text-muted small mb-0">{% trans "Track customer bill clearances, invoice settlements, and PDC collections." %}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'accounts_app:create_receiptbill' %}" class="btn-custom-primary">
+                    <i class="bi bi-plus-lg"></i> {% trans "Create New Receipt Bill" %}
+                </a>
+            </div>
+        </div>
     </div>
 
+    <!-- Content Card -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <div class="search-wrapper">
+                <i class="bi bi-search"></i>
+                <input type="text" id="billSearch" class="form-control" placeholder="{% trans 'Search customer, voucher, cheque...' %}">
+            </div>
+        </div>
 
-    <!-- search -->
-<div style="margin-bottom:15px;">
-    <input type="text" id="billSearch" 
-        placeholder="Search Customer..."
-        style="width:100%; padding:8px; border:1px solid #ccc; border-radius:5px;">
+        <div class="table-responsive">
+            <table class="table-modern" id="receiptbillTable">
+                <thead>
+                    <tr>
+                        <th style="width: 110px;">{% trans "Date" %}</th>
+                        <th style="width: 120px;">{% trans "Voucher No" %}</th>
+                        <th>{% trans "Customer" %}</th>
+                        <th>{% trans "Ledger" %}</th>
+                        <th class="text-end" style="width: 130px;">{% trans "Total Amount" %}</th>
+                        <th class="text-center" style="width: 80px;">{% trans "PDC" %}</th>
+                        <th style="width: 110px;">{% trans "Cheque No" %}</th>
+                        <th class="text-center" style="width: 120px;">{% trans "Cheque Status" %}</th>
+                        <th class="text-center" style="width: 110px;">{% trans "Status" %}</th>
+                        <th class="text-center actions-cell">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for bill in receipt_bills %}
+                    <tr>
+                        <td>{{ bill.Date|date:"d M Y"|default:bill.Date }}</td>
+                        <td>
+                            <span class="voucher-badge">{{ bill.voucher_no|default:"-" }}</span>
+                        </td>
+                        <td>
+                            <strong>{{ bill.Customer.ledger_name|default:"-" }}</strong>
+                        </td>
+                        <td>{{ bill.Ledger.ledger_name|default:"-" }}</td>
+                        <td class="text-end font-weight-bold text-dark">
+                            {{ bill.TotalAmount|floatformat:3 }}
+                        </td>
+                        <td class="text-center">
+                            {% if bill.IsPDC %}
+                                <span class="badge-status badge-pdc-yes">{% trans "Yes" %}</span>
+                            {% else %}
+                                <span class="badge-status badge-pdc-no">{% trans "No" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ bill.ChequeNo|default:"-" }}</td>
+                        <td class="text-center">
+                            {% if bill.ChequeStatus %}
+                                <span class="badge-status badge-cheque">{{ bill.get_ChequeStatus_display }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if bill.Cleared == "Cleared" %}
+                                <span class="badge-status badge-cleared">{% trans "Cleared" %}</span>
+                            {% else %}
+                                <span class="badge-status badge-uncleared">{% trans "Not Cleared" %}</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell">
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                <a href="{% url 'accounts_app:view_receiptbill' bill.id %}" class="btn-action btn-action-view" title="{% trans 'View' %}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                <a href="{% url 'accounts_app:edit_receiptbill' bill.id %}" class="btn-action btn-action-edit" title="{% trans 'Edit' %}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                                <a href="{% url 'accounts_app:receiptbill_pdf' bill.id %}" target="_blank" class="btn-action btn-action-pdf" title="{% trans 'Print PDF' %}">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </a>
+
+                                <button type="button" onclick="deleteReceiptBill({{ bill.id }}, '{{ bill.voucher_no|default:bill.id|escapejs }}')" class="btn-action btn-action-delete" title="{% trans 'Delete' %}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center py-5 text-muted">
+                            <i class="bi bi-file-earmark-text" style="font-size: 2.5rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>
+                            {% trans "No receipt bills found." %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-    <table class="table table-bordered table-striped table-hover" id="receiptbillTable">
-        <thead class="table-dark">
-            <tr>
-                
-                <th>Date</th>
-                <th>Voucher No</th>
-                <th>Customer</th>
-                <th>Ledger</th>
-                <th>Total Amount</th>
-                {% comment %} <th>Cleared</th> {% endcomment %}
-                <th>PDC</th>
-                <th>Cheque No</th>
-                <th>Cheque Status</th>
-                <th>Cleared</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
 
-        <tbody>
-        {% for bill in receipt_bills %}
-            <tr>
-                
-                <td>{{ bill.Date }}</td>
-                <td>{{ bill.voucher_no|default:"-" }}</td>
-                <td>{{ bill.Customer.ledger_name|default:"-" }}</td>
-                <td>{{ bill.Ledger.ledger_name|default:"-" }}</td>
-                <td>{{ bill.TotalAmount|floatformat:3 }}</td>
-                {% comment %} <td>
-                    {% if bill.Cleared == "Cleared" %}
-                        <span class="badge bg-success">Cleared</span>
-                    {% else %}
-                        <span class="badge bg-warning">Not Cleared</span>
-                    {% endif %}
-                </td> {% endcomment %}
-                <td>
-                    {% if bill.IsPDC %}
-                        <span class="badge bg-warning">Yes</span>
-                    {% else %}
-                        <span class="badge bg-success">No</span>
-                    {% endif %}
-                </td>
-                <td>{{ bill.ChequeNo|default:"-" }}</td>
-                <td>
-                    {% if bill.ChequeStatus %}
-                        <span class="badge bg-info">{{ bill.get_ChequeStatus_display }}</span>
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>
-                    {{ bill.Cleared }}
-                </td>
-                <td>
-    <a href="{% url 'accounts_app:view_receiptbill' bill.id %}" class="btn btn-sm btn-warning">
-        <i class="bi bi-eye"></i> View
-    </a>
-
-    <a href="{% url 'accounts_app:receiptbill_pdf' bill.id %}" target="_blank" class="btn btn-sm btn-info">
-        <i class="bi bi-file-earmark-pdf"></i> PDF
-    </a>
-
-    <button onclick="deleteReceiptBill({{ bill.id }}, '{{ bill.id }}')" class="btn btn-sm btn-danger">
-        Delete
-    </button>
-</td>
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="10" class="text-center">No receipt bills found.</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
 <script>
 function deleteReceiptBill(id, voucherNo) {
-    
     if (!confirm(`Delete Receipt Bill ${voucherNo}?`)) {
         return;
     }
 
-    // ✅ STORE DELETE URL
     window.pendingDeleteId = "{% url 'accounts_app:receiptbill_delete' 0 %}".replace('/0/', `/${id}/`);
 
     $.ajax({
@@ -112,8 +366,6 @@ function deleteReceiptBill(id, voucherNo) {
         dataType: 'json',
 
         success: function (response) {
-            console.log("DELETE SUCCESS:", response);
-
             if (response.admin_required) {
                 $("#admin_error").text(response.message || "");
                 $("#adminOverrideModal").modal("show");
@@ -129,8 +381,6 @@ function deleteReceiptBill(id, voucherNo) {
         },
 
         error: function (xhr) {
-            console.log("DELETE ERROR:", xhr.status, xhr.responseJSON);
-
             if (xhr.status === 403 && xhr.responseJSON?.admin_required) {
                 $("#admin_error").text(xhr.responseJSON.message || "");
                 $("#adminOverrideModal").modal("show");
@@ -140,23 +390,21 @@ function deleteReceiptBill(id, voucherNo) {
         }
     });
 }
-</script>
 
-<!-- search -->
-<script>
+// Search filter across customer, voucher number, and cheque number
 document.getElementById("billSearch").addEventListener("keyup", function () {
-
-    let filter = this.value.toLowerCase();
-    let rows     = document.querySelectorAll("#receiptbillTable tbody tr");
+    let filter = this.value.toLowerCase().trim();
+    let rows = document.querySelectorAll("#receiptbillTable tbody tr");
 
     rows.forEach(function(row) {
-
         if (row.children.length <= 1) return;
 
-        // let voucher   = row.cells[0].textContent.toLowerCase();   // col 1
-        let customer  = row.cells[2].textContent.toLowerCase();   // col 3 (Customer)
+        let dateText = row.cells[0] ? row.cells[0].textContent.toLowerCase() : "";
+        let voucherText = row.cells[1] ? row.cells[1].textContent.toLowerCase() : "";
+        let customerText = row.cells[2] ? row.cells[2].textContent.toLowerCase() : "";
+        let chequeText = row.cells[6] ? row.cells[6].textContent.toLowerCase() : "";
 
-        if (customer.includes(filter)) {
+        if (customerText.includes(filter) || voucherText.includes(filter) || chequeText.includes(filter) || dateText.includes(filter)) {
             row.style.display = "";
         } else {
             row.style.display = "none";
@@ -164,6 +412,4 @@ document.getElementById("billSearch").addEventListener("keyup", function () {
     });
 });
 </script>
-
-
 {% endblock %}

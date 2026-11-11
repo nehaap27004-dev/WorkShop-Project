@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -7,7 +9,11 @@ from item_master.models import Item, Unit
 from accounts_app.models import Groups, LedgerCreation
 
 from fleet_app.models import Staff, StaffCategory, Manufacturer, VehicleModel, VehicleCategory
-from .models import WorkshopVehicle, VehicleInspection, InspectionFinding, ServiceCategory, JobCard
+from .models import (
+    CIMainHead, CISubHead, CIType, CIField, WorkshopVehicle, VehicleInspection,
+    InspectionFinding, ServiceCategory, JobCard, CustomInspection,
+    CustomInspectionAnswer,
+)
 
 
 def create_test_customer(name='Test Customer'):
@@ -32,6 +38,199 @@ def create_test_vehicle(customer, registration_number, make_name='Toyota', model
     )
 
 
+class CustomInspectionSetupTests(TestCase):
+    def test_saved_custom_inspection_appears_in_both_inspection_lists(self):
+        user = get_user_model().objects.create_user(username='ci-save-tester', password='secret123')
+        self.client.force_login(user)
+        group, _ = Groups.objects.get_or_create(
+            pk=29, defaults={'groupName': 'Custom Inspection Customers'},
+        )
+        customer = LedgerCreation.objects.create(ledger_name='CI Saved Customer', groups=group)
+        main = CIMainHead.objects.create(name='CI Saved Main')
+        sub = CISubHead.objects.create(main_head=main, name='Engine')
+        field_type = CIType.objects.create(name='CI Saved Type')
+        field = CIField.objects.create(sub_head=sub, label='Oil level', type=field_type)
+
+        save_response = self.client.post(
+            reverse('jobcard_app:ci_submit'),
+            data=json.dumps({
+                'main_head': main.pk,
+                'customer': customer.pk,
+                'date': timezone.now().date().isoformat(),
+                'answers': {
+                    str(field.pk): {
+                        'value': 'Normal',
+                        'type_id': field_type.pk,
+                        'remark': 'Checked',
+                    },
+                },
+            }),
+            content_type='application/json',
+        )
+
+        self.assertEqual(save_response.status_code, 200)
+        self.assertEqual(save_response.json()['redirect'], reverse('jobcard_app:inspection_list'))
+        inspection = CustomInspection.objects.get(customer=customer, main_head=main)
+        self.assertEqual(inspection.answers.get(field=field).value, 'Normal')
+
+        regular_list = self.client.get(reverse('jobcard_app:inspection_list'))
+        self.assertEqual(regular_list.status_code, 200)
+        self.assertIn(inspection, regular_list.context['custom_inspections'])
+        self.assertContains(regular_list, inspection.inspection_number)
+
+        custom_list = self.client.get(reverse('jobcard_app:custom_inspection_list'))
+        self.assertEqual(custom_list.status_code, 200)
+        self.assertContains(custom_list, inspection.inspection_number)
+
+    def test_setup_tree_and_field_save_use_description_only_fields(self):
+        user = get_user_model().objects.create_user(username='ci-tester', password='secret123')
+        self.client.force_login(user)
+
+        main = CIMainHead.objects.create(name='Vehicle Check')
+        sub = CISubHead.objects.create(main_head=main, name='Engine')
+        field_type = CIType.objects.create(name='Condition')
+        field = CIField.objects.create(sub_head=sub, label='Oil level')
+
+        response = self.client.get(reverse('jobcard_app:custom_inspection_setup'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse('jobcard_app:custom_inspection_setup'))
+        self.assertNotContains(response, reverse('jobcard_app:custom_inspection_create'))
+        self.assertEqual(response.context['initial_tree'][0]['name'], 'Vehicle Check')
+        self.assertEqual(response.context['initial_tree'][0]['subs'][0]['name'], 'Engine')
+        self.assertContains(response, 'ci-initial-tree')
+        html = response.content.decode()
+        self.assertIn('Vehicle Check', html)
+        self.assertIn('Engine', html)
+        self.assertLess(html.index('Vehicle Check'), html.index('id="ci-initial-tree"'))
+
+        tree_response = self.client.get(reverse('jobcard_app:ci_tree'))
+        self.assertEqual(tree_response.status_code, 200)
+        field_data = tree_response.json()['tree'][0]['subs'][0]['fields'][0]
+        self.assertEqual(field_data['label'], 'Oil level')
+        self.assertNotIn('field_type', field_data)
+
+        save_response = self.client.post(
+            reverse('jobcard_app:ci_save_fields'),
+            data=json.dumps({
+                'sub_id': sub.pk,
+                'fields': [
+                    {
+                        'id': field.pk,
+                        'label': 'Engine oil level',
+                        'default': 'Normal',
+                        'type_id': field_type.pk,
+                        'remark': 'Check for leaks',
+                    },
+                    {
+                        'id': None,
+                        'label': 'Coolant level',
+                        'default': 'Full',
+                        'type_id': field_type.pk,
+                        'remark': 'Top up if needed',
+                    },
+                ],
+            }),
+            content_type='application/json',
+        )
+        self.assertEqual(save_response.status_code, 200)
+        self.assertEqual(
+            list(sub.fields.order_by('order').values_list('label', flat=True)),
+            ['Engine oil level', 'Coolant level'],
+        )
+        field.refresh_from_db()
+        self.assertEqual(field.default_value, 'Normal')
+        self.assertEqual(field.type_id, field_type.pk)
+        self.assertEqual(field.remark_hint, 'Check for leaks')
+        new_field = sub.fields.get(label='Coolant level')
+        self.assertEqual(new_field.default_value, 'Full')
+        self.assertEqual(new_field.type_id, field_type.pk)
+        self.assertEqual(new_field.remark_hint, 'Top up if needed')
+
+    def test_inspection_list_has_edit_and_delete_actions(self):
+        user = get_user_model().objects.create_user(username='ci-actions-tester', password='secret123')
+        self.client.force_login(user)
+        group, _ = Groups.objects.get_or_create(
+            pk=29, defaults={'groupName': 'Custom Inspection Customers'},
+        )
+        customer = LedgerCreation.objects.create(ledger_name='CI Actions Customer', groups=group)
+        main = CIMainHead.objects.create(name='CI Actions Main')
+        inspection = CustomInspection.objects.create(
+            main_head=main, customer=customer, inspection_date=timezone.now().date(),
+        )
+        inspection.inspection_number = f'CI-{inspection.pk:05d}'
+        inspection.save(update_fields=['inspection_number'])
+
+        response = self.client.get(reverse('jobcard_app:custom_inspection_list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse('jobcard_app:custom_inspection_setup'))
+        self.assertNotContains(response, reverse('jobcard_app:custom_inspection_create'))
+        self.assertContains(response, reverse('jobcard_app:custom_inspection_edit', args=[inspection.pk]))
+        self.assertContains(response, reverse('jobcard_app:custom_inspection_delete', args=[inspection.pk]))
+
+    def test_inspection_can_be_edited_and_deleted(self):
+        user = get_user_model().objects.create_user(username='ci-edit-tester', password='secret123')
+        self.client.force_login(user)
+        group, _ = Groups.objects.get_or_create(
+            pk=29, defaults={'groupName': 'Custom Inspection Customers'},
+        )
+        customer = LedgerCreation.objects.create(ledger_name='CI Edit Customer', groups=group)
+        main = CIMainHead.objects.create(name='CI Edit Main')
+        sub = CISubHead.objects.create(main_head=main, name='Engine')
+        field_type = CIType.objects.create(name='CI Edit Type')
+        field = CIField.objects.create(
+            sub_head=sub, label='Oil level', type=field_type,
+        )
+        inspection = CustomInspection.objects.create(
+            main_head=main, customer=customer, inspection_date=timezone.now().date(),
+        )
+        answer = CustomInspectionAnswer.objects.create(
+            inspection=inspection, field=field, sub_head_name='Engine', label='Oil level',
+            field_type='text', value='Normal', type_name=field_type.name,
+        )
+
+        edit_url = reverse('jobcard_app:custom_inspection_edit', args=[inspection.pk])
+        edit_response = self.client.get(edit_url)
+        self.assertEqual(edit_response.status_code, 200)
+        self.assertTemplateUsed(edit_response, 'jobcard_app/custom_inspection_form.html')
+        self.assertContains(edit_response, 'Oil level')
+        self.assertContains(edit_response, 'Update Inspection')
+        self.assertContains(edit_response, '"value": "Normal"')
+
+        updated_date = timezone.now().date().isoformat()
+        save_response = self.client.post(edit_url, {
+            'main_head': main.pk,
+            'customer': customer.pk,
+            'vehicle': '',
+            'inspector': '',
+            'date': updated_date,
+            'notes': 'Updated note',
+            'answers': {
+                str(field.pk): {
+                    'value': 'Low',
+                    'type_id': field_type.pk,
+                    'remark': 'Needs checking',
+                },
+            },
+        }, content_type='application/json')
+        self.assertEqual(save_response.status_code, 200)
+        self.assertEqual(
+            save_response.json()['redirect'],
+            reverse('jobcard_app:inspection_list'),
+        )
+        inspection.refresh_from_db()
+        answer.refresh_from_db()
+        self.assertEqual(inspection.notes, 'Updated note')
+        self.assertEqual(answer.value, 'Low')
+        self.assertEqual(answer.remark, 'Needs checking')
+        self.assertEqual(answer.type_name, field_type.name)
+        self.assertEqual(inspection.inspection_number, f'CI-{inspection.pk:05d}')
+
+        delete_url = reverse('jobcard_app:custom_inspection_delete', args=[inspection.pk])
+        self.assertEqual(self.client.get(delete_url).status_code, 405)
+        delete_response = self.client.post(delete_url)
+        self.assertRedirects(delete_response, reverse('jobcard_app:custom_inspection_list'))
+        self.assertFalse(CustomInspection.objects.filter(pk=inspection.pk).exists())
 
 class InspectionCreateViewTests(TestCase):
     def test_inspector_dropdown_includes_inspector_staff(self):
@@ -722,8 +921,3 @@ class InvoiceStockIntegrationTests(TestCase):
         stocks = Stock.objects.filter(item=self.item)
         net_qty = sum(s.in_quantity - s.out_quantity for s in stocks)
         self.assertEqual(net_qty, 8)
-
-
-
-
-

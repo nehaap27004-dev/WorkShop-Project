@@ -1,0 +1,367 @@
+{% extends 'fleet_base1.html' %}
+{% load i18n %}
+{% block title %}{% trans "Custom Inspection" %}{% endblock %}
+
+{% block content %}
+<style>
+.ci-wrap{max-width:1300px;margin:0 auto;padding-bottom:30px}
+.ci-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.ci-hdr-l{display:flex;align-items:center;gap:12px}
+.ci-icon{width:42px;height:42px;background:#fdf2f5;border:1px solid #f9c9d5;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#9f1045}
+.ci-title{font-size:20px;font-weight:700;color:#0f172a;margin:0}
+.ci-sub{font-size:12.5px;color:#64748b;margin-top:2px}
+.ci-btn{background:#fff;color:#334155;border:1px solid #cbd5e1;border-radius:6px;padding:8px 16px;font-size:12.5px;font-weight:600;text-decoration:none!important;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:all .15s}
+.ci-btn:hover{background:#f8fafc;color:#0f172a}
+.ci-btn.pri{background:#9f1045;border-color:#9f1045;color:#fff}.ci-btn.pri:hover{background:#830d38;color:#fff}
+.ci-btn.dng{color:#dc2626;border-color:#fca5a5}.ci-btn.dng:hover{background:#fef2f2}
+.ci-top{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+@media(max-width:1100px){.ci-top{grid-template-columns:1fr 1fr}}@media(max-width:600px){.ci-top{grid-template-columns:1fr}}
+.ci-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+.ci-tcard{padding:12px 14px}
+.ci-lbl{font-size:12px;font-weight:700;color:#0f172a;margin-bottom:6px}.ci-lbl i{color:#ef4444;font-style:normal}
+.ci-row{display:flex;gap:8px}
+.ci-in{width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:8px 10px;font-size:13px;outline:none;font-family:inherit;background:#fff}
+.ci-in:focus{border-color:#9f1045;box-shadow:0 0 0 3px rgba(159,16,69,.12)}
+.ci-add{background:#9f1045;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.ci-add:hover{background:#830d38}
+.ci-err{color:#dc2626;font-size:11.5px;margin-top:4px;min-height:14px}
+.ci-main{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+@media(max-width:900px){.ci-main{grid-template-columns:1fr}}
+.ci-ph{background:#9f1045;color:#fff;border-radius:10px 10px 0 0;padding:11px 16px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.ci-ph .ci-btn{padding:5px 12px;font-size:12px}
+.ci-pb{padding:12px 14px}
+.ci-tree{max-height:520px;overflow-y:auto;margin-top:10px}
+.tn{padding:8px 10px;border-radius:7px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:8px;margin-bottom:2px;color:#1e293b}
+.tn:hover{background:#f8fafc}.tn.active{background:#fdf2f5;color:#9f1045;font-weight:700}
+.tn.m{font-weight:700;font-size:14px}.tn.s{margin-left:16px}.tn.t{margin-left:34px;font-size:12.5px;color:#475569}
+.tn .c{color:#94a3b8;font-weight:600}
+.ci-sec{margin-bottom:16px}
+.ci-sech{background:#fdf2f5;border-radius:6px;padding:7px 12px;font-weight:700;color:#9f1045;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.ci-sech button{background:#fff;border:1px solid #f9c9d5;color:#9f1045;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;cursor:pointer}
+.ci-tbl{width:100%;border-collapse:collapse;margin-top:6px}
+.ci-tbl th{font-size:10.5px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;text-align:left;padding:6px 6px;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+.ci-tbl td{padding:5px 4px;vertical-align:middle}
+.ci-tbl .ci-in{padding:6px 8px;font-size:12.5px}
+.ci-x{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:15px}.ci-x:hover{color:#dc2626}
+.ci-empty{text-align:center;color:#94a3b8;padding:40px 10px;font-size:13px}
+.ci-foot{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:16px;padding:14px;background:#fff;border:1px solid #e2e8f0;border-radius:10px}
+#ciMsg{margin-bottom:12px;display:none;padding:9px 14px;border-radius:7px;font-size:13px}
+#ciMsg.ok{display:block;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+#ciMsg.err{display:block;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
+</style>
+
+<div class="ci-wrap">
+  <div class="ci-hdr">
+    <div class="ci-hdr-l">
+      <div class="ci-icon"><i class="bi bi-layers"></i></div>
+      <div>
+        <h1 class="ci-title">{% trans "Custom Inspection" %}</h1>
+        <div class="ci-sub">{% trans "Define Main Head, add Sub Head, and create detail fields dynamically." %}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="{% url 'jobcard_app:custom_inspection_list' %}" class="ci-btn"><i class="bi bi-list-ul"></i> {% trans "Saved Inspections" %}</a>
+    </div>
+  </div>
+
+  <div id="ciMsg"></div>
+
+  <!-- Top row: Main Head / Main Head select / Sub Head / Type -->
+  <div class="ci-top">
+    <div class="ci-card ci-tcard">
+      <div class="ci-lbl">Main Head <i>*</i></div>
+      <div class="ci-row"><input id="mhName" class="ci-in" placeholder="e.g. Vehicle Inspection"><button class="ci-add" onclick="addNode('main')">+ Add Main Head</button></div>
+      <div class="ci-err" id="mhErr"></div>
+    </div>
+    <div class="ci-card ci-tcard">
+      <div class="ci-lbl">Main Head <i>*</i></div>
+      <select id="mhSelect" class="ci-in" onchange="pickMain(this.value)"></select>
+      <div class="ci-err"></div>
+    </div>
+    <div class="ci-card ci-tcard">
+      <div class="ci-lbl">Sub Head <i>*</i></div>
+      <div class="ci-row"><input id="shName" class="ci-in" placeholder="e.g. Engine Inspection"><button class="ci-add" onclick="addNode('sub')">+ Add Sub Head</button></div>
+      <div class="ci-err" id="shErr"></div>
+    </div>
+    <div class="ci-card ci-tcard">
+      <div class="ci-lbl">Type <i>*</i></div>
+      <div class="ci-row"><input id="tyName" class="ci-in" placeholder="e.g. General Check"><button class="ci-add" onclick="addNode('type')">+ Add Type</button></div>
+      <div class="ci-err" id="tyErr"></div>
+    </div>
+  </div>
+
+  <div class="ci-main">
+    <!-- Tree -->
+    <div class="ci-card">
+      <div class="ci-ph"><span><i class="bi bi-layers mr-2"></i> Inspection Structure</span></div>
+      <div class="ci-pb">
+        <div class="ci-row">
+          <input id="treeSearch" class="ci-in" placeholder="Search Main Head / Sub Head / Type..." oninput="renderTree()">
+          <button class="ci-btn" onclick="loadTree()" title="Refresh"><i class="bi bi-arrow-repeat"></i></button>
+        </div>
+        <div id="tree" class="ci-tree">
+          {% for main in initial_tree %}
+          <div class="tn m{% if forloop.first %} active{% endif %}" onclick="selMain({{ main.id }})">
+            <span>▾ {{ main.name }}</span><span class="c">({{ main.field_count }})</span>
+          </div>
+          {% for sub in main.subs %}
+          <div class="tn s" onclick="selSub({{ sub.id }})">
+            <span>{{ sub.name }}</span><span class="c">({{ sub.field_count }})</span>
+          </div>
+          {% endfor %}
+          {% empty %}
+          <div class="ci-empty">No Main Head yet. Add one above.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Fields -->
+    <div class="ci-card">
+      <div class="ci-ph"><span><i class="bi bi-file-earmark-text mr-2"></i> Detail Fields</span>
+        <button class="ci-btn" onclick="addField()"><i class="bi bi-plus-lg"></i> Add Field</button></div>
+      <div class="ci-pb" id="fieldsBox"></div>
+    </div>
+  </div>
+
+  <div class="ci-foot">
+    <button class="ci-btn pri" onclick="saveAll()"><i class="bi bi-save"></i> Save</button>
+    <button class="ci-btn dng" onclick="deleteSelected()"><i class="bi bi-trash"></i> Delete</button>
+    <button class="ci-btn" onclick="loadTree()"><i class="bi bi-arrow-counterclockwise"></i> Clear</button>
+    <button class="ci-btn" onclick="history.length>1 ? history.back() : window.close()"><i class="bi bi-x-lg"></i> Close</button>
+  </div>
+</div>
+
+{{ initial_tree|json_script:"ci-initial-tree" }}
+{{ initial_types|json_script:"ci-initial-types" }}
+<script>
+const URLS = {
+  tree:   "{% url 'jobcard_app:ci_tree' %}",
+  node:   "{% url 'jobcard_app:ci_save_node' %}",
+  del:    "{% url 'jobcard_app:ci_delete_node' %}",
+  fields: "{% url 'jobcard_app:ci_save_fields' %}"
+};
+const CSRF = "{{ csrf_token }}";
+
+let tree = JSON.parse(document.getElementById('ci-initial-tree').textContent);
+let types = JSON.parse(document.getElementById('ci-initial-types').textContent);
+let sel = { main: null, sub: null };
+let edits = {};            // subId -> working rows (unsaved changes)
+
+const el  = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+async function post(url, body) {
+  const r = await fetch(url, { method: 'POST', credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }, body: JSON.stringify(body) });
+  let data = {};
+  try { data = await r.json(); } catch (e) {}
+  return { ok: r.ok && data.ok !== false, data };
+}
+function msg(text, kind) {
+  const m = el('ciMsg'); m.textContent = text; m.className = kind;
+  clearTimeout(msg.t); msg.t = setTimeout(() => { m.className = ''; m.style.display = 'none'; }, 4000);
+}
+
+const findMain = id => tree.find(m => m.id === id);
+function findSub(id) { for (const m of tree) for (const s of m.subs) if (s.id === id) return { m, s }; return null; }
+
+/* counts: include unsaved edits so the tree is always current */
+const subCount  = s => edits[s.id] ? edits[s.id].length : s.fields.length;
+const mainCount = m => m.subs.reduce((n, s) => n + subCount(s), 0);
+async function loadTree() {
+    try {
+        const response = await fetch(URLS.tree, {
+            credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+            throw new Error('Could not load inspection structure.');
+        }
+
+        const data = await response.json();
+
+        tree = data.tree || [];
+        types = data.types || [];
+
+        edits = {};
+
+        if (sel.main && !findMain(sel.main)) {
+            sel = { main: null, sub: null };
+        }
+
+        if (sel.sub && !findSub(sel.sub)) {
+            sel.sub = null;
+        }
+
+        if (!sel.main && tree.length) {
+            sel.main = tree[0].id;
+        }
+
+        renderMainSelect();
+        renderTypes();
+        renderTree();
+        renderFields();
+
+    } catch (error) {
+        console.error('Inspection tree loading error:', error);
+        msg(error.message, 'err');
+    }
+}
+function renderMainSelect() {
+  el('mhSelect').innerHTML = '<option value="">— Select Main Head —</option>' +
+    tree.map(m => `<option value="${m.id}" ${m.id === sel.main ? 'selected' : ''}>${esc(m.name)}</option>`).join('');
+}
+function renderTypes() {
+  el('typeList').innerHTML = types.map(t =>
+    `<span class="ci-chip">${esc(t.name)}<button title="Delete type" onclick="delType(${t.id},'${esc(t.name).replace(/'/g,"\\'")}')">✕</button></span>`).join('');
+}
+
+function renderTree() {
+  const q = el('treeSearch').value.trim().toLowerCase();
+  const hit = n => !q || n.toLowerCase().includes(q);
+  el('tree').innerHTML = tree.map(m => {
+    const subs = m.subs.filter(s => hit(m.name) || hit(s.name));
+    if (q && !hit(m.name) && !subs.length) return '';
+    let h = `<div class="tn m ${sel.main === m.id && !sel.sub ? 'active' : ''}" onclick="selMain(${m.id})">
+               <span>▾ ${esc(m.name)}</span><span class="c">(${mainCount(m)})</span></div>`;
+    subs.forEach(s => {
+      h += `<div class="tn s ${sel.sub === s.id ? 'active' : ''}" onclick="selSub(${s.id})"><span>${esc(s.name)}</span><span class="c">(${subCount(s)})</span></div>`;
+    });
+    return h;
+  }).join('') || '<div class="ci-empty">No Main Head yet. Add one above.</div>';
+}
+
+function selMain(id) { sel = { main: id, sub: null }; renderMainSelect(); renderTree(); renderFields(); }
+function pickMain(v) { if (v) selMain(+v); else { sel = { main: null, sub: null }; renderTree(); renderFields(); } }
+function selSub(id)  { const f = findSub(id); sel = { main: f.m.id, sub: id }; renderMainSelect(); renderTree(); renderFields(); }
+
+/* ── add / delete nodes ── */
+async function addNode(kind) {
+  const ids = { main: ['mhName', 'mhErr'], sub: ['shName', 'shErr'], type: ['tyName', 'tyErr'] }[kind];
+  const inp = el(ids[0]), err = el(ids[1]);
+  ['mhErr', 'shErr', 'tyErr'].forEach(i => el(i).textContent = '');
+  const name = inp.value.trim();
+  if (!name) { err.textContent = 'Name is required.'; return; }
+
+  let parent = null;
+  if (kind === 'sub') { parent = el('mhSelect').value; if (!parent) { err.textContent = 'Select a Main Head first.'; return; } }
+  const r = await post(URLS.node, { kind, name, parent_id: parent });
+  if (!r.ok) { err.textContent = r.data.error || 'Could not save.'; return; }
+
+  inp.value = '';
+  await loadTree();
+  if (kind === 'main') sel = { main: r.data.id, sub: null };
+  if (kind === 'sub')  sel = { main: +parent, sub: r.data.id };
+  renderMainSelect(); renderTree(); renderFields();
+}
+
+async function delType(id, name) {
+  if (!confirm(`Delete type "${name}"?`)) return;
+  const r = await post(URLS.del, { kind: 'type', id });
+  if (!r.ok) { msg(r.data.error || 'Delete failed.', 'err'); return; }
+  await loadTree(); msg('Type deleted.', 'ok');
+}
+
+async function deleteSelected() {
+  let kind, id, name;
+  if (sel.sub)       { kind = 'sub';  id = sel.sub;  name = findSub(id).s.name; }
+  else if (sel.main) { kind = 'main'; id = sel.main; name = findMain(id).name; }
+  else { msg('Select something in the tree first.', 'err'); return; }
+  if (!confirm(`Delete ${kind === 'sub' ? 'sub head' : 'main head'} "${name}" and everything under it?`)) return;
+  const r = await post(URLS.del, { kind, id });
+  if (!r.ok) { msg(r.data.error || 'Delete failed.', 'err'); return; }
+  if (kind === 'sub') sel.sub = null; else sel = { main: null, sub: null };
+  await loadTree(); msg('Deleted.', 'ok');
+}
+
+/* ── detail fields (template descriptions per Sub Head) ── */
+function rowsFor(s) {
+  if (!edits[s.id]) edits[s.id] = s.fields.map((f, i) => ({
+    id: f.id,
+    label: f.label.replace(new RegExp('^\\s*' + (i + 1) + '\\.(?:\\s+|$)'), ''),
+    default: f.default || '',
+    type_id: f.type_id || '',
+    remark: f.remark || '',
+    _edit: false
+  }));
+  return edits[s.id];
+}
+function typeOptions(selectedId) {
+  return '<option value="">— Select Type —</option>' +
+    types.map(t => `<option value="${t.id}" ${String(t.id) === String(selectedId) ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
+}
+
+function renderFields() {
+  const box = el('fieldsBox');
+  if (!sel.sub) {
+    box.innerHTML = '<div class="ci-empty">Select a Sub Head in the tree to see and edit its fields.</div>';
+    return;
+  }
+  const { m, s } = findSub(sel.sub);
+  const rows = rowsFor(s);
+  box.innerHTML = `<div style="font-weight:700;color:#9f1045;margin-bottom:2px">${esc(m.name)} › ${esc(s.name)}</div>
+    <div style="font-size:11.5px;color:#64748b;margin-bottom:6px">Set a default value, type and remark hint for each field.</div>
+    <div style="overflow-x:auto"><table class="ci-tbl"><thead><tr>
+      <th style="width:40px">#</th><th style="min-width:200px">Description</th><th style="min-width:130px">Value</th>
+      <th style="min-width:150px">Type</th><th style="min-width:150px">Remark</th><th style="width:80px">Action</th>
+    </tr></thead><tbody>
+    ${rows.length ? rows.map((f, i) => `<tr>
+        <td>${i + 1}</td>
+        <td><input class="ci-in" ${f._edit ? '' : 'readonly'} value="${esc(f.label)}" placeholder="Description" oninput="upd(${i},'label',this.value)"></td>
+        <td><input class="ci-in" value="${esc(f.default)}" placeholder="Default value" oninput="upd(${i},'default',this.value)"></td>
+        <td><select class="ci-in" onchange="upd(${i},'type_id',this.value)">${typeOptions(f.type_id)}</select></td>
+        <td><input class="ci-in" value="${esc(f.remark)}" placeholder="Remark hint" oninput="upd(${i},'remark',this.value)"></td>
+        <td style="white-space:nowrap">
+          <button class="ci-ic ${f._edit ? 'ok' : ''}" title="${f._edit ? 'Done' : 'Edit'}" onclick="toggleEdit(${i})"><i class="bi ${f._edit ? 'bi-check-lg' : 'bi-pencil'}"></i></button>
+          <button class="ci-ic del" title="Delete" onclick="delField(${i})"><i class="bi bi-trash"></i></button>
+        </td></tr>`).join('')
+      : '<tr><td colspan="6" class="ci-empty" style="padding:14px">No fields yet. Click “Add Field”.</td></tr>'}
+    </tbody></table></div>`;
+}
+
+function cur() { return rowsFor(findSub(sel.sub).s); }
+function upd(i, key, val) { cur()[i][key] = val; }
+function toggleEdit(i) { const r = cur()[i]; r._edit = !r._edit; renderFields(); renderTree(); }
+function delField(i) { cur().splice(i, 1); renderFields(); renderTree(); }
+
+function addField() {
+  if (!sel.sub) { msg('Select a Sub Head first.', 'err'); return; }
+  const rows = cur();
+  rows.push({ id: null, label: '', default: '', type_id: '', remark: '', _edit: true });
+  renderFields(); renderTree();
+  const inp = document.querySelector('#fieldsBox tbody tr:last-child td:nth-child(2) input');
+  if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+}
+
+async function saveAll() {
+  const ids = Object.keys(edits);
+  if (!ids.length) { msg('Nothing to save.', 'err'); return; }
+  for (const id of ids) {
+    const f = findSub(+id); if (!f) continue;
+    for (const [i, r] of edits[id].entries())
+      if (!r.label.trim()) { msg(`${f.s.name}, row ${i + 1}: enter a description.`, 'err'); return; }
+  }
+  for (const id of ids) {
+    const fields = edits[id].map(r => ({
+      id: r.id,
+      label: r.label,
+      default: r.default,
+      type_id: r.type_id,
+      remark: r.remark
+    }));
+    const r = await post(URLS.fields, { sub_id: +id, fields });
+    if (!r.ok) { msg(r.data.error || 'Save failed.', 'err'); return; }
+  }
+  await loadTree();
+  msg('Saved.', 'ok');
+}
+
+window.addEventListener('beforeunload', e => { if (Object.keys(edits).length) { e.preventDefault(); e.returnValue = ''; } });
+if (tree.length) sel.main = tree[0].id;
+renderMainSelect();
+renderTypes();
+renderTree();
+renderFields();
+</script>
+{% endblock %}

@@ -61,18 +61,20 @@
                 <td>
                     {{ bill.Cleared }}
                 </td>
-                <td>
-                   <a href="{% url 'accounts_app:view_paymentbill' bill.id %}" class="btn btn-sm btn-warning">
-                        <i class="bi bi-eye"></i> View
-                    </a>
+                <td style="white-space: nowrap; width: 140px; text-align: center;">
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                        <a href="{% url 'accounts_app:view_paymentbill' bill.id %}" class="btn btn-sm btn-warning" title="View">
+                            <i class="bi bi-eye"></i> View
+                        </a>
 
-                    <a href="{% url 'accounts_app:paymentbill_pdf' bill.id %}" target="_blank" class="btn btn-sm btn-info">
-                        <i class="bi bi-file-earmark-pdf"></i> PDF
-                    </a>
+                        <a href="{% url 'accounts_app:paymentbill_pdf' bill.id %}" target="_blank" class="btn btn-sm btn-info" title="PDF">
+                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                        </a>
 
-                    <button onclick="deletePaymentBill({{ bill.id }})" class="btn btn-sm btn-danger">
-                        <i class="bi bi-trash"></i> Delete
-                    </button>
+                        <button onclick="deletePaymentBill({{ bill.id }})" class="btn btn-sm btn-danger" title="Delete">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </div>
                 </td>
             </tr>
         {% empty %}

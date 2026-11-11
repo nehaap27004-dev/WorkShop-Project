@@ -50,21 +50,38 @@
         color: #ffffff !important;
     }
 
-    form label {
+    form label.form-label {
         font-weight: 600;
-        color: #495057;
-        font-size: 0.85rem;
+        color: #374151;
+        font-size: 0.82rem;
         margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
     }
 
-    input,
+    input:not([type="checkbox"]):not([type="radio"]),
     select,
     textarea {
         width: 100% !important;
         border: 1px solid #ced4da;
         border-radius: 6px;
-        padding: 6px 10px;
-        font-size: 0.9rem;
+        padding: 6px 12px;
+        font-size: 0.88rem;
+        background-color: #ffffff;
+        color: #1f2937;
+        transition: all 0.15s ease-in-out;
+    }
+
+    input:not([type="checkbox"]):not([type="radio"]),
+    select {
+        height: 38px !important;
+    }
+
+    textarea {
+        height: 38px !important;
+        min-height: 38px;
+        resize: vertical;
     }
 
     input:focus,
@@ -73,6 +90,46 @@
         border-color: var(--primary-burgundy) !important;
         box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
         outline: none;
+    }
+
+    input[readonly] {
+        background-color: #f8fafc !important;
+        color: #475569 !important;
+        cursor: not-allowed;
+    }
+
+    .pdc-box {
+        display: flex;
+        align-items: center;
+        height: 38px;
+        padding: 0 12px;
+        background: #f8fafc;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .pdc-box:focus-within,
+    .pdc-box:hover {
+        border-color: var(--primary-burgundy);
+        background: #ffffff;
+    }
+
+    .pdc-box .form-check-input {
+        width: 1.15rem !important;
+        height: 1.15rem !important;
+        margin-top: 0;
+        cursor: pointer;
+        accent-color: var(--primary-burgundy);
+    }
+
+    .pdc-box .form-check-label {
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #4b5563;
+        margin-left: 8px;
+        margin-bottom: 0;
     }
 
     .btn-success {
@@ -194,73 +251,72 @@
             </div>
 
             <div class="card-body">
-                <div class="row g-2">
+                <div style="display: none;">
+                    {{ master_form.voucherType }}
+                </div>
 
-                    <!-- Row 1 -->
-                    <div class="col-md-2">
+                <!-- Row 1: Voucher No | Date | Client | Ledger -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
                         <label class="form-label">{% trans "Voucher No" %}</label>
                         {{ master_form.voucher_no }}
                     </div>
-                    <div class="col-md-2" style="display: none;">
-                        <label class="form-label">{% trans "Voucher Type" %}</label>
-                        {{ master_form.voucherType }}
-                    </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label class="form-label">{% trans "Date" %}</label>
                         {{ master_form.Date }}
                     </div>
-
-                    <div class="col-md-2">
-                        <label class="form-label">{% trans "Client" %}</label><span class="text-danger">*</span>
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "Client" %} <span class="text-danger">*</span></label>
                         {{ master_form.Customer }}
                     </div>
-
-                    <div class="col-md-2">
-                        <label class="form-label">{% trans "Ledger" %}</label><span class="text-danger">*</span>
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "Ledger" %} <span class="text-danger">*</span></label>
                         {{ master_form.Ledger }}
                     </div>
+                </div>
 
-                    <div class="col-md-2">
-                        <label class="form-label">{% trans "Remark" %}</label>
-                        {{ master_form.Remark }}
-                    </div>
-
-                    <div class="col-md-2">
-                        <label class="form-label">{% trans "TR No" %}</label>
-                        {{ master_form.TrnNo }}
-                    </div>
-
-                    <div class="col-md-2">
-                        <label class="form-label">{% trans "PDC" %}</label>
-                        <div class="form-check mt-2">
-                            {{ master_form.IsPDC }}
-                            <label class="form-check-label ms-2" for="id_IsPDC"></label>
-                        </div>
-                    </div>
-
-                    <div class="col-md-2">
+                <!-- Row 2: Cheque No | Cheque Date | Cheque Status | PDC -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
                         <label class="form-label">{% trans "Cheque No" %}</label>
                         {{ master_form.ChequeNo }}
                     </div>
-
-                    <!-- Row 2 -->
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label class="form-label">{% trans "Cheque Date" %}</label>
                         {{ master_form.ChequeDate }}
                     </div>
-
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label class="form-label">{% trans "Cheque Status" %}</label>
                         {{ master_form.ChequeStatus }}
                     </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "PDC" %}</label>
+                        <div class="pdc-box">
+                            {{ master_form.IsPDC }}
+                            <label class="form-check-label" for="id_IsPDC">
+                                {% trans "Post-Dated Cheque" %}
+                            </label>
+                        </div>
+                    </div>
+                </div>
 
-                    <div class="col-md-2">
+                <!-- Row 3: TR No | Max Amount | Remark -->
+                <div class="row mb-0">
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "TR No" %}</label>
+                        {{ master_form.TrnNo }}
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label">{% trans "Max Amount" %}</label>
                         <input type="number" step="0.001" min="0" id="maxAmountField"
                                class="form-control" placeholder="0.000" autocomplete="off">
                     </div>
-
+                    <div class="col-md-6">
+                        <label class="form-label">{% trans "Remark" %}</label>
+                        {{ master_form.Remark }}
+                    </div>
                 </div>
+
             </div>
         </div>
 

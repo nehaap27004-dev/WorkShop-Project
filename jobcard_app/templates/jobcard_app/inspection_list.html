@@ -13,9 +13,17 @@
             </h2>
             
         </div>
-        <a href="{% url 'jobcard_app:inspection_create' %}" class="btn btn-custom-primary shadow-sm">
-            <i class="bi bi-plus-lg mr-1"></i> {% trans "New Inspection" %}
-        </a>
+        <div class="d-flex flex-wrap" style="gap:8px">
+            <a href="{% url 'jobcard_app:custom_inspection_list' %}" class="btn btn-outline-secondary shadow-sm">
+                <i class="bi bi-layers mr-1"></i> {% trans "Custom Inspections" %}
+            </a>
+            <a href="{% url 'jobcard_app:custom_inspection_setup' %}" class="btn btn-outline-primary shadow-sm">
+                <i class="bi bi-plus-lg mr-1"></i> {% trans "New Custom Inspection" %}
+            </a>
+            <a href="{% url 'jobcard_app:inspection_create' %}" class="btn btn-custom-primary shadow-sm">
+                <i class="bi bi-plus-lg mr-1"></i> {% trans "New Inspection" %}
+            </a>
+        </div>
     </div>
 
     <!-- Alert Messages -->
@@ -170,10 +178,73 @@
                     </tbody>
                 </table>
             </div>
-            {% else %}
+            {% elif not custom_inspections %}
             <div class="text-center py-5 text-muted">
                 <i class="bi bi-clipboard2-check display-4 d-block mb-2 text-secondary"></i>
                 {% trans "No vehicle inspections found." %}
+            </div>
+            {% endif %}
+
+            {% if custom_inspections %}
+            <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2 border-top">
+                <span class="card-banner-title">
+                    <i class="bi bi-layers mr-1 text-burgundy"></i> {% trans "Custom Inspections" %}
+                </span>
+                <a href="{% url 'jobcard_app:custom_inspection_list' %}" class="btn btn-sm btn-outline-secondary">
+                    {% trans "View Custom Inspection List" %}
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Inspection No." %}</th>
+                            <th>{% trans "Date" %}</th>
+                            <th>{% trans "Main Head" %}</th>
+                            <th>{% trans "Customer Name" %}</th>
+                            <th>{% trans "Vehicle" %}</th>
+                            <th>{% trans "Type" %}</th>
+                            <th>{% trans "Inspector" %}</th>
+                            <th style="width: 160px;" class="text-center">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for insp in custom_inspections %}
+                        <tr>
+                            <td class="align-middle">
+                                <a href="{% url 'jobcard_app:custom_inspection_detail' insp.pk %}" class="font-weight-bold text-burgundy">
+                                    <i class="bi bi-receipt text-secondary mr-1"></i> {{ insp.inspection_number }}
+                                </a>
+                            </td>
+                            <td class="align-middle text-muted">{{ insp.inspection_date|date:"d M Y" }}</td>
+                            <td class="align-middle">{{ insp.main_head.name }}</td>
+                            <td class="align-middle font-weight-600 text-dark">{{ insp.customer.ledger_name|default:"—" }}</td>
+                            <td class="align-middle">
+                                <span class="badge badge-light border text-dark">
+                                    <i class="bi bi-truck mr-1 text-secondary"></i> {{ insp.vehicle.registration_number|default:"—" }}
+                                </span>
+                            </td>
+                            <td class="align-middle"><span class="badge badge-info">{% trans "Custom" %}</span></td>
+                            <td class="align-middle text-muted small">{{ insp.inspector.full_name|default:"—" }}</td>
+                            <td class="align-middle text-center text-nowrap">
+                                <a href="{% url 'jobcard_app:custom_inspection_detail' insp.pk %}" class="btn btn-sm btn-outline-info mr-1" title="{% trans 'View Inspection' %}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'jobcard_app:custom_inspection_edit' insp.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit Inspection' %}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="post" action="{% url 'jobcard_app:custom_inspection_delete' insp.pk %}" class="d-inline"
+                                    onsubmit="return confirm('{% trans 'Delete this custom inspection?' %}');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete Inspection' %}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
             {% endif %}
         </div>

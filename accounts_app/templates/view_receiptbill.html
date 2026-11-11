@@ -119,7 +119,7 @@
                                     {{ detail.voucherType }}
                                 {% endif %}
                             </td>
-                            <td>{{ detail.VoucherNo }}</td>
+                            <td>{{ detail.display_voucher_no|default:detail.VoucherNo }}</td>
                             <td class="text-end">{{ detail.CurrentAmount|floatformat:3 }}</td>
                             <td class="text-end">{{ detail.Amount|floatformat:3 }}</td>
                         </tr>

@@ -80,7 +80,15 @@ from .forms import InvoiceHeaderForm
 from .models import (
     DeliveryNote, Invoice, InvoiceItem, InvoiceVehicle, JobCard, WorkshopVehicle,
 )
-
+from collections import OrderedDict
+from django.db import transaction
+from django.db.models import Prefetch, ProtectedError
+from django.http import JsonResponse
+from django.urls import reverse
+from django.utils.dateparse import parse_date
+from django.views.decorators.http import require_POST
+from .models import (CIMainHead, CISubHead, CIType, CIField,
+                      CustomInspection, CustomInspectionAnswer)
 # ─────────────────────────────────────────────────────────────
 # SERVICE CATEGORY
 # ─────────────────────────────────────────────────────────────
@@ -515,19 +523,34 @@ def inspection_list(request):
         qs = qs.filter(vehicle_id=vehicle_id)
     if status_filter:
         qs = qs.filter(overall_status=status_filter)
- 
+
+    custom_inspections = CustomInspection.objects.select_related(
+        'customer', 'vehicle', 'main_head', 'inspector'
+    )
+    if q:
+        custom_inspections = custom_inspections.filter(
+            Q(inspection_number__icontains=q) |
+            Q(customer__ledger_name__icontains=q) |
+            Q(vehicle__registration_number__icontains=q) |
+            Q(vehicle__vehicle_number__icontains=q) |
+            Q(main_head__name__icontains=q)
+        )
+    if vehicle_id:
+        custom_inspections = custom_inspections.filter(vehicle_id=vehicle_id)
+
     vehicles  = WorkshopVehicle.objects.filter(is_active=True).order_by('registration_number')
     customers = LedgerCreation.objects.filter(groups_id=29).order_by('ledger_name')
     today = timezone.now().date()
 
     return render(request, 'jobcard_app/inspection_list.html', {
         'inspections':    qs,
+        'custom_inspections': custom_inspections,
         'vehicles':       vehicles,
         'customers':      customers,
         'q':              q,
         'vehicle_id':     vehicle_id,
         'status_filter':  status_filter,
-        'total':          VehicleInspection.objects.count(),
+        'total':          VehicleInspection.objects.count() + CustomInspection.objects.count(),
         'pass_count':     VehicleInspection.objects.filter(overall_status='pass').count(),
         'attention_count':VehicleInspection.objects.filter(overall_status='attention').count(),
         'fail_count':      VehicleInspection.objects.filter(overall_status='fail').count(),
@@ -5016,3 +5039,429 @@ def skill_tag_delete(request, pk):
     messages.success(request, f"Skill tag '{name}' deleted successfully.")
     return redirect('jobcard_app:skill_tag_list')
 
+CI_NODES = {
+    'main': (CIMainHead, None, None),
+    'sub':  (CISubHead, 'main_head_id', CIMainHead),
+    'type': (CIType,    None, None),          # standalone: no parent
+}
+def _ci_field_dict(f):
+    return {
+        'id': f.id, 'label': f.label, 'options': f.options,
+        'default': f.default_value, 'remark': f.remark_hint, 'required': f.is_required,
+        'type_id': f.type_id,
+    }
+
+def _ci_body(request):
+    try:
+        return json.loads(request.body or b'{}')
+    except ValueError:
+        return {}
+ 
+ 
+def _ci_err(msg, status=400):
+    return JsonResponse({'ok': False, 'error': msg}, status=status)
+ 
+
+
+def _ci_tree(main_id=None):
+    mains = CIMainHead.objects.all()
+    if main_id:
+        mains = mains.filter(pk=main_id)
+    mains = mains.prefetch_related(
+        Prefetch('subs', queryset=CISubHead.objects.prefetch_related(
+            Prefetch('fields', queryset=CIField.objects.select_related('type')))))
+    out = []
+    for m in mains:
+        subs = []
+        for s in m.subs.all():
+            fields, groups = [], OrderedDict()
+            for f in s.fields.all():
+                d = _ci_field_dict(f)
+                fields.append(d)
+                key = f.type_id or 0
+                g = groups.setdefault(key, {'id': key, 'name': f.type.name if f.type else 'General', 'fields': []})
+                g['fields'].append(d)
+            # 'types' is a grouped view of the fields, so the fill-in form keeps working unchanged
+            subs.append({'id': s.id, 'name': s.name, 'fields': fields, 'types': list(groups.values())})
+        out.append({'id': m.id, 'name': m.name, 'subs': subs})
+    return out
+
+ 
+# ── Setup page (Structure & Fields) ──────────────────────────
+@login_required
+def ci_setup(request):
+    initial_tree = _ci_tree()
+    for main in initial_tree:
+        main['field_count'] = sum(len(sub['fields']) for sub in main['subs'])
+        for sub in main['subs']:
+            sub['field_count'] = len(sub['fields'])
+
+    return render(request, 'jobcard_app/custom_inspection_setup.html', {
+        'initial_tree': initial_tree,
+        'initial_types': list(CIType.objects.values('id', 'name')),
+    })
+ 
+ 
+@login_required
+def ci_tree(request):
+    return JsonResponse({
+        'tree':  _ci_tree(request.GET.get('main_head')),
+        'types': list(CIType.objects.values('id', 'name')),
+    })
+
+@login_required
+@require_POST
+def ci_save_fields(request):
+    """Template = descriptions only (per Sub Head). Value / Type / Remark belong to each inspection."""
+    d = _ci_body(request)
+    sub = CISubHead.objects.filter(pk=d.get('sub_id')).first()
+    if not sub:
+        return _ci_err('Sub Head not found.', 404)
+
+    clean = []
+    for i, r in enumerate(d.get('fields') or []):
+        label = (r.get('label') or '').strip()
+        if not label:
+            return _ci_err(f'Row {i + 1}: description is required.')
+        type_id = r.get('type_id') or None
+        if type_id is not None:
+            if not str(type_id).isdigit() or not CIType.objects.filter(pk=type_id).exists():
+                return _ci_err(f'Row {i + 1}: select a valid type.')
+        clean.append({
+            'id': r.get('id'),
+            'label': label[:200],
+            'default_value': str(r.get('default') or '').strip()[:200],
+            'type_id': type_id,
+            'remark_hint': str(r.get('remark') or '').strip()[:200],
+            'order': i,
+        })
+
+    with transaction.atomic():
+        existing = {f.pk: f for f in sub.fields.all()}
+        keep, new = set(), []
+        for c in clean:
+            fid = c.pop('id', None)
+            f = existing.get(fid) if fid else None
+            if f:
+                f.label = c['label']
+                f.default_value = c['default_value']
+                f.type_id = c['type_id']
+                f.remark_hint = c['remark_hint']
+                f.order = c['order']
+                f.save(update_fields=[
+                    'label', 'default_value', 'type', 'remark_hint', 'order',
+                ])
+                keep.add(f.pk)
+            else:
+                new.append(CIField(
+                    sub_head=sub,
+                    label=c['label'],
+                    default_value=c['default_value'],
+                    type_id=c['type_id'],
+                    remark_hint=c['remark_hint'],
+                    order=c['order'],
+                ))
+        sub.fields.exclude(pk__in=keep).delete()
+        CIField.objects.bulk_create(new)
+    return JsonResponse({'ok': True})
+@login_required
+@require_POST
+def ci_save_node(request):
+    """Create or rename a Main Head / Sub Head / Type."""
+    d = _ci_body(request)
+    kind = d.get('kind')
+    if kind not in CI_NODES:
+        return _ci_err('Invalid request.')
+    Model, parent_field, ParentModel = CI_NODES[kind]
+ 
+    name = (d.get('name') or '').strip()
+    if not name:
+        return _ci_err('Name is required.')
+ 
+    qs = Model.objects.all()
+    kw = {}
+    if parent_field:
+        pid = d.get('parent_id')
+        if not pid or not ParentModel.objects.filter(pk=pid).exists():
+            return _ci_err('Select the parent first.')
+        kw[parent_field] = pid
+        qs = qs.filter(**kw)
+    if d.get('id'):
+        qs = qs.exclude(pk=d['id'])
+    if qs.filter(name__iexact=name).exists():          # duplicate check (case-insensitive)
+        return _ci_err(f'"{name}" already exists here.')
+ 
+    if d.get('id'):
+        obj = Model.objects.filter(pk=d['id']).first()
+        if not obj:
+            return _ci_err('Not found.', 404)
+        obj.name = name
+        obj.save(update_fields=['name'])
+    else:
+        kw['order'] = qs.count()
+        obj = Model.objects.create(name=name, **kw)
+    return JsonResponse({'ok': True, 'id': obj.pk})
+ 
+ 
+@login_required
+@require_POST
+def ci_delete_node(request):
+    d = _ci_body(request)
+    kind = d.get('kind')
+    if kind not in CI_NODES:
+        return _ci_err('Invalid request.')
+    obj = CI_NODES[kind][0].objects.filter(pk=d.get('id')).first()
+    if not obj:
+        return _ci_err('Not found.', 404)
+    try:
+        with transaction.atomic():
+            obj.delete()      # cascades to children; saved answers keep their snapshot text
+    except ProtectedError:
+        return _ci_err('This Main Head is used by saved inspections and cannot be deleted.')
+    return JsonResponse({'ok': True})
+ 
+ 
+# ── Fill-in form ─────────────────────────────────────────────
+@login_required
+def ci_create(request):
+    return render(request, 'jobcard_app/custom_inspection_form.html', {
+        'customers': LedgerCreation.objects.filter(groups_id=29).order_by('ledger_name'),
+        'inspectors':      Staff.objects.filter(status='Active').order_by('full_name'),
+        'main_heads':      CIMainHead.objects.all(),
+        'initial_tree':    _ci_tree(),
+        'initial_types':   list(CIType.objects.values('id', 'name')),
+        'selected_main':   request.GET.get('main_head', ''),
+        'selected_customer': request.GET.get('customer', ''),
+        'selected_vehicle': request.GET.get('vehicle', ''),
+        'selected_inspector': request.GET.get('inspector', ''),
+        'from_inspection': request.GET.get('from_inspection', ''),
+        'initial_date':    timezone.now().date(),
+        'initial_notes':   '',
+        'insp':            None,
+        'initial_answers': {},
+    })
+ 
+ 
+@login_required
+@require_POST
+def ci_submit(request):
+    """One request saves the whole dynamic form: 1 header row + N answers (bulk insert)."""
+    d = _ci_body(request)
+    errors = {}
+ 
+    main = CIMainHead.objects.filter(pk=d.get('main_head')).first()
+    customer = LedgerCreation.objects.filter(pk=d.get('customer'), groups_id=29).first()
+    insp_date = parse_date(d.get('date') or '')
+    if not main:
+        errors['main_head'] = 'Select a main head.'
+    if not customer:
+        errors['customer'] = 'Select a customer.'
+    if not insp_date:
+        errors['date'] = 'Enter a valid date.'
+
+    fields = []
+    if main:
+            fields = list(CIField.objects
+                      .filter(sub_head__main_head=main)
+                      .select_related('sub_head', 'type')
+                      .order_by('sub_head__order', 'order', 'id'))
+    types_by_id = {t.id: t.name for t in CIType.objects.all()}
+    posted = d.get('answers') or {}
+    rows = []
+    for i, f in enumerate(fields):
+        a = posted.get(str(f.id)) or {}
+        val = str(a.get('value', '')).strip()
+        remark = str(a.get('remark', '')).strip()
+        tid = a.get('type_id')
+        type_name = types_by_id.get(int(tid), '') if str(tid or '').isdigit() else ''
+        rows.append(CustomInspectionAnswer(
+            field=f, sub_head_name=f.sub_head.name, type_name=type_name,
+            label=f.label, field_type='text', value=val, remark=remark, order=i))
+
+        
+    vehicle = WorkshopVehicle.objects.filter(pk=d.get('vehicle')).first() if d.get('vehicle') else None
+    inspector = Staff.objects.filter(pk=d.get('inspector')).first() if d.get('inspector') else None
+    src = d.get('source_inspection_id')
+ 
+    with transaction.atomic():
+        insp = CustomInspection.objects.create(
+            main_head=main, customer=customer, vehicle=vehicle, inspector=inspector,
+            inspection_date=insp_date, notes=(d.get('notes') or '').strip(),
+            source_inspection_id=int(src) if str(src or '').isdigit() else None,
+            created_by=request.user.id)
+        insp.inspection_number = f'CI-{insp.pk:05d}'
+        insp.save(update_fields=['inspection_number'])
+        for r in rows:
+            r.inspection = insp
+        CustomInspectionAnswer.objects.bulk_create(rows)
+ 
+    return JsonResponse({'ok': True, 'redirect': reverse('jobcard_app:inspection_list')})
+ 
+ 
+@login_required
+def ci_list(request):
+    qs = CustomInspection.objects.select_related('customer', 'vehicle', 'main_head')
+    q = request.GET.get('q', '').strip()
+    if q:
+        qs = qs.filter(Q(inspection_number__icontains=q) | Q(customer__ledger_name__icontains=q) |
+                       Q(vehicle__vehicle_number__icontains=q) | Q(main_head__name__icontains=q))
+    return render(request, 'jobcard_app/custom_inspection_list.html', {'inspections': qs, 'q': q})
+ 
+ 
+@login_required
+def ci_detail(request, pk):
+    insp = get_object_or_404(
+        CustomInspection.objects.select_related('customer', 'vehicle', 'inspector', 'main_head'), pk=pk)
+    groups = OrderedDict()
+    for a in insp.answers.all():
+        groups.setdefault(a.sub_head_name, []).append(a)
+    return render(request, 'jobcard_app/custom_inspection_detail.html', {
+        'insp': insp,
+        'groups': [{'sub': k, 'rows': v} for k, v in groups.items()],
+    })
+
+
+@login_required
+def ci_edit(request, pk):
+    insp = get_object_or_404(
+        CustomInspection.objects.select_related(
+            'customer', 'vehicle', 'inspector', 'main_head',
+        ).prefetch_related('answers'),
+        pk=pk,
+    )
+    initial_answers = {}
+    types = list(CIType.objects.values('id', 'name'))
+    types_by_id = {item['id']: item['name'] for item in types}
+    type_ids_by_name = {item['name']: item['id'] for item in types}
+    for answer in insp.answers.all():
+        if answer.field_id:
+            initial_answers[str(answer.field_id)] = {
+                'value': answer.value,
+                'type_id': type_ids_by_name.get(answer.type_name, ''),
+                'remark': answer.remark,
+            }
+
+    if request.method == 'POST':
+        data = _ci_body(request) if request.content_type == 'application/json' else request.POST
+        errors = {}
+        customer = LedgerCreation.objects.filter(
+            pk=data.get('customer'), groups_id=29,
+        ).first()
+        inspection_date = parse_date(data.get('date') or '')
+        if not customer:
+            errors['customer'] = 'Select a valid customer.'
+        if not inspection_date:
+            errors['date'] = 'Enter a valid inspection date.'
+        if str(data.get('main_head') or '') != str(insp.main_head_id):
+            errors['main_head'] = 'The Main Head cannot be changed while editing an inspection.'
+
+        vehicle = None
+        if data.get('vehicle'):
+            vehicle = WorkshopVehicle.objects.filter(
+                pk=data.get('vehicle'), customer=customer, is_active=True,
+            ).first()
+            if not vehicle:
+                errors['vehicle'] = 'Select a valid vehicle for this customer.'
+
+        inspector = None
+        if data.get('inspector'):
+            inspector = Staff.objects.filter(
+                pk=data.get('inspector'), status='Active',
+            ).first()
+            if not inspector:
+                errors['inspector'] = 'Select a valid active inspector.'
+
+        posted = data.get('answers') or {}
+        if not isinstance(posted, dict):
+            errors['answers'] = 'Inspection answers must be provided as a valid object.'
+            posted = {}
+
+        fields = list(CIField.objects.filter(
+            sub_head__main_head_id=insp.main_head_id,
+        ).select_related('sub_head', 'type').order_by('sub_head__order', 'order', 'id'))
+        existing_answers = {
+            answer.field_id: answer
+            for answer in insp.answers.all()
+            if answer.field_id
+        }
+        answer_rows = []
+        for index, field in enumerate(fields):
+            item = posted.get(str(field.pk), {})
+            if not isinstance(item, dict):
+                errors[f'answers.{field.pk}'] = f'Answers for row {index + 1} are invalid.'
+                continue
+            type_id = item.get('type_id') or ''
+            if type_id and (
+                not str(type_id).isdigit()
+                or int(type_id) not in types_by_id
+            ):
+                errors[f'answers.{field.pk}.type_id'] = f'Select a valid type for row {index + 1}.'
+                continue
+            type_name = types_by_id.get(int(type_id), '') if type_id else ''
+            existing = existing_answers.get(field.pk)
+            answer_rows.append(CustomInspectionAnswer(
+                pk=existing.pk if existing else None,
+                inspection=insp,
+                field=field,
+                sub_head_name=field.sub_head.name,
+                type_name=type_name,
+                label=field.label,
+                field_type='text',
+                value=str(item.get('value', '')).strip(),
+                remark=str(item.get('remark', '')).strip(),
+                order=index,
+            ))
+
+        if errors:
+            return JsonResponse({
+                'ok': False,
+                'error': next(iter(errors.values())),
+                'errors': errors,
+            }, status=400)
+
+        with transaction.atomic():
+            insp.customer = customer
+            insp.vehicle = vehicle
+            insp.inspector = inspector
+            insp.inspection_date = inspection_date
+            insp.notes = str(data.get('notes') or '').strip()
+            insp.save(update_fields=[
+                'customer', 'vehicle', 'inspector', 'inspection_date', 'notes',
+            ])
+            CustomInspectionAnswer.objects.bulk_create(
+                [answer for answer in answer_rows if answer.pk is None],
+            )
+            CustomInspectionAnswer.objects.bulk_update(
+                [answer for answer in answer_rows if answer.pk is not None],
+                ['field', 'sub_head_name', 'type_name', 'label', 'field_type', 'value', 'remark', 'order'],
+            )
+        return JsonResponse({
+            'ok': True,
+            'redirect': reverse('jobcard_app:inspection_list'),
+        })
+
+    return render(request, 'jobcard_app/custom_inspection_form.html', {
+        'customers': LedgerCreation.objects.filter(groups_id=29).order_by('ledger_name'),
+        'inspectors': Staff.objects.filter(status='Active').order_by('full_name'),
+        'main_heads': CIMainHead.objects.all(),
+        'initial_tree': _ci_tree(),
+        'initial_types': types,
+        'selected_main': str(insp.main_head_id),
+        'selected_customer': str(insp.customer_id),
+        'selected_vehicle': str(insp.vehicle_id or ''),
+        'selected_inspector': str(insp.inspector_id or ''),
+        'from_inspection': str(insp.source_inspection_id or ''),
+        'initial_date': insp.inspection_date,
+        'initial_notes': insp.notes,
+        'insp': insp,
+        'initial_answers': initial_answers,
+    })
+
+
+@login_required
+@require_POST
+def ci_delete(request, pk):
+    insp = get_object_or_404(CustomInspection, pk=pk)
+    insp.delete()
+    messages.success(request, 'Custom inspection deleted.')
+    return redirect('jobcard_app:custom_inspection_list')

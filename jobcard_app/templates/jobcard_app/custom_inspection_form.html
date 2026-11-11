@@ -1,0 +1,233 @@
+{% extends 'fleet_base1.html' %}
+{% load i18n %}
+{% block title %}{% if insp %}{% trans "Edit Custom Inspection" %}{% else %}{% trans "New Custom Inspection" %}{% endif %}{% endblock %}
+
+{% block content %}
+<style>
+.ci-entry{max-width:1300px;margin:0 auto;padding-bottom:32px}
+.ci-entry-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.ci-entry-title{font-size:22px;font-weight:700;color:#0f172a;margin:0}
+.ci-entry-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ci-entry-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 1px 3px rgba(15,23,42,.04);margin-bottom:16px;overflow:hidden}
+.ci-entry-card h2{background:#9f1045;color:#fff;font-size:15px;margin:0;padding:12px 16px}
+.ci-entry-body{padding:16px}
+.ci-entry-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media(max-width:800px){.ci-entry-grid{grid-template-columns:1fr}}
+.ci-entry-label{display:block;font-size:12px;font-weight:700;color:#334155;margin-bottom:5px}
+.ci-entry-input{width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:8px 10px;font:inherit;background:#fff}
+.ci-entry-input:focus{outline:none;border-color:#9f1045;box-shadow:0 0 0 3px rgba(159,16,69,.12)}
+.ci-entry-table{width:100%;border-collapse:collapse}
+.ci-entry-table th{font-size:11px;text-align:left;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;padding:8px}
+.ci-entry-table td{padding:8px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.ci-entry-actions-bottom{display:flex;justify-content:flex-end;gap:8px}
+.ci-entry-button{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:6px;padding:9px 16px;font-weight:600;text-decoration:none}
+.ci-entry-button.primary{background:#9f1045;border-color:#9f1045;color:#fff}
+.ci-entry-button:disabled{opacity:.6;cursor:wait}
+.ci-entry-error{display:none;margin-bottom:14px;padding:10px 14px;border:1px solid #fecaca;border-radius:7px;background:#fef2f2;color:#b91c1c}
+.ci-entry-error.show{display:block}
+.ci-entry-empty{text-align:center;color:#64748b;padding:24px}
+</style>
+
+<div class="ci-entry">
+  <div class="ci-entry-head">
+    <h1 class="ci-entry-title">{% if insp %}{% trans "Edit Custom Inspection" %}{% else %}{% trans "New Custom Inspection" %}{% endif %}</h1>
+    <div class="ci-entry-actions">
+      <a class="ci-entry-button" href="{% url 'jobcard_app:custom_inspection_list' %}">{% trans "Saved Inspections" %}</a>
+      <a class="ci-entry-button" href="{% url 'jobcard_app:custom_inspection_setup' %}">{% trans "Structure & Fields" %}</a>
+    </div>
+  </div>
+
+  <div id="ciEntryError" class="ci-entry-error" role="alert"></div>
+  <section class="ci-entry-card">
+    <h2>{% trans "Inspection Details" %}</h2>
+    <div class="ci-entry-body">
+      <div class="ci-entry-grid">
+        <div>
+          <label class="ci-entry-label" for="ciMainHead">{% trans "Main Head" %} *</label>
+          <select id="ciMainHead" class="ci-entry-input" required {% if insp %}disabled{% endif %}>
+            <option value="">{% trans "Select Main Head" %}</option>
+            {% for main in main_heads %}
+            <option value="{{ main.id }}" {% if main.id|stringformat:"s" == selected_main %}selected{% endif %}>{{ main.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="ci-entry-label" for="ciCustomer">{% trans "Customer" %} *</label>
+          <select id="ciCustomer" class="ci-entry-input" required>
+            <option value="">{% trans "Select Customer" %}</option>
+            {% for customer in customers %}
+            <option value="{{ customer.id }}" {% if customer.id|stringformat:"s" == selected_customer %}selected{% endif %}>{{ customer.ledger_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="ci-entry-label" for="ciVehicle">{% trans "Vehicle" %}</label>
+          <select id="ciVehicle" class="ci-entry-input" data-selected="{{ selected_vehicle }}">
+            <option value="">{% trans "Select Customer First" %}</option>
+          </select>
+        </div>
+        <div>
+          <label class="ci-entry-label" for="ciInspector">{% trans "Inspector" %}</label>
+          <select id="ciInspector" class="ci-entry-input">
+            <option value="">{% trans "Select Inspector" %}</option>
+            {% for inspector in inspectors %}
+            <option value="{{ inspector.id }}" {% if inspector.id|stringformat:"s" == selected_inspector %}selected{% endif %}>{{ inspector.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="ci-entry-label" for="ciDate">{% trans "Inspection Date" %} *</label>
+          <input id="ciDate" class="ci-entry-input" type="date" value="{{ initial_date|date:'Y-m-d' }}" required>
+        </div>
+        <div>
+          <label class="ci-entry-label" for="ciNotes">{% trans "Notes" %}</label>
+          <input id="ciNotes" class="ci-entry-input" type="text" maxlength="2000" value="{{ initial_notes }}">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ci-entry-card">
+    <h2>{% trans "Inspection Fields" %}</h2>
+    <div class="ci-entry-body" id="ciEntryFields"></div>
+  </section>
+
+  <div class="ci-entry-actions-bottom">
+    <a class="ci-entry-button" href="{% url 'jobcard_app:custom_inspection_list' %}">{% trans "Cancel" %}</a>
+    <button id="ciSubmit" class="ci-entry-button primary" type="button" onclick="submitCustomInspection()">
+      {% if insp %}{% trans "Update Inspection" %}{% else %}{% trans "Save Inspection" %}{% endif %}
+    </button>
+  </div>
+</div>
+
+{{ initial_tree|json_script:"ci-entry-tree" }}
+{{ initial_types|json_script:"ci-entry-types" }}
+{{ initial_answers|json_script:"ci-entry-answers" }}
+<script>
+const ciTree = JSON.parse(document.getElementById('ci-entry-tree').textContent);
+const ciTypes = JSON.parse(document.getElementById('ci-entry-types').textContent);
+const ciInitialAnswers = JSON.parse(document.getElementById('ci-entry-answers').textContent);
+const ciFieldContainer = document.getElementById('ciEntryFields');
+const ciMainInput = document.getElementById('ciMainHead');
+const ciCustomerInput = document.getElementById('ciCustomer');
+const ciVehicleInput = document.getElementById('ciVehicle');
+const ciError = document.getElementById('ciEntryError');
+const ciSubmitUrl = "{% if insp %}{% url 'jobcard_app:custom_inspection_edit' insp.pk %}{% else %}{% url 'jobcard_app:ci_submit' %}{% endif %}";
+const ciVehiclesUrl = "{% url 'jobcard_app:insp_get_vehicles' %}";
+const ciListUrl = "{% url 'jobcard_app:custom_inspection_list' %}";
+const ciCSRF = "{{ csrf_token }}";
+const ciEscape = value => String(value == null ? '' : value)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+function renderInspectionFields() {
+  const main = ciTree.find(item => String(item.id) === ciMainInput.value);
+  if (!main) {
+    ciFieldContainer.innerHTML = '<div class="ci-entry-empty">Select a Main Head to load its saved fields.</div>';
+    return;
+  }
+  const rows = (main.subs || []).flatMap(sub => (sub.fields || []).map(field => ({sub, field})));
+  if (!rows.length) {
+    ciFieldContainer.innerHTML = '<div class="ci-entry-empty">No fields are configured for this Main Head. Add them in Structure &amp; Fields first.</div>';
+    return;
+  }
+
+  ciFieldContainer.innerHTML = `<div style="overflow-x:auto"><table class="ci-entry-table">
+    <thead><tr><th>#</th><th>Sub Head</th><th>Description</th><th>Value</th><th>Type</th><th>Remark</th></tr></thead>
+    <tbody>${rows.map(({sub, field}, index) => {
+      const saved = ciInitialAnswers[String(field.id)] || {};
+      const value = saved.value == null ? field.default || '' : saved.value;
+      const remark = saved.remark == null ? field.remark || '' : saved.remark;
+      const selectedType = saved.type_id == null ? field.type_id || '' : saved.type_id;
+      return `<tr>
+        <td>${index + 1}</td>
+        <td>${ciEscape(sub.name)}</td>
+        <td>${ciEscape(field.label)}</td>
+        <td><input class="ci-entry-input" data-answer-value="${field.id}" value="${ciEscape(value)}" aria-label="Value for ${ciEscape(field.label)}"></td>
+        <td><select class="ci-entry-input" data-answer-type="${field.id}" aria-label="Type for ${ciEscape(field.label)}">
+          <option value="">- Select Type -</option>
+          ${ciTypes.map(type => `<option value="${type.id}" ${String(type.id) === String(selectedType) ? 'selected' : ''}>${ciEscape(type.name)}</option>`).join('')}
+        </select></td>
+        <td><input class="ci-entry-input" data-answer-remark="${field.id}" value="${ciEscape(remark)}" aria-label="Remark for ${ciEscape(field.label)}"></td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+async function loadInspectionVehicles() {
+  const customerId = ciCustomerInput.value;
+  const selectedVehicle = ciVehicleInput.dataset.selected;
+  ciVehicleInput.innerHTML = '<option value="">Loading vehicles...</option>';
+  if (!customerId) {
+    ciVehicleInput.innerHTML = '<option value="">Select Customer First</option>';
+    return;
+  }
+  try {
+    const response = await fetch(`${ciVehiclesUrl}?customer_id=${encodeURIComponent(customerId)}`, {credentials: 'same-origin'});
+    if (!response.ok) throw new Error('Could not load vehicles for this customer.');
+    const data = await response.json();
+    const vehicles = data.vehicles || [];
+    ciVehicleInput.innerHTML = '<option value="">No Vehicle / Select Vehicle</option>' +
+      vehicles.map(vehicle => `<option value="${vehicle.id}" ${String(vehicle.id) === String(selectedVehicle) ? 'selected' : ''}>${ciEscape(vehicle.label)}${vehicle.reg ? ` - ${ciEscape(vehicle.reg)}` : ''}</option>`).join('');
+    ciVehicleInput.dataset.selected = '';
+  } catch (error) {
+    ciVehicleInput.innerHTML = '<option value="">Vehicle list unavailable</option>';
+    showCIError(error.message);
+  }
+}
+
+function showCIError(message) {
+  ciError.textContent = message;
+  ciError.classList.add('show');
+}
+
+async function submitCustomInspection() {
+  ciError.textContent = '';
+  ciError.classList.remove('show');
+  if (!ciMainInput.value || !ciCustomerInput.value || !document.getElementById('ciDate').value) {
+    showCIError('Select a Main Head and Customer, and enter an inspection date.');
+    return;
+  }
+
+  const answers = {};
+  ciFieldContainer.querySelectorAll('[data-answer-value]').forEach(input => {
+    const fieldId = input.dataset.answerValue;
+    answers[fieldId] = {
+      value: input.value,
+      type_id: ciFieldContainer.querySelector(`[data-answer-type="${fieldId}"]`).value,
+      remark: ciFieldContainer.querySelector(`[data-answer-remark="${fieldId}"]`).value
+    };
+  });
+
+  const submitButton = document.getElementById('ciSubmit');
+  submitButton.disabled = true;
+  try {
+    const response = await fetch(ciSubmitUrl, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': ciCSRF},
+      body: JSON.stringify({
+        main_head: ciMainInput.value,
+        customer: ciCustomerInput.value,
+        vehicle: ciVehicleInput.value,
+        inspector: document.getElementById('ciInspector').value,
+        date: document.getElementById('ciDate').value,
+        notes: document.getElementById('ciNotes').value,
+        source_inspection_id: "{{ from_inspection|escapejs }}",
+        answers
+      })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error || 'Could not save this inspection.');
+    window.location.href = result.redirect || ciListUrl;
+  } catch (error) {
+    showCIError(error.message);
+    submitButton.disabled = false;
+  }
+}
+
+ciMainInput.addEventListener('change', renderInspectionFields);
+ciCustomerInput.addEventListener('change', loadInspectionVehicles);
+renderInspectionFields();
+loadInspectionVehicles();
+</script>
+{% endblock %}

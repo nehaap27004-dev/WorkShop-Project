@@ -75,7 +75,7 @@ urlpatterns = [
     path('receiptbill/delete/<int:pk>/', receiptbill_delete, name='receiptbill_delete'),
     path('ajax/get-customer-invoices-openings/', get_customer_invoices_and_openings, name='get_customer_invoices_and_openings'),
     path('receiptbill/<int:pk>/pdf/', receiptbill_pdf, name='receiptbill_pdf'),
-    path('receiptbill/view/<int:pk>/', view_receiptbill, name='view_receiptbill'),
+    path('receiptbill/edit/<int:pk>/', create_ReceiptBillClearance, name='edit_receiptbill'),
     
     path('create-paymentbill/', create_PaymentBillClearance, name='create_paymentbill'),
     path('paymentbill/<int:pk>/view/', view_PaymentBillClearance, name='view_paymentbill'),

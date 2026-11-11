@@ -71,37 +71,43 @@
                 {% csrf_token %}
 
                 <!-- Payment Information -->
-                <div class="row">
-                    <!-- Voucher No -->
-                    <div class="col-md-3 mb-3">
+                <div style="display:none;">
+                    {{ form.voucherType }}
+                </div>
+
+                <!-- Row 1: Voucher Number | Date | Cash/Bank | Cheque No -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
                         <label class="form-label">{{ form.voucher_no.label }}</label>
                         {{ form.voucher_no }}
                     </div>
 
-                    <!-- Voucher Type (HIDDEN) -->
-                    <div class="col-md-3 mb-3" style="display:none;">
-                        <label class="form-label">{{ form.voucherType.label }}</label>
-                        {{ form.voucherType }}
-                    </div>
-
-                    <!-- Date -->
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">{{ form.Date.label }}</label><span class="text-danger">*</span>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ form.Date.label }} <span class="text-danger">*</span></label>
                         {{ form.Date }}
                     </div>
 
-                    <!-- Ledger -->
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">{{ form.Ledger.label }}</label><span class="text-danger">*</span>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ form.Ledger.label }} <span class="text-danger">*</span></label>
                         {{ form.Ledger }}
                     </div>
 
-                    <!-- PaidTo has been moved to PaymentDetails — removed from master -->
+                    <div class="col-md-3">
+                        <label class="form-label">{{ form.ChequeNo.label }}</label>
+                        {{ form.ChequeNo }}
+                    </div>
+                </div>
 
-                    <!-- Is PDC (Checkbox) -->
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label d-block">&nbsp;</label>
-                        <div class="form-check">
+                <!-- Row 2: Cheque Date | PDC | Is Expense | Advance -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">{{ form.ChequeDate.label }}</label>
+                        {{ form.ChequeDate }}
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "PDC" %}</label>
+                        <div class="checkbox-box">
                             <input type="checkbox" name="{{ form.IsPDC.name }}" id="{{ form.IsPDC.id_for_label }}"
                                 class="form-check-input" {% if form.IsPDC.value %}checked{% endif %}>
                             <label class="form-check-label" for="{{ form.IsPDC.id_for_label }}">
@@ -110,21 +116,9 @@
                         </div>
                     </div>
 
-                    <!-- Cheque Date -->
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">{{ form.ChequeDate.label }}</label>
-                        {{ form.ChequeDate }}
-                    </div>
-
-                    <!-- Cheque No -->
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">{{ form.ChequeNo.label }}</label>
-                        {{ form.ChequeNo }}
-                    </div>
-                    
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label d-block">&nbsp;</label>
-                        <div class="form-check">
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "Expense" %}</label>
+                        <div class="checkbox-box">
                             <input type="checkbox" name="{{ form.IsExpense.name }}" id="{{ form.IsExpense.id_for_label }}"
                                 class="form-check-input" {% if form.IsExpense.value %}checked{% endif %}>
                             <label class="form-check-label" for="{{ form.IsExpense.id_for_label }}">
@@ -133,9 +127,9 @@
                         </div>
                     </div>
 
-                     <div class="col-md-3 mb-3">
-                        <label class="form-label d-block">&nbsp;</label>
-                        <div class="form-check">
+                    <div class="col-md-3">
+                        <label class="form-label">{% trans "Advance" %}</label>
+                        <div class="checkbox-box">
                             <input type="checkbox" name="{{ form.IsAdvance.name }}" id="{{ form.IsAdvance.id_for_label }}"
                                 class="form-check-input" {% if form.IsAdvance.value %}checked{% endif %}>
                             <label class="form-check-label" for="{{ form.IsAdvance.id_for_label }}">
@@ -170,65 +164,79 @@
                         <div class="card-body">
 
                             <!-- ── SIMPLE MODE INPUT ROW ── -->
-                            <div id="simpleInputRow" class="row">
-                                <div class="col-md-3 mb-2">
-                                    <label class="form-label">{% trans "Ledger Account" %}</label><span class="text-danger">*</span>
-                                    <select class="form-control" id="inputLedger">
-                                        <option value="">---------</option>
-                                        {% if formset.empty_form.Ledger.field.queryset %}
-                                        {% for option in formset.empty_form.Ledger.field.queryset %}
-                                        <option value="{{ option.id }}">{{ option }}</option>
-                                        {% endfor %}
-                                        {% endif %}
-                                    </select>
+                            <div id="simpleInputRow" style="display:none;">
+                                <!-- Row 1: Ledger Account | Amount | Paid To | Party VAT No -->
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Ledger Account" %} <span class="text-danger">*</span></label>
+                                        <select class="form-control" id="inputLedger">
+                                            <option value="">---------</option>
+                                            {% if formset.empty_form.Ledger.field.queryset %}
+                                            {% for option in formset.empty_form.Ledger.field.queryset %}
+                                            <option value="{{ option.id }}">{{ option }}</option>
+                                            {% endfor %}
+                                            {% endif %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Amount" %} <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="inputAmount" step="0.001" placeholder="0.000">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Paid To" %}</label>
+                                        <input type="text" class="form-control" id="inputPaidTo" placeholder="{% trans 'Paid To' %}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Party VAT No" %}</label>
+                                        <input type="text" class="form-control" id="inputVatNo" placeholder="{% trans 'VAT No' %}">
+                                    </div>
                                 </div>
-                                <div class="col-md-2 mb-2">
-                                    <label class="form-label">{% trans "Amount" %}</label><span class="text-danger">*</span>
-                                    <input type="number" class="form-control" id="inputAmount" step="0.001" placeholder="0.000">
-                                </div>
-                                <div class="col-md-2 mb-2">
-                                    <label class="form-label">{% trans "Paid To" %}</label>
-                                    <input type="text" class="form-control" id="inputPaidTo" placeholder="{% trans 'Paid To' %}">
-                                </div>
-                                <div class="col-md-2 mb-2">
-                                    <label class="form-label">{% trans "Party VAT No" %}</label>
-                                    <input type="text" class="form-control" id="inputVatNo" placeholder="{% trans 'VAT No' %}">
-                                </div>
-                                <div class="col-md-2 mb-2">
-                                    <label class="form-label">{% trans "Vehicle" %}</label>
-                                    <select class="form-control" id="inputVehicle">
-                                        <option value="">---------</option>
-                                        {% for vehicle in all_vehicles %}
-                                        <option value="{{ vehicle.id }}">{{ vehicle }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-2 mb-2">
-                                    <label class="form-label">{% trans "Description" %}</label>
-                                    <input type="text" class="form-control" id="inputDesc" placeholder="{% trans 'Enter description' %}">
-                                </div>
-                                <div class="col-md-1 mb-2 d-flex align-items-end gap-1">
-                                    <button type="button" id="addRow" class="btn btn-custom flex-fill">{% trans "Add" %}</button>
-                                    <button type="button" id="cancelSimple" class="btn btn-secondary flex-fill" style="display:none;">{% trans "Cancel" %}</button>
+
+                                <!-- Row 2: Vehicle | Description | Add Button -->
+                                <div class="row mb-2">
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Vehicle" %}</label>
+                                        <select class="form-control" id="inputVehicle">
+                                            <option value="">---------</option>
+                                            {% for vehicle in all_vehicles %}
+                                            <option value="{{ vehicle.id }}">{{ vehicle }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">{% trans "Description" %}</label>
+                                        <input type="text" class="form-control" id="inputDesc" placeholder="{% trans 'Enter description' %}">
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end gap-2">
+                                        <button type="button" id="addRow" class="btn btn-custom flex-fill" style="height: 38px;">
+                                            <i class="bi bi-plus-circle me-1"></i> {% trans "Add" %}
+                                        </button>
+                                        <button type="button" id="cancelSimple" class="btn btn-secondary flex-fill" style="height: 38px; display:none;">
+                                            {% trans "Cancel" %}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
 
                             <!-- Expense Voucher Details -->
-                            <div class="card mb-3">
-                                <div class="card-body">
-                                    <h6 class="text-dark mb-3">{% trans "Load Details from Expense (optional)" %}</h6>
-                                    <div class="row align-items-end">
-                                        <div class="col-md-4 mb-2">
+                            <div class="card mb-4 bg-light border">
+                                <div class="card-body py-3 px-3">
+                                    <h6 class="text-dark font-weight-bold mb-2">{% trans "Load Details from Expense (optional)" %}</h6>
+                                    <div class="row align-items-end g-2">
+                                        <div class="col-md-4">
+                                            <label class="form-label">{% trans "Search Expense" %}</label>
+                                            <input type="text" class="form-control" id="expenseSearchInput" placeholder="{% trans 'Type to search...' %}">
+                                        </div>
+                                        <div class="col-md-5">
                                             <label class="form-label">{% trans "Expense Voucher" %}</label>
-                                            <input type="text" class="form-control mb-1" id="expenseSearchInput" placeholder="{% trans 'Type to search...' %}">
                                             <select class="form-control" id="expenseSelect">
                                                 <option value="">{% trans "-- Select Expense --" %}</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-2 mb-2">
-                                            <button type="button" id="loadExpenseBtn" class="btn btn-custom" disabled>
-                                                {% trans "Load Details" %}
+                                        <div class="col-md-3">
+                                            <button type="button" id="loadExpenseBtn" class="btn btn-custom w-100" style="height: 38px;" disabled>
+                                                <i class="bi bi-box-arrow-in-down me-1"></i> {% trans "Load Details" %}
                                             </button>
                                         </div>
                                     </div>
@@ -270,72 +278,87 @@
                             </div> <!-- closes Expense card -->
 
                             <!-- ── DETAILED MODE INPUT ROW ── -->
-                            <div id="detailedInputRow" class="row" style="display:none;">
-                                <div class="col-md-2 mb-2">
-                                    <label class="form-label">{% trans "Invoice Date" %}</label><span class="text-danger">*</span>
-                                    <input type="date" class="form-control" id="inputInvoiceDate">
+                            <div id="detailedInputRow" style="display:none;">
+                                <!-- Row 1: Invoice Date | Ledger Account | Paid To | Party VAT No -->
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Invoice Date" %} <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" id="inputInvoiceDate">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Ledger Account" %} <span class="text-danger">*</span></label>
+                                        <select class="form-control" id="inputLedgerDetailed">
+                                            <option value="">---------</option>
+                                            {% if formset.empty_form.Ledger.field.queryset %}
+                                            {% for option in formset.empty_form.Ledger.field.queryset %}
+                                            <option value="{{ option.id }}">{{ option }}</option>
+                                            {% endfor %}
+                                            {% endif %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Paid To" %}</label>
+                                        <input type="text" class="form-control" id="inputPaidToDetailed" placeholder="{% trans 'Paid To' %}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Party VAT No" %}</label>
+                                        <input type="text" class="form-control" id="inputVatNoDetailed" placeholder="{% trans 'VAT No' %}">
+                                    </div>
                                 </div>
-                                <div class="col-md-2 mb-2">
-                                    <label class="form-label">{% trans "Ledger Account" %}</label><span class="text-danger">*</span>
-                                    <select class="form-control" id="inputLedgerDetailed">
-                                        <option value="">---------</option>
-                                        {% if formset.empty_form.Ledger.field.queryset %}
-                                        {% for option in formset.empty_form.Ledger.field.queryset %}
-                                        <option value="{{ option.id }}">{{ option }}</option>
-                                        {% endfor %}
-                                        {% endif %}
-                                    </select>
+
+                                <!-- Row 2: Invoice No | Vehicle | VAT Type | Description -->
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Invoice No" %}</label>
+                                        <input type="text" class="form-control" id="inputInvoiceNo" placeholder="{% trans 'Inv No' %}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Vehicle" %}</label>
+                                        <select class="form-control" id="inputVehicleDetailed">
+                                            <option value="">---------</option>
+                                            {% for vehicle in all_vehicles %}
+                                            <option value="{{ vehicle.id }}">{{ vehicle }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "VAT Type" %} <span class="text-danger">*</span></label>
+                                        <select class="form-control" id="inputVatType">
+                                            <option value="1">{% trans "No VAT" %}</option>
+                                            <option value="2">{% trans "Inclusive VAT (5%)" %}</option>
+                                            <option value="3">{% trans "Exclusive VAT (5%)" %}</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Description" %}</label>
+                                        <input type="text" class="form-control" id="inputDescDetailed" placeholder="{% trans 'Description' %}">
+                                    </div>
                                 </div>
-                                <div class="col-md-2 mb-2">
-                                    <label class="form-label">{% trans "Paid To" %}</label>
-                                    <input type="text" class="form-control" id="inputPaidToDetailed" placeholder="{% trans 'Paid To' %}">
-                                </div>
-                                <div class="col-md-2 mb-2">
-                                    <label class="form-label">{% trans "Party VAT No" %}</label>
-                                    <input type="text" class="form-control" id="inputVatNoDetailed" placeholder="{% trans 'VAT No' %}">
-                                </div>
-                                <div class="col-md-1 mb-2">
-                                    <label class="form-label">{% trans "Description" %}</label>
-                                    <input type="text" class="form-control" id="inputDescDetailed" placeholder="{% trans 'Description' %}">
-                                </div>
-                                <div class="col-md-1 mb-2">
-                                    <label class="form-label">{% trans "Invoice No" %}</label>
-                                    <input type="text" class="form-control" id="inputInvoiceNo" placeholder="{% trans 'Inv No' %}">
-                                </div>
-                                <div class="col-md-1 mb-2">
-                                    <label class="form-label">{% trans "VAT Type" %}</label><span class="text-danger">*</span>
-                                    <select class="form-control" id="inputVatType">
-                                        <option value="1">{% trans "No VAT" %}</option>
-                                        <option value="2">{% trans "Inclusive VAT (5%)" %}</option>
-                                        <option value="3">{% trans "Exclusive VAT (5%)" %}</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-1 mb-2">
-                                    <label class="form-label">{% trans "Vehicle" %}</label>
-                                    <select class="form-control" id="inputVehicleDetailed">
-                                        <option value="">---------</option>
-                                        {% for vehicle in all_vehicles %}
-                                        <option value="{{ vehicle.id }}">{{ vehicle }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-1 mb-2">
-                                    <label class="form-label">{% trans "Amount" %}</label><span class="text-danger">*</span>
-                                    <input type="number" class="form-control" id="inputAmountDetailed" step="0.001" placeholder="0.000">
-                                </div>
-                                <div class="col-md-1 mb-2">
-                                    <label class="form-label">{% trans "Taxable" %}</label>
-                                    <input type="number" class="form-control" id="inputTaxableDisplay" step="0.001" readonly
-                                        style="background-color:#f8f9fa;">
-                                </div>
-                                <div class="col-md-1 mb-2">
-                                    <label class="form-label">{% trans "VAT" %}</label>
-                                    <input type="number" class="form-control" id="inputVatDisplay" step="0.001" readonly
-                                        style="background-color:#f8f9fa;">
-                                </div>
-                                <div class="col-md-1 mb-2 d-flex align-items-end gap-1">
-                                    <button type="button" id="addRowDetailed" class="btn btn-custom flex-fill">{% trans "Add" %}</button>
-                                    <button type="button" id="cancelDetailed" class="btn btn-secondary flex-fill" style="display:none;">{% trans "Cancel" %}</button>
+
+                                <!-- Row 3: Amount | Taxable | VAT | Action Button -->
+                                <div class="row mb-2">
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Amount" %} <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="inputAmountDetailed" step="0.001" placeholder="0.000">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "Taxable" %}</label>
+                                        <input type="number" class="form-control" id="inputTaxableDisplay" step="0.001" readonly
+                                            style="background-color:#f8fafc;">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">{% trans "VAT" %}</label>
+                                        <input type="number" class="form-control" id="inputVatDisplay" step="0.001" readonly
+                                            style="background-color:#f8fafc;">
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end gap-2">
+                                        <button type="button" id="addRowDetailed" class="btn btn-custom flex-fill" style="height: 38px;">
+                                            <i class="bi bi-plus-circle me-1"></i> {% trans "Add" %}
+                                        </button>
+                                        <button type="button" id="cancelDetailed" class="btn btn-secondary flex-fill" style="height: 38px; display:none;">
+                                            {% trans "Cancel" %}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -489,37 +512,29 @@
         color: #ffffff !important;
     }
 
+    form label.form-label,
     .form-label {
-        font-size: 0.85rem;
-        color: #495057;
-        margin-bottom: 0.375rem;
         font-weight: 600;
+        color: #374151;
+        font-size: 0.82rem;
+        margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        white-space: nowrap;
     }
 
-    .form-control,
+    input:not([type="checkbox"]):not([type="radio"]),
     select {
-        font-size: 0.875rem;
-        padding: 0.5rem 0.75rem;
+        height: 38px !important;
+        width: 100% !important;
         border: 1px solid #ced4da;
-        border-radius: 0.35rem;
-        width: 100%;
-    }
-
-    input[type="text"],
-    input[type="number"],
-    input[type="date"],
-    input[type="email"],
-    textarea,
-    select {
-        display: block;
-        width: 100%;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.875rem;
-        line-height: 1.5;
-        color: #495057;
-        background-color: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 0.35rem;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 0.88rem;
+        background-color: #ffffff;
+        color: #1f2937;
+        transition: all 0.15s ease-in-out;
     }
 
     input:focus,
@@ -530,22 +545,37 @@
         box-shadow: 0 0 0 3px rgba(159, 16, 69, 0.12) !important;
     }
 
-    input[type="checkbox"] {
-        width: auto;
-        height: 18px;
+    .checkbox-box {
+        display: flex;
+        align-items: center;
+        height: 38px;
+        padding: 0 12px;
+        background: #f8fafc;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .checkbox-box:focus-within,
+    .checkbox-box:hover {
+        border-color: #9f1045;
+        background: #ffffff;
+    }
+
+    .checkbox-box .form-check-input {
+        width: 1.15rem !important;
+        height: 1.15rem !important;
+        margin-top: 0;
         cursor: pointer;
         accent-color: #9f1045;
     }
 
-    .form-check {
-        display: flex;
-        align-items: center;
-        padding-top: 0.5rem;
-    }
-
-    .form-check-label {
+    .checkbox-box .form-check-label {
         cursor: pointer;
-        font-size: 0.875rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #4b5563;
+        margin-left: 8px;
         margin-bottom: 0;
     }
 

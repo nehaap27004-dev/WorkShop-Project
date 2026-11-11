@@ -161,33 +161,32 @@ def build_customer_outstanding_data(cid, from_date=None, to_date=None):
     }
 
     # ---------------------------------------------------
-    # INVOICES
+    # INVOICES (Workshop Jobcard Invoices)
     # ---------------------------------------------------
     invoices = Invoice.objects.filter(
-        payment_mode='Credit',
         customer_id=cid
-    ).select_related('customer', 'voucherType')
+    ).exclude(status='cancelled').select_related('customer', 'voucherType')
 
     if from_date:
-        invoices = invoices.filter(date__gte=from_date)
+        invoices = invoices.filter(invoice_date__gte=from_date)
     if to_date:
-        invoices = invoices.filter(date__lte=to_date)
+        invoices = invoices.filter(invoice_date__lte=to_date)
 
     for invoice in invoices:
-        debit_amt = invoice.grand_total
+        debit_amt = Decimal(str(invoice.get_grand_total()))
         credit_amt = credit_map.get((invoice.pk, CLEARANCE_TYPE_INVOICE), Decimal('0'))
         outstanding_amt = debit_amt - credit_amt
 
         data['bill_rows'].append({
             'source': invoice,
             'bill_type': 'invoice',
-            'date': invoice.date,
-            'number': invoice.voucher_no,
-            'po_no': invoice.buyer_order_no,
+            'date': invoice.invoice_date,
+            'number': invoice.invoice_number or invoice.voucher_number or f"INV#{invoice.id}",
+            'po_no': '-',
             'debit_amt': debit_amt,
             'credit_amt': credit_amt,
             'outstanding_amt': outstanding_amt,
-            'is_cleared': invoice.IsCleared,
+            'is_cleared': (invoice.status == 'paid' or outstanding_amt <= Decimal('0.01')),
         })
         data['total_invoice'] += debit_amt
 

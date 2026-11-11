@@ -25,6 +25,7 @@ from django.views.decorators.http import require_POST, require_GET
 import json
 from item_master.models import *
 from fleet_app.models import *
+from jobcard_app.models import Invoice
 from django.db import connection
 from django.db.models import Sum, Q, Count
 from accounts_app.common import *
@@ -157,7 +158,7 @@ VOUCHER_EDIT_URL_MAP = {
     'Asset Purchase': 'asset_app:asset_purchase_edit',
     'Asset Opening': 'asset_app:asset_opening_edit',
 
-    'Invoice': 'fleet_app:edit_invoice',
+    'Invoice': 'jobcard_app:invoice_edit',
     'Hire': 'fleet_app:fleet_hire_edit',
     'Repair': 'fleet_app:repair_edit',
      
@@ -188,7 +189,7 @@ REMARK_CONFIG = {
     #'Asset Purchase':         {'source': 'detail', 'model': AssetPurchaseDetails,  'fk': 'purchase',          'field': 'description'},
     #'Asset Opening':          {'source': 'detail', 'model': AssetOpeningDetail,    'fk': 'asset_opening',     'field': 'description'},
 
-    #'Invoice':                {'source': 'detail', 'model': InvoiceDetails,        'fk': 'invoice',           'field': 'description'},
+    'Invoice':                {'source': 'master', 'field': 'notes'},
     'Hire':                   None,
     'Repair':                 {'source': 'master', 'field': 'remark'},
 
@@ -1656,28 +1657,24 @@ def create_payment(request):
         "bill_clearances": bill_clearances,
     })
     
-def update_invoice_cleared_status(invoice_id):
+def update_invoice_cleared_status(invoice_id, payment_mode=None):
     """
-    Update the IsCleared status for a specific invoice
-    based on Receipt Bill + Credit Note clearance
+    Update the status, amount_paid, and payment_mode for a specific workshop invoice
+    based on Receipt Bill + Credit Note clearances.
 
     Returns:
         (invoice, was_updated, total_cleared, remaining)
     """
-
     try:
-
         from accounts_app.models import (
             ReceiptBillDetails,
             CreditNoteDetail
         )
-
-        from fleet_app.models import Invoice
+        from jobcard_app.models import Invoice
 
         invoice = Invoice.objects.get(pk=invoice_id)
 
         # ✅ Receipt Bill Total
-
         receipt_total = ReceiptBillDetails.objects.filter(
             VoucherNo=invoice_id,
             voucherType__id=2
@@ -1686,7 +1683,6 @@ def update_invoice_cleared_status(invoice_id):
         )['total'] or Decimal('0.000')
 
         # ✅ Credit Note Total
-
         credit_total = CreditNoteDetail.objects.filter(
             VoucherNo=invoice_id,
             voucherType__id=2
@@ -1695,89 +1691,54 @@ def update_invoice_cleared_status(invoice_id):
         )['total'] or Decimal('0.000')
 
         # ✅ Final Cleared Total
+        total_cleared = receipt_total + credit_total
+        grand_total = Decimal(str(invoice.get_grand_total()))
+        remaining = grand_total - total_cleared
 
-        total_cleared = (
-            receipt_total +
-            credit_total
-        )
-
-        print(f"\n📊 Invoice ID={invoice_id}")
-        print(f"Voucher No: {invoice.voucher_no}")
-
+        print(f"\n📊 Workshop Invoice ID={invoice_id}")
+        print(f"Invoice No: {invoice.invoice_number or invoice.voucher_number}")
         print(f"Receipt Total: {receipt_total}")
         print(f"Credit Note Total: {credit_total}")
-
-        print(f"Grand Total: {invoice.grand_total}")
+        print(f"Grand Total: {grand_total}")
         print(f"Total Cleared: {total_cleared}")
-
-        # ✅ Remaining Balance
-
-        remaining = (
-            invoice.grand_total -
-            total_cleared
-        )
-
         print(f"Remaining: {remaining}")
 
-        # ✅ Cleared Status
+        invoice.amount_paid = total_cleared
 
-        should_be_cleared = (
-            remaining <= Decimal('0.01')
-        )
+        # Update payment mode if provided (or set to credit if completely unpaid)
+        if payment_mode:
+            invoice.payment_mode = payment_mode
+        elif total_cleared <= Decimal('0.000'):
+            invoice.payment_mode = 'credit'
 
-        print(f"Should Be Cleared: {should_be_cleared}")
-        print(f"Current IsCleared: {invoice.IsCleared}")
+        # Derive status
+        if invoice.status != 'cancelled':
+            if total_cleared <= Decimal('0.000'):
+                if invoice.status not in ('draft', 'overdue'):
+                    invoice.status = 'sent'
+            elif total_cleared + Decimal('0.005') >= grand_total:
+                invoice.status = 'paid'
+            else:
+                invoice.status = 'partial'
 
-        # ✅ Update Status
-
-        if invoice.IsCleared != should_be_cleared:
-
-            invoice.IsCleared = should_be_cleared
-
-            invoice.save()
-
-            print(
-                f"✅ IsCleared updated to: "
-                f"{invoice.IsCleared}"
-            )
-
-            invoice.refresh_from_db()
-
-            print(
-                f"✅ Verified From DB: "
-                f"{invoice.IsCleared}"
-            )
-
-            was_updated = True
-
-        else:
-
-            was_updated = False
+        invoice.save()
+        print(f"✅ Workshop Invoice updated: status={invoice.status}, mode={invoice.payment_mode}, paid={invoice.amount_paid}")
 
         return (
             invoice,
-            was_updated,
+            True,
             total_cleared,
             remaining
         )
 
+    except Invoice.DoesNotExist:
+        print(f"⚠️ Invoice ID {invoice_id} not found")
+        return (None, False, Decimal('0.000'), Decimal('0.000'))
     except Exception as e:
-
-        print(
-            f"❌ Error in "
-            f"update_invoice_cleared_status: {str(e)}"
-        )
-
+        print(f"❌ Error in update_invoice_cleared_status: {str(e)}")
         import traceback
-
         traceback.print_exc()
-
-        return (
-            None,
-            False,
-            Decimal('0.000'),
-            Decimal('0.000')
-        )
+        return (None, False, Decimal('0.000'), Decimal('0.000'))
 
 
 def get_customer_invoices_and_openings(request):
@@ -1814,13 +1775,11 @@ def get_customer_invoices_and_openings(request):
     opening_data = []
 
     # =========================
-    # INVOICES
+    # INVOICES (Workshop Jobcard Invoices)
     # =========================
     invoices = Invoice.objects.filter(
         customer_id=customer_id
-    ).filter(
-        Q(IsCleared=False) | Q(id__in=linked_invoice_ids)
-    )
+    ).exclude(status='cancelled')
 
     for inv in invoices:
         receipt_qs = ReceiptBillDetails.objects.filter(VoucherNo=inv.id, voucherType__id=2)
@@ -1834,7 +1793,8 @@ def get_customer_invoices_and_openings(request):
         credit_total = credit_qs.aggregate(total=Sum('Amount'))['total'] or Decimal('0.000')
 
         total_paid_excl_self = float(receipt_total) + float(credit_total)
-        balance = float(inv.grand_total) - total_paid_excl_self
+        grand_total = float(inv.get_grand_total())
+        balance = grand_total - total_paid_excl_self
 
         # This bill's own previously-saved amount against this invoice —
         # used to prefill the input, NOT added to balance anymore since
@@ -1847,14 +1807,17 @@ def get_customer_invoices_and_openings(request):
                 ).aggregate(total=Sum('Amount'))['total'] or 0
             )
 
-        if balance > 0 or inv.id in linked_invoice_ids:
+        if balance > 0.001 or inv.id in linked_invoice_ids:
+            inv_display_no = inv.invoice_number or inv.voucher_number or f"INV#{inv.id}"
+            inv_date_str = inv.invoice_date.strftime('%Y-%m-%d') if inv.invoice_date else '-'
+            cust_name = getattr(inv.customer, 'ledger_name', str(inv.customer))
             invoice_data.append({
                 'type': 'invoice',
                 'invoice_id': inv.id,
-                'voucher_no': inv.voucher_no,
-                'date': inv.date.strftime('%Y-%m-%d'),
-                'customer': inv.customer.ledger_name,
-                'grand_total': float(inv.grand_total),
+                'voucher_no': inv_display_no,
+                'date': inv_date_str,
+                'customer': cust_name,
+                'grand_total': grand_total,
                 'amount_cleared': total_paid_excl_self,
                 'receivable_balance': max(balance, 0),
                 'existing_amount': own_amount,
@@ -2160,33 +2123,21 @@ def create_ReceiptBillClearance(request, pk=None):
                                     new_opening_totals.get(detail.VoucherNo, Decimal('0')) + detail.Amount
                                 )
 
-                        # 🔍 Invoice status update — unchanged, full recompute
-                        # is safe here since Invoice.grand_total has no
-                        # "pre-import already-paid" concept to lose.
-                        print("\n🔍 Starting invoice status update...")
+                        # 🔍 Invoice status and payment mode update
+                        print("\n🔍 Starting workshop invoice status & payment mode update...")
+                        payment_mode = 'cash'
+                        if master.ChequeNo or master.IsPDC:
+                            payment_mode = 'bank'
+                        elif master.Ledger:
+                            ledger_group_id = getattr(master.Ledger, 'groups_id', None)
+                            ledger_name = (getattr(master.Ledger, 'ledger_name', '') or '').lower()
+                            if ledger_group_id == 5 or 'bank' in ledger_name:
+                                payment_mode = 'bank'
+                            elif ledger_group_id == 8 or 'cash' in ledger_name:
+                                payment_mode = 'cash'
+
                         for invoice_id in invoices_to_check:
-                            try:
-                                invoice = Invoice.objects.get(pk=invoice_id)
-
-                                total_paid = sum(
-                                    ReceiptBillDetails.objects.filter(
-                                        VoucherNo=invoice_id,
-                                        voucherType__id=2
-                                    ).values_list('Amount', flat=True)
-                                ) or Decimal('0.00')
-
-                                remaining = invoice.grand_total - total_paid
-                                should_be_cleared = abs(remaining) <= Decimal('0.01')
-
-                                if invoice.IsCleared != should_be_cleared:
-                                    Invoice.objects.filter(pk=invoice_id).update(IsCleared=should_be_cleared)
-
-                            except Invoice.DoesNotExist:
-                                print(f"  ⚠️ Invoice ID {invoice_id} not found")
-                            except Exception as e:
-                                print(f"  ❌ Error: {str(e)}")
-                                import traceback
-                                traceback.print_exc()
+                            update_invoice_cleared_status(invoice_id, payment_mode=payment_mode)
 
                         print("\n✅ Finished processing all invoices")
 
@@ -2296,7 +2247,17 @@ def view_receiptbill(request, pk):
             }, status=403)
 
     instance = get_object_or_404(ReceiptBillMaster, pk=pk)
-    details = ReceiptBillDetails.objects.filter(BillMaster=instance).select_related('voucherType')
+    details = list(ReceiptBillDetails.objects.filter(BillMaster=instance).select_related('voucherType'))
+    for d in details:
+        if d.voucherType_id == 2:
+            inv = Invoice.objects.filter(pk=d.VoucherNo).first()
+            d.display_voucher_no = (inv.invoice_number or inv.voucher_number) if inv else f"#{d.VoucherNo}"
+        elif d.voucherType_id == 16:
+            op = BillWiseOpening.objects.filter(pk=d.VoucherNo).first()
+            d.display_voucher_no = op.InvNo if op else f"#{d.VoucherNo}"
+        else:
+            d.display_voucher_no = f"#{d.VoucherNo}"
+
     return render(request, 'view_receiptbill.html', {
         'receipt_bill_instance': instance,
         'details': details,
@@ -7176,10 +7137,10 @@ VOUCHER_DETAIL_MAP = {
         'po_field': 'po_no',
     },
     'Invoice': {
-        'app': 'fleet_app',
+        'app': 'jobcard_app',
         'model': 'Invoice',
-        'invoice_field': 'voucher_no',
-        'po_field': 'buyer_order_no',
+        'invoice_field': 'invoice_number',
+        'po_field': None,
     },
     # Add every other VoucherType that can post to a Sundry Debtor ledger here,
     # e.g. 'Credit Note': {...}, 'Receipt': {...}
@@ -7251,8 +7212,8 @@ def _get_voucher_detail(voucher_type_name, voucher_no, is_opening=False):
     if not obj:
         return fallback_no, '-'
 
-    invoice_no = getattr(obj, config['invoice_field'], None) or fallback_no
-    po_no = getattr(obj, config['po_field'], None) or '-'
+    invoice_no = getattr(obj, config['invoice_field'], None) or getattr(obj, 'voucher_number', None) or fallback_no
+    po_no = getattr(obj, config['po_field'], None) if config.get('po_field') else '-'
     return invoice_no, po_no
 
 

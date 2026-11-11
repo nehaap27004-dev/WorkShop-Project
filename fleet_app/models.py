@@ -494,55 +494,59 @@ class Vouchers(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
     
-    def get_next_voucher_number(self, model_class=None, number_field='voucher_number'):
-    
-
+    def get_next_voucher_number(self, model_class=None, number_field=None):
         from django.apps import apps
         from django.db import transaction
         from django.db.models import ForeignKey
-
-        number_field = number_field or 'voucher_number'
 
         all_voucher_numbers = []
 
         # If a model is provided, check only that model.
         if model_class:
-            models_to_check = [model_class]
+            field_to_use = number_field
+            if not field_to_use:
+                for candidate in ['voucher_number', 'voucher_no']:
+                    try:
+                        model_class._meta.get_field(candidate)
+                        field_to_use = candidate
+                        break
+                    except Exception:
+                        continue
+            models_to_check = [(model_class, field_to_use)] if field_to_use else []
         else:
             # Otherwise, find all models linked to this Voucher Master.
             models_to_check = []
-
             for model in apps.get_models():
                 try:
                     field = model._meta.get_field('voucherType')
-
-                    if (
-                        isinstance(field, ForeignKey)
-                        and field.remote_field.model == type(self)
-                    ):
-                        model._meta.get_field('voucher_number')
-                        models_to_check.append(model)
-
+                    if (isinstance(field, ForeignKey) and field.remote_field.model == type(self)):
+                        target_field = number_field
+                        if not target_field:
+                            for candidate in ['voucher_number', 'voucher_no']:
+                                try:
+                                    model._meta.get_field(candidate)
+                                    target_field = candidate
+                                    break
+                                except Exception:
+                                    continue
+                        if target_field:
+                            models_to_check.append((model, target_field))
                 except Exception:
                     continue
 
         # Collect existing voucher numbers.
-        for model in models_to_check:
+        for model, f_name in models_to_check:
             try:
-                model._meta.get_field(number_field)
-
                 records = model.objects.filter(
                     voucherType=self
                 ).exclude(
-                    **{f'{number_field}__isnull': True}
+                    **{f'{f_name}__isnull': True}
                 ).exclude(
-                    **{number_field: ''}
+                    **{f_name: ''}
                 ).values_list(
-                    number_field, flat=True
+                    f_name, flat=True
                 )
-
                 all_voucher_numbers.extend(records)
-
             except Exception:
                 continue
 
@@ -556,7 +560,6 @@ class Vouchers(models.Model):
 
         # Find the highest existing number.
         for voucher_no in all_voucher_numbers:
-
             number_part = str(voucher_no).strip()
 
             if prefix:
@@ -579,19 +582,15 @@ class Vouchers(models.Model):
 
         while True:
             formatted_number = str(next_number).zfill(min_length)
-
-            voucher_number = (
-                f'{prefix}{formatted_number}{suffix}'
-            )
+            voucher_number = f'{prefix}{formatted_number}{suffix}'
 
             # Check duplicate in the selected model(s).
             duplicate = False
-
-            for model in models_to_check:
+            for model, f_name in models_to_check:
                 try:
                     if model.objects.filter(
                         voucherType=self,
-                        **{number_field: voucher_number}
+                        **{f_name: voucher_number}
                     ).exists():
                         duplicate = True
                         break

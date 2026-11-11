@@ -1933,3 +1933,104 @@ class InvoiceVehicle(models.Model):
     mileage = models.PositiveIntegerField(null=True, blank=True)
     notes   = models.CharField(max_length=255, blank=True, default='')
 
+
+
+class CIMainHead(models.Model):
+    name       = models.CharField(max_length=120, unique=True)
+    order      = models.PositiveIntegerField(default=0)
+    created_on = models.DateTimeField(auto_now_add=True)
+ 
+    class Meta:
+        ordering = ['order', 'id']
+ 
+    def __str__(self):
+        return self.name
+ 
+ 
+class CISubHead(models.Model):
+    main_head = models.ForeignKey(CIMainHead, on_delete=models.CASCADE, related_name='subs')
+    name      = models.CharField(max_length=120)
+    order     = models.PositiveIntegerField(default=0)
+ 
+    class Meta:
+        ordering = ['order', 'id']
+        unique_together = ('main_head', 'name')
+ 
+    def __str__(self):
+        return f"{self.main_head} > {self.name}"
+ 
+ 
+class CIType(models.Model):
+    """Standalone list: no longer nested under a Sub Head."""
+    name  = models.CharField(max_length=120)
+    order = models.PositiveIntegerField(default=0)
+    # legacy column, no longer used; kept nullable so old data survives
+    
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return self.name
+
+
+class CIField(models.Model):
+    
+    sub_head      = models.ForeignKey(CISubHead, on_delete=models.CASCADE, related_name='fields')
+                                     
+    type          = models.ForeignKey(CIType, on_delete=models.SET_NULL, null=True, blank=True,
+                                      related_name='fields')
+    label         = models.CharField(max_length=200)
+    options       = models.TextField(blank=True)
+    default_value = models.CharField(max_length=200, blank=True)
+    remark_hint   = models.CharField(max_length=200, blank=True)
+    is_required   = models.BooleanField(default=False)
+    order         = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    
+    def __str__(self):
+        return self.label
+ 
+class CustomInspection(models.Model):
+    inspection_number = models.CharField(max_length=30, blank=True)
+    main_head   = models.ForeignKey(CIMainHead, on_delete=models.PROTECT, related_name='inspections')
+    customer    = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT,
+                                    related_name='custom_inspections')
+    
+    vehicle     = models.ForeignKey('WorkshopVehicle', on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='custom_inspections')
+    inspector   = models.ForeignKey('fleet_app.Staff', on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='custom_inspections')
+    inspection_date = models.DateField()
+    # optional link to the normal vehicle inspection it was opened from
+    source_inspection_id = models.PositiveIntegerField(null=True, blank=True)
+    notes       = models.TextField(blank=True)
+    created_on  = models.DateTimeField(auto_now_add=True)
+    created_by  = models.IntegerField(null=True, blank=True)
+ 
+    class Meta:
+        ordering = ['-created_on']
+ 
+    def __str__(self):
+        return self.inspection_number or f"CI-{self.pk}"
+ 
+ 
+class CustomInspectionAnswer(models.Model):
+    inspection = models.ForeignKey(CustomInspection, on_delete=models.CASCADE, related_name='answers')
+    # SET_NULL: deleting a field from the template keeps the saved answer
+    field      = models.ForeignKey(CIField, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='answers')
+    # snapshots (copied at save time)
+    sub_head_name = models.CharField(max_length=120)
+    type_name     = models.CharField(max_length=120, blank=True)
+    label         = models.CharField(max_length=200)
+    field_type    = models.CharField(max_length=10)
+    value  = models.TextField(blank=True)     # checkbox: "A | B"
+    remark = models.TextField(blank=True)
+    order  = models.PositiveIntegerField(default=0)
+ 
+    class Meta:
+        ordering = ['order', 'id']
+ 

@@ -533,7 +533,7 @@ class ReceiptBillMaster(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     voucher_no = models.CharField(max_length=100, unique=True)
-    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=4, related_name="receiptbill_master_voucher_type")
+    voucherType = models.ForeignKey('fleet_app.Vouchers', on_delete=models.PROTECT, default=5, related_name="receiptbill_master_voucher_type")
     Date = models.DateField( default=timezone.now )
     Customer = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name='receipt_party', blank=True, null=True)
     Ledger = models.ForeignKey(LedgerCreation, on_delete=models.PROTECT, related_name='cash_bank')
