@@ -1,6 +1,6 @@
 {% extends 'fleet_base1.html' %}
 {% load i18n %}
-{% block title %}{% trans "Custom Inspection" %} {{ insp.inspection_number }}{% endblock %}
+{% block title %}{% trans "Custom Inspection" %} {{ ci.inspection_number }}{% endblock %}
 
 {% block content %}
 <style>
@@ -8,51 +8,64 @@
 .cd-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:16px;box-shadow:0 1px 3px rgba(15,23,42,.04);overflow:hidden}
 .cd-ch{padding:11px 18px;background:#fdf2f5;color:#9f1045;font-weight:700;font-size:14px}
 .cd-cb{padding:16px 18px}
-.cd-info{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-@media(max-width:700px){.cd-info{grid-template-columns:1fr}}
+.cd-info{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:700px){.cd-info{grid-template-columns:1fr 1fr}}
 .cd-l{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
 .cd-v{font-size:13.5px;color:#0f172a;font-weight:600;margin-top:2px}
 .cd-tbl{width:100%;border-collapse:collapse}
 .cd-tbl th{font-size:10.5px;color:#64748b;text-transform:uppercase;text-align:left;padding:7px 8px;border-bottom:1px solid #e2e8f0}
 .cd-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:top}
-.cd-btn{background:#fff;color:#334155;border:1px solid #cbd5e1;border-radius:6px;padding:8px 16px;font-size:12.5px;font-weight:600;text-decoration:none!important;display:inline-flex;align-items:center;gap:6px}
+.cd-btn{background:#fff;color:#334155;border:1px solid #cbd5e1;border-radius:6px;padding:8px 16px;font-size:12.5px;font-weight:600;text-decoration:none!important;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.cd-btn.pri{background:#9f1045;border-color:#9f1045;color:#fff}
+.cd-btn.dng{color:#dc2626;border-color:#fca5a5}
 </style>
 
 <div class="cd-wrap">
+  {% if messages %}{% for m in messages %}
+    <div class="alert {% if 'error' in m.tags or 'danger' in m.tags %}alert-danger{% else %}alert-success{% endif %}">{{ m }}</div>
+  {% endfor %}{% endif %}
+
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap" style="gap:10px">
     <div>
-      <h2 class="module-title mb-1"><i class="bi bi-layers text-burgundy mr-2"></i>{{ insp.inspection_number }} — {{ insp.main_head.name }}</h2>
-      <div class="text-muted small">{% trans "Custom inspection record" %}</div>
+      <h2 class="module-title mb-1"><i class="bi bi-layers text-burgundy mr-2"></i>{% trans "Custom Inspection" %} — {{ ci.inspection_number }}</h2>
+      <div class="text-muted small">{% trans "Recorded against the vehicle inspection voucher" %}</div>
     </div>
-    <div style="display:flex;gap:8px">
-      <a href="{% url 'jobcard_app:custom_inspection_list' %}" class="cd-btn"><i class="bi bi-arrow-left"></i> {% trans "Back to List" %}</a>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="{% url 'jobcard_app:inspection_list' %}" class="cd-btn"><i class="bi bi-arrow-left"></i> {% trans "Back to Inspections" %}</a>
+      {% if ci.vehicle_inspection_id %}
+      <a href="{% url 'jobcard_app:custom_inspection_edit' ci.pk %}" class="cd-btn pri"><i class="bi bi-pencil"></i> {% trans "Edit" %}</a>
+      {% endif %}
+      <form method="post" action="{% url 'jobcard_app:custom_inspection_delete' ci.pk %}"
+            onsubmit="return confirm('Delete this custom inspection? This cannot be undone.');">
+        {% csrf_token %}
+        <button type="submit" class="cd-btn dng"><i class="bi bi-trash"></i> {% trans "Delete" %}</button>
+      </form>
     </div>
   </div>
 
   <div class="cd-card"><div class="cd-cb"><div class="cd-info">
-    <div><div class="cd-l">Customer</div><div class="cd-v">{{ insp.customer.ledger_name }}</div></div>
-    <div><div class="cd-l">Vehicle</div><div class="cd-v">{{ insp.vehicle.vehicle_number|default:"—" }}</div></div>
-    <div><div class="cd-l">Date</div><div class="cd-v">{{ insp.inspection_date|date:"d M Y" }}</div></div>
-    <div><div class="cd-l">Inspector</div><div class="cd-v">{{ insp.inspector.full_name|default:"—" }}</div></div>
-    <div style="grid-column:span 2"><div class="cd-l">Notes</div><div class="cd-v">{{ insp.notes|default:"—" }}</div></div>
+    <div><div class="cd-l">Voucher</div><div class="cd-v">{{ ci.inspection_number }}</div></div>
+    <div><div class="cd-l">Customer</div><div class="cd-v">{{ ci.customer.ledger_name }}</div></div>
+    <div><div class="cd-l">Vehicle</div><div class="cd-v">{{ ci.vehicle.vehicle_number|default:"—" }}</div></div>
+    <div><div class="cd-l">Date</div><div class="cd-v">{{ ci.inspection_date|date:"d M Y" }}</div></div>
   </div></div></div>
 
   {% for g in groups %}
   <div class="cd-card">
-    <div class="cd-ch">{{ g.sub }}</div>
+    <div class="cd-ch">{% if g.main %}{{ g.main }} › {% endif %}{{ g.sub }}</div>
     <div class="cd-cb" style="padding:0 18px 8px">
-        <table class="cd-tbl">
+      <table class="cd-tbl">
         <thead><tr><th style="width:36px">#</th><th>Description</th><th>Value</th><th>Type</th><th>Remark</th></tr></thead>
         <tbody>
         {% for a in g.rows %}
-            <tr><td>{{ forloop.counter }}</td><td>{{ a.label }}</td><td><strong>{{ a.value|default:"—" }}</strong></td><td>{{ a.type_name|default:"—" }}</td><td class="text-muted">{{ a.remark|default:"" }}</td></tr>
+          <tr><td>{{ forloop.counter }}</td><td>{{ a.label }}</td><td><strong>{{ a.value|default:"—" }}</strong></td><td>{{ a.type_name|default:"—" }}</td><td class="text-muted">{{ a.remark|default:"" }}</td></tr>
         {% endfor %}
         </tbody>
-        </table>
+      </table>
     </div>
   </div>
   {% empty %}
-  <div class="text-center text-muted py-5">{% trans "No fields were recorded." %}</div>
+  <div class="text-center text-muted py-5">{% trans "No entries were recorded." %}</div>
   {% endfor %}
 </div>
 {% endblock %}

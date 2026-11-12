@@ -246,4 +246,6 @@ urlpatterns = [
     path('custom-inspection/api/node/delete/',   views.ci_delete_node, name='ci_delete_node'),
     path('custom-inspection/api/fields/save/',   views.ci_save_fields, name='ci_save_fields'),
     path('custom-inspection/api/submit/',        views.ci_submit,      name='ci_submit'),
+    path('custom-inspection/<int:pk>/edit/',   views.ci_edit,   name='custom_inspection_edit'),     # NEW
+    path('custom-inspection/<int:pk>/delete/', views.ci_delete, name='custom_inspection_delete'),   # NEW
 ]

@@ -66,11 +66,21 @@
   align-items: center;
   gap: 6px;
   transition: all .15s ease;
+  cursor: pointer;
 }
 .ins-btn-back:hover {
   background: #f8fafc;
   color: #0f172a;
   border-color: #94a3b8;
+}
+.ins-btn-back.pri {
+  background: #9f1045;
+  border-color: #9f1045;
+  color: #ffffff;
+}
+.ins-btn-back.pri:hover {
+  background: #830d38;
+  color: #ffffff;
 }
 
 /* Sticky Section Tab Strip */
@@ -129,6 +139,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .sc-title {
   font-size: 14px;
@@ -737,6 +749,38 @@ textarea.fi {
   margin: 0;
 }
 
+/* Custom Inspection section */
+.cust-grp-title {
+  font-weight: 700;
+  color: #9f1045;
+  margin: 8px 0 4px;
+  font-size: 13.5px;
+}
+.cust-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+}
+.cust-tbl th {
+  font-size: 10.5px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  text-align: left;
+  padding: 7px 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.cust-tbl td {
+  padding: 8px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+  vertical-align: top;
+}
+.cust-note {
+  font-size: 13px;
+  color: #64748b;
+}
+
 /* Sticky Save Bar */
 .save-bar {
   position: sticky;
@@ -775,6 +819,7 @@ textarea.fi {
   align-items: center;
   gap: 6px;
   transition: background .15s ease;
+  text-decoration: none !important;
 }
 .btn-save-insp:hover {
   background: #830d38;
@@ -813,6 +858,7 @@ textarea.fi {
 .view-mode .f-inp-row { display: none; }
 .view-mode .rb:not([class*="a-"]),
 .view-mode .ab:not(.ab-av):not(.ab-ms):not(.ab-dm) { opacity: .45; }
+.ins-btn-back:disabled { opacity:.5; cursor:not-allowed; }
 </style>
 
 <div class="ins-wrapper {% if view_mode %}view-mode{% endif %}">
@@ -857,21 +903,9 @@ textarea.fi {
     <button type="button" class="ts-btn" onclick="jumpToSection('s-findings', this)">
       <i class="bi bi-journal-text"></i> Findings & Sign-off
     </button>
-    <a href="#" onclick="return openCustomInspection()"
-      style="margin-left:auto;background:#9f1045;color:#fff;border-radius:6px;padding:8px 16px;font-size:12.5px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap">
+    <button type="button" class="ts-btn" onclick="jumpToSection('s-custom', this)">
       <i class="bi bi-layers"></i> Custom Inspection
-    </a>
-    <script>
-    function openCustomInspection() {
-      const c = document.querySelector('select[name="customer"]');
-      const v = document.querySelector('select[name="vehicle"]');
-      if (!c || !c.value || !v || !v.value) { alert('Select the customer and vehicle first.'); return false; }
-      const q = new URLSearchParams({ customer: c.value, vehicle: v.value });
-      {% if inspection %}q.set('from_inspection', '{{ inspection.pk }}');{% endif %}
-      window.open("{% url 'jobcard_app:custom_inspection_setup' %}?" + q.toString(), '_blank');
-      return false;
-    }
-    </script>
+    </button>
   </div>
 
   <!-- Messages -->
@@ -881,6 +915,10 @@ textarea.fi {
 
   <form method="post" enctype="multipart/form-data" id="inspForm">{% csrf_token %}
   {% if not edit_mode %}<input type="hidden" name="request_id" value="{{ request_id }}">{% endif %}
+  <!-- set to 1 by "Save & Open Custom Inspection": the inspection is saved first, then Custom Inspection opens -->
+  <input type="hidden" name="go_custom" id="goCustom" value="">
+
+  <fieldset {% if view_mode %}disabled{% endif %} style="border:0;padding:0;margin:0;min-width:0">
 
   <!-- ═══════════════════════════════════════
        SECTION 1: GENERAL INFORMATION
@@ -914,7 +952,7 @@ textarea.fi {
           <select name="inspector" class="fi">
             <option value="">— Select Inspector —</option>
             {% for s in inspectors %}
-            <option value="{{ s.id }}"{% if edit_mode and insp.inspector_id == s.id %}selected{% endif %}>{{ s.full_name }} ({{ s.get_role_display }})</option>
+            <option value="{{ s.id }}" {% if edit_mode and insp.inspector_id == s.id %}selected{% endif %}>{{ s.full_name }} ({{ s.get_role_display }})</option>
             {% endfor %}
           </select>
         </div>
@@ -1447,7 +1485,83 @@ textarea.fi {
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════
+       SECTION 7: CUSTOM INSPECTION
+       Standard checklist above + custom entries here, one voucher.
+       The links sit in the header (not the body) so they still work in view mode.
+  ═══════════════════════════════════════ -->
+  <div class="sc" id="s-custom">
+    <div class="sc-hdr">
+      <h3 class="sc-title"><i class="bi bi-layers"></i> Custom Inspection</h3>
+
+      {% if edit_mode %}
+        {# {% url ... as var %} never raises, so a missing URL name just hides the link instead of crashing the page #}
+        {% url 'jobcard_app:custom_inspection_edit' custom.pk as ci_edit_url %}
+        {% url 'jobcard_app:custom_inspection_detail' custom.pk as ci_view_url %}
+        {% url 'jobcard_app:custom_inspection_create' as ci_create_url %}
+        {% if custom %}
+          {% if ci_edit_url %}
+            <a href="{{ ci_edit_url }}" class="ins-btn-back"><i class="bi bi-pencil"></i> Edit Custom Details</a>
+          {% elif ci_view_url %}
+            <a href="{{ ci_view_url }}" class="ins-btn-back"><i class="bi bi-eye"></i> View Custom Details</a>
+          {% endif %}
+        {% elif ci_create_url %}
+          <a href="{{ ci_create_url }}?inspection={{ insp.pk }}&amp;from_inspection={{ insp.pk }}&amp;customer={{ insp.customer_id }}&amp;vehicle={{ insp.vehicle_id }}" class="ins-btn-back pri"><i class="bi bi-plus-lg"></i> Add Custom Details</a>
+        {% endif %}
+      {% else %}
+        <button type="button" class="ins-btn-back pri" id="customBtn" onclick="saveAndOpenCustom()" disabled
+                title="Select a customer and vehicle first">
+          <i class="bi bi-layers"></i> Save &amp; Open Custom Inspection
+        </button>
+      {% endif %}
+    </div>
+
+    <div class="sc-body">
+      {% if edit_mode %}
+        {% for g in custom_groups %}
+          <div class="cust-grp-title">{% if g.main %}{{ g.main }} › {% endif %}{{ g.sub }}</div>
+          <div style="overflow-x:auto">
+            <table class="cust-tbl">
+              <thead><tr><th style="width:36px">#</th><th>Description</th><th>Value</th><th>Type</th><th>Remark</th></tr></thead>
+              <tbody>
+              {% for a in g.rows %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ a.label }}</td>
+                  <td><strong>{{ a.value|default:"—" }}</strong></td>
+                  <td>{{ a.type_name|default:"—" }}</td>
+                  <td class="text-muted">{{ a.remark|default:"" }}</td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% empty %}
+          <div class="cust-note">No custom details recorded for this inspection yet.</div>
+        {% endfor %}
+      {% else %}
+        <div class="cust-note">
+          Pick the customer and vehicle above, then use <b>Save &amp; Open Custom Inspection</b>.
+          This inspection is saved first, and the custom checklist opens for the same customer and vehicle.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  </fieldset>
+
   <!-- ══════════ STICKY SAVE BAR ══════════ -->
+  {% if view_mode %}
+  <div class="save-bar">
+    <div class="sb-note">Read-only view &middot; <span>{{ insp.inspection_number }}</span></div>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{% url 'jobcard_app:inspection_list' %}" class="ins-btn-back">Back to Inspections</a>
+      <a href="{% url 'jobcard_app:inspection_edit' insp.pk %}" class="btn-save-insp">
+        <i class="bi bi-pencil mr-1"></i> Edit Inspection
+      </a>
+    </div>
+  </div>
+  {% else %}
   <div class="save-bar">
     <div class="sb-note">
       All sections are saved together &middot;
@@ -1460,6 +1574,7 @@ textarea.fi {
       </button>
     </div>
   </div>
+  {% endif %}
 
   </form>
 </div><!-- /ins-wrapper -->
@@ -1917,6 +2032,33 @@ document.addEventListener('DOMContentLoaded', function () {
       saveBtn.style.cursor = 'not-allowed';
     }
   });
+});
+
+/* ── Save & Open Custom Inspection (new inspections) ─────────────
+   Needs a customer and a vehicle. Sets go_custom=1 and submits the normal
+   form, so all the usual validation runs; the server then opens Custom
+   Inspection for the saved inspection. */
+function updateCustomBtn() {
+  const b = document.getElementById('customBtn');
+  if (!b) return;
+  const c = document.getElementById('custSel');
+  const v = document.getElementById('vehicleSel');
+  const ok = c && v && c.value && v.value;
+  b.disabled = !ok;
+  b.title = ok ? 'Save this inspection and open Custom Inspection' : 'Select a customer and vehicle first';
+}
+function saveAndOpenCustom() {
+  const b = document.getElementById('customBtn');
+  if (!b || b.disabled) return;
+  document.getElementById('goCustom').value = '1';
+  document.getElementById('inspForm').requestSubmit();
+}
+document.addEventListener('DOMContentLoaded', function () {
+  ['custSel', 'vehicleSel'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.addEventListener('change', updateCustomBtn);
+  });
+  updateCustomBtn();
 });
 </script>
 {% endblock %}

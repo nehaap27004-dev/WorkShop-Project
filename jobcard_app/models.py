@@ -1992,45 +1992,43 @@ class CIField(models.Model):
     
     def __str__(self):
         return self.label
- 
 class CustomInspection(models.Model):
-    inspection_number = models.CharField(max_length=30, blank=True)
-    main_head   = models.ForeignKey(CIMainHead, on_delete=models.PROTECT, related_name='inspections')
+    vehicle_inspection = models.OneToOneField(
+        'VehicleInspection', on_delete=models.CASCADE, null=True, blank=True,
+        related_name='custom_inspection')            # deleting the voucher deletes this too
+    inspection_number = models.CharField(max_length=30, blank=True)   # = the inspection voucher number
+    main_head   = models.ForeignKey(CIMainHead, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='inspections')       # legacy
     customer    = models.ForeignKey('accounts_app.LedgerCreation', on_delete=models.PROTECT,
                                     related_name='custom_inspections')
-    
     vehicle     = models.ForeignKey('WorkshopVehicle', on_delete=models.SET_NULL, null=True, blank=True,
                                     related_name='custom_inspections')
     inspector   = models.ForeignKey('fleet_app.Staff', on_delete=models.SET_NULL, null=True, blank=True,
                                     related_name='custom_inspections')
     inspection_date = models.DateField()
-    # optional link to the normal vehicle inspection it was opened from
-    source_inspection_id = models.PositiveIntegerField(null=True, blank=True)
+    source_inspection_id = models.PositiveIntegerField(null=True, blank=True)   # legacy
     notes       = models.TextField(blank=True)
     created_on  = models.DateTimeField(auto_now_add=True)
     created_by  = models.IntegerField(null=True, blank=True)
- 
+
     class Meta:
         ordering = ['-created_on']
- 
+
     def __str__(self):
         return self.inspection_number or f"CI-{self.pk}"
- 
- 
+
+
 class CustomInspectionAnswer(models.Model):
     inspection = models.ForeignKey(CustomInspection, on_delete=models.CASCADE, related_name='answers')
-    # SET_NULL: deleting a field from the template keeps the saved answer
-    field      = models.ForeignKey(CIField, on_delete=models.SET_NULL, null=True, blank=True,
-                                   related_name='answers')
-    # snapshots (copied at save time)
-    sub_head_name = models.CharField(max_length=120)
-    type_name     = models.CharField(max_length=120, blank=True)
-    label         = models.CharField(max_length=200)
-    field_type    = models.CharField(max_length=10)
-    value  = models.TextField(blank=True)     # checkbox: "A | B"
+    field      = models.ForeignKey(CIField, on_delete=models.SET_NULL, null=True, blank=True, related_name='answers')
+    main_head_name = models.CharField(max_length=120, blank=True, default='')   # NEW snapshot
+    sub_head_name  = models.CharField(max_length=120)
+    type_name      = models.CharField(max_length=120, blank=True)
+    label          = models.CharField(max_length=200)
+    field_type     = models.CharField(max_length=10, default='text')
+    value  = models.TextField(blank=True)
     remark = models.TextField(blank=True)
     order  = models.PositiveIntegerField(default=0)
- 
+
     class Meta:
         ordering = ['order', 'id']
- 
