@@ -5,6 +5,8 @@ from django.conf.urls.static import static
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 
@@ -19,7 +21,7 @@ urlpatterns = [
     path('', include(('audit_app.urls', 'audit_app'), namespace='audit_app')),
     path('', include(('asset_app.urls', 'asset_app'), namespace='asset_app')),
     path('jobcard/', include('jobcard_app.urls', namespace='jobcard_app')),
-    
+    path('pdf/', include('pdf_generator.urls')),
    
     
 ]

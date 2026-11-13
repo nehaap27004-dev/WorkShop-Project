@@ -131,6 +131,7 @@
                             </td>
                             <td class="align-middle text-muted small">{{ insp.inspector.full_name|default:"—" }}</td>
                             <td class="align-middle text-center text-nowrap">
+                                <a href="{% url 'inspection_pdf' insp.pk %}"target="_blank"class="btn btn-sm btn-outline-primary mr-1"title="Download Inspection PDF"><i class="bi bi-file-earmark-pdf"></i></a>
                                 <a href="{% url 'jobcard_app:inspection_view' insp.pk %}" class="btn btn-sm btn-outline-info mr-1" title="{% trans 'View' %}"><i class="bi bi-eye"></i></a>
                                 <a href="{% url 'jobcard_app:inspection_edit' insp.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit' %}"><i class="bi bi-pencil"></i></a>
                                 <form method="post" action="{% url 'jobcard_app:inspection_delete' insp.pk %}" class="d-inline"

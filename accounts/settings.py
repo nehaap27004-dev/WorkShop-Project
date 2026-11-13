@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'asset_app',
     'jobcard_app',
     'documents.apps.DocumentsConfig',
+    'pdf_generator',
 
 
 
@@ -228,6 +229,8 @@ INSTALLED_APPS = [
     'asset_app',
     'jobcard_app',
     'documents.apps.DocumentsConfig',
+    'pdf_generator',
+
 
 
     'django.contrib.admin',
