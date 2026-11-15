@@ -164,15 +164,15 @@
                             <th class="text-right" style="width:10%">{% trans "Grand Total" %}</th>
                             <th class="text-right" style="width:10%">{% trans "Balance Due" %}</th>
                             <th class="text-center" style="width:8%">{% trans "Status" %}</th>
-                            <th class="text-right" style="width:10%">{% trans "Actions" %}</th>
+                            <th class="text-center" style="width:130px">{% trans "Action" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for inv in invoices %}
                         <tr>
                             <td>
-                                <a href="{% url 'jobcard_app:invoice_edit' inv.pk %}" class="font-weight-bold text-burgundy text-decoration-none">
-                                    {{ inv.invoice_number }}
+                                <a href="{% url 'jobcard_app:invoice_detail' inv.pk %}" class="font-weight-bold text-burgundy text-decoration-none">
+                                    {{ inv.display_number }}
                                 </a>
                                 {% if inv.voucher_number and inv.voucher_number != inv.invoice_number %}
                                     <div class="small text-muted font-italic">{{ inv.voucher_number }}</div>
@@ -244,25 +244,40 @@
                                     <span class="badge badge-pill badge-secondary px-2 py-1">{{ inv.get_status_display }}</span>
                                 {% endif %}
                             </td>
-                            <td class="text-right">
-                                <div class="btn-group">
-                                    <a href="{% url 'jobcard_app:invoice_detail' inv.pk %}"
-                                        class="btn btn-sm btn-outline-info"
-                                        title="{% trans 'View Invoice' %}">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    <a href="{% url 'jobcard_app:invoice_edit' inv.pk %}"
-                                       class="btn btn-sm btn-outline-secondary"
-                                       title="{% trans 'Edit Invoice' %}">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <form method="post" action="{% url 'jobcard_app:invoice_delete' inv.pk %}" class="d-inline"
-                                        onsubmit="return confirm('{% trans "Delete this invoice? This cannot be undone." as msg %}{{ msg|escapejs }}');">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete' %}">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
+
+                            <!-- ACTION DROPDOWN -->
+                            <td class="text-center">
+                                <div class="dropdown action-dd">
+                                    <button class="btn btn-sm btn-action dropdown-toggle" type="button"
+                                            data-toggle="dropdown" data-display="static"
+                                            aria-haspopup="true" aria-expanded="false">
+                                        <i class="bi bi-gear-fill mr-1"></i> {% trans "Action" %}
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-right">
+
+                                        <a class="dropdown-item item-edit" href="{% url 'jobcard_app:invoice_edit' inv.pk %}">
+                                            <i class="bi bi-pencil-fill"></i> {% trans "Edit" %}
+                                        </a>
+
+                                        <a class="dropdown-item item-view" href="{% url 'jobcard_app:invoice_detail' inv.pk %}">
+                                            <i class="bi bi-eye-fill"></i> {% trans "View" %}
+                                        </a>
+
+                                        <a class="dropdown-item item-pdf" href="{% url 'invoice_pdf' inv.pk %}" target="_blank">
+                                            <i class="bi bi-file-earmark-pdf-fill"></i> {% trans "Invoice PDF" %}
+                                        </a>
+
+                                        <div class="dropdown-divider"></div>
+
+                                        <form method="post" action="{% url 'jobcard_app:invoice_delete' inv.pk %}"
+                                              onsubmit="return confirm('{% trans "Delete this invoice? This cannot be undone." as msg %}{{ msg|escapejs }}');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item item-delete">
+                                                <i class="bi bi-trash-fill"></i> {% trans "Delete" %}
+                                            </button>
+                                        </form>
+
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -369,5 +384,86 @@
 #invTable tbody tr:hover {
     background-color: #fafbfd;
 }
+
+/* ===== Action dropdown (same as inspection list) ===== */
+.action-dd .btn-action {
+    background: #7b1c3e;
+    border-color: #7b1c3e;
+    color: #fff;
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 5px 12px;
+    box-shadow: 0 0 0 3px rgba(123, 28, 62, .15);
+}
+.action-dd .btn-action:hover,
+.action-dd .btn-action:focus,
+.action-dd.show .btn-action {
+    background: #651631;
+    border-color: #651631;
+    color: #fff;
+}
+.action-dd .dropdown-menu {
+    min-width: 210px;
+    padding: 8px 0;
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .15);
+}
+.action-dd .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    font-weight: 500;
+    font-size: 15px;
+    background: transparent;
+    border: 0;
+    width: 100%;
+    text-align: left;
+}
+.action-dd .dropdown-item i { width: 26px; font-size: 16px; }
+.action-dd .dropdown-item:hover { background: #f6f1f3; }
+.action-dd .item-edit   { color: #a3123f; }
+.action-dd .item-view   { color: #4a5568; }
+.action-dd .item-pdf    { color: #1e6bb8; }
+.action-dd .item-delete { color: #dc2626; }
+.action-dd .dropdown-divider { margin: 6px 0; }
+.action-dd form { margin: 0; }
 </style>
+
+<script>
+/* Action dropdown: render the menu with position:fixed so the card /
+   .table-responsive can't clip it, and open upward only if needed. */
+window.addEventListener('load', function () {
+    var $ = window.jQuery;
+    if (!$) { return; }
+
+    $(document).on('shown.bs.dropdown', '.action-dd', function () {
+        var $menu = $(this).find('.dropdown-menu');
+        var rect  = $(this).find('.btn-action')[0].getBoundingClientRect();
+        var h = $menu.outerHeight(), w = $menu.outerWidth();
+
+        var top = (window.innerHeight - rect.bottom >= h + 8)
+                    ? rect.bottom + 4
+                    : Math.max(8, rect.top - h - 4);
+        var left = Math.max(8, rect.right - w);
+
+        $menu.css({
+            position: 'fixed', top: top + 'px', left: left + 'px',
+            right: 'auto', bottom: 'auto', transform: 'none', margin: 0
+        });
+    });
+
+    $(document).on('hidden.bs.dropdown', '.action-dd', function () {
+        $(this).find('.dropdown-menu').css({
+            position: '', top: '', left: '', right: '',
+            bottom: '', transform: '', margin: ''
+        });
+    });
+
+    // Fixed menus don't follow the page, so close on scroll / resize
+    $(window).on('scroll resize', function () {
+        $('.action-dd.show .btn-action').dropdown('hide');
+    });
+});
+</script>
 {% endblock %}

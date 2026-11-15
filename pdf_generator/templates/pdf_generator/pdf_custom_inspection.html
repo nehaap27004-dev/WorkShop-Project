@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ document.title }} {{ document.number }}</title>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="report-header">
+        <div class="header-left">
+            <h1>{{ document.title }}</h1>
+            <p class="subtitle">Custom Inspection</p>
+        </div>
+        <div class="header-right">
+            <p><strong>Document No.</strong> {{ document.number }}</p>
+            <p><strong>Date</strong> {{ document.date|date:"M. d, Y" }}</p>
+        </div>
+    </div>
+
+    <!-- INSPECTION DETAILS -->
+    <div class="inspection-details">
+        <h3>Inspection Details</h3>
+        <div class="details-grid">
+            {% for item in details %}
+            <div class="detail-item {% if forloop.counter <= 2 %}detail-wide{% endif %}">
+                <span class="detail-label">{{ item.label }}</span>
+                <strong class="detail-value">{{ item.value|default:"-" }}</strong>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- SECTIONS: one full-width table per section -->
+    {% for section in sections %}
+    <div class="section">
+        <h3 class="section-title">{{ section.main_head }} - {{ section.sub_head }}</h3>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="c-sl">Sl No</th>
+                    <th class="c-item">Inspection Item</th>
+                    <th class="c-type">Type</th>
+                    <th class="c-value">Value</th>
+                    <th class="c-remark">Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in section.rows %}
+                <tr>
+                    <td class="c-sl">{{ forloop.counter }}</td>
+                    <td class="c-item">{{ row.label }}</td>
+                    <td class="c-type">{{ row.type }}</td>
+                    <td class="c-value">{{ row.value }}</td>
+                    <td class="c-remark">{{ row.remark }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% empty %}
+    <p class="empty">No inspection answers recorded.</p>
+    {% endfor %}
+
+    {% if document.notes %}
+    <div class="notes"><strong>Remarks:</strong> {{ document.notes }}</div>
+    {% endif %}
+
+    <!-- SIGNATURES -->
+    <div class="signature-container">
+        {% for signature in signatures %}
+        <div class="signature-box">
+            <div class="signature-line"></div>
+            <strong>{{ signature.label }}</strong>
+        </div>
+        {% endfor %}
+    </div>
+
+</body>
+</html>

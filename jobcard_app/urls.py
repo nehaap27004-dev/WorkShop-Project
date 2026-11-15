@@ -248,4 +248,4 @@ urlpatterns = [
     path('custom-inspection/api/submit/',        views.ci_submit,      name='ci_submit'),
     path('custom-inspection/<int:pk>/edit/',   views.ci_edit,   name='custom_inspection_edit'),     # NEW
     path('custom-inspection/<int:pk>/delete/', views.ci_delete, name='custom_inspection_delete'),   # NEW
-]
+] 

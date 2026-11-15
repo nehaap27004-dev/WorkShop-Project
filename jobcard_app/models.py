@@ -1070,7 +1070,6 @@ class VehicleInspection(models.Model):
     odometer        = models.PositiveIntegerField(null=True, blank=True)
     fuel_level      = models.CharField(
         max_length=10, choices=FUEL_CHOICES, default='1/2')
-
     STATUS_CHOICES = [
         ('pass',      'Pass / Safe'),
         ('attention', 'Needs Attention'),
@@ -1091,6 +1090,8 @@ class VehicleInspection(models.Model):
     updated_on = models.DateTimeField(auto_now=True)
     created_by = models.IntegerField(null=True, blank=True)   
     updated_by = models.IntegerField(null=True, blank=True)
+    pdf_file = models.FileField( upload_to='inspection_pdfs/regular/', blank=True, null=True)
+
 
     
 
@@ -2010,6 +2011,7 @@ class CustomInspection(models.Model):
     notes       = models.TextField(blank=True)
     created_on  = models.DateTimeField(auto_now_add=True)
     created_by  = models.IntegerField(null=True, blank=True)
+    pdf_file = models.FileField(upload_to='inspection_pdfs/custom/', blank=True,null=True)
 
     class Meta:
         ordering = ['-created_on']

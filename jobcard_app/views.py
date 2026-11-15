@@ -102,6 +102,31 @@ def service_category_list(request):
         'active':     categories.filter(is_active=True).count(),
         'inactive':   categories.filter(is_active=False).count(),
     })
+import logging
+
+from django.core.files.base import ContentFile
+
+from pdf_generator.services.pdf_service import generate_pdf
+from pdf_generator.services.regular_inspection_builder import (
+    build_regular_inspection_context
+)
+from pdf_generator.services.custom_inspection_builder import (
+    build_custom_inspection_context
+)
+
+
+
+from django.core.files.base import ContentFile
+
+from pdf_generator.services.pdf_service import generate_pdf
+from pdf_generator.services.regular_inspection_builder import (
+    build_regular_inspection_context,
+)
+from pdf_generator.services.custom_inspection_builder import (
+    build_custom_inspection_context,
+)
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -551,7 +576,82 @@ def inspection_list(request):
         'total':         VehicleInspection.objects.count() +
                          CustomInspection.objects.filter(vehicle_inspection__isnull=True).count(),
     })
+def generate_and_store_inspection_pdf(
+    request, instance, builder, prefix,
+    template_name="pdf_generator/pdf_template.html",
+    css_name="pdf_generator/pdf.css",
+):
+    """Build a PDF for `instance` and save it in instance.pdf_file."""
+    try:
+        context = builder(instance)
+
+        pdf_bytes = generate_pdf(
+            request, context,
+            template_name=template_name,
+            css_name=css_name,
+        )
+
+        old_file_name = instance.pdf_file.name if instance.pdf_file else None
+        filename = f"{prefix}_{instance.pk}.pdf"
+
+        instance.pdf_file.save(filename, ContentFile(pdf_bytes), save=False)
+        instance.save(update_fields=["pdf_file"])
+
+        # delete the old file only after the new one is saved
+        if old_file_name and old_file_name != instance.pdf_file.name:
+            instance.pdf_file.storage.delete(old_file_name)
+
+        return True
+
+    except Exception:
+        logger.exception(
+            "PDF generation failed for %s ID %s",
+            instance.__class__.__name__, instance.pk,
+        )
+        return False
+
+
+# ------------------- B2. ONE PLACE THAT DECIDES WHICH PDF -------------------
+PDF_KINDS = {
+    "regular": {                      # Standard inspection flow
+        "model": VehicleInspection,
+        "builder": build_regular_inspection_context,
+        "prefix": "regular_inspection",
+        "template_name": "pdf_generator/pdf_regular_inspection.html",
+        "css_name": "pdf_generator/regular_inspection.css",
+    },
+    "custom": {                       # Custom inspection flow
+        "model": CustomInspection,
+        "builder": build_custom_inspection_context,
+        "prefix": "custom_inspection",
+        "template_name": "pdf_generator/pdf_custom_inspection.html",
+        "css_name": "pdf_generator/custom_inspection.css",
+    },
+}
+
+
+def make_inspection_pdf(request, instance, kind):
+    """
+    kind="regular" -> VehicleInspection only
+    kind="custom"  -> CustomInspection only
+    A record can never receive the other flow's PDF.
+    """
+    cfg = PDF_KINDS[kind]
+
+    if not isinstance(instance, cfg["model"]):
+        raise TypeError(
+            f"'{kind}' PDF needs a {cfg['model'].__name__}, "
+            f"got {instance.__class__.__name__}"
+        )
+
+    return generate_and_store_inspection_pdf(
+        request, instance, cfg["builder"], cfg["prefix"],
+        template_name=cfg["template_name"],
+        css_name=cfg["css_name"],
+    )
+
 def inspection_create(request, vehicle_id=None):
+
     customers = LedgerCreation.objects.filter(groups_id=29).order_by('ledger_name')
     inspectors = Staff.objects.filter(
         status='Active',
@@ -594,7 +694,7 @@ def inspection_create(request, vehicle_id=None):
         inspector_id = request.POST.get('inspector')
         inspector = Staff.objects.filter(pk=inspector_id).first() if inspector_id else None
 
-        # 5. Atomic transaction
+        # 5. Atomic transaction (data only - no PDF work in here)
         try:
             with transaction.atomic():
                 insp = VehicleInspection(
@@ -644,11 +744,16 @@ def inspection_create(request, vehicle_id=None):
                 return redirect('jobcard_app:inspection_list')
             raise  # a different integrity error: don't hide it
 
-
+        # 7. Going on to the Custom page -> NO Regular PDF
         if request.POST.get('go_custom') == '1':
             return redirect(f"{reverse('jobcard_app:custom_inspection_create')}?inspection={insp.pk}")
-        # 7. Success
-        messages.success(request, 'Vehicle Inspection saved successfully!')
+
+        # 8. Saved as a Standard inspection -> Regular PDF only
+        pdf_created = make_inspection_pdf(request, insp, "regular")
+        if pdf_created:
+            messages.success(request, 'Vehicle Inspection saved and PDF generated.')
+        else:
+            messages.warning(request, 'Inspection saved, but PDF generation failed. Please try again.')
         return redirect('jobcard_app:inspection_list')
 
     # ---------- GET: show form ----------
@@ -668,6 +773,7 @@ def inspection_create(request, vehicle_id=None):
         'request_id': str(uuid.uuid4()),  # new ID for each form load
     })
     return render(request, 'jobcard_app/inspection_form.html', ctx)
+
 def _custom_context(insp):
     ci = CustomInspection.objects.filter(vehicle_inspection=insp).first()
     groups = OrderedDict()
@@ -678,61 +784,71 @@ def _custom_context(insp):
             'custom_groups': [{'main': k[0], 'sub': k[1], 'rows': v} for k, v in groups.items()]}
 # ─────────────────────────────────────────────────────────────
 # EDIT
-# ─────────────────────────────────────────────────────────────
 def inspection_edit(request, pk):
-    insp      = get_object_or_404(VehicleInspection, pk=pk)
+    insp = get_object_or_404(VehicleInspection, pk=pk)
     customers = LedgerCreation.objects.filter(groups_id=29).order_by('ledger_name')
     inspectors = Staff.objects.filter(
         status='Active',
         staff_category__name__in=['Inspector', 'Technician']
     ).order_by('full_name')
 
-    vehicles  = WorkshopVehicle.objects.filter(is_active=True)
+    vehicles = WorkshopVehicle.objects.filter(is_active=True)
 
-    try:    interior    = insp.interior
-    except: interior    = None
-    try:    mechanical  = insp.mechanical
-    except: mechanical  = None
-    try:    accessories = insp.accessories
-    except: accessories = None
- 
+    interior = getattr(insp, 'interior', None)
+    mechanical = getattr(insp, 'mechanical', None)
+    accessories = getattr(insp, 'accessories', None)
+
     complaints = insp.findings.filter(finding_type='complaint').order_by('order')
-    findings   = insp.findings.filter(finding_type='finding').order_by('order')
- 
+    findings = insp.findings.filter(finding_type='finding').order_by('order')
+
     if request.method == 'POST':
         if request.POST.get("inspection_date"):
-            insp.inspection_date = datetime.strptime(request.POST.get("inspection_date"),"%Y-%m-%d").date()
-        insp.odometer        = request.POST.get('odometer') or None
-        insp.fuel_level      = request.POST.get('fuel_level', '1/2')
-        inspector_id         = request.POST.get('inspector')
+            insp.inspection_date = datetime.strptime(
+                request.POST.get("inspection_date"), "%Y-%m-%d"
+            ).date()
+        insp.odometer = request.POST.get('odometer') or None
+        insp.fuel_level = request.POST.get('fuel_level', '1/2')
+        inspector_id = request.POST.get('inspector')
         insp.inspector = Staff.objects.filter(pk=inspector_id).first() if inspector_id else None
         insp.save()
 
         _save_inspection(request, insp)
+
+        # Going on to the Custom page -> NO Regular PDF
         if request.POST.get('go_custom') == '1':
+            # an older stored Regular PDF would now be out of date, so remove it
+            if insp.pdf_file:
+                insp.pdf_file.delete(save=True)
             return redirect(f"{reverse('jobcard_app:custom_inspection_create')}?inspection={insp.pk}")
-        messages.success(request, f"Inspection {insp.inspection_number} updated successfully.")
+
+        # Saved as a Standard inspection -> Regular PDF only
+        pdf_created = make_inspection_pdf(request, insp, "regular")
+        if pdf_created:
+            messages.success(request, f"Inspection {insp.inspection_number} updated and PDF generated.")
+        else:
+            messages.warning(request, f"Inspection {insp.inspection_number} updated, but PDF generation failed.")
         return redirect('jobcard_app:inspection_list')
- 
+
     ctx = _inspection_context()
     ctx.update({
-        'vehicle_types':        VehicleCategory.objects.all().order_by('category_name'),
+        'vehicle_types': VehicleCategory.objects.all().order_by('category_name'),
         'vehicle_fuel_choices': WorkshopVehicle.FUEL_CHOICES,
-        'insp':        insp,
-        'interior':    interior,
-        'mechanical':  mechanical,
+        'insp': insp,
+        'interior': interior,
+        'mechanical': mechanical,
         'accessories': accessories,
-
-        'complaints':  complaints,
-        'findings':    findings,
-        'customers':   customers,
-        'inspectors':  inspectors,
-        'vehicles':    vehicles,
-        'edit_mode':   True,
-        'today':       timezone.now().date(),
+        'complaints': complaints,
+        'findings': findings,
+        'customers': customers,
+        'inspectors': inspectors,
+        'vehicles': vehicles,
+        'edit_mode': True,
+        'today': timezone.now().date(),
         **_custom_context(insp),
     })
     return render(request, 'jobcard_app/inspection_form.html', ctx)
+
+
 # ─────────────────────────────────────────────────────────────
 # VIEW (same form, read-only)
 # ─────────────────────────────────────────────────────────────
@@ -5237,7 +5353,6 @@ def ci_create(request):
         return redirect('jobcard_app:custom_inspection_edit', pk=existing.pk)
     return _ci_workspace(request, vi, None)        # fresh values, template descriptions loaded by the page
 
-
 @login_required
 @require_POST
 def ci_submit(request):
@@ -5286,7 +5401,16 @@ def ci_submit(request):
             r.inspection = ci
         CustomInspectionAnswer.objects.bulk_create(rows)
 
-    return JsonResponse({'ok': True, 'redirect': reverse('jobcard_app:custom_inspection_detail', args=[ci.pk])})
+    # OUTSIDE the transaction: answers are committed before the PDF is built.
+    # Custom flow -> Custom PDF only (the Standard record is never touched).
+    pdf_created = make_inspection_pdf(request, ci, "custom")
+
+    return JsonResponse({
+        'ok': True,
+        'redirect': reverse('jobcard_app:custom_inspection_detail', args=[ci.pk]),
+        'pdf_created': pdf_created,
+        'pdf_error': not pdf_created,
+    })
 
 
 @login_required

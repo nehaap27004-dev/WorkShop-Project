@@ -7,186 +7,304 @@
     <title>{{ document.title }}</title>
 </head>
 
-<body>
+<body class="
+    {% if 'Inspection' in document.subtitle %}inspection-report{% endif %}
+    {% if document.subtitle == 'Custom Inspection' %}custom-report{% endif %}
+    {% if document.subtitle == 'Regular Inspection' %}regular-report{% endif %}
+">
 
-    <!-- COMPANY HEADER -->
-    <div class="company-header">
-        <div class="company-info">
-            <h1>{{ company.name }}</h1>
-            <p>{{ company.address }}</p>
-            <p>{{ company.phone }} | {{ company.email }}</p>
+    <!-- HEADER -->
+
+    <div class="report-header">
+
+        <div class="header-left">
+            <h1>{{ document.title }}</h1>
+
+            {% if document.subtitle %}
+                <p class="subtitle">{{ document.subtitle }}</p>
+            {% endif %}
         </div>
+
+        <div class="header-right">
+            <p>
+                <strong>Document No.</strong>
+                {{ document.number }}
+            </p>
+
+            <p>
+                <strong>Date</strong>
+                {{ document.date|date:"M. d, Y" }}
+            </p>
+        </div>
+
     </div>
 
-    <hr>
+    <!-- COMPANY INFORMATION -->
 
-    <!-- DOCUMENT TITLE -->
-    <h2 class="document-title">
-        {{ document.title }}
-    </h2>
+    {% if company.name %}
+    <div class="company-info">
 
-    {% if document.subtitle %}
-        <p class="subtitle">{{ document.subtitle }}</p>
+        <strong>{{ company.name }}</strong>
+
+        <span>{{ company.address }}</span>
+
+        <span>
+            {{ company.phone }}
+            {% if company.phone and company.email %} | {% endif %}
+            {{ company.email }}
+        </span>
+
+    </div>
     {% endif %}
 
-    <!-- DOCUMENT NUMBER AND DATE -->
-    <table class="document-info">
-        <tr>
-            <td><strong>Document No:</strong> {{ document.number }}</td>
-            <td><strong>Date:</strong> {{ document.date }}</td>
-        </tr>
-    </table>
+    <div class="header-line"></div>
 
-    <!-- CUSTOMER / VEHICLE DETAILS -->
+
+    <!-- INSPECTION DETAILS -->
+
     {% if details %}
-    <table class="details-table">
-        {% for item in details %}
-        <tr>
-            <th>{{ item.label }}</th>
-            <td>{{ item.value|default:"-" }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <div class="inspection-details">
+
+        <h3>Inspection Details</h3>
+
+        <div class="details-grid">
+
+            {% for item in details %}
+
+            <div class="detail-item {% if forloop.counter <= 2 %}detail-wide{% endif %}">
+
+                <span class="detail-label">
+                    {{ item.label }}
+                </span>
+
+                <strong class="detail-value">
+                    {{ item.value|default:"-" }}
+                </strong>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
     {% endif %}
 
 
-    <!-- STANDARD TABLE (Invoice, Job Card etc.) -->
+    <!-- STANDARD TABLE -->
+
     {% if columns %}
+
     <table class="data-table">
+
         <thead>
             <tr>
+
                 <th>Sl No</th>
 
                 {% for column in columns %}
                     <th>{{ column.label }}</th>
                 {% endfor %}
+
             </tr>
         </thead>
 
         <tbody>
+
             {% for row in rows %}
+
             <tr>
+
                 <td>{{ forloop.counter }}</td>
 
                 {% for column in columns %}
-                    <td>
-                        {{ row|get_item:column.key|default:"-" }}
-                    </td>
+
+                <td>
+                    {{ row|get_item:column.key|default:"-" }}
+                </td>
+
                 {% endfor %}
+
             </tr>
 
             {% empty %}
+
             <tr>
                 <td colspan="{{ columns|length|add:1 }}">
                     No records available.
                 </td>
             </tr>
+
             {% endfor %}
+
         </tbody>
+
     </table>
+
     {% endif %}
 
 
-    <!-- DYNAMIC SECTIONS (Inspection etc.) -->
+    <!-- INSPECTION SECTIONS -->
+
     {% if sections %}
+
+    <div class="sections-container">
+
         {% for section in sections %}
+
+        <div class="inspection-section">
 
             <h3 class="section-title">
                 {{ section.title }}
             </h3>
 
+
             {% if section.text %}
-                <div class="section-text">
-                    {{ section.text|linebreaks }}
-                </div>
+
+            <div class="section-text">
+                {{ section.text|linebreaks }}
+            </div>
+
             {% endif %}
 
+
             {% if section.columns %}
+
             <table class="data-table">
+
                 <thead>
                     <tr>
+
                         <th>Sl No</th>
 
                         {% for column in section.columns %}
                             <th>{{ column.label }}</th>
                         {% endfor %}
+
                     </tr>
                 </thead>
 
                 <tbody>
+
                     {% for row in section.rows %}
+
                     <tr>
+
                         <td>{{ forloop.counter }}</td>
 
                         {% for column in section.columns %}
-                            <td>
-                                {{ row|get_item:column.key|default:"-" }}
-                            </td>
+
+                        <td>
+                            {{ row|get_item:column.key|default:"-" }}
+                        </td>
+
                         {% endfor %}
+
                     </tr>
 
                     {% empty %}
+
                     <tr>
                         <td colspan="{{ section.columns|length|add:1 }}">
                             No records available.
                         </td>
                     </tr>
+
                     {% endfor %}
+
                 </tbody>
+
             </table>
+
             {% endif %}
 
+        </div>
+
         {% endfor %}
+
+    </div>
+
     {% endif %}
 
 
     <!-- TOTALS -->
+
     {% if totals %}
+
     <table class="totals-table">
+
         {% for total in totals %}
+
         <tr>
+
             <th>{{ total.label }}</th>
+
             <td>{{ total.value }}</td>
+
         </tr>
+
         {% endfor %}
+
     </table>
+
     {% endif %}
 
 
     <!-- AMOUNT IN WORDS -->
+
     {% if amount_in_words %}
+
     <div class="amount-words">
+
         <strong>Amount in Words:</strong>
         {{ amount_in_words }}
+
     </div>
+
     {% endif %}
 
 
     <!-- NOTES -->
+
     {% if document.notes %}
+
     <div class="notes">
-        <strong>Notes:</strong>
+
+        <strong>Remarks:</strong>
         {{ document.notes }}
+
     </div>
+
     {% endif %}
 
 
     <!-- SIGNATURES -->
+
     {% if signatures %}
+
     <div class="signature-container">
+
         {% for signature in signatures %}
+
         <div class="signature-box">
-            <p>{{ signature.label }}</p>
+
             <div class="signature-line"></div>
+
+            <strong>{{ signature.label }}</strong>
+
         </div>
+
         {% endfor %}
+
     </div>
+
     {% endif %}
 
 
     <!-- FOOTER -->
+
     <div class="footer">
-        {{ company.name }} | Generated by Workshop ERP
+        Generated by Workshop ERP
     </div>
 
 </body>

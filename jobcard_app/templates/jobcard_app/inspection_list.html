@@ -3,6 +3,59 @@
 {% load i18n %}
 
 {% block content %}
+
+<style>
+    /* ===== Action dropdown (matches job order list) ===== */
+    .action-dd .btn-action {
+        background: #7b1c3e;
+        border-color: #7b1c3e;
+        color: #fff;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 5px 12px;
+        box-shadow: 0 0 0 3px rgba(123, 28, 62, .15);
+    }
+    .action-dd .btn-action:hover,
+    .action-dd .btn-action:focus,
+    .action-dd.show .btn-action {
+        background: #651631;
+        border-color: #651631;
+        color: #fff;
+    }
+    .action-dd .dropdown-menu {
+        min-width: 210px;
+        padding: 8px 0;
+        border: 0;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .15);
+    }
+    .action-dd .dropdown-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 20px;
+        font-weight: 500;
+        font-size: 15px;
+        background: transparent;
+        border: 0;
+        width: 100%;
+        text-align: left;
+    }
+    .action-dd .dropdown-item i {
+        width: 26px;
+        font-size: 16px;
+    }
+    .action-dd .dropdown-item:hover {
+        background: #f6f1f3;
+    }
+    .action-dd .item-edit   { color: #a3123f; }
+    .action-dd .item-view   { color: #4a5568; }
+    .action-dd .item-pdf    { color: #1e6bb8; }
+    .action-dd .item-custom { color: #1e8a5a; }
+    .action-dd .item-delete { color: #dc2626; }
+    .action-dd .dropdown-divider { margin: 6px 0; }
+    .action-dd form { margin: 0; }
+</style>
+
 <div class="container-fluid p-0 mb-5">
 
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -26,6 +79,7 @@
         {% endfor %}
     {% endif %}
 
+    <!-- FILTERS -->
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header card-banner-header">
             <span class="card-banner-title"><i class="bi bi-funnel text-burgundy mr-1"></i> {% trans "Filter Inspections" %}</span>
@@ -73,6 +127,7 @@
         </div>
     </div>
 
+    <!-- LIST -->
     <div class="card shadow-sm border-0">
         <div class="card-header card-banner-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span class="card-banner-title"><i class="bi bi-list-task mr-1 text-burgundy"></i> {% trans "Inspections Directory" %}</span>
@@ -91,11 +146,12 @@
                             <th>{% trans "Type" %}</th>
                             <th>{% trans "Status" %}</th>
                             <th>{% trans "Inspector" %}</th>
-                            <th style="width:160px;" class="text-center">{% trans "Actions" %}</th>
+                            <th style="width:130px;" class="text-center">{% trans "Action" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                     {% for r in rows %}
+
                         {% if r.kind == 'standard' %}
                         {% with insp=r.obj %}
                         <tr>
@@ -130,18 +186,51 @@
                                 {% else %}<span class="badge badge-secondary">—</span>{% endif %}
                             </td>
                             <td class="align-middle text-muted small">{{ insp.inspector.full_name|default:"—" }}</td>
-                            <td class="align-middle text-center text-nowrap">
-                                <a href="{% url 'inspection_pdf' insp.pk %}"target="_blank"class="btn btn-sm btn-outline-primary mr-1"title="Download Inspection PDF"><i class="bi bi-file-earmark-pdf"></i></a>
-                                <a href="{% url 'jobcard_app:inspection_view' insp.pk %}" class="btn btn-sm btn-outline-info mr-1" title="{% trans 'View' %}"><i class="bi bi-eye"></i></a>
-                                <a href="{% url 'jobcard_app:inspection_edit' insp.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit' %}"><i class="bi bi-pencil"></i></a>
-                                <form method="post" action="{% url 'jobcard_app:inspection_delete' insp.pk %}" class="d-inline"
-                                      onsubmit="return confirm('Delete inspection {{ insp.inspection_number|default:insp.voucher_number|escapejs }}{% if insp.custom_count %} and its custom entries{% endif %}? This cannot be undone.');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete' %}"><i class="bi bi-trash"></i></button>
-                                </form>
+
+                            <!-- ACTION DROPDOWN (standard) -->
+                            <td class="align-middle text-center">
+                                <div class="dropdown action-dd">
+                                    <button class="btn btn-sm btn-action dropdown-toggle" type="button"
+                                            data-toggle="dropdown" data-display="static"
+                                            aria-haspopup="true" aria-expanded="false">
+                                        <i class="bi bi-gear-fill mr-1"></i> {% trans "Action" %}
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-right">
+
+                                        <a class="dropdown-item item-edit" href="{% url 'jobcard_app:inspection_edit' insp.pk %}">
+                                            <i class="bi bi-pencil-fill"></i> {% trans "Edit" %}
+                                        </a>
+
+                                        <a class="dropdown-item item-view" href="{% url 'jobcard_app:inspection_view' insp.pk %}">
+                                            <i class="bi bi-eye-fill"></i> {% trans "View" %}
+                                        </a>
+
+                                        <a class="dropdown-item item-pdf" href="{% url 'regular_inspection_pdf' insp.pk %}" target="_blank">
+                                            <i class="bi bi-file-earmark-pdf-fill"></i> {% trans "Inspection PDF" %}
+                                        </a>
+
+                                        {% if insp.custom_inspection.pk %}
+                                        <a class="dropdown-item item-custom" href="{% url 'custom_inspection_pdf' insp.custom_inspection.pk %}" target="_blank">
+                                            <i class="bi bi-file-earmark-pdf-fill"></i> {% trans "Custom PDF" %}
+                                        </a>
+                                        {% endif %}
+
+                                        <div class="dropdown-divider"></div>
+
+                                        <form method="post" action="{% url 'jobcard_app:inspection_delete' insp.pk %}"
+                                              onsubmit="return confirm('Delete inspection {{ insp.inspection_number|default:insp.voucher_number|escapejs }}{% if insp.custom_count %} and its custom entries{% endif %}? This cannot be undone.');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item item-delete">
+                                                <i class="bi bi-trash-fill"></i> {% trans "Delete" %}
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         {% endwith %}
+
                         {% else %}
                         {% with c=r.obj %}
                         <tr>
@@ -158,20 +247,48 @@
                             <td class="align-middle"><span class="badge badge-info"><i class="bi bi-layers mr-1"></i>{% trans "Custom" %} ({{ c.custom_count }})</span></td>
                             <td class="align-middle"><span class="badge badge-secondary">—</span></td>
                             <td class="align-middle text-muted small">{{ c.inspector.full_name|default:"—" }}</td>
-                            <td class="align-middle text-center text-nowrap">
-                                <a href="{% url 'jobcard_app:custom_inspection_detail' c.pk %}" class="btn btn-sm btn-outline-info mr-1" title="{% trans 'View' %}"><i class="bi bi-eye"></i></a>
-                                {% if c.vehicle_inspection_id %}
-                                <a href="{% url 'jobcard_app:custom_inspection_edit' c.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit' %}"><i class="bi bi-pencil"></i></a>
-                                {% endif %}
-                                <form method="post" action="{% url 'jobcard_app:custom_inspection_delete' c.pk %}" class="d-inline"
-                                      onsubmit="return confirm('Delete custom inspection {{ c.inspection_number|escapejs }}? This cannot be undone.');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete' %}"><i class="bi bi-trash"></i></button>
-                                </form>
+
+                            <!-- ACTION DROPDOWN (custom) -->
+                            <td class="align-middle text-center">
+                                <div class="dropdown action-dd">
+                                    <button class="btn btn-sm btn-action dropdown-toggle" type="button"
+                                            data-toggle="dropdown" data-display="static"
+                                            aria-haspopup="true" aria-expanded="false">
+                                        <i class="bi bi-gear-fill mr-1"></i> {% trans "Action" %}
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-right">
+
+                                        {% if c.vehicle_inspection_id %}
+                                        <a class="dropdown-item item-edit" href="{% url 'jobcard_app:custom_inspection_edit' c.pk %}">
+                                            <i class="bi bi-pencil-fill"></i> {% trans "Edit" %}
+                                        </a>
+                                        {% endif %}
+
+                                        <a class="dropdown-item item-view" href="{% url 'jobcard_app:custom_inspection_detail' c.pk %}">
+                                            <i class="bi bi-eye-fill"></i> {% trans "View" %}
+                                        </a>
+
+                                        <a class="dropdown-item item-custom" href="{% url 'custom_inspection_pdf' c.pk %}" target="_blank">
+                                            <i class="bi bi-file-earmark-pdf-fill"></i> {% trans "Custom PDF" %}
+                                        </a>
+
+                                        <div class="dropdown-divider"></div>
+
+                                        <form method="post" action="{% url 'jobcard_app:custom_inspection_delete' c.pk %}"
+                                              onsubmit="return confirm('Delete custom inspection {{ c.inspection_number|escapejs }}? This cannot be undone.');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item item-delete">
+                                                <i class="bi bi-trash-fill"></i> {% trans "Delete" %}
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         {% endwith %}
                         {% endif %}
+
                     {% endfor %}
                     </tbody>
                 </table>
@@ -185,4 +302,41 @@
         </div>
     </div>
 </div>
+
+<script>
+/* Action dropdown: render the menu with position:fixed so the card /
+   .table-responsive can't clip it, and open upward only if needed. */
+window.addEventListener('load', function () {
+    var $ = window.jQuery;
+    if (!$) { return; }
+
+    $(document).on('shown.bs.dropdown', '.action-dd', function () {
+        var $menu = $(this).find('.dropdown-menu');
+        var rect  = $(this).find('.btn-action')[0].getBoundingClientRect();
+        var h = $menu.outerHeight(), w = $menu.outerWidth();
+
+        var top = (window.innerHeight - rect.bottom >= h + 8)
+                    ? rect.bottom + 4
+                    : Math.max(8, rect.top - h - 4);
+        var left = Math.max(8, rect.right - w);
+
+        $menu.css({
+            position: 'fixed', top: top + 'px', left: left + 'px',
+            right: 'auto', bottom: 'auto', transform: 'none', margin: 0
+        });
+    });
+
+    $(document).on('hidden.bs.dropdown', '.action-dd', function () {
+        $(this).find('.dropdown-menu').css({
+            position: '', top: '', left: '', right: '',
+            bottom: '', transform: '', margin: ''
+        });
+    });
+
+    // Fixed menus don't follow the page, so close on scroll / resize
+    $(window).on('scroll resize', function () {
+        $('.action-dd.show .btn-action').dropdown('hide');
+    });
+});
+</script>
 {% endblock %}

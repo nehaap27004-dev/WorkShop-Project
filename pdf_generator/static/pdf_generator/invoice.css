@@ -1,0 +1,197 @@
+@page {
+    size: A4;
+    margin: 14mm 14mm 18mm 14mm;
+
+    @bottom-left {
+        content: "Thank you for your business";
+        font-size: 9px;
+        color: #777;
+        width: 50%;
+        border-top: 1px solid #d9dce0;
+        padding-top: 6px;
+    }
+    @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        font-size: 9px;
+        color: #555;
+        width: 50%;
+        text-align: right;
+        border-top: 1px solid #d9dce0;
+        padding-top: 6px;
+    }
+}
+
+* { box-sizing: border-box; }
+
+body {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    color: #263238;
+    line-height: 1.45;
+    margin: 0;
+}
+
+/* ================= HEADER ================= */
+.inv-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-top: 6px solid #713348;
+    padding-top: 14px;
+    margin-bottom: 18px;
+}
+.company { width: 55%; }
+.company-name { font-size: 19px; font-weight: 700; color: #713348; margin-bottom: 4px; }
+.company-line { font-size: 10px; color: #555; margin-top: 2px; }
+.company-tax { font-weight: 700; color: #263238; }
+
+.doc-title { width: 40%; text-align: right; }
+.doc-name { font-size: 24px; font-weight: 700; color: #263238; letter-spacing: 1px; margin-bottom: 6px; }
+.doc-no { font-size: 11px; margin-top: 3px; color: #555; }
+.doc-no strong { color: #263238; margin-left: 6px; }
+
+/* ================= BILL TO / INFO ================= */
+.parties {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    margin-bottom: 12px;
+}
+.party {
+    border: 1px solid #e2e4e8;
+    border-top: 3px solid #713348;
+    padding: 10px 12px;
+}
+.party-left { width: 52%; }
+.party-right { width: 45%; }
+.party h4 {
+    margin: 0 0 7px;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #73777d;
+}
+.bill-name { font-size: 13px; font-weight: 700; color: #263238; margin-bottom: 4px; }
+.bill-line { font-size: 10.5px; color: #444; margin-top: 2px; overflow-wrap: break-word; }
+
+.info-table { width: 100%; border-collapse: collapse; }
+.info-table th {
+    text-align: left;
+    font-weight: 400;
+    color: #73777d;
+    font-size: 10px;
+    padding: 2px 0;
+    width: 42%;
+}
+.info-table td { font-weight: 700; font-size: 10.5px; padding: 2px 0; }
+.info-table td.tone-good { color: #1e7a4f; }
+.info-table td.tone-fair { color: #b26a00; }
+.info-table td.tone-poor { color: #b3261e; }
+
+.vehicles-strip {
+    margin-bottom: 18px;
+    padding: 8px 12px;
+    background: #f7f7f8;
+    border-left: 3px solid #713348;
+    font-size: 10px;
+    page-break-inside: avoid;
+}
+.vehicles-strip strong { color: #713348; text-transform: uppercase; font-size: 9px; letter-spacing: 1px; }
+.vehicles-strip div { margin-top: 3px; }
+
+/* ================= SECTIONS ================= */
+.section { width: 100%; margin-bottom: 16px; }
+.section-title {
+    color: #713348;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 6px;
+    page-break-after: avoid;
+}
+
+/* ================= TABLES ================= */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 9.5px;
+}
+.data-table thead { display: table-header-group; }
+.data-table th {
+    background: #713348;
+    color: #ffffff;
+    text-align: left;
+    font-weight: 700;
+    padding: 7px 4px;
+    font-size: 8.5px;
+    overflow-wrap: break-word;
+}
+.data-table td {
+    padding: 6px 4px;
+    border-bottom: 1px solid #e3e5e8;
+    vertical-align: top;
+    overflow-wrap: break-word;
+    color: #303940;
+}
+.data-table tbody tr:nth-child(even) { background: #faf7f8; }
+.data-table tr { page-break-inside: avoid; }
+.data-table .r { text-align: right; }
+
+.section-total {
+    display: flex;
+    justify-content: flex-end;
+    gap: 24px;
+    padding: 6px 4px;
+    font-size: 10px;
+    color: #555;
+}
+.section-total strong { color: #713348; font-size: 11px; min-width: 70px; text-align: right; }
+
+/* ================= NOTES + TOTALS ================= */
+.bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 10px;
+    page-break-inside: avoid;
+}
+.bottom-left { width: 50%; }
+.notes {
+    padding: 9px 11px;
+    background: #f7f7f8;
+    border-left: 3px solid #713348;
+    font-size: 10px;
+}
+
+.summary-table { width: 44%; border-collapse: collapse; font-size: 10.5px; }
+.summary-table th { text-align: left; font-weight: 400; color: #555; padding: 5px 8px; }
+.summary-table td { text-align: right; padding: 5px 8px; font-weight: 700; color: #263238; }
+.summary-table tr { border-bottom: 1px solid #eceef1; }
+.summary-table .grand th,
+.summary-table .grand td {
+    background: #713348;
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 8px;
+}
+.summary-table .balance th,
+.summary-table .balance td {
+    background: #fdf6dc;
+    color: #7a5a00;
+    font-weight: 700;
+}
+
+/* ================= SIGNATURES ================= */
+.signature-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 44px;
+    page-break-inside: avoid;
+}
+.signature-box { width: 46%; }
+.signature-line { border-top: 1px solid #999; margin-bottom: 7px; height: 1px; }
+.signature-box strong { font-size: 11px; color: #263238; }
