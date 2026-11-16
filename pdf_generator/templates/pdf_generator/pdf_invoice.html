@@ -6,109 +6,74 @@
 </head>
 <body>
 
-    <!-- HEADER: company (left) / invoice title (right) -->
+    <!-- HEADER -->
     <div class="inv-header">
-        <div class="company">
+        <div class="header-left">
+            <h1>{{ document.title }}</h1>
+            {% if company.name %}
             <div class="company-name">{{ company.name }}</div>
             {% if company.address %}<div class="company-line">{{ company.address }}</div>{% endif %}
             {% if company.phone or company.email %}
             <div class="company-line">{{ company.phone }}{% if company.phone and company.email %}  |  {% endif %}{{ company.email }}</div>
             {% endif %}
             {% if company.tax_no %}<div class="company-line company-tax">{{ company.tax_no }}</div>{% endif %}
+            {% endif %}
         </div>
-        <div class="doc-title">
-            <div class="doc-name">{{ document.title }}</div>
-            <div class="doc-no"><span>Invoice No.</span> <strong>{{ document.number }}</strong></div>
-            <div class="doc-no"><span>Date</span> <strong>{{ document.date|date:"d M Y" }}</strong></div>
-        </div>
-    </div>
-
-    <!-- BILL TO / INVOICE INFO -->
-    <div class="parties">
-        <div class="party party-left">
-            <h4>Bill To</h4>
-            <div class="bill-name">{{ bill_to.name }}</div>
-            {% if bill_to.address %}<div class="bill-line">{{ bill_to.address }}</div>{% endif %}
-            {% if bill_to.mobile %}<div class="bill-line">Tel: {{ bill_to.mobile }}</div>{% endif %}
-        </div>
-        <div class="party party-right">
-            <h4>Invoice Information</h4>
-            <table class="info-table">
-                {% for row in info %}
-                <tr>
-                    <th>{{ row.label }}</th>
-                    <td class="{% if row.tone %}tone-{{ row.tone }}{% endif %}">{{ row.value }}</td>
-                </tr>
-                {% endfor %}
-            </table>
+        <div class="header-right">
+            <p><strong>Document No.</strong> {{ document.number }}</p>
+            <p><strong>Date</strong> {{ document.date|date:"d M Y" }}</p>
         </div>
     </div>
 
-    {% if vehicle_lines %}
-    <div class="vehicles-strip">
-        <strong>Vehicle{{ vehicle_lines|length|pluralize }}</strong>
-        {% for line in vehicle_lines %}<div>{{ line }}</div>{% endfor %}
+    <!-- INVOICE DETAILS -->
+    <h3 class="section-title">Invoice Details</h3>
+    <div class="details-box">
+        {% for item in details %}
+        <div class="detail-item">
+            <span class="detail-label">{{ item.label }}</span>
+            <strong class="detail-value {% if item.tone %}tone-{{ item.tone }}{% endif %}">{{ item.value|default:"-" }}</strong>
+        </div>
+        {% endfor %}
     </div>
-    {% endif %}
 
-    <!-- ITEM TABLES -->
+    <!-- TABLES -->
     {% for section in sections %}
     <div class="section">
         <h3 class="section-title">{{ section.title }}</h3>
-
         <table class="data-table">
             <colgroup>
                 {% for col in section.columns %}<col style="width: {{ col.width }}%">{% endfor %}
             </colgroup>
             <thead>
-                <tr>
-                    {% for col in section.columns %}<th class="{{ col.align }}">{{ col.label }}</th>{% endfor %}
-                </tr>
+                <tr>{% for col in section.columns %}<th>{{ col.label }}</th>{% endfor %}</tr>
             </thead>
             <tbody>
                 {% for row in section.rows %}
-                <tr>
-                    {% for cell in row %}<td class="{{ cell.align }}">{{ cell.text }}</td>{% endfor %}
-                </tr>
+                <tr>{% for cell in row %}<td>{{ cell.text }}</td>{% endfor %}</tr>
                 {% endfor %}
             </tbody>
         </table>
-
-        {% if section.total %}
-        <div class="section-total">
-            <span>{{ section.total_label }}</span>
-            <span>Tax {{ section.tax }}</span>
-            <strong>{{ section.total }}</strong>
-        </div>
-        {% endif %}
     </div>
     {% endfor %}
 
-    <!-- NOTES + TOTALS -->
-    <div class="bottom">
-        <div class="bottom-left">
-            {% if document.notes %}
-            <div class="notes"><strong>Notes</strong><br>{{ document.notes|linebreaksbr }}</div>
-            {% endif %}
-        </div>
-
-        <table class="summary-table">
+    <!-- PAYMENT SUMMARY -->
+    <div class="summary-wrap">
+        <h3 class="section-title">Payment Summary ({{ currency }})</h3>
+        <table class="summary">
             {% for row in summary %}
-            <tr><th>{{ row.label }}</th><td>{{ row.value }}</td></tr>
+            <tr class="{{ row.kind }}"><td class="s-label">{{ row.label }}</td><td class="s-value">{{ row.value }}</td></tr>
             {% endfor %}
-            <tr class="grand"><th>Grand Total ({{ currency }})</th><td>{{ grand_total }}</td></tr>
-            <tr><th>Amount Paid</th><td>{{ amount_paid }}</td></tr>
-            <tr class="balance"><th>Balance Due</th><td>{{ balance_due }}</td></tr>
         </table>
+
+        {% if document.notes %}
+        <div class="notes"><strong>Notes:</strong> {{ document.notes|linebreaksbr }}</div>
+        {% endif %}
     </div>
 
     <!-- SIGNATURES -->
-    <div class="signature-container">
+    <div class="signatures">
         {% for signature in signatures %}
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <strong>{{ signature.label }}</strong>
-        </div>
+        <div class="sig">{{ signature.label }}</div>
         {% endfor %}
     </div>
 

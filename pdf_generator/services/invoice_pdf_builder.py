@@ -1,17 +1,18 @@
 CURRENCY = "OMR"
+DECIMALS = 3          # OMR uses 3 decimals (baisa). Set to 2 if you want 1,330.75 style.
 
-# >>> EDIT THESE: printed at the top of every invoice. Empty lines are hidden. <<<
+# Optional: printed under the "INVOICE" title when filled. Left empty = hidden.
 COMPANY = {
-    "name": "Silver Line Group",
-    "address": "",       # e.g. "P.O. Box 123, Muscat, Sultanate of Oman"
-    "phone": "",         # e.g. "+968 2400 0000"
-    "email": "",         # e.g. "info@silverline.example"
-    "tax_no": "",        # e.g. "VAT No: OM1234567890"
+    "name": "",
+    "address": "",
+    "phone": "",
+    "email": "",
+    "tax_no": "",     # e.g. "VAT No: OM1234567890"
 }
 
 STATUS_TONE = {
     "paid": "good",
-    "partial": "fair",
+    "partial": "good",
     "overdue": "poor",
     "cancelled": "poor",
 }
@@ -19,7 +20,7 @@ STATUS_TONE = {
 
 # ---------------------------- small helpers ----------------------------
 def _money(value):
-    return f"{float(value or 0):,.3f}"
+    return f"{float(value or 0):,.{DECIMALS}f}"
 
 
 def _num(value):
@@ -28,16 +29,28 @@ def _num(value):
     return text or "0"
 
 
-def _date(value):
-    return value.strftime("%d %b %Y") if value else ""
+def _pct(value):
+    return f"{_num(value)}%"
 
 
-def _cell(text, align=""):
-    return {"text": text, "align": align}
+def _sl(n):
+    return f"{n:02d}"
 
 
-def _col(label, width, align=""):
-    return {"label": label, "width": width, "align": align}
+def _qty(item):
+    text = _num(item.quantity)
+    unit = (item.unit or "").strip()
+    if unit and unit.lower() not in ("pcs", "no"):
+        text += f" {unit}"
+    return text
+
+
+def _cell(text):
+    return {"text": text}
+
+
+def _col(label, width):
+    return {"label": label, "width": width}
 
 
 def _vehicle_label(vehicle):
@@ -52,10 +65,18 @@ def _vehicle_label(vehicle):
 
 def _vehicle_model(vehicle):
     if not vehicle:
-        return ""
+        return "-"
     maker = getattr(getattr(vehicle, "manufacturer", None), "manufacturer_name", "") or ""
     model = getattr(getattr(vehicle, "vehicle_model", None), "model_name", "") or ""
-    return f"{maker} {model}".strip()
+    return f"{maker} {model}".strip() or "-"
+
+
+def _with_description(fixed_cols, insert_at):
+    """Put a Description column in; it takes whatever width is left so the table always totals 100%."""
+    used = sum(c["width"] for c in fixed_cols)
+    cols = list(fixed_cols)
+    cols.insert(insert_at, _col("Description", 100 - used))
+    return cols
 
 
 # ---------------------------- main builder ----------------------------
@@ -71,174 +92,155 @@ def build_invoice_pdf_context(invoice):
     customer = invoice.customer
     jobcard = invoice.jobcard
 
-    # ---------------- company + bill-to ----------------
-    company = {k: v for k, v in COMPANY.items() if v}
-
-    bill_to = {
-        "name": getattr(customer, "ledger_name", "") or "-",
-        "address": invoice.customer_address or getattr(customer, "address1", "") or "",
-        "mobile": invoice.customer_mobile or getattr(customer, "mobile", "") or "",
-    }
-
-    # ---------------- invoice info (empty values are left out) ----------------
-    info = [
-        {"label": "Invoice Date", "value": _date(invoice.invoice_date)},
-        {"label": "Due Date", "value": _date(invoice.due_date)},
-        {"label": "Payment Mode", "value": invoice.get_payment_mode_display()},
-        {"label": "Job Card", "value": jobcard.job_number if jobcard else ""},
-        {"label": "Status", "value": invoice.get_status_display(),
+    # ---------------- details box ----------------
+    details = [
+        {"label": "Customer", "value": getattr(customer, "ledger_name", "") or "-"},
+        {"label": "Billing Address",
+         "value": invoice.customer_address or getattr(customer, "address1", "") or "-"},
+        {"label": "Payment Status", "value": invoice.get_status_display().upper(),
          "tone": STATUS_TONE.get(invoice.status, "")},
+        {"label": "Invoice Number", "value": invoice.display_number},
+        {"label": "Payment Mode", "value": invoice.get_payment_mode_display()},
+        {"label": "Job Card Ref.", "value": jobcard.job_number if jobcard else "-"},
     ]
-    info = [row for row in info if row["value"]]
-
-    # ---------------- vehicles (one line each) ----------------
-    vehicle_lines = []
-    for iv in invoice_vehicles:
-        v = iv.vehicle
-        bits = [_vehicle_label(v)]
-        reg = getattr(v, "registration_number", "") or ""
-        if reg and reg != bits[0]:
-            bits.append(reg)
-        model = _vehicle_model(v)
-        if model:
-            bits.append(model)
-        if iv.mileage:
-            bits.append(f"{iv.mileage:,} km")
-        vehicle_lines.append("  |  ".join(bits))
+    mobile = invoice.customer_mobile or getattr(customer, "mobile", "") or ""
+    if mobile:
+        details.append({"label": "Mobile", "value": mobile})
+    if invoice.due_date:
+        details.append({"label": "Due Date", "value": invoice.due_date.strftime("%d %b %Y")})
 
     sections = []
 
+    # ---------------- vehicle details ----------------
+    if invoice_vehicles:
+        sections.append({
+            "title": "Vehicle Details",
+            "columns": [_col("SL", 7), _col("Vehicle Number", 24), _col("Registration", 24),
+                        _col("Model", 28), _col("Mileage", 17)],
+            "rows": [[
+                _cell(_sl(n)),
+                _cell(_vehicle_label(iv.vehicle)),
+                _cell(getattr(iv.vehicle, "registration_number", "") or "-"),
+                _cell(_vehicle_model(iv.vehicle)),
+                _cell(f"{iv.mileage:,} km" if iv.mileage else "-"),
+            ] for n, iv in enumerate(invoice_vehicles, 1)],
+        })
+
     # ---------------- spare parts ----------------
     if parts:
-        cols = [_col("Sl No", 7)]
+        show_disc = any(float(p.discount_pct or 0) > 0 for p in parts)
+        fixed = [_col("SL", 6)]
         if show_veh:
-            cols.append(_col("Vehicle", 12))
-        cols += [
-            _col("Description", 17 if show_veh else 28),
-            _col("Code", 11),
-            _col("Qty", 5 if show_veh else 6, "r"), _col("Unit", 5 if show_veh else 6),
-            _col("Rate", 10 if show_veh else 11, "r"), _col("Disc %", 7, "r"), _col("Tax %", 6, "r"),
-            _col("Tax Amt", 9 if show_veh else 8, "r"), _col("Total", 11 if show_veh else 10, "r"),
-        ]
+            fixed.append(_col("Vehicle", 12))
+        fixed += [_col("Item Code", 14), _col("Qty", 8), _col("Rate", 13)]
+        if show_disc:
+            fixed.append(_col("Disc %", 8))
+        fixed += [_col("Tax", 8), _col("Total", 13)]
+        cols = _with_description(fixed, 2 if show_veh else 1)
+
         rows = []
         for n, p in enumerate(parts, 1):
-            row = [_cell(n)]
+            row = [_cell(_sl(n))]
             if show_veh:
                 row.append(_cell(_vehicle_label(p.vehicle)))
             row += [
                 _cell(p.description or "-"),
                 _cell(p.item_code or "-"),
-                _cell(_num(p.quantity), "r"),
-                _cell(p.unit or "-"),
-                _cell(_money(p.unit_price), "r"),
-                _cell(_num(p.discount_pct), "r"),
-                _cell(_num(p.tax_percent), "r"),
-                _cell(_money(p.get_tax_amount()), "r"),
-                _cell(_money(p.total_price()), "r"),
+                _cell(_qty(p)),
+                _cell(_money(p.unit_price)),
             ]
+            if show_disc:
+                row.append(_cell(_pct(p.discount_pct)))
+            row += [_cell(_pct(p.tax_percent)), _cell(_money(p.total_price()))]
             rows.append(row)
-        sections.append({
-            "title": "Spare Parts", "columns": cols, "rows": rows,
-            "total_label": "Spare Parts Total",
-            "tax": _money(invoice.get_parts_tax()),
-            "total": _money(invoice.get_parts_total()),
-        })
+        sections.append({"title": "Spare Parts", "columns": cols, "rows": rows})
 
     # ---------------- labour ----------------
     if labours:
-        cols = [_col("Sl No", 7)]
+        fixed = [_col("SL", 6)]
         if show_veh:
-            cols.append(_col("Vehicle", 12))
-        cols += [
-            _col("Description / Work Done", 22 if show_veh else 30),
-            _col("Technician", 16 if show_veh else 18),
-            _col("Hours", 7 if show_veh else 8, "r"), _col("Rate / Hr", 10 if show_veh else 11, "r"),
-            _col("Tax %", 6 if show_veh else 7, "r"),
-            _col("Tax Amt", 9, "r"), _col("Total", 11 if show_veh else 10, "r"),
-        ]
+            fixed.append(_col("Vehicle", 12))
+        fixed += [_col("Technician", 16), _col("Hours", 8), _col("Rate", 13),
+                  _col("Tax", 8), _col("Total", 13)]
+        cols = _with_description(fixed, 2 if show_veh else 1)
+
         rows = []
         for n, l in enumerate(labours, 1):
-            row = [_cell(n)]
+            row = [_cell(_sl(n))]
             if show_veh:
                 row.append(_cell(_vehicle_label(l.vehicle)))
             row += [
                 _cell(l.description or "-"),
                 _cell(l.technician.full_name if l.technician else "-"),
-                _cell(_num(l.hours), "r"),
-                _cell(_money(l.unit_price), "r"),
-                _cell(_num(l.tax_percent), "r"),
-                _cell(_money(l.get_tax_amount()), "r"),
-                _cell(_money(l.total_price()), "r"),
+                _cell(_num(l.hours)),
+                _cell(_money(l.unit_price)),
+                _cell(_pct(l.tax_percent)),
+                _cell(_money(l.total_price())),
             ]
             rows.append(row)
-        sections.append({
-            "title": "Labour Charges", "columns": cols, "rows": rows,
-            "total_label": "Labour Total",
-            "tax": _money(invoice.get_labour_tax()),
-            "total": _money(invoice.get_labour_total()),
-        })
+        sections.append({"title": "Labour Charges", "columns": cols, "rows": rows})
 
     # ---------------- other charges ----------------
     if others:
-        cols = [_col("Sl No", 7)]
+        fixed = [_col("SL", 6)]
         if show_veh:
-            cols.append(_col("Vehicle", 12))
-        cols += [
-            _col("Description", 31 if show_veh else 43),
-            _col("Amount", 14, "r"), _col("Tax %", 8, "r"),
-            _col("Tax Amt", 12, "r"), _col("Total", 16, "r"),
-        ]
+            fixed.append(_col("Vehicle", 12))
+        fixed += [_col("Amount", 15), _col("Tax %", 9), _col("Tax Amount", 14), _col("Total", 15)]
+        cols = _with_description(fixed, 2 if show_veh else 1)
+
         rows = []
         for n, o in enumerate(others, 1):
-            row = [_cell(n)]
+            row = [_cell(_sl(n))]
             if show_veh:
                 row.append(_cell(_vehicle_label(o.vehicle)))
             row += [
                 _cell(o.description or "-"),
-                _cell(_money(o.unit_price), "r"),
-                _cell(_num(o.tax_percent), "r"),
-                _cell(_money(o.get_tax_amount()), "r"),
-                _cell(_money(o.total_price()), "r"),
+                _cell(_money(o.unit_price)),
+                _cell(_pct(o.tax_percent)),
+                _cell(_money(o.get_tax_amount())),
+                _cell(_money(o.total_price())),
             ]
             rows.append(row)
-        sections.append({
-            "title": "Other Charges", "columns": cols, "rows": rows,
-            "total_label": "Other Charges Total",
-            "tax": _money(invoice.get_other_tax()),
-            "total": _money(invoice.get_other_total()),
-        })
+        sections.append({"title": "Other Charges", "columns": cols, "rows": rows})
 
     # ---------------- payment summary ----------------
+    # Section lines are tax-inclusive (same as the TOTAL column of each table).
+    # Grand total = Subtotal - Discount = Taxable Amount + VAT   (same maths as the Invoice model)
+    net = invoice.get_subtotal()
+    tax = invoice.get_total_tax()
+    disc_rate = float(invoice.discount_pct or 0) / 100
+    taxable = net * (1 - disc_rate)
+    vat = tax * (1 - disc_rate)
+
+    rates = {float(i.tax_percent) for i in items if float(i.tax_percent or 0) > 0}
+    vat_label = f"VAT ({_num(rates.pop())}%)" if len(rates) == 1 else "VAT"
+    disc_label = f"Discount ({_num(invoice.discount_pct)}%)" if disc_rate else "Discount"
+
     summary = [
-        {"label": "Spare Parts", "value": _money(invoice.get_parts_total())},
-        {"label": "Labour Charges", "value": _money(invoice.get_labour_total())},
-        {"label": "Other Charges", "value": _money(invoice.get_other_total())},
-        {"label": "Subtotal (Before Tax)", "value": _money(invoice.get_subtotal())},
-        {"label": "Total Tax", "value": _money(invoice.get_total_tax())},
+        {"label": "Spare Parts", "value": _money(invoice.get_parts_total()), "kind": "line"},
+        {"label": "Labour Charges", "value": _money(invoice.get_labour_total()), "kind": "line"},
+        {"label": "Other Charges", "value": _money(invoice.get_other_total()), "kind": "line"},
+        {"label": "Subtotal (incl. tax)", "value": _money(net + tax), "kind": "sub"},
+        {"label": disc_label, "value": _money(invoice.get_discount_amount()), "kind": ""},
+        {"label": "Taxable Amount", "value": _money(taxable), "kind": ""},
+        {"label": vat_label, "value": _money(vat), "kind": ""},
+        {"label": "GRAND TOTAL", "value": _money(invoice.get_grand_total()), "kind": "grand"},
+        {"label": "Amount Paid", "value": _money(invoice.amount_paid), "kind": "paid"},
+        {"label": "BALANCE DUE", "value": _money(invoice.get_balance_due()), "kind": "balance"},
     ]
-    if float(invoice.discount_pct or 0):
-        summary.append({
-            "label": f"Discount ({_num(invoice.discount_pct)}%)",
-            "value": "-" + _money(invoice.get_discount_amount()),
-        })
 
     return {
-        "company": company,
+        "company": {k: v for k, v in COMPANY.items() if v},
         "document": {
-            "title": "TAX INVOICE",
+            "title": "INVOICE",
             "number": invoice.display_number,
             "date": invoice.invoice_date,
             "notes": invoice.notes or "",
         },
         "currency": CURRENCY,
-        "bill_to": bill_to,
-        "info": info,
-        "vehicle_lines": vehicle_lines,
+        "details": details,
         "sections": sections,
         "summary": summary,
-        "grand_total": _money(invoice.get_grand_total()),
-        "amount_paid": _money(invoice.amount_paid),
-        "balance_due": _money(invoice.get_balance_due()),
         "signatures": [
             {"label": "Authorized Signature"},
             {"label": "Customer Signature"},

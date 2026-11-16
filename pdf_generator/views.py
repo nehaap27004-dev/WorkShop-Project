@@ -10,6 +10,12 @@ from .services.pdf_service import generate_pdf
 from .services.regular_inspection_builder import build_regular_inspection_context
 from jobcard_app.models import Invoice
 from .services.invoice_pdf_builder import build_invoice_pdf_context
+from jobcard_app.models import Estimate
+from .services.estimate_pdf_builder import build_estimate_pdf_context
+from jobcard_app.models import Quotation
+from .services.quotation_pdf_builder import build_quotation_pdf_context
+from jobcard_app.models import DeliveryNote
+from .services.delivery_pdf_builder import build_delivery_pdf_context
 REGULAR_TEMPLATE = "pdf_generator/pdf_regular_inspection.html"
 REGULAR_CSS = "pdf_generator/regular_inspection.css"
 CUSTOM_TEMPLATE = "pdf_generator/pdf_custom_inspection.html"
@@ -158,3 +164,98 @@ def invoice_pdf(request, pk):
         css_name=INVOICE_CSS,
     )
     return _pdf_response(pdf_bytes, f"invoice_{invoice.display_number}.pdf")
+
+
+ESTIMATE_TEMPLATE = "pdf_generator/pdf_estimate.html"
+ESTIMATE_CSS = "pdf_generator/estimate.css"
+
+
+@login_required
+def estimate_pdf(request, pk):
+    """Estimate PDF - built fresh each time so it always matches the saved estimate."""
+    estimate = get_object_or_404(
+        Estimate.objects.select_related(
+            "customer", "jobcard", "advisor", "vehicle",
+        ).prefetch_related(
+            "items__vehicle",
+            "items__technician",
+            "vehicles__vehicle__manufacturer",
+            "vehicles__vehicle__vehicle_model",
+            "complaints__vehicle",
+            "complaints__technician",
+        ),
+        pk=pk,
+    )
+
+    context = build_estimate_pdf_context(estimate)
+    pdf_bytes = generate_pdf(
+        request, context,
+        template_name=ESTIMATE_TEMPLATE,
+        css_name=ESTIMATE_CSS,
+    )
+    number = estimate.voucher_number or estimate.estimate_number or estimate.pk
+    return _pdf_response(pdf_bytes, f"estimate_{number}.pdf")
+
+
+
+QUOTATION_TEMPLATE = "pdf_generator/pdf_quotation.html"
+QUOTATION_CSS = "pdf_generator/quotation.css"
+
+
+@login_required
+def quotation_pdf(request, pk):
+    """Quotation PDF - built fresh each time so it always matches the saved quotation."""
+    quotation = get_object_or_404(
+        Quotation.objects.select_related(
+            "customer", "jobcard", "estimate", "advisor", "vehicle",
+        ).prefetch_related(
+            "items__vehicle",
+            "items__technician",
+            "vehicles__vehicle__manufacturer",
+            "vehicles__vehicle__vehicle_model",
+            "complaints__vehicle",
+            "complaints__technician",
+        ),
+        pk=pk,
+    )
+
+    context = build_quotation_pdf_context(quotation)
+    pdf_bytes = generate_pdf(
+        request, context,
+        template_name=QUOTATION_TEMPLATE,
+        css_name=QUOTATION_CSS,
+    )
+    number = quotation.voucher_number or quotation.quotation_number or quotation.pk
+    return _pdf_response(pdf_bytes, f"quotation_{number}.pdf")
+
+
+DELIVERY_TEMPLATE = "pdf_generator/pdf_delivery.html"
+DELIVERY_CSS = "pdf_generator/delivery.css"
+
+
+@login_required
+def delivery_pdf(request, pk):
+    """Delivery Note PDF - built fresh each time so it always matches the saved note."""
+    dn = get_object_or_404(
+        DeliveryNote.objects.select_related(
+            "customer", "jobcard", "quotation", "estimate",
+            "advisor", "technician", "vehicle",
+        ).prefetch_related(
+            "vehicles__vehicle__manufacturer",
+            "vehicles__vehicle__vehicle_model",
+            "services__vehicle",
+            "parts__vehicle",
+            "labours__vehicle",
+            "labours__technician",
+        ),
+        pk=pk,
+    )
+
+    context = build_delivery_pdf_context(dn)
+    pdf_bytes = generate_pdf(
+        request, context,
+        template_name=DELIVERY_TEMPLATE,
+        css_name=DELIVERY_CSS,
+    )
+    return _pdf_response(pdf_bytes, f"delivery_note_{dn.voucher_number or dn.pk}.pdf")
+

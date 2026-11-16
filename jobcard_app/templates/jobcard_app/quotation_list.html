@@ -11,7 +11,6 @@
             <h2 class="module-title mb-1">
                 <i class="bi bi-file-earmark-text text-burgundy mr-2"></i>{% trans "Quotations & Proposals" %}
             </h2>
-            
         </div>
         <a href="{% url 'jobcard_app:quotation_create' %}" class="btn btn-custom-primary shadow-sm">
             <i class="bi bi-plus-lg mr-1"></i> {% trans "New Quotation" %}
@@ -30,7 +29,6 @@
             </div>
         {% endfor %}
     {% endif %}
-
 
     <!-- Filters Card -->
     <div class="card shadow-sm border-0 mb-4">
@@ -102,7 +100,7 @@
                             <th>{% trans "Linked Document" %}</th>
                             <th>{% trans "Status" %}</th>
                             <th class="text-right">{% trans "Grand Total" %}</th>
-                            <th style="width: 130px;" class="text-center">{% trans "Actions" %}</th>
+                            <th style="width: 130px;" class="text-center">{% trans "Action" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -170,20 +168,41 @@
                             <td class="align-middle text-right font-weight-bold text-dark">
                                 {{ q.grand_total|floatformat:2 }}
                             </td>
-                            <td class="align-middle text-center text-nowrap">
-                                <a href="{% url 'jobcard_app:quotation_view' q.pk %}" class="btn btn-sm btn-outline-info mr-1" title="{% trans 'View Quotation' %}">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{% url 'jobcard_app:quotation_edit' q.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit Quotation' %}">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <form method="post" action="{% url 'jobcard_app:quotation_delete' q.pk %}" class="d-inline"
-                                      onsubmit="return confirm('Delete quotation {{ q.voucher_number|default:q.quotation_number }}? This cannot be undone.');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete Quotation' %}">
-                                        <i class="bi bi-trash"></i>
+
+                            <!-- ACTION DROPDOWN -->
+                            <td class="align-middle text-center">
+                                <div class="dropdown action-dd">
+                                    <button class="btn btn-sm btn-action dropdown-toggle" type="button"
+                                            data-toggle="dropdown" data-display="static"
+                                            aria-haspopup="true" aria-expanded="false">
+                                        <i class="bi bi-gear-fill mr-1"></i> {% trans "Action" %}
                                     </button>
-                                </form>
+                                    <div class="dropdown-menu dropdown-menu-right">
+
+                                        <a class="dropdown-item item-edit" href="{% url 'jobcard_app:quotation_edit' q.pk %}">
+                                            <i class="bi bi-pencil-fill"></i> {% trans "Edit" %}
+                                        </a>
+
+                                        <a class="dropdown-item item-view" href="{% url 'jobcard_app:quotation_view' q.pk %}">
+                                            <i class="bi bi-eye-fill"></i> {% trans "View" %}
+                                        </a>
+
+                                        <a class="dropdown-item item-pdf" href="{% url 'quotation_pdf' q.pk %}" target="_blank">
+                                            <i class="bi bi-file-earmark-pdf-fill"></i> {% trans "Quotation PDF" %}
+                                        </a>
+
+                                        <div class="dropdown-divider"></div>
+
+                                        <form method="post" action="{% url 'jobcard_app:quotation_delete' q.pk %}"
+                                              onsubmit="return confirm('Delete quotation {{ q.voucher_number|default:q.quotation_number }}? This cannot be undone.');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item item-delete">
+                                                <i class="bi bi-trash-fill"></i> {% trans "Delete" %}
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -199,4 +218,87 @@
         </div>
     </div>
 </div>
+
+<style>
+/* ===== Action dropdown (same as inspection / invoice lists) ===== */
+.action-dd .btn-action {
+    background: #7b1c3e;
+    border-color: #7b1c3e;
+    color: #fff;
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 5px 12px;
+    box-shadow: 0 0 0 3px rgba(123, 28, 62, .15);
+}
+.action-dd .btn-action:hover,
+.action-dd .btn-action:focus,
+.action-dd.show .btn-action {
+    background: #651631;
+    border-color: #651631;
+    color: #fff;
+}
+.action-dd .dropdown-menu {
+    min-width: 210px;
+    padding: 8px 0;
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .15);
+}
+.action-dd .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    font-weight: 500;
+    font-size: 15px;
+    background: transparent;
+    border: 0;
+    width: 100%;
+    text-align: left;
+}
+.action-dd .dropdown-item i { width: 26px; font-size: 16px; }
+.action-dd .dropdown-item:hover { background: #f6f1f3; }
+.action-dd .item-edit   { color: #a3123f; }
+.action-dd .item-view   { color: #4a5568; }
+.action-dd .item-pdf    { color: #1e6bb8; }
+.action-dd .item-delete { color: #dc2626; }
+.action-dd .dropdown-divider { margin: 6px 0; }
+.action-dd form { margin: 0; }
+</style>
+
+<script>
+/* Action dropdown: render the menu with position:fixed so the card /
+   .table-responsive can't clip it, and open upward only if needed. */
+window.addEventListener('load', function () {
+    var $ = window.jQuery;
+    if (!$) { return; }
+
+    $(document).on('shown.bs.dropdown', '.action-dd', function () {
+        var $menu = $(this).find('.dropdown-menu');
+        var rect  = $(this).find('.btn-action')[0].getBoundingClientRect();
+        var h = $menu.outerHeight(), w = $menu.outerWidth();
+
+        var top = (window.innerHeight - rect.bottom >= h + 8)
+                    ? rect.bottom + 4
+                    : Math.max(8, rect.top - h - 4);
+        var left = Math.max(8, rect.right - w);
+
+        $menu.css({
+            position: 'fixed', top: top + 'px', left: left + 'px',
+            right: 'auto', bottom: 'auto', transform: 'none', margin: 0
+        });
+    });
+
+    $(document).on('hidden.bs.dropdown', '.action-dd', function () {
+        $(this).find('.dropdown-menu').css({
+            position: '', top: '', left: '', right: '',
+            bottom: '', transform: '', margin: ''
+        });
+    });
+
+    // Fixed menus don't follow the page, so close on scroll / resize
+    $(window).on('scroll resize', function () {
+        $('.action-dd.show .btn-action').dropdown('hide');
+    });
+});
+</script>
 {% endblock %}

@@ -92,7 +92,7 @@
         <div class="card-body p-0">
             {% if estimates %}
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0" id="estTable">
                     <thead>
                         <tr>
                             <th>{% trans "Estimate No." %}</th>
@@ -101,14 +101,14 @@
                             <th>{% trans "Vehicles" %}</th>
                             <th>{% trans "Status" %}</th>
                             <th class="text-right">{% trans "Grand Total" %}</th>
-                            <th style="width: 160px;" class="text-center">{% trans "Actions" %}</th>
+                            <th style="width: 130px;" class="text-center">{% trans "Action" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for e in estimates %}
                         <tr>
                             <td class="align-middle">
-                                <a href="{% url 'jobcard_app:estimate_edit' e.pk %}" class="font-weight-bold text-burgundy" style="font-size:14px;">
+                                <a href="{% url 'jobcard_app:estimate_view' e.pk %}" class="font-weight-bold text-burgundy" style="font-size:14px;">
                                     <i class="bi bi-receipt text-secondary mr-1"></i>
                                     {{ e.voucher_number|default:e.estimate_number|default:"—" }}
                                 </a>
@@ -152,20 +152,41 @@
                             <td class="align-middle text-right font-weight-bold text-dark">
                                 {{ e.grand_total|floatformat:2 }}
                             </td>
-                            <td class="align-middle text-center text-nowrap">
-                                <a href="{% url 'jobcard_app:estimate_view' e.pk %}" class="btn btn-sm btn-outline-info mr-1" title="{% trans 'View Estimate' %}">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{% url 'jobcard_app:estimate_edit' e.pk %}" class="btn btn-sm btn-outline-secondary mr-1" title="{% trans 'Edit Estimate' %}">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <form method="post" action="{% url 'jobcard_app:estimate_delete' e.pk %}" class="d-inline"
-                                    onsubmit="return confirm('Delete estimate {{ e.voucher_number|default:e.estimate_number }}? This cannot be undone.');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete Estimate' %}">
-                                        <i class="bi bi-trash"></i>
+
+                            <!-- ACTION DROPDOWN -->
+                            <td class="align-middle text-center">
+                                <div class="dropdown action-dd">
+                                    <button class="btn btn-sm btn-action dropdown-toggle" type="button"
+                                            data-toggle="dropdown" data-display="static"
+                                            aria-haspopup="true" aria-expanded="false">
+                                        <i class="bi bi-gear-fill mr-1"></i> {% trans "Action" %}
                                     </button>
-                                </form>
+                                    <div class="dropdown-menu dropdown-menu-right">
+
+                                        <a class="dropdown-item item-edit" href="{% url 'jobcard_app:estimate_edit' e.pk %}">
+                                            <i class="bi bi-pencil-fill"></i> {% trans "Edit" %}
+                                        </a>
+
+                                        <a class="dropdown-item item-view" href="{% url 'jobcard_app:estimate_view' e.pk %}">
+                                            <i class="bi bi-eye-fill"></i> {% trans "View" %}
+                                        </a>
+
+                                        <a class="dropdown-item item-pdf" href="{% url 'estimate_pdf' e.pk %}" target="_blank">
+                                            <i class="bi bi-file-earmark-pdf-fill"></i> {% trans "Estimate PDF" %}
+                                        </a>
+
+                                        <div class="dropdown-divider"></div>
+
+                                        <form method="post" action="{% url 'jobcard_app:estimate_delete' e.pk %}"
+                                              onsubmit="return confirm('{% trans "Delete this estimate? This cannot be undone." as msg %}{{ msg|escapejs }}');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item item-delete">
+                                                <i class="bi bi-trash-fill"></i> {% trans "Delete" %}
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -181,4 +202,118 @@
         </div>
     </div>
 </div>
+
+<style>
+.text-burgundy { color: #9f1045 !important; }
+.btn-custom-primary {
+    background-color: #9f1045 !important;
+    border-color: #9f1045 !important;
+    color: #fff !important;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    transition: all .15s ease;
+}
+.btn-custom-primary:hover {
+    background-color: #830d38 !important;
+    border-color: #830d38 !important;
+    color: #fff !important;
+}
+.card { background: #ffffff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; }
+.card-banner-header { background-color: #ffffff !important; border-bottom: 1.5px solid #f1f5f9 !important; padding: 12px 18px !important; }
+.card-banner-title { font-size: 14px; font-weight: 700; color: #0f172a; }
+
+#estTable thead th {
+    background: #ffffff;
+    border-bottom: 1.5px solid #e2e8f0;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    padding: 11px 14px;
+    white-space: nowrap;
+}
+#estTable tbody td { padding: 11px 14px; border-bottom: 1px solid #f1f5f9; font-size: 12.5px; }
+#estTable tbody tr:hover { background-color: #fafbfd; }
+
+/* ===== Action dropdown (same as invoice list) ===== */
+.action-dd .btn-action {
+    background: #7b1c3e;
+    border-color: #7b1c3e;
+    color: #fff;
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 5px 12px;
+    box-shadow: 0 0 0 3px rgba(123, 28, 62, .15);
+}
+.action-dd .btn-action:hover,
+.action-dd .btn-action:focus,
+.action-dd.show .btn-action {
+    background: #651631;
+    border-color: #651631;
+    color: #fff;
+}
+.action-dd .dropdown-menu {
+    min-width: 210px;
+    padding: 8px 0;
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .15);
+}
+.action-dd .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    font-weight: 500;
+    font-size: 15px;
+    background: transparent;
+    border: 0;
+    width: 100%;
+    text-align: left;
+}
+.action-dd .dropdown-item i { width: 26px; font-size: 16px; }
+.action-dd .dropdown-item:hover { background: #f6f1f3; }
+.action-dd .item-edit   { color: #a3123f; }
+.action-dd .item-view   { color: #4a5568; }
+.action-dd .item-pdf    { color: #1e6bb8; }
+.action-dd .item-delete { color: #dc2626; }
+.action-dd .dropdown-divider { margin: 6px 0; }
+.action-dd form { margin: 0; }
+</style>
+
+<script>
+window.addEventListener('load', function () {
+    var $ = window.jQuery;
+    if (!$) { return; }
+
+    $(document).on('shown.bs.dropdown', '.action-dd', function () {
+        var $menu = $(this).find('.dropdown-menu');
+        var rect  = $(this).find('.btn-action')[0].getBoundingClientRect();
+        var h = $menu.outerHeight(), w = $menu.outerWidth();
+
+        var top = (window.innerHeight - rect.bottom >= h + 8)
+                    ? rect.bottom + 4
+                    : Math.max(8, rect.top - h - 4);
+        var left = Math.max(8, rect.right - w);
+
+        $menu.css({
+            position: 'fixed', top: top + 'px', left: left + 'px',
+            right: 'auto', bottom: 'auto', transform: 'none', margin: 0
+        });
+    });
+
+    $(document).on('hidden.bs.dropdown', '.action-dd', function () {
+        $(this).find('.dropdown-menu').css({
+            position: '', top: '', left: '', right: '',
+            bottom: '', transform: '', margin: ''
+        });
+    });
+
+    $(window).on('scroll resize', function () {
+        $('.action-dd.show .btn-action').dropdown('hide');
+    });
+});
+</script>
 {% endblock %}
