@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt Voucher - {{ receipt.voucher_no }}</title>
+</head>
+
+<body>
+
+    <div class="receipt-page">
+
+        
+
+        <div class="document-title">
+            RECEIPT VOUCHER
+        </div>
+
+        <!-- Receipt Information -->
+        <div class="receipt-info">
+
+            <div class="received-section">
+                <div class="field-label">Received From:</div>
+                <div class="received-name">
+                    {{ received_from|default:"-" }}
+                </div>
+            </div>
+
+            <table class="voucher-info">
+                <tr>
+                    <td>Voucher No:</td>
+                    <td>{{ receipt.voucher_no }}</td>
+                </tr>
+
+                <tr>
+                    <td>Date:</td>
+                    <td>{{ receipt.Date|date:"d-m-Y" }}</td>
+                </tr>
+
+                {% if receipt.IsPDC %}
+                <tr>
+                    <td>Cheque No:</td>
+                    <td>{{ receipt.ChequeNo|default:"-" }}</td>
+                </tr>
+
+                <tr>
+                    <td>Cheque Date:</td>
+                    <td>
+                        {% if receipt.ChequeDate %}
+                            {{ receipt.ChequeDate|date:"d-m-Y" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Cleared:</td>
+                    <td>{{ receipt.Cleared|default:"-" }}</td>
+                </tr>
+                {% endif %}
+            </table>
+
+        </div>
+
+        <!-- Receipt Details -->
+        <table class="details-table">
+
+            <thead>
+                <tr>
+                    <th class="sl-col">Sl.No</th>
+                    <th class="ledger-col">Ledger</th>
+                    <th class="description-col">Description</th>
+                    <th class="amount-col">Amount</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for detail in receipt_details %}
+                <tr>
+                    <td class="center">{{ forloop.counter }}</td>
+
+                    <td>
+                        {% if detail.Ledger %}
+                            {{ detail.Ledger.ledger_name }}
+                        {% endif %}
+                    </td>
+
+                    <td>{{ detail.Desc|default:"-"|linebreaksbr }}</td>
+
+                    <td class="amount">
+                        {{ detail.Amount|floatformat:3 }}
+                    </td>
+                </tr>
+                {% endfor %}
+
+                {% if bounce_charge > 0 %}
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td><strong>Bounce Charge</strong></td>
+                    <td class="amount">
+                        {{ bounce_charge|floatformat:3 }}
+                    </td>
+                </tr>
+                {% endif %}
+
+                <tr class="total-row">
+                    <td colspan="3" class="total-label">
+                        Total
+                    </td>
+
+                    <td class="amount">
+                        {{ total_amount|floatformat:3 }}
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+        <!-- Amount in Words -->
+        <div class="amount-words">
+            <strong>Amount (in words):</strong>
+            {{ amount_in_words }}
+        </div>
+
+        <!-- Signature Boxes -->
+        <div class="signature-section">
+
+            <div class="signature-box">
+                <strong>Received By</strong>
+            </div>
+
+            <div class="signature-box">
+                <strong>For Silver Line Group Business</strong>
+
+                {% if receipt.enable_signature and signature_uri %}
+                <div class="signature-image">
+                    <img src="{{ signature_uri }}" alt="Signature">
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+
+       
+
+    </div>
+
+</body>
+</html>

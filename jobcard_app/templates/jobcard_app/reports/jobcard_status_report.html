@@ -1,0 +1,156 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h2 style="color:#9f1045;">
+                Job Card Status Report
+            </h2>
+            <p class="text-muted">
+                View all workshop job cards and their current status.
+            </p>
+        </div>
+
+       
+
+    </div>
+
+    <!-- FILTERS -->
+
+    <div class="card p-3 mb-4">
+
+        <form method="get" class="row g-3">
+
+            <div class="col-md-3">
+                <label>Search</label>
+                <input type="text"
+                       name="search"
+                       class="form-control"
+                       value="{{ search }}"
+                       placeholder="Job number, customer or vehicle">
+            </div>
+
+            <div class="col-md-2">
+                <label>From Date</label>
+                <input type="date"
+                       name="from_date"
+                       class="form-control"
+                       value="{{ from_date }}">
+            </div>
+
+            <div class="col-md-2">
+                <label>To Date</label>
+                <input type="date"
+                       name="to_date"
+                       class="form-control"
+                       value="{{ to_date }}">
+            </div>
+
+            <div class="col-md-3">
+                <label>Status</label>
+                <select name="status" class="form-control">
+
+                    <option value="">All Statuses</option>
+
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}"
+                        {% if selected_status == value %}
+                            selected
+                        {% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+
+                <button type="submit"
+                        class="btn btn-block"
+                        style="background:#9f1045;color:white;">
+                    Generate
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <!-- REPORT TABLE -->
+
+    <div class="card p-3">
+
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-hover">
+
+                <thead style="background:#9f1045;color:white;">
+
+                    <tr>
+                        <th>Job Card No</th>
+                        <th>Date</th>
+                        <th>Vehicle No</th>
+                        <th>Customer</th>
+                        <th>Technician</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th class="text-right">Amount</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for row in report_rows %}
+
+                    <tr>
+                        <td>{{ row.job_number }}</td>
+
+                        <td>{{ row.date|date:"d-M-Y" }}</td>
+
+                        <td>{{ row.vehicle_number|default:"-" }}</td>
+
+                        <td>{{ row.customer }}</td>
+
+                        <td>{{ row.technician|default:"-" }}</td>
+
+                        <td>{{ row.priority }}</td>
+
+                        <td>{{ row.status }}</td>
+
+                        <td class="text-right">
+                            {{ row.amount|floatformat:3 }}
+                        </td>
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            No job cards found.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div class="text-right font-weight-bold">
+            Total Job Cards: {{ report_rows|length }}
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

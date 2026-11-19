@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Voucher</title>
+</head>
+<body>
+
+    <h2 class="voucher-title">PAYMENT VOUCHER</h2>
+
+    <!-- Payment Header -->
+    <div class="payment-header">
+
+        <div class="paid-to">
+            <strong>Paid To:</strong>
+            <p>{{ paid_to }}</p>
+        </div>
+
+        <table class="voucher-info">
+            <tr>
+                <th>Voucher No:</th>
+                <td>{{ payment.voucher_no }}</td>
+            </tr>
+            <tr>
+                <th>Date:</th>
+                <td>{{ payment.Date|date:"d-m-Y" }}</td>
+            </tr>
+
+            {% if payment.IsPDC %}
+            <tr>
+                <th>Cheque No:</th>
+                <td>{{ payment.ChequeNo|default:"" }}</td>
+            </tr>
+            <tr>
+                <th>Cheque Date:</th>
+                <td>
+                    {% if payment.ChequeDate %}
+                        {{ payment.ChequeDate|date:"d-m-Y" }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Cleared:</th>
+                <td>{{ payment.Cleared|default:"" }}</td>
+            </tr>
+            {% endif %}
+        </table>
+
+    </div>
+
+    <!-- Detailed Payment Table -->
+    {% if is_detailed %}
+
+    <table class="details-table detailed-table">
+        <thead>
+            <tr>
+                <th>Sl.No</th>
+                <th>Inv. Date</th>
+                <th>Inv. No</th>
+                <th>Ledger</th>
+                <th>VAT Type</th>
+                <th>Taxable</th>
+                <th>VAT</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for row in payment_rows %}
+            <tr>
+                <td class="center">{{ row.sl_no }}</td>
+                <td>{{ row.invoice_date }}</td>
+                <td>{{ row.invoice_no }}</td>
+                <td>{{ row.ledger_name }}</td>
+                <td>{{ row.vat_type }}</td>
+                <td class="number">{{ row.taxable|floatformat:3 }}</td>
+                <td class="number">{{ row.vat_amount|floatformat:3 }}</td>
+                <td class="number">{{ row.amount|floatformat:3 }}</td>
+            </tr>
+            {% endfor %}
+
+            {% if bounce_charge > 0 %}
+            <tr class="summary-row">
+                <td colspan="5"></td>
+                <td>Bounce Charge</td>
+                <td class="number">
+                    {{ bounce_charge|floatformat:3 }}
+                </td>
+                <td></td>
+            </tr>
+            {% endif %}
+
+            <tr class="summary-row">
+                <td colspan="5"></td>
+                <td>Taxable Total</td>
+                <td class="number">
+                    {{ total_taxable|floatformat:3 }}
+                </td>
+                <td></td>
+            </tr>
+
+            <tr class="summary-row">
+                <td colspan="5"></td>
+                <td>VAT Total</td>
+                <td class="number">
+                    {{ total_vat|floatformat:3 }}
+                </td>
+                <td></td>
+            </tr>
+
+            <tr class="grand-total">
+                <td colspan="6"></td>
+                <td>Total</td>
+                <td class="number">
+                    {{ grand_total|floatformat:3 }}
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
+
+    <!-- Non-Detailed Payment Table -->
+    {% else %}
+
+    <table class="details-table simple-table">
+        <thead>
+            <tr>
+                <th>Sl.No</th>
+                <th>Ledger</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for row in payment_rows %}
+            <tr>
+                <td class="center">{{ row.sl_no }}</td>
+                <td>{{ row.ledger_name }}</td>
+                <td class="number">
+                    {{ row.amount|floatformat:3 }}
+                </td>
+            </tr>
+            {% endfor %}
+
+            {% if bounce_charge > 0 %}
+            <tr class="summary-row">
+                <td></td>
+                <td>Bounce Charge</td>
+                <td class="number">
+                    {{ bounce_charge|floatformat:3 }}
+                </td>
+            </tr>
+            {% endif %}
+
+            <tr class="grand-total">
+                <td></td>
+                <td>Total</td>
+                <td class="number">
+                    {{ grand_total|floatformat:3 }}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% endif %}
+
+    <!-- Amount in Words -->
+    <div class="amount-words">
+        <strong>Amount (in words):</strong>
+        {{ amount_in_words }}
+    </div>
+
+    <!-- Signature Section -->
+    <div class="signature-section">
+
+        <div class="signature-box">
+            <strong>Received By</strong>
+        </div>
+
+        <div class="signature-box">
+            <strong>For Silver Line Group Business</strong>
+
+            {% if signature_uri %}
+            <img src="{{ signature_uri }}" class="signature-image"
+                 alt="Signature">
+            {% endif %}
+        </div>
+
+    </div>
+
+</body>
+</html>

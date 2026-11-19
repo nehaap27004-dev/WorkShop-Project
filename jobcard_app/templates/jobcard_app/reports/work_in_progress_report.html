@@ -1,0 +1,206 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+
+<style>
+    .report-title {
+        color: #9f1045;
+        font-weight: 600;
+    }
+
+    .report-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 22px;
+    }
+
+    .report-table thead th {
+        background: #9f1045;
+        color: white;
+        font-size: 12px;
+        padding: 12px 10px;
+        white-space: nowrap;
+    }
+
+    .report-table tbody td {
+        padding: 11px 10px;
+        vertical-align: middle;
+        font-size: 13px;
+    }
+
+    .wip-label {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        background: #fff1f2;
+        color: #9f1045;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    @media print {
+        .no-print,
+        .sidebar,
+        .main-sidebar {
+            display: none !important;
+        }
+
+        body {
+            background: white !important;
+        }
+
+        .report-card {
+            border: none;
+            box-shadow: none;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+
+    <!-- REPORT HEADER -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h2 class="report-title">
+                Work In Progress (WIP) Report
+            </h2>
+
+            <p class="text-muted mb-0">
+                View vehicles currently under repair in the workshop.
+            </p>
+        </div>
+
+        
+
+    </div>
+
+    <!-- FILTER SECTION -->
+
+    <div class="report-card no-print">
+
+        <form method="get" class="row">
+
+            <div class="col-md-4 mb-3">
+                <label>Search</label>
+
+                <input type="text"
+                       name="search"
+                       class="form-control"
+                       placeholder="Job Card No, Customer or Vehicle"
+                       value="{{ search }}">
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label>From Date</label>
+
+                <input type="date"
+                       name="from_date"
+                       class="form-control"
+                       value="{{ from_date }}">
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label>To Date</label>
+
+                <input type="date"
+                       name="to_date"
+                       class="form-control"
+                       value="{{ to_date }}">
+            </div>
+
+            <div class="col-md-2 mb-3 d-flex align-items-end">
+
+                <button type="submit"
+                        class="btn btn-block"
+                        style="background:#9f1045;color:white;">
+                    <i class="bi bi-search"></i>
+                    Generate
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <!-- WIP REPORT TABLE -->
+
+    <div class="report-card">
+
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-hover report-table">
+
+                <thead>
+                    <tr>
+                        <th>Job Card No</th>
+                        <th>Date</th>
+                        <th>Vehicle No</th>
+                        <th>Customer</th>
+                        <th>Technician</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th class="text-right">Amount</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for row in report_rows %}
+
+                    <tr>
+
+                        <td>{{ row.job_number|default:"-" }}</td>
+
+                        <td>{{ row.date|date:"d-M-Y" }}</td>
+
+                        <td>{{ row.vehicle_number|default:"-" }}</td>
+
+                        <td>{{ row.customer }}</td>
+
+                        <td>{{ row.technician|default:"-" }}</td>
+
+                        <td>{{ row.priority }}</td>
+
+                        <td>
+                            <span class="wip-label">
+                                In Progress
+                            </span>
+                        </td>
+
+                        <td class="text-right">
+                            {{ row.amount|floatformat:3 }}
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="8"
+                            class="text-center text-muted py-4">
+                            No vehicles currently under repair.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div class="text-right font-weight-bold mt-3">
+            Total WIP Job Cards: {{ report_rows|length }}
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

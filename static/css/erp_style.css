@@ -1645,3 +1645,57 @@ textarea:focus,
         height: 70px;
     }
 }
+
+/* ==========================================
+   FIX: COLLAPSED SIDEBAR ALIGNMENT
+========================================== */
+
+@media (min-width: 992px) {
+
+    /* Sidebar width */
+    body.erp-sidebar-collapsed .erp-sidebar {
+        width: var(--erp-sidebar-mini-width) !important;
+        overflow-x: hidden !important;
+    }
+
+    /* Hide Dashboard text also */
+    body.erp-sidebar-collapsed .erp-nav-dashboard-link span {
+        display: none !important;
+    }
+
+    /* Hide all section headings and menu labels */
+    body.erp-sidebar-collapsed .erp-nav-section-title,
+    body.erp-sidebar-collapsed .erp-nav-link span,
+    body.erp-sidebar-collapsed .erp-sidebar .arrow-icon,
+    body.erp-sidebar-collapsed .erp-sidebar .erp-submenu {
+        display: none !important;
+    }
+
+    /* Center Dashboard icon */
+    body.erp-sidebar-collapsed .erp-nav-dashboard-link {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 14px 0 !important;
+        margin: 0 auto !important;
+        overflow: hidden !important;
+    }
+
+    /* Center remaining menu icons */
+    body.erp-sidebar-collapsed .erp-nav-link {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 14px 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Correct main content position and width */
+    body.erp-sidebar-collapsed .erp-content-wrapper {
+        margin-left: var(--erp-sidebar-mini-width) !important;
+        width: calc(100% - var(--erp-sidebar-mini-width)) !important;
+        box-sizing: border-box !important;
+    }
+}

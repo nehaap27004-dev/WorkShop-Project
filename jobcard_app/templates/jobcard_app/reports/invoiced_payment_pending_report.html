@@ -1,0 +1,308 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+
+<style>
+    .report-title {
+        color: #9f1045;
+        font-weight: 600;
+    }
+
+    .report-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 22px;
+    }
+
+    .report-table {
+        min-width: 1150px;
+    }
+
+    .report-table thead th {
+        background: #9f1045;
+        color: white;
+        font-size: 12px;
+        padding: 12px 10px;
+        white-space: nowrap;
+    }
+
+    .report-table tbody td {
+        padding: 11px 10px;
+        vertical-align: middle;
+        font-size: 13px;
+    }
+
+    .status-label {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .status-unpaid {
+        background: #fff1f2;
+        color: #9f1045;
+    }
+
+    .status-partial {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+
+    .status-overdue {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .outstanding-summary {
+        background: #fff5f8;
+        border-left: 4px solid #9f1045;
+        border-radius: 6px;
+        padding: 15px;
+    }
+
+    @media print {
+        .no-print,
+        .sidebar,
+        .main-sidebar {
+            display: none !important;
+        }
+
+        body {
+            background: white !important;
+        }
+
+        .report-card {
+            border: none;
+            box-shadow: none;
+        }
+
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        .report-table {
+            min-width: 0;
+            font-size: 9px;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h2 class="report-title">
+                Invoiced – Payment Pending Report
+            </h2>
+
+            <p class="text-muted mb-0">
+                View job card invoices with outstanding customer balances.
+            </p>
+        </div>
+
+        
+    </div>
+
+    <!-- Outstanding Summary -->
+    <div class="report-card">
+
+        <div class="row">
+
+            <div class="col-md-4">
+                <div class="outstanding-summary">
+                    <small class="text-muted font-weight-bold">
+                        TOTAL PENDING INVOICES
+                    </small>
+
+                    <h4 class="report-title mb-0">
+                        {{ report_rows|length }}
+                    </h4>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="outstanding-summary">
+                    <small class="text-muted font-weight-bold">
+                        TOTAL OUTSTANDING AMOUNT
+                    </small>
+
+                    <h4 class="report-title mb-0">
+                        OMR {{ total_outstanding|floatformat:3 }}
+                    </h4>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Filters -->
+    <div class="report-card no-print">
+
+        <form method="get" class="row">
+
+            <div class="col-md-4 mb-3">
+                <label>Search</label>
+
+                <input type="text"
+                       name="search"
+                       class="form-control"
+                       placeholder="Invoice, Job Card, Customer or Vehicle"
+                       value="{{ search }}">
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label>Invoice From Date</label>
+
+                <input type="date"
+                       name="from_date"
+                       class="form-control"
+                       value="{{ from_date }}">
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label>Invoice To Date</label>
+
+                <input type="date"
+                       name="to_date"
+                       class="form-control"
+                       value="{{ to_date }}">
+            </div>
+
+            <div class="col-md-2 mb-3 d-flex align-items-end">
+                <button type="submit"
+                        class="btn btn-block"
+                        style="background:#9f1045;color:white;">
+                    <i class="bi bi-search"></i>
+                    Generate
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+    <!-- Report Table -->
+    <div class="report-card">
+
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-hover report-table">
+
+                <thead>
+                    <tr>
+                        <th>Invoice No</th>
+                        <th>Job Card No</th>
+                        <th>Invoice Date</th>
+                        <th>Due Date</th>
+                        <th>Vehicle No</th>
+                        <th>Customer</th>
+                        <th>Payment Mode</th>
+                        <th class="text-right">Invoice Total</th>
+                        <th class="text-right">Amount Paid</th>
+                        <th class="text-right">Balance Due</th>
+                        <th>Payment Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for row in report_rows %}
+
+                    <tr>
+                        <td>{{ row.invoice_number|default:"-" }}</td>
+
+                        <td>{{ row.job_number|default:"-" }}</td>
+
+                        <td>{{ row.invoice_date|date:"d-M-Y" }}</td>
+
+                        <td>
+                            {% if row.due_date %}
+                                {{ row.due_date|date:"d-M-Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <td>{{ row.vehicle_number|default:"-" }}</td>
+
+                        <td>{{ row.customer }}</td>
+
+                        <td>{{ row.payment_mode|default:"-" }}</td>
+
+                        <td class="text-right">
+                            {{ row.invoice_total|floatformat:3 }}
+                        </td>
+
+                        <td class="text-right">
+                            {{ row.amount_paid|floatformat:3 }}
+                        </td>
+
+                        <td class="text-right font-weight-bold">
+                            {{ row.balance_due|floatformat:3 }}
+                        </td>
+
+                        <td>
+                            {% if row.payment_status == 'Overdue' %}
+                                <span class="status-label status-overdue">
+                                    Overdue
+                                </span>
+
+                            {% elif row.payment_status == 'Partially Paid' %}
+                                <span class="status-label status-partial">
+                                    Partially Paid
+                                </span>
+
+                            {% else %}
+                                <span class="status-label status-unpaid">
+                                    Unpaid
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="11"
+                            class="text-center text-muted py-4">
+                            No invoices with pending payments found.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+                {% if report_rows %}
+                <tfoot>
+                    <tr class="font-weight-bold">
+                        <td colspan="9" class="text-right">
+                            Total Outstanding:
+                        </td>
+
+                        <td class="text-right">
+                            {{ total_outstanding|floatformat:3 }}
+                        </td>
+
+                        <td></td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

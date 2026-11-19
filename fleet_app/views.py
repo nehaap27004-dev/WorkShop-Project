@@ -6,7 +6,7 @@ from datetime import time
 import traceback
 from item_master.models import PurchaseDetail
 from django.shortcuts import render, redirect, get_object_or_404
-
+from fleet_app.models import Vouchers
 from django.http import JsonResponse
 from accounts_app.common import check_admin_override, check_privilege
 from accounts_app.models import *
@@ -5181,7 +5181,17 @@ def po_create(request):
             else:
                 try:
                     with transaction.atomic():
-                        po = form.save()
+                        po = form.save(commit=False)
+
+                        # Assign the Purchase Order voucher type
+                        voucher_type = Vouchers.objects.get(pk=27)
+                        po.voucherType = voucher_type
+
+                        # Generate the next voucher number automatically
+                        po.voucher_no = voucher_type.get_next_voucher_number()
+
+                        # Save Purchase Order
+                        po.save()
                         for row in detail_rows:
                             PODetails.objects.create(po_master=po, **row)
                         _save_totals(po)
@@ -5189,7 +5199,10 @@ def po_create(request):
                 except Exception as e:
                     messages.error(request, f'Error saving Purchase Order: {e}')
         else:
+            print("========== PURCHASE ORDER FORM ERRORS ==========")
+            print(form.errors.as_json())
             messages.error(request, 'Please fix the form errors.')
+
     else:
         form = POMasterForm()
 
@@ -5224,6 +5237,8 @@ def po_edit(request, pk):
                 except Exception as e:
                     messages.error(request, f'Error updating Purchase Order: {e}')
         else:
+            print("========== PURCHASE ORDER FORM ERRORS ==========")
+            print(form.errors.as_json())
             messages.error(request, 'Please fix the form errors.')
     else:
         form = POMasterForm(instance=po)

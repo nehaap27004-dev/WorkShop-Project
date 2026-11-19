@@ -1,0 +1,350 @@
+
+{% extends 'fleet_base1.html' %}
+{% load static i18n %}
+
+{% block content %}
+
+<style>
+    .jc-reports-page {
+        padding: 20px 22px;
+        background: #fff;
+        min-height: 80vh;
+    }
+
+    /* PAGE HEADER */
+    .jc-reports-heading {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e1e4e8;
+        margin-bottom: 25px;
+    }
+
+    .jc-heading-icon {
+        font-size: 32px;
+        color: #c2185b;
+    }
+
+    .jc-reports-heading h2 {
+        margin: 0;
+        font-size: 25px;
+        font-weight: 700;
+        color: #23364a;
+    }
+
+    .jc-breadcrumb {
+        margin-top: 5px;
+        font-size: 13px;
+        color: #8390a0;
+    }
+
+    .jc-breadcrumb a {
+        color: #8390a0;
+        text-decoration: none;
+    }
+
+    .jc-breadcrumb a:hover {
+        color: #c2185b;
+    }
+
+    .jc-breadcrumb span {
+        padding: 0 8px;
+        color: #aab1ba;
+    }
+
+    /* SECTION HEADING */
+    .jc-report-section {
+        margin-bottom: 20px;
+    }
+
+    .jc-section-heading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+        padding-left: 5px;
+    }
+
+    .jc-section-heading i {
+        font-size: 19px;
+        color: #c2185b;
+    }
+
+    .jc-section-heading h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #202d3c;
+    }
+
+    /* REPORT GRID - FOUR COLUMNS */
+    .jc-report-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        row-gap: 14px;
+        column-gap: 0;
+    }
+
+    /* REPORT LINK */
+    .jc-report-link {
+        min-width: 0;
+        min-height: 55px;
+        padding: 9px 13px;
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        color: #172536;
+        text-decoration: none !important;
+        border-right: 1px solid #dfe3e8;
+        transition: background .2s ease;
+    }
+
+    .jc-report-link:hover {
+        background: #faf7f9;
+        color: #c2185b;
+    }
+
+    .jc-report-link:hover .jc-report-name {
+        color: #c2185b;
+    }
+
+    .jc-report-icon {
+        width: 25px;
+        flex-shrink: 0;
+        text-align: center;
+        font-size: 21px;
+    }
+
+    /* ICON COLORS */
+    .jc-icon-pink {
+        color: #c2185b;
+    }
+
+    .jc-icon-orange {
+        color: #ff7900;
+    }
+
+    .jc-icon-blue {
+        color: #2878df;
+    }
+
+    .jc-icon-green {
+        color: #159c72;
+    }
+
+    .jc-icon-purple {
+        color: #8954d8;
+    }
+
+    .jc-report-name {
+        font-size: 13px;
+        font-weight: 500;
+        color: #172536;
+        line-height: 1.35;
+    }
+
+    .jc-report-arrow {
+        margin-left: auto;
+        flex-shrink: 0;
+        font-size: 12px;
+        color: #65758a;
+    }
+
+    /* COMING SOON */
+    .jc-report-disabled {
+        cursor: not-allowed;
+        opacity: .55;
+    }
+
+    .jc-report-disabled .jc-report-name {
+        color: #657080;
+    }
+
+    .jc-coming-soon {
+        font-size: 9px;
+        color: #8a6574;
+        white-space: nowrap;
+        margin-left: auto;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1200px) {
+        .jc-report-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 900px) {
+        .jc-report-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 600px) {
+        .jc-reports-page {
+            padding: 15px 10px;
+        }
+
+        .jc-report-grid {
+            grid-template-columns: 1fr;
+            row-gap: 5px;
+        }
+
+        .jc-report-link {
+            border-right: none;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 12px 10px;
+        }
+
+        .jc-reports-heading h2 {
+            font-size: 21px;
+        }
+    }
+</style>
+
+
+<div class="jc-reports-page">
+
+    <!-- PAGE HEADER -->
+    <div class="jc-reports-heading">
+
+        <i class="bi bi-graph-up-arrow jc-heading-icon"></i>
+
+        <div>
+            <h2>Job Card Reports</h2>
+
+            <div class="jc-breadcrumb">
+                <a href="{% url 'fleet_app:fleet_home' %}">Home</a>
+                <span>›</span>
+                Reports
+                <span>›</span>
+                Job Card Reports
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- REPORT SECTION -->
+    <div class="jc-report-section">
+
+        <div class="jc-section-heading">
+            <i class="bi bi-file-earmark-text"></i>
+            <h4>JOB CARD OVERVIEW</h4>
+        </div>
+
+
+        <!-- FOUR-COLUMN REPORT LAYOUT -->
+        <div class="jc-report-grid">
+
+            <!-- 1. JOB CARD STATUS -->
+            <a href="{% url 'jobcard_app:jobcard_status_report' %}"
+               class="jc-report-link">
+
+                <i class="bi bi-bar-chart-line jc-report-icon jc-icon-pink"></i>
+
+                <span class="jc-report-name">
+                    Job Card Status
+                </span>
+
+                <i class="bi bi-chevron-right jc-report-arrow"></i>
+            </a>
+
+
+            <!-- 2. OPEN JOB CARDS -->
+            <a href="{% url 'jobcard_app:open_jobcard_report' %}"
+               class="jc-report-link">
+
+                <i class="bi bi-folder2-open jc-report-icon jc-icon-orange"></i>
+
+                <span class="jc-report-name">
+                    Open Job Cards
+                </span>
+
+                <i class="bi bi-chevron-right jc-report-arrow"></i>
+            </a>
+
+
+            <!-- 3. WORK IN PROGRESS -->
+            <a href="{% url 'jobcard_app:work_in_progress_report' %}"
+               class="jc-report-link">
+
+                <i class="bi bi-gear-wide-connected jc-report-icon jc-icon-blue"></i>
+
+                <span class="jc-report-name">
+                    Work In Progress
+                </span>
+
+                <i class="bi bi-chevron-right jc-report-arrow"></i>
+            </a>
+
+
+            <!-- 4. COMPLETED NOT DELIVERED -->
+            <a href="{% url 'jobcard_app:completed_not_delivered_report' %}"
+               class="jc-report-link">
+
+                <i class="bi bi-check-circle jc-report-icon jc-icon-green"></i>
+
+                <span class="jc-report-name">
+                    Completed – Not Delivered
+                </span>
+
+                <i class="bi bi-chevron-right jc-report-arrow"></i>
+            </a>
+
+
+            <!-- 5. DELIVERED NOT INVOICED -->
+            <a href="{% url 'jobcard_app:delivered_not_invoiced_report' %}"
+               class="jc-report-link">
+
+                <i class="bi bi-truck jc-report-icon jc-icon-orange"></i>
+
+                <span class="jc-report-name">
+                    Delivered – Not Invoiced
+                </span>
+
+                <i class="bi bi-chevron-right jc-report-arrow"></i>
+            </a>
+
+
+            <!-- 6. PAYMENT PENDING -->
+            <a href="{% url 'jobcard_app:invoiced_payment_pending_report' %}"
+               class="jc-report-link">
+
+                <i class="bi bi-wallet2 jc-report-icon jc-icon-blue"></i>
+
+                <span class="jc-report-name">
+                    Invoiced – Payment Pending
+                </span>
+
+                <i class="bi bi-chevron-right jc-report-arrow"></i>
+            </a>
+
+
+            <!-- 7. TECHNICIAN PENDING JOBS -->
+            <a href="{% url 'jobcard_app:technician_pending_jobs_report' %}"
+               class="jc-report-link">
+
+                <i class="bi bi-people jc-report-icon jc-icon-pink"></i>
+
+                <span class="jc-report-name">
+                    Technician Pending Jobs
+                </span>
+
+                <i class="bi bi-chevron-right jc-report-arrow"></i>
+            </a>
+
+
+            <!-- 8. JOB CARD PROFITABILITY -->
+            
+
+
+            <!-- 9. JOB CARD AGING -->
+            
+
+    </div>
+
+</div>
+
+{% endblock %}

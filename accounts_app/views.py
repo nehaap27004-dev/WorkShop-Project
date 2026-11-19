@@ -35,7 +35,12 @@ from collections import defaultdict
 from datetime import datetime
 from django.utils import timezone
 from django.utils.dateparse import parse_date
-
+from pdf_generator.services.receipt_pdf_builder import (
+    generate_receipt_pdf_response
+)
+from pdf_generator.services.payment_pdf_builder import (
+    generate_payment_pdf_response
+)
 CLEAR_DATA_PASSWORD = "Pass@123"
 
 #MENU ID 
@@ -3916,11 +3921,14 @@ def payment_master_delete(request, pk):
 
 
 def payment_pdf(request, pk):
-    payment = get_object_or_404(PaymentMaster, pk=pk)
-    return create_payment_pdf(payment)
+    payment = get_object_or_404(
+        PaymentMaster.objects.select_related("Ledger").prefetch_related(
+            "details__Ledger"
+        ),
+        pk=pk
+    )
 
-    
-
+    return generate_payment_pdf_response(request, payment)
 
 def receipt_create(request, pk=None):
 
@@ -4068,10 +4076,14 @@ def receipt_create(request, pk=None):
 
 
 def receipt_pdf(request, pk):
-    receipt = get_object_or_404(ReceiptMaster, pk=pk)
-    return create_receipt_pdf(receipt)
+    receipt = get_object_or_404(
+        ReceiptMaster.objects.select_related("Ledger").prefetch_related(
+            "details__Ledger"
+        ),
+        pk=pk
+    )
 
-
+    return generate_receipt_pdf_response(request, receipt)
 def list_receipt(request):
 
     if not check_privilege(request.user, RECEIPT_MENU_ID, "can_read"):

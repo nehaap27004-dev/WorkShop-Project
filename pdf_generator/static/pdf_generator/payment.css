@@ -1,0 +1,214 @@
+@page {
+    size: A4;
+    margin: 15mm 12mm 15mm 12mm;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    color: #263238;
+    line-height: 1.4;
+}
+
+.voucher-title {
+    text-align: center;
+    font-size: 19px;
+    color: #8e1745;
+    margin: 5px 0 22px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #8e1745;
+    letter-spacing: 0.5px;
+}
+
+/* Paid To and Voucher Information */
+
+.payment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.paid-to {
+    width: 48%;
+    padding-top: 8px;
+    font-size: 11px;
+}
+
+.paid-to p {
+    font-weight: bold;
+    margin-top: 7px;
+}
+
+.voucher-info {
+    width: 45%;
+    border-collapse: collapse;
+    font-size: 9px;
+}
+
+.voucher-info th,
+.voucher-info td {
+    border: 1px solid #d5d9df;
+    padding: 7px;
+    text-align: left;
+}
+
+.voucher-info th {
+    background: #f5f1f3;
+    font-weight: bold;
+    width: 42%;
+}
+
+/* Payment Details Table */
+
+.details-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin-top: 12px;
+    font-size: 8px;
+}
+
+.details-table th {
+    background: #8e1745;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 9px 4px;
+    text-align: center;
+    border: 1px solid #8e1745;
+}
+
+.details-table td {
+    border: 1px solid #d5d9df;
+    padding: 8px 4px;
+    vertical-align: middle;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+.details-table tbody tr:nth-child(even):not(.summary-row):not(.grand-total) {
+    background: #faf7f9;
+}
+
+/* Detailed Table Column Widths */
+
+.detailed-table th:nth-child(1),
+.detailed-table td:nth-child(1) {
+    width: 5%;
+}
+
+.detailed-table th:nth-child(2),
+.detailed-table td:nth-child(2) {
+    width: 12%;
+}
+
+.detailed-table th:nth-child(3),
+.detailed-table td:nth-child(3) {
+    width: 10%;
+}
+
+.detailed-table th:nth-child(4),
+.detailed-table td:nth-child(4) {
+    width: 19%;
+}
+
+.detailed-table th:nth-child(5),
+.detailed-table td:nth-child(5) {
+    width: 16%;
+}
+
+.detailed-table th:nth-child(6),
+.detailed-table td:nth-child(6),
+.detailed-table th:nth-child(7),
+.detailed-table td:nth-child(7),
+.detailed-table th:nth-child(8),
+.detailed-table td:nth-child(8) {
+    width: 12.67%;
+}
+
+/* Simple Table Column Widths */
+
+.simple-table th:nth-child(1),
+.simple-table td:nth-child(1) {
+    width: 10%;
+}
+
+.simple-table th:nth-child(2),
+.simple-table td:nth-child(2) {
+    width: 65%;
+}
+
+.simple-table th:nth-child(3),
+.simple-table td:nth-child(3) {
+    width: 25%;
+}
+
+.center {
+    text-align: center;
+}
+
+.number {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Totals */
+
+.summary-row td {
+    background: #f5eef1;
+    font-weight: bold;
+}
+
+.grand-total td {
+    background: #eadde3;
+    color: #8e1745;
+    font-weight: bold;
+    border-top: 2px solid #8e1745;
+    padding-top: 9px;
+    padding-bottom: 9px;
+}
+
+/* Amount in Words */
+
+.amount-words {
+    margin-top: 22px;
+    padding: 12px;
+    border: 1px solid #d5d9df;
+    background: #fafafa;
+    font-size: 10px;
+}
+
+/* Signature Boxes */
+
+.signature-section {
+    display: flex;
+    width: 100%;
+    margin-top: 28px;
+    page-break-inside: avoid;
+}
+
+.signature-box {
+    width: 50%;
+    height: 90px;
+    border: 1px solid #d5d9df;
+    padding: 10px;
+    position: relative;
+}
+
+.signature-box + .signature-box {
+    border-left: none;
+}
+
+.signature-image {
+    position: absolute;
+    left: 15px;
+    bottom: 12px;
+    max-width: 150px;
+    max-height: 35px;
+    object-fit: contain;
+}

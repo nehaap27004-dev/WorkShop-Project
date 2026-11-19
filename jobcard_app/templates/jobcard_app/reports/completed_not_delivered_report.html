@@ -1,0 +1,559 @@
+
+{% extends 'fleet_base1.html' %}
+{% load static i18n %}
+
+{% block content %}
+
+<style>
+    .report-page {
+        padding: 20px;
+        max-width: 1500px;
+        margin: auto;
+    }
+
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 17px;
+        margin-bottom: 22px;
+    }
+
+    .report-title {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+    }
+
+    .report-title i {
+        font-size: 30px;
+        color: #9f1045;
+    }
+
+    .report-title h3 {
+        margin: 0;
+        font-size: 23px;
+        font-weight: 700;
+        color: #26384b;
+    }
+
+    .breadcrumb-text {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #87909c;
+    }
+
+    .breadcrumb-text a {
+        color: #87909c;
+        text-decoration: none;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 9px;
+    }
+
+    .btn-report {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 15px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none !important;
+        cursor: pointer;
+        border: none;
+    }
+
+    .btn-back {
+        color: #9f1045;
+        border: 1px solid #9f1045;
+        background: white;
+    }
+
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 220px));
+        gap: 15px;
+        margin-bottom: 22px;
+    }
+
+    .summary-card {
+        border: 1px solid #e8dce2;
+        border-radius: 8px;
+        padding: 16px;
+        background: white;
+        border-left: 4px solid #9f1045;
+    }
+
+    .summary-label {
+        display: block;
+        color: #777;
+        font-size: 12px;
+        margin-bottom: 7px;
+    }
+
+    .summary-value {
+        color: #9f1045;
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .filter-panel {
+        display: flex;
+        align-items: end;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 15px;
+        background: #faf7f9;
+        border: 1px solid #eee2e8;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .filter-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .filter-field label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #394454;
+    }
+
+    .filter-field input {
+        height: 36px;
+        min-width: 150px;
+        padding: 7px 10px;
+        border: 1px solid #d9dce1;
+        border-radius: 5px;
+        background: white;
+        font-size: 12px;
+        outline: none;
+    }
+
+    .filter-field input:focus {
+        border-color: #9f1045;
+    }
+
+    .btn-filter {
+        background: #9f1045;
+        color: white;
+    }
+
+    .btn-reset {
+        background: #eceef1;
+        color: #394454;
+    }
+
+    .table-panel {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+    }
+
+    .table-heading {
+        padding: 15px 17px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .table-heading h5 {
+        color: #26384b;
+        font-size: 15px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .table-count {
+        font-size: 11px;
+        color: #9f1045;
+        background: #f8edf2;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-weight: 600;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1050px;
+    }
+
+    .report-table thead {
+        background: #9f1045;
+        color: white;
+    }
+
+    .report-table th {
+        padding: 12px 11px;
+        font-size: 11px;
+        font-weight: 600;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .report-table td {
+        padding: 12px 11px;
+        font-size: 12px;
+        color: #394454;
+        border-bottom: 1px solid #edf0f2;
+        vertical-align: middle;
+    }
+
+    .report-table tbody tr:nth-child(even) {
+        background: #fcf9fb;
+    }
+
+    .report-table tbody tr:hover {
+        background: #f8edf2;
+    }
+
+    .job-number {
+        color: #9f1045;
+        font-weight: 700;
+    }
+
+    .priority {
+        display: inline-block;
+        padding: 5px 9px;
+        border-radius: 12px;
+        background: #f1f1f1;
+        color: #555;
+        font-size: 10px;
+        font-weight: 600;
+    }
+
+    .priority-urgent {
+        background: #fff0e4;
+        color: #d66b00;
+    }
+
+    .priority-express {
+        background: #fce8ed;
+        color: #b5164c;
+    }
+
+    .amount {
+        text-align: right;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .empty-state {
+        padding: 35px 15px !important;
+        text-align: center;
+        color: #858b94 !important;
+    }
+
+    .empty-state i {
+        display: block;
+        font-size: 30px;
+        margin-bottom: 8px;
+        color: #aaa;
+    }
+
+    .table-total {
+        padding: 13px 17px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 35px;
+        background: #faf7f9;
+        border-top: 1px solid #eee2e8;
+        color: #26384b;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .table-total strong {
+        color: #9f1045;
+    }
+
+    @media(max-width: 650px) {
+        .report-page {
+            padding: 12px;
+        }
+
+        .summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media print {
+        @page {
+            size: A4 landscape;
+            margin: 12mm;
+        }
+
+        body {
+            background: white !important;
+        }
+
+        .report-page {
+            padding: 0;
+            max-width: none;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+
+        .table-panel {
+            border: none;
+        }
+
+        .report-table {
+            min-width: 0;
+        }
+
+        .report-table th,
+        .report-table td {
+            padding: 7px 5px;
+            font-size: 9px;
+        }
+
+        .report-table thead {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .report-table tr {
+            break-inside: avoid;
+        }
+    }
+</style>
+
+
+<div class="report-page">
+
+    <!-- HEADER -->
+    <div class="report-header">
+
+        <div class="report-title">
+            <i class="bi bi-check-circle"></i>
+
+            <div>
+                <h3>Completed – Not Delivered Report</h3>
+
+                <div class="breadcrumb-text">
+                    <a href="{% url 'fleet_app:fleet_home' %}">Home</a>
+                    &nbsp; › &nbsp;
+                    <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}">
+                        Job Card Reports
+                    </a>
+                    &nbsp; › &nbsp;
+                    Completed – Not Delivered
+                </div>
+            </div>
+        </div>
+
+        <div class="header-actions no-print">
+
+            <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}"
+               class="btn-report btn-back">
+                <i class="bi bi-arrow-left"></i>
+                Back to Reports
+            </a>
+
+           
+
+        </div>
+
+    </div>
+
+
+    <!-- SUMMARY -->
+    <div class="summary-grid">
+
+        <div class="summary-card">
+            <span class="summary-label">
+                Completed – Not Delivered
+            </span>
+
+            <span class="summary-value">
+                {{ total_jobs }}
+            </span>
+        </div>
+
+        <div class="summary-card">
+            <span class="summary-label">
+                Total Job Card Amount
+            </span>
+
+            <span class="summary-value">
+                {{ total_amount|floatformat:3 }}
+            </span>
+        </div>
+
+    </div>
+
+
+    <!-- FILTERS -->
+    <form method="GET" class="filter-panel no-print">
+
+        <div class="filter-field">
+            <label>Search</label>
+
+            <input type="text"
+                   name="search"
+                   value="{{ search }}"
+                   placeholder="Job No, customer, vehicle">
+        </div>
+
+        <div class="filter-field">
+            <label>From Date</label>
+
+            <input type="date"
+                   name="from_date"
+                   value="{{ from_date }}">
+        </div>
+
+        <div class="filter-field">
+            <label>To Date</label>
+
+            <input type="date"
+                   name="to_date"
+                   value="{{ to_date }}">
+        </div>
+
+        <button type="submit"
+                class="btn-report btn-filter">
+            <i class="bi bi-search"></i>
+            Apply Filters
+        </button>
+
+        <a href="{% url 'jobcard_app:completed_not_delivered_report' %}"
+           class="btn-report btn-reset">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            Reset
+        </a>
+
+    </form>
+
+
+    <!-- REPORT TABLE -->
+    <div class="table-panel">
+
+        <div class="table-heading">
+            <h5>
+                <i class="bi bi-list-ul mr-2"
+                   style="color:#9f1045"></i>
+                Completed Job Cards Pending Delivery
+            </h5>
+
+            <span class="table-count">
+                {{ total_jobs }} Records
+            </span>
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="report-table">
+
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Job Card No.</th>
+                        <th>Job Date</th>
+                        <th>Customer</th>
+                        <th>Vehicle Number</th>
+                        <th>Technician</th>
+                        <th>Priority</th>
+                        <th>Expected Delivery</th>
+                        <th style="text-align:right;">Job Amount</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for row in report_rows %}
+
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+
+                        <td>
+                            <span class="job-number">
+                                {{ row.job_number }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {% if row.job_date %}
+                                {{ row.job_date|date:"d-m-Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <td>{{ row.customer|default:"-" }}</td>
+
+                        <td>{{ row.vehicle|default:"-" }}</td>
+
+                        <td>{{ row.technicians|default:"-" }}</td>
+
+                        <td>
+                            <span class="priority
+                                {% if row.priority == 'Urgent' %}
+                                    priority-urgent
+                                {% elif row.priority == 'Express' %}
+                                    priority-express
+                                {% endif %}">
+                                {{ row.priority|default:"-" }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {% if row.expected_delivery %}
+                                {{ row.expected_delivery|date:"d-m-Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <td class="amount">
+                            {{ row.amount|floatformat:3 }}
+                        </td>
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="9" class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            No completed job cards pending delivery found.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div class="table-total">
+            <span>Total Job Card Amount</span>
+            <strong>{{ total_amount|floatformat:3 }}</strong>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

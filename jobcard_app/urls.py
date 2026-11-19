@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
-
+from . import report_views
+from .report_views import technician_pending_jobs_report
+from .report_views import jobcard_reports_dashboard
 app_name = 'jobcard_app'
 
 urlpatterns = [
@@ -248,4 +250,13 @@ urlpatterns = [
     path('custom-inspection/api/submit/',        views.ci_submit,      name='ci_submit'),
     path('custom-inspection/<int:pk>/edit/',   views.ci_edit,   name='custom_inspection_edit'),     # NEW
     path('custom-inspection/<int:pk>/delete/', views.ci_delete, name='custom_inspection_delete'),   # NEW
-] 
+    path('reports/job-card-status/',report_views.jobcard_status_report,name='jobcard_status_report'),
+    path('reports/open-job-cards/', report_views.open_jobcard_report, name='open_jobcard_report'),
+    path('reports/work-in-progress/', report_views.work_in_progress_report, name='work_in_progress_report'),
+    path('reports/delivered-not-invoiced/', report_views.delivered_not_invoiced_report, name='delivered_not_invoiced_report'),
+    path('reports/invoiced-payment-pending/', report_views.invoiced_payment_pending_report, name='invoiced_payment_pending_report'),
+    path('reports/technician-pending-jobs/', report_views.technician_pending_jobs_report, name='technician_pending_jobs_report'),
+    path('reports/', report_views.jobcard_reports_dashboard, name='jobcard_reports_dashboard'),
+    path('reports/completed-not-delivered/', report_views.completed_not_delivered_report, name='completed_not_delivered_report'),
+]
+

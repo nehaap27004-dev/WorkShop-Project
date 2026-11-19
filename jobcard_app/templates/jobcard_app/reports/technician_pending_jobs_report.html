@@ -1,0 +1,704 @@
+
+{% extends 'fleet_base1.html' %}
+{% load static i18n %}
+
+{% block content %}
+
+<style>
+    .tpr-page {
+        padding: 20px;
+        max-width: 1550px;
+        margin: auto;
+        color: #26384b;
+    }
+
+    /* PAGE HEADER */
+    .tpr-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        padding-bottom: 17px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid #e2e5e9;
+    }
+
+    .tpr-title {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .tpr-title-icon {
+        font-size: 31px;
+        color: #c2185b;
+    }
+
+    .tpr-title h3 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #26384b;
+    }
+
+    .tpr-breadcrumb {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #87909c;
+    }
+
+    .tpr-breadcrumb a {
+        color: #87909c;
+        text-decoration: none;
+    }
+
+    .tpr-breadcrumb a:hover {
+        color: #9f1045;
+    }
+
+    .tpr-breadcrumb span {
+        padding: 0 8px;
+        color: #aab1ba;
+    }
+
+    .tpr-actions {
+        display: flex;
+        gap: 9px;
+    }
+
+    .tpr-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 9px 15px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none !important;
+        border: 1px solid transparent;
+        cursor: pointer;
+    }
+
+    .tpr-btn-back {
+        color: #9f1045;
+        background: white;
+        border-color: #9f1045;
+    }
+
+    .tpr-btn-print,
+    .tpr-btn-filter {
+        color: white;
+        background: #9f1045;
+    }
+
+    .tpr-btn-reset {
+        color: #394454;
+        background: #eceef1;
+    }
+
+    /* SECTION HEADING */
+    .tpr-section-heading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .tpr-section-heading i {
+        color: #c2185b;
+        font-size: 19px;
+    }
+
+    .tpr-section-heading h5 {
+        margin: 0;
+        color: #26384b;
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    /* SUMMARY */
+    .tpr-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 15px;
+        margin-bottom: 24px;
+    }
+
+    .tpr-summary-card {
+        padding: 16px 18px;
+        border: 1px solid #e8dce2;
+        border-left: 4px solid #9f1045;
+        border-radius: 7px;
+        background: #fff;
+    }
+
+    .tpr-summary-label {
+        display: block;
+        color: #77808c;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .tpr-summary-value {
+        color: #9f1045;
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    /* FILTER PANEL */
+    .tpr-filter-panel {
+        display: flex;
+        align-items: end;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background: #faf7f9;
+        border: 1px solid #eee2e8;
+        border-radius: 7px;
+    }
+
+    .tpr-filter-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .tpr-filter-field label {
+        color: #394454;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .tpr-filter-field input,
+    .tpr-filter-field select {
+        height: 37px;
+        min-width: 155px;
+        padding: 7px 10px;
+        border: 1px solid #d8dce2;
+        border-radius: 5px;
+        background: #fff;
+        color: #333;
+        font-size: 12px;
+        outline: none;
+    }
+
+    .tpr-filter-field input:focus,
+    .tpr-filter-field select:focus {
+        border-color: #9f1045;
+    }
+
+    /* TABLE PANEL */
+    .tpr-table-panel {
+        background: #fff;
+        border: 1px solid #e4e7eb;
+        border-radius: 7px;
+        overflow: hidden;
+    }
+
+    .tpr-table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 15px 17px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .tpr-table-header h5 {
+        margin: 0;
+        color: #26384b;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .tpr-count {
+        padding: 5px 10px;
+        border-radius: 15px;
+        color: #9f1045;
+        background: #f8edf2;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .tpr-table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .tpr-table {
+        width: 100%;
+        min-width: 1100px;
+        border-collapse: collapse;
+    }
+
+    .tpr-table thead {
+        background: #9f1045;
+        color: white;
+    }
+
+    .tpr-table th {
+        padding: 12px 10px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .tpr-table td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #edf0f2;
+        color: #394454;
+        font-size: 12px;
+        vertical-align: middle;
+    }
+
+    .tpr-table tbody tr:nth-child(even) {
+        background: #fcf9fb;
+    }
+
+    .tpr-table tbody tr:hover {
+        background: #f8edf2;
+    }
+
+    .tpr-job-number {
+        color: #9f1045;
+        font-weight: 700;
+    }
+
+    .tpr-status {
+        display: inline-block;
+        padding: 5px 9px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .tpr-status-open,
+    .tpr-status-pending {
+        background: #fff1d6;
+        color: #986000;
+    }
+
+    .tpr-status-progress,
+    .tpr-status-confirmed {
+        background: #e8f0ff;
+        color: #2456a6;
+    }
+
+    .tpr-empty {
+        padding: 35px 15px !important;
+        text-align: center;
+        color: #858b94 !important;
+    }
+
+    .tpr-empty i {
+        display: block;
+        color: #adb3bb;
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+
+    /* FOOTER */
+    .tpr-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 13px 17px;
+        border-top: 1px solid #e5e7eb;
+        color: #87909c;
+        font-size: 11px;
+    }
+
+    /* PRINT */
+    @media print {
+        @page {
+            size: A4 landscape;
+            margin: 12mm;
+        }
+
+        .tpr-page {
+            padding: 0;
+            max-width: none;
+        }
+
+        .tpr-no-print {
+            display: none !important;
+        }
+
+        .tpr-table {
+            min-width: 0;
+        }
+
+        .tpr-table th,
+        .tpr-table td {
+            padding: 7px 5px;
+            font-size: 9px;
+        }
+
+        .tpr-table thead {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .tpr-table tr {
+            break-inside: avoid;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .tpr-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 600px) {
+        .tpr-page {
+            padding: 12px;
+        }
+
+        .tpr-summary {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+
+<div class="tpr-page">
+
+    <!-- PAGE HEADER -->
+    <div class="tpr-header">
+
+        <div class="tpr-title">
+
+            <i class="bi bi-person-workspace tpr-title-icon"></i>
+
+            <div>
+                <h3>Technician Pending Jobs Report</h3>
+
+                <div class="tpr-breadcrumb">
+                    <a href="{% url 'fleet_app:fleet_home' %}">Home</a>
+                    <span>›</span>
+
+                    <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}">
+                        Job Card Reports
+                    </a>
+
+                    <span>›</span>
+                    Technician Pending Jobs
+                </div>
+            </div>
+
+        </div>
+
+        <div class="tpr-actions tpr-no-print">
+
+            <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}"
+               class="tpr-btn tpr-btn-back">
+                <i class="bi bi-arrow-left"></i>
+                Back to Reports
+            </a>
+
+            
+
+        </div>
+
+    </div>
+
+
+    <!-- SUMMARY -->
+    <div class="tpr-section-heading">
+        <i class="bi bi-clipboard-data"></i>
+        <h5>TECHNICIAN WORK OVERVIEW</h5>
+    </div>
+
+    <div class="tpr-summary">
+
+        <div class="tpr-summary-card">
+            <span class="tpr-summary-label">
+                Total Pending Tasks
+            </span>
+
+            <span class="tpr-summary-value">
+                {{ total_pending_tasks }}
+            </span>
+        </div>
+
+        <div class="tpr-summary-card">
+            <span class="tpr-summary-label">
+                Job Cards
+            </span>
+
+            <span class="tpr-summary-value">
+                {{ total_pending_jobs }}
+            </span>
+        </div>
+
+        <div class="tpr-summary-card">
+            <span class="tpr-summary-label">
+                Technicians Assigned
+            </span>
+
+            <span class="tpr-summary-value">
+                {{ total_technicians }}
+            </span>
+        </div>
+
+    </div>
+
+
+    <!-- FILTERS -->
+    <div class="tpr-section-heading">
+        <i class="bi bi-funnel"></i>
+        <h5>FILTER REPORT</h5>
+    </div>
+
+    <form method="GET" class="tpr-filter-panel tpr-no-print">
+
+        <div class="tpr-filter-field">
+            <label>Search</label>
+
+            <input type="text"
+                   name="search"
+                   value="{{ search }}"
+                   placeholder="Job card, customer, task...">
+        </div>
+
+
+        <div class="tpr-filter-field">
+            <label>Technician</label>
+
+            <select name="technician">
+
+                <option value="">All Technicians</option>
+
+                {% for tech in technicians %}
+
+                    <option value="{{ tech.id }}"
+                        {% if technician_id == tech.id|stringformat:"s" %}
+                            selected
+                        {% endif %}>
+                        {{ tech.full_name }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+
+        <div class="tpr-filter-field">
+            <label>Task Status</label>
+
+            <select name="task_status">
+
+                <option value="">All Pending Statuses</option>
+
+                <option value="Open"
+                    {% if task_status == 'Open' %}selected{% endif %}>
+                    Open
+                </option>
+
+                <option value="In Progress"
+                    {% if task_status == 'In Progress' %}selected{% endif %}>
+                    In Progress
+                </option>
+
+                <option value="Pending"
+                    {% if task_status == 'Pending' %}selected{% endif %}>
+                    Pending
+                </option>
+
+                <option value="Confirmed"
+                    {% if task_status == 'Confirmed' %}selected{% endif %}>
+                    Confirmed
+                </option>
+
+            </select>
+        </div>
+
+
+        <div class="tpr-filter-field">
+            <label>From Date</label>
+
+            <input type="date"
+                   name="from_date"
+                   value="{{ from_date }}">
+        </div>
+
+
+        <div class="tpr-filter-field">
+            <label>To Date</label>
+
+            <input type="date"
+                   name="to_date"
+                   value="{{ to_date }}">
+        </div>
+
+
+        <button type="submit"
+                class="tpr-btn tpr-btn-filter">
+            <i class="bi bi-search"></i>
+            Apply Filters
+        </button>
+
+
+        <a href="{% url 'jobcard_app:technician_pending_jobs_report' %}"
+           class="tpr-btn tpr-btn-reset">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            Reset
+        </a>
+
+    </form>
+
+
+    <!-- REPORT TABLE -->
+    <div class="tpr-section-heading">
+        <i class="bi bi-list-ul"></i>
+        <h5>TECHNICIAN PENDING TASK DETAILS</h5>
+    </div>
+
+
+    <div class="tpr-table-panel">
+
+        <div class="tpr-table-header">
+
+            <h5>
+                <i class="bi bi-table mr-2"
+                   style="color:#9f1045"></i>
+                Pending Technician Work
+            </h5>
+
+            <span class="tpr-count">
+                {{ total_pending_tasks }} Records
+            </span>
+
+        </div>
+
+
+        <div class="tpr-table-responsive">
+
+            <table class="tpr-table">
+
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Job Card No.</th>
+                        <th>Job Date</th>
+                        <th>Customer</th>
+                        <th>Vehicle</th>
+                        <th>Technician</th>
+                        <th>Work Type</th>
+                        <th>Task Description</th>
+                        <th>Task Status</th>
+                        <th>Job Card Status</th>
+                        <th>Expected Delivery</th>
+                    </tr>
+                </thead>
+
+
+                <tbody>
+
+                    {% for row in report_rows %}
+
+                    <tr>
+
+                        <td>{{ forloop.counter }}</td>
+
+                        <td>
+                            <span class="tpr-job-number">
+                                {{ row.job_number }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {% if row.job_date %}
+                                {{ row.job_date|date:"d-m-Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <td>{{ row.customer|default:"-" }}</td>
+
+                        <td>{{ row.vehicle|default:"-" }}</td>
+
+                        <td>{{ row.technician|default:"-" }}</td>
+
+                        <td>{{ row.task_type|default:"-" }}</td>
+
+                        <td>{{ row.description|default:"-" }}</td>
+
+                        <td>
+                            {% if row.task_status == 'Open' or row.task_status == 'Pending' %}
+
+                                <span class="tpr-status tpr-status-pending">
+                                    {{ row.task_status }}
+                                </span>
+
+                            {% else %}
+
+                                <span class="tpr-status tpr-status-progress">
+                                    {{ row.task_status }}
+                                </span>
+
+                            {% endif %}
+                        </td>
+
+                        <td>{{ row.job_status|default:"-" }}</td>
+
+                        <td>
+                            {% if row.expected_delivery %}
+                                {{ row.expected_delivery|date:"d-m-Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="11" class="tpr-empty">
+
+                            <i class="bi bi-inbox"></i>
+
+                            No pending technician tasks found.
+
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- FOOTER -->
+        <div class="tpr-footer">
+
+            <span>
+                Workshop Job Card Management System
+            </span>
+
+            <span>
+                Total Pending Tasks: {{ total_pending_tasks }}
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

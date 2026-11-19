@@ -1799,8 +1799,7 @@ class POMasterForm(forms.ModelForm):
     class Meta:
         model = POMaster
         fields = [
-            'voucher_no',
-            'voucherType',
+            
             'PO_no',
             'PO_date',
             'quote_ref',
@@ -1832,7 +1831,7 @@ class POMasterForm(forms.ModelForm):
         self.fields['supplier'].queryset = get_ledgers_by_group_ids(28)  
 
         # Voucher type filter 
-        filter_voucher_types(self, [27])
+        
          
 
 

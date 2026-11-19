@@ -237,7 +237,12 @@
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong>Unable to save item. Please check the following errors:</strong>
+                {{ form.errors }}
+            </div>
+        {% endif %}
         {% if form.non_field_errors %}
             <div class="errorlist">{{ form.non_field_errors }}</div>
         {% endif %}

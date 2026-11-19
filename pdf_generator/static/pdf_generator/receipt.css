@@ -1,0 +1,211 @@
+
+@page {
+    size: A4;
+    margin: 15mm 14mm 18mm 14mm;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #263238;
+    line-height: 1.5;
+}
+
+.receipt-page {
+    width: 100%;
+}
+
+.company-header {
+    text-align: center;
+    margin-bottom: 18px;
+}
+
+.company-header img {
+    max-width: 100%;
+    max-height: 105px;
+    object-fit: contain;
+}
+
+.document-title {
+    text-align: center;
+    font-size: 19px;
+    font-weight: bold;
+    color: #8e1745;
+    border-bottom: 2px solid #8e1745;
+    padding-bottom: 10px;
+    margin-bottom: 22px;
+    letter-spacing: 1px;
+}
+
+.receipt-info {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    margin-bottom: 24px;
+}
+
+.received-section,
+.voucher-info {
+    display: table-cell;
+    vertical-align: top;
+}
+
+.received-section {
+    width: 52%;
+    padding: 8px 12px 8px 0;
+}
+
+.field-label {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.received-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.voucher-info {
+    width: 48%;
+    border-collapse: collapse;
+    font-size: 10px;
+}
+
+.voucher-info td {
+    border: 1px solid #d8dce2;
+    padding: 7px 9px;
+}
+
+.voucher-info td:first-child {
+    font-weight: bold;
+    background: #f5f5f7;
+    width: 42%;
+}
+
+.details-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+.details-table th {
+    background: #8e1745;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 11px 9px;
+    text-align: left;
+    border: 1px solid #8e1745;
+}
+
+.details-table td {
+    padding: 10px 9px;
+    border: 1px solid #d8dce2;
+    vertical-align: top;
+}
+
+.details-table tbody tr:nth-child(even) {
+    background: #fafafa;
+}
+
+.sl-col {
+    width: 8%;
+    text-align: center !important;
+}
+
+.ledger-col {
+    width: 28%;
+}
+
+.description-col {
+    width: 42%;
+}
+
+.amount-col {
+    width: 22%;
+    text-align: right !important;
+}
+
+.center {
+    text-align: center;
+}
+
+.amount {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.total-row {
+    background: #f5eef1 !important;
+    font-weight: bold;
+}
+
+.total-label {
+    text-align: right;
+    color: #8e1745;
+    font-weight: bold;
+}
+
+.amount-words {
+    margin-top: 20px;
+    padding: 12px;
+    border: 1px solid #d8dce2;
+    background: #fafafa;
+    line-height: 1.7;
+}
+
+.signature-section {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    margin-top: 28px;
+    page-break-inside: avoid;
+}
+
+.signature-box {
+    display: table-cell;
+    width: 50%;
+    height: 105px;
+    vertical-align: top;
+    border: 1px solid #cbd0d8;
+    padding: 12px;
+}
+
+.signature-box + .signature-box {
+    border-left: none;
+}
+
+.signature-image {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.signature-image img {
+    width: 115px;
+    max-height: 55px;
+    object-fit: contain;
+}
+
+.company-footer {
+    text-align: center;
+    margin-top: 25px;
+    page-break-inside: avoid;
+}
+
+.company-footer img {
+    max-width: 100%;
+    max-height: 75px;
+    object-fit: contain;
+}
+
+thead {
+    display: table-header-group;
+}
+
+tr {
+    page-break-inside: avoid;
+}

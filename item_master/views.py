@@ -136,7 +136,14 @@ def item_create_update(request, item_id=None):
 
     if request.method == 'POST':
         form = ItemForm(request.POST, request.FILES, instance=item)
-        if form.is_valid():
+        is_valid = form.is_valid()
+
+        print("========== ITEM SAVE DEBUG ==========")
+        print("FORM VALID:", is_valid)
+
+        if not is_valid:
+            print("FORM ERRORS:", form.errors.as_json())
+        if is_valid:
             try:
                 with transaction.atomic():
                     base_item = form.save(commit=False)
@@ -255,8 +262,8 @@ def item_create_update(request, item_id=None):
                 # If we reach here, the transaction was successful
                 return redirect('item_master:item_create_update')  # Redirect to item list after successful operation
 
-            except ValueError:
-                pass
+            except ValueError as e:
+                print("ITEM VALUE ERROR:", str(e))
 
             except IntegrityError as e:
                 form.add_error(None, "Duplicate value found. Item Name, Item Code or Barcode must be unique.")
