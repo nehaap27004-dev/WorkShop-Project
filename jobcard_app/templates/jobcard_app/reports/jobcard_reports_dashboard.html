@@ -1,40 +1,47 @@
-
 {% extends 'fleet_base1.html' %}
 {% load static i18n %}
 
 {% block content %}
-
 <style>
+    /* PAGE CONTAINER */
     .jc-reports-page {
-        padding: 20px 22px;
+        padding: 20px 24px 40px;
         background: #fff;
-        min-height: 80vh;
+        min-height: 85vh;
     }
 
     /* PAGE HEADER */
-    .jc-reports-heading {
+    .jc-reports-header {
         display: flex;
         align-items: center;
-        gap: 15px;
+        justify-content: space-between;
+        gap: 16px;
         padding-bottom: 16px;
-        border-bottom: 1px solid #e1e4e8;
-        margin-bottom: 25px;
+        border-bottom: 1px solid #e5e9ef;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
     }
 
-    .jc-heading-icon {
-        font-size: 32px;
-        color: #c2185b;
+    .jc-header-title-box {
+        display: flex;
+        align-items: center;
+        gap: 14px;
     }
 
-    .jc-reports-heading h2 {
+    .jc-header-icon {
+        font-size: 30px;
+        color: #76213b;
+    }
+
+    .jc-header-text h2 {
         margin: 0;
-        font-size: 25px;
+        font-size: 23px;
         font-weight: 700;
-        color: #23364a;
+        color: #202d3c;
     }
 
     .jc-breadcrumb {
-        margin-top: 5px;
+        margin-top: 4px;
         font-size: 13px;
         color: #8390a0;
     }
@@ -45,127 +52,237 @@
     }
 
     .jc-breadcrumb a:hover {
-        color: #c2185b;
+        color: #76213b;
     }
 
     .jc-breadcrumb span {
-        padding: 0 8px;
+        padding: 0 6px;
         color: #aab1ba;
     }
 
-    /* SECTION HEADING */
-    .jc-report-section {
+    /* SEARCH BAR */
+    .jc-search-container {
+        position: relative;
+        width: 320px;
+        max-width: 100%;
+    }
+
+    .jc-search-container i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 14px;
+        pointer-events: none;
+    }
+
+    .jc-search-input {
+        width: 100%;
+        height: 38px;
+        padding: 6px 12px 6px 36px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #1f2937;
+        background: #f9fafb;
+        outline: none;
+        transition: all .2s ease;
+    }
+
+    .jc-search-input:focus {
+        border-color: #76213b;
+        background: #fff;
+        box-shadow: 0 0 0 2px rgba(118, 33, 59, 0.1);
+    }
+
+    /* CATEGORY TABS (SIMPLE & STANDARD) */
+    .jc-tabs-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .jc-tab-btn {
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all .15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none !important;
+    }
+
+    .jc-tab-btn:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #76213b;
+    }
+
+    .jc-tab-btn.active {
+        background: #76213b;
+        color: #fff;
+        border-color: #76213b;
+    }
+
+    .jc-tab-btn .badge-pill {
+        font-size: 11px;
+        padding: 1px 6px;
+        border-radius: 10px;
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .jc-tab-btn.active .badge-pill {
+        background: rgba(255, 255, 255, 0.25);
+        color: #fff;
+    }
+
+    /* MAIN CATEGORY BLOCK */
+    .jc-category-block {
+        margin-bottom: 30px;
+    }
+
+    .jc-category-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #76213b;
+        margin-bottom: 18px;
+    }
+
+    .jc-category-header i {
+        font-size: 19px;
+        color: #76213b;
+    }
+
+    .jc-category-header h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: #202d3c;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* SUBGROUP BLOCK */
+    .jc-subgroup-block {
         margin-bottom: 20px;
     }
 
-    .jc-section-heading {
+    .jc-subgroup-header {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 15px;
-        padding-left: 5px;
+        gap: 8px;
+        margin-bottom: 10px;
+        padding-left: 2px;
     }
 
-    .jc-section-heading i {
-        font-size: 19px;
-        color: #c2185b;
+    .jc-subgroup-header i {
+        font-size: 15px;
+        color: #76213b;
     }
 
-    .jc-section-heading h4 {
+    .jc-subgroup-header h4 {
         margin: 0;
-        font-size: 16px;
+        font-size: 13px;
         font-weight: 700;
-        color: #202d3c;
+        color: #334155;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
     }
 
-    /* REPORT GRID - FOUR COLUMNS */
+    /* 4-COLUMN STANDARD REPORT GRID */
     .jc-report-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        row-gap: 14px;
+        row-gap: 0;
         column-gap: 0;
+        border: 1px solid #e5e9ef;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+        margin-bottom: 14px;
     }
 
-    /* REPORT LINK */
+    /* STANDARD REPORT LINK ITEM */
     .jc-report-link {
         min-width: 0;
-        min-height: 55px;
-        padding: 9px 13px;
+        min-height: 54px;
+        padding: 10px 16px;
         display: flex;
         align-items: center;
-        gap: 13px;
-        color: #172536;
+        gap: 12px;
+        color: #1e293b;
         text-decoration: none !important;
-        border-right: 1px solid #dfe3e8;
-        transition: background .2s ease;
+        border-right: 1px solid #e5e9ef;
+        border-bottom: 1px solid #e5e9ef;
+        transition: background .15s ease, color .15s ease;
+        background: #fff;
     }
 
     .jc-report-link:hover {
-        background: #faf7f9;
-        color: #c2185b;
+        background: #fdf7f9;
+        color: #76213b;
     }
 
     .jc-report-link:hover .jc-report-name {
-        color: #c2185b;
+        color: #76213b;
+    }
+
+    .jc-report-link:hover .jc-report-arrow {
+        color: #76213b;
+        transform: translateX(3px);
     }
 
     .jc-report-icon {
-        width: 25px;
+        width: 22px;
         flex-shrink: 0;
         text-align: center;
-        font-size: 21px;
-    }
-
-    /* ICON COLORS */
-    .jc-icon-pink {
-        color: #c2185b;
-    }
-
-    .jc-icon-orange {
-        color: #ff7900;
-    }
-
-    .jc-icon-blue {
-        color: #2878df;
-    }
-
-    .jc-icon-green {
-        color: #159c72;
-    }
-
-    .jc-icon-purple {
-        color: #8954d8;
+        font-size: 18px;
+        color: #76213b;
     }
 
     .jc-report-name {
         font-size: 13px;
         font-weight: 500;
-        color: #172536;
+        color: #1e293b;
         line-height: 1.35;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .jc-report-arrow {
         margin-left: auto;
         flex-shrink: 0;
-        font-size: 12px;
-        color: #65758a;
+        font-size: 11px;
+        color: #94a3b8;
+        transition: transform .15s ease, color .15s ease;
     }
 
-    /* COMING SOON */
-    .jc-report-disabled {
-        cursor: not-allowed;
-        opacity: .55;
-    }
-
-    .jc-report-disabled .jc-report-name {
-        color: #657080;
-    }
-
-    .jc-coming-soon {
-        font-size: 9px;
-        color: #8a6574;
-        white-space: nowrap;
-        margin-left: auto;
+    /* EMPTY / NO RESULTS */
+    .jc-no-results {
+        display: none;
+        padding: 40px 20px;
+        text-align: center;
+        color: #64748b;
+        font-size: 14px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px dashed #cbd5e1;
+        margin-top: 20px;
     }
 
     /* RESPONSIVE */
@@ -175,187 +292,207 @@
         }
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 850px) {
         .jc-report-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+        .jc-search-container {
+            width: 100%;
+        }
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 550px) {
         .jc-reports-page {
-            padding: 15px 10px;
+            padding: 14px 12px;
         }
-
         .jc-report-grid {
             grid-template-columns: 1fr;
-            row-gap: 5px;
         }
-
         .jc-report-link {
             border-right: none;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 12px 10px;
-        }
-
-        .jc-reports-heading h2 {
-            font-size: 21px;
         }
     }
 </style>
 
-
 <div class="jc-reports-page">
 
     <!-- PAGE HEADER -->
-    <div class="jc-reports-heading">
-
-        <i class="bi bi-graph-up-arrow jc-heading-icon"></i>
-
-        <div>
-            <h2>Job Card Reports</h2>
-
-            <div class="jc-breadcrumb">
-                <a href="{% url 'fleet_app:fleet_home' %}">Home</a>
-                <span>›</span>
-                Reports
-                <span>›</span>
-                Job Card Reports
+    <div class="jc-reports-header">
+        <div class="jc-header-title-box">
+            <i class="bi bi-graph-up-arrow jc-header-icon"></i>
+            <div class="jc-header-text">
+                <h2>Reports Dashboard</h2>
+                <div class="jc-breadcrumb">
+                    <a href="{% url 'fleet_app:fleet_home' %}">Home</a>
+                    <span>›</span>
+                    Reports
+                    <span>›</span>
+                    Reports Dashboard
+                </div>
             </div>
         </div>
 
+        <!-- SIMPLE SEARCH -->
+        <div class="jc-search-container">
+            <i class="bi bi-search"></i>
+            <input type="text"
+                   id="reportSearchInput"
+                   class="jc-search-input"
+                   placeholder="Search reports..."
+                   autocomplete="off">
+        </div>
     </div>
 
+    <!-- SIMPLE CATEGORY TABS -->
+    <div class="jc-tabs-nav" id="categoryTabs">
+        <button type="button"
+                class="jc-tab-btn active"
+                data-category="all"
+                onclick="filterCategory('all', this)">
+            <i class="bi bi-grid-fill"></i>
+            All Reports
+            <span class="badge-pill">{{ total_reports }}</span>
+        </button>
 
-    <!-- REPORT SECTION -->
-    <div class="jc-report-section">
+        {% for cat in categories %}
+        <button type="button"
+                class="jc-tab-btn"
+                data-category="{{ cat.id }}"
+                onclick="filterCategory('{{ cat.id }}', this)">
+            <i class="bi {{ cat.icon }}"></i>
+            {{ cat.title }}
+            <span class="badge-pill">{{ cat.report_count }}</span>
+        </button>
+        {% endfor %}
+    </div>
 
-        <div class="jc-section-heading">
-            <i class="bi bi-file-earmark-text"></i>
-            <h4>JOB CARD OVERVIEW</h4>
+    <!-- CATEGORIZED REPORT SUBGROUPS -->
+    <div id="reportsContainer">
+        {% for cat in categories %}
+        <div class="jc-category-block" id="cat-block-{{ cat.id }}" data-category-id="{{ cat.id }}">
+
+            <!-- CATEGORY TITLE -->
+            <div class="jc-category-header">
+                <i class="bi {{ cat.icon }}"></i>
+                <h3>{{ cat.title }}</h3>
+            </div>
+
+            <!-- SUBGROUPS IN THIS CATEGORY -->
+            {% for sub in cat.subgroups %}
+            <div class="jc-subgroup-block" id="sub-block-{{ sub.id }}">
+
+                <div class="jc-subgroup-header">
+                    <i class="bi {{ sub.icon }}"></i>
+                    <h4>{{ sub.title }}</h4>
+                </div>
+
+                <!-- 4-COLUMN STANDARD GRID -->
+                <div class="jc-report-grid">
+                    {% for rep in sub.reports %}
+                    <a href="{{ rep.url }}"
+                       class="jc-report-link"
+                       data-report-name="{{ rep.name|lower }}">
+                        <i class="bi {{ rep.icon }} jc-report-icon"></i>
+                        <span class="jc-report-name">{{ rep.name }}</span>
+                        <i class="bi bi-chevron-right jc-report-arrow"></i>
+                    </a>
+                    {% endfor %}
+                </div>
+
+            </div>
+            {% endfor %}
+
         </div>
+        {% endfor %}
+    </div>
 
-
-        <!-- FOUR-COLUMN REPORT LAYOUT -->
-        <div class="jc-report-grid">
-
-            <!-- 1. JOB CARD STATUS -->
-            <a href="{% url 'jobcard_app:jobcard_status_report' %}"
-               class="jc-report-link">
-
-                <i class="bi bi-bar-chart-line jc-report-icon jc-icon-pink"></i>
-
-                <span class="jc-report-name">
-                    Job Card Status
-                </span>
-
-                <i class="bi bi-chevron-right jc-report-arrow"></i>
-            </a>
-
-
-            <!-- 2. OPEN JOB CARDS -->
-            <a href="{% url 'jobcard_app:open_jobcard_report' %}"
-               class="jc-report-link">
-
-                <i class="bi bi-folder2-open jc-report-icon jc-icon-orange"></i>
-
-                <span class="jc-report-name">
-                    Open Job Cards
-                </span>
-
-                <i class="bi bi-chevron-right jc-report-arrow"></i>
-            </a>
-
-
-            <!-- 3. WORK IN PROGRESS -->
-            <a href="{% url 'jobcard_app:work_in_progress_report' %}"
-               class="jc-report-link">
-
-                <i class="bi bi-gear-wide-connected jc-report-icon jc-icon-blue"></i>
-
-                <span class="jc-report-name">
-                    Work In Progress
-                </span>
-
-                <i class="bi bi-chevron-right jc-report-arrow"></i>
-            </a>
-
-
-            <!-- 4. COMPLETED NOT DELIVERED -->
-            <a href="{% url 'jobcard_app:completed_not_delivered_report' %}"
-               class="jc-report-link">
-
-                <i class="bi bi-check-circle jc-report-icon jc-icon-green"></i>
-
-                <span class="jc-report-name">
-                    Completed – Not Delivered
-                </span>
-
-                <i class="bi bi-chevron-right jc-report-arrow"></i>
-            </a>
-
-
-            <!-- 5. DELIVERED NOT INVOICED -->
-            <a href="{% url 'jobcard_app:delivered_not_invoiced_report' %}"
-               class="jc-report-link">
-
-                <i class="bi bi-truck jc-report-icon jc-icon-orange"></i>
-
-                <span class="jc-report-name">
-                    Delivered – Not Invoiced
-                </span>
-
-                <i class="bi bi-chevron-right jc-report-arrow"></i>
-            </a>
-
-
-            <!-- 6. PAYMENT PENDING -->
-            <a href="{% url 'jobcard_app:invoiced_payment_pending_report' %}"
-               class="jc-report-link">
-
-                <i class="bi bi-wallet2 jc-report-icon jc-icon-blue"></i>
-
-                <span class="jc-report-name">
-                    Invoiced – Payment Pending
-                </span>
-
-                <i class="bi bi-chevron-right jc-report-arrow"></i>
-            </a>
-
-
-            <!-- 7. TECHNICIAN PENDING JOBS -->
-            <a href="{% url 'jobcard_app:technician_pending_jobs_report' %}"
-               class="jc-report-link">
-
-                <i class="bi bi-people jc-report-icon jc-icon-pink"></i>
-
-                <span class="jc-report-name">
-                    Technician Pending Jobs
-                </span>
-
-                <i class="bi bi-chevron-right jc-report-arrow"></i>
-            </a>
-            <!-- 8. JOB CARD AGING -->
-            <a href="{% url 'jobcard_app:jobcard_aging_report' %}"
-            class="jc-report-link">
-
-                <i class="bi bi-hourglass-split jc-report-icon jc-icon-purple"></i>
-
-                <span class="jc-report-name">
-                    Job Card Aging Report
-                </span>
-
-                <i class="bi bi-chevron-right jc-report-arrow"></i>
-            </a>
-
-            <!-- 8. JOB CARD PROFITABILITY -->
-            
-
-
-            <!-- 9. JOB CARD AGING -->
-            
-
+    <!-- NO RESULTS MESSAGE -->
+    <div class="jc-no-results" id="noResultsBlock">
+        <i class="bi bi-search" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
+        No reports found matching your search.
     </div>
 
 </div>
 
+<script>
+    let activeCategory = 'all';
+
+    function filterCategory(catId, btnElement) {
+        activeCategory = catId;
+
+        // Update tab buttons
+        document.querySelectorAll('.jc-tab-btn').forEach(btn => btn.classList.remove('active'));
+        if (btnElement) {
+            btnElement.classList.add('active');
+        }
+
+        applySearchAndFilter();
+    }
+
+    function applySearchAndFilter() {
+        const query = document.getElementById('reportSearchInput').value.trim().toLowerCase();
+        const categoryBlocks = document.querySelectorAll('.jc-category-block');
+        let totalVisibleReports = 0;
+
+        categoryBlocks.forEach(catBlock => {
+            const catId = catBlock.getAttribute('data-category-id');
+            const matchesCat = (activeCategory === 'all' || activeCategory === catId);
+
+            if (!matchesCat) {
+                catBlock.style.display = 'none';
+                return;
+            }
+
+            let catHasVisible = false;
+            const subgroups = catBlock.querySelectorAll('.jc-subgroup-block');
+
+            subgroups.forEach(subBlock => {
+                const links = subBlock.querySelectorAll('.jc-report-link');
+                let subHasVisible = false;
+
+                links.forEach(link => {
+                    const name = link.getAttribute('data-report-name') || '';
+                    const matchesQuery = !query || name.includes(query);
+
+                    if (matchesQuery) {
+                        link.style.display = 'flex';
+                        subHasVisible = true;
+                        catHasVisible = true;
+                        totalVisibleReports++;
+                    } else {
+                        link.style.display = 'none';
+                    }
+                });
+
+                subBlock.style.display = subHasVisible ? 'block' : 'none';
+            });
+
+            catBlock.style.display = catHasVisible ? 'block' : 'none';
+        });
+
+        // Toggle empty state
+        const noResults = document.getElementById('noResultsBlock');
+        if (noResults) {
+            noResults.style.display = (totalVisibleReports === 0) ? 'block' : 'none';
+        }
+    }
+
+    // Search input listener
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('reportSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', applySearchAndFilter);
+        }
+
+        // Handle URL parameter ?category=... if passed
+        const urlParams = new URLSearchParams(window.location.search);
+        const catParam = urlParams.get('category');
+        if (catParam) {
+            const matchingTab = document.querySelector(`.jc-tab-btn[data-category="${catParam}"]`);
+            if (matchingTab) {
+                filterCategory(catParam, matchingTab);
+            }
+        }
+    });
+</script>
 {% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'fleet_base1.html' %}
+{% load static i18n %}
+
+{% block content %}
+<style>
+    .jc-reports-page { padding: 20px 22px; background: #fff; min-height: 80vh; }
+    .jc-reports-heading { display:flex; align-items:center; gap:15px; padding-bottom:16px; border-bottom:1px solid #e1e4e8; margin-bottom:25px; }
+    .jc-heading-icon { font-size:32px; color:#c2185b; }
+    .jc-reports-heading h2 { margin:0; font-size:25px; font-weight:700; color:#23364a; }
+    .jc-breadcrumb { margin-top:5px; font-size:13px; color:#8390a0; }
+    .jc-breadcrumb a { color:#8390a0; text-decoration:none; }
+    .jc-breadcrumb a:hover { color:#c2185b; }
+    .jc-breadcrumb span { padding:0 8px; color:#aab1ba; }
+    .jc-report-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); row-gap:14px; }
+    .jc-report-link { min-width:0; min-height:55px; padding:9px 13px; display:flex; align-items:center; gap:13px; color:#172536; text-decoration:none !important; border-right:1px solid #dfe3e8; transition:background .2s ease; }
+    .jc-report-link:hover, .jc-report-link:hover .jc-report-name { background:#faf7f9; color:#c2185b; }
+    .jc-report-icon { width:25px; flex-shrink:0; text-align:center; font-size:21px; }
+    .jc-icon-pink{color:#c2185b} .jc-icon-orange{color:#ff7900} .jc-icon-blue{color:#2878df} .jc-icon-green{color:#159c72} .jc-icon-purple{color:#8954d8}
+    .jc-report-name { font-size:13px; font-weight:500; color:#172536; line-height:1.35; }
+    .jc-report-arrow { margin-left:auto; flex-shrink:0; font-size:12px; color:#65758a; }
+    @media (max-width:1200px){ .jc-report-grid{grid-template-columns:repeat(3,minmax(0,1fr));} }
+    @media (max-width:900px){ .jc-report-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+    @media (max-width:600px){ .jc-report-grid{grid-template-columns:1fr;row-gap:5px;} .jc-report-link{border-right:none;border-bottom:1px solid #e5e7eb;} }
+</style>
+
+<div class="jc-reports-page">
+
+    <div class="jc-reports-heading">
+        <i class="bi bi-people jc-heading-icon"></i>
+        <div>
+            <h2>Customer &amp; Vehicle Reports</h2>
+            <div class="jc-breadcrumb">
+                <a href="{% url 'fleet_app:fleet_home' %}">Home</a><span>›</span>
+                <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}">Reports</a><span>›</span>
+                Customer &amp; Vehicle
+            </div>
+        </div>
+    </div>
+
+    <div class="jc-report-grid">
+        {% for report in reports %}
+        <a href="{% url report.url_name %}" class="jc-report-link" title="{{ report.description }}">
+            <i class="bi {{ report.icon }} jc-report-icon {% cycle 'jc-icon-pink' 'jc-icon-orange' 'jc-icon-blue' 'jc-icon-green' 'jc-icon-purple' %}"></i>
+            <span class="jc-report-name">{{ report.name }}</span>
+            <i class="bi bi-chevron-right jc-report-arrow"></i>
+        </a>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

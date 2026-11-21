@@ -1,0 +1,259 @@
+
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+
+<style>
+    .purchase-report {
+        padding: 20px;
+    }
+
+    .purchase-header {
+        background: #76213b;
+        color: #fff;
+        padding: 22px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .purchase-header h2 {
+        margin: 0;
+        font-size: 23px;
+    }
+
+    .filter-box {
+        background: #fff;
+        padding: 18px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 6px rgba(0,0,0,.05);
+    }
+
+    .filter-box form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .filter-box label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .filter-box input {
+        padding: 9px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
+
+    .btn-report {
+        background: #76213b;
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .summary-card {
+        background: white;
+        border-left: 4px solid #76213b;
+        padding: 18px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 6px rgba(0,0,0,.05);
+    }
+
+    .summary-card small {
+        color: #777;
+        display: block;
+    }
+
+    .summary-card strong {
+        color: #76213b;
+        font-size: 23px;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        background: white;
+        border-radius: 10px;
+    }
+
+    .purchase-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1000px;
+    }
+
+    .purchase-table th {
+        background: #76213b;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .purchase-table td {
+        padding: 11px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .purchase-table tbody tr:hover {
+        background: #faf5f7;
+    }
+
+    .text-right {
+        text-align: right;
+    }
+
+    .total-row {
+        background: #f4e9ed;
+        font-weight: bold;
+    }
+
+    @media print {
+        .filter-box,
+        .no-print {
+            display: none !important;
+        }
+
+        .purchase-report {
+            padding: 0;
+        }
+
+        .purchase-table {
+            font-size: 10px;
+            min-width: auto;
+        }
+
+        .purchase-table th {
+            background: #76213b !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+
+<div class="purchase-report">
+
+    <div class="purchase-header">
+        <h2>Parts Purchase Report</h2>
+        <p>Spare parts purchase history and supplier transactions</p>
+    </div>
+
+    <!-- Date Filters -->
+    <div class="filter-box no-print">
+        <form method="GET">
+
+            <div>
+                <label>From Date</label>
+                <input type="date"
+                       name="from_date"
+                       value="{{ from_date }}">
+            </div>
+
+            <div>
+                <label>To Date</label>
+                <input type="date"
+                       name="to_date"
+                       value="{{ to_date }}">
+            </div>
+
+            <button type="submit" class="btn-report">
+                Filter
+            </button>
+
+            <a href="{% url 'jobcard_app:parts_purchase_report' %}"
+               class="btn-report"
+               style="text-decoration:none;">
+                Reset
+            </a>
+
+            <button type="button"
+                    class="btn-report"
+                    onclick="window.print()">
+                Print
+            </button>
+
+        </form>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-card">
+        <small>Total Purchase Quantity</small>
+        <strong>{{ total_quantity }}</strong>
+        <br><br>
+        <small>Total Purchase Amount</small>
+        <strong>{{ total_amount|floatformat:2 }}</strong>
+    </div>
+
+    <!-- Purchase Table -->
+    <div class="table-wrapper">
+
+        <table class="purchase-table">
+
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Voucher No.</th>
+                    <th>Supplier</th>
+                    <th>Item Code</th>
+                    <th>Item Name</th>
+                    <th>Unit</th>
+                    <th class="text-right">Quantity</th>
+                    <th class="text-right">Rate</th>
+                    <th class="text-right">Tax</th>
+                    <th class="text-right">Amount</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for row in purchase_rows %}
+
+                <tr>
+                    <td>{{ row.purchase.transaction_date|date:"d-m-Y" }}</td>
+                    <td>{{ row.purchase.voucher_no }}</td>
+                    <td>{{ row.purchase.ledger }}</td>
+                    <td>{{ row.detail.item_code|default:"-" }}</td>
+                    <td>{{ row.detail.item_name|default:"-" }}</td>
+                    <td>{{ row.detail.unit|default:"-" }}</td>
+                    <td class="text-right">{{ row.quantity }}</td>
+                    <td class="text-right">{{ row.detail.purchase_rate|floatformat:2 }}</td>
+                    <td class="text-right">{{ row.detail.item_tax_amount|floatformat:2 }}</td>
+                    <td class="text-right">{{ row.amount|floatformat:2 }}</td>
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="10" style="text-align:center;padding:30px;">
+                        No purchase records found for the selected period.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+                {% if purchase_rows %}
+                <tr class="total-row">
+                    <td colspan="6">TOTAL</td>
+                    <td class="text-right">{{ total_quantity }}</td>
+                    <td colspan="2"></td>
+                    <td class="text-right">{{ total_amount|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

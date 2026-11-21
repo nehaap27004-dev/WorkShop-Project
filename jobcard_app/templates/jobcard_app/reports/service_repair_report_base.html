@@ -1,0 +1,475 @@
+{% extends 'fleet_base1.html' %}
+{% load static i18n %}
+
+{% block content %}
+
+<style>
+/* ==============================
+   SERVICE & REPAIR REPORT STYLE
+============================== */
+
+.sr-page {
+    padding: 24px;
+    background: #f7f8fa;
+    min-height: 80vh;
+    color: #263445;
+}
+
+.sr-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 22px;
+}
+
+.sr-header h2 {
+    color: #76213b;
+    font-size: 25px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.sr-subtitle {
+    color: #7b8796;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.sr-breadcrumb {
+    font-size: 12px;
+    color: #8a95a3;
+    margin-top: 8px;
+}
+
+.sr-breadcrumb a {
+    text-decoration: none;
+    color: #8a95a3;
+}
+
+.sr-breadcrumb a:hover {
+    color: #76213b;
+}
+
+.sr-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.sr-btn {
+    padding: 9px 15px;
+    border: 1px solid #d8dee7;
+    background: #fff;
+    color: #344255;
+    border-radius: 7px;
+    font-size: 13px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.sr-btn:hover {
+    background: #f3f4f6;
+}
+
+.sr-btn-primary {
+    background: #76213b;
+    border-color: #76213b;
+    color: white;
+}
+
+.sr-btn-primary:hover {
+    background: #5d192f;
+    color: white;
+}
+
+/* FILTER PANEL */
+
+.sr-card {
+    background: white;
+    border: 1px solid #e9edf2;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(30,45,60,.05);
+    margin-bottom: 20px;
+}
+
+.sr-filter-card {
+    padding: 18px;
+}
+
+.sr-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 14px;
+    align-items: end;
+}
+
+.sr-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #647184;
+    margin-bottom: 6px;
+}
+
+.sr-field input,
+.sr-field select {
+    width: 100%;
+    height: 40px;
+    padding: 8px 11px;
+    border: 1px solid #d7dee7;
+    border-radius: 7px;
+    background: #fff;
+    color: #334155;
+    font-size: 13px;
+    outline: none;
+}
+
+.sr-field input:focus,
+.sr-field select:focus {
+    border-color: #76213b;
+    box-shadow: 0 0 0 2px rgba(118,33,59,.08);
+}
+
+.sr-filter-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* TABLE CARD */
+
+.sr-table-card {
+    overflow: hidden;
+}
+
+.sr-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 17px 20px;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.sr-table-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #29384a;
+}
+
+.sr-total {
+    color: #657386;
+    font-size: 13px;
+}
+
+.sr-total strong {
+    color: #76213b;
+    font-size: 15px;
+}
+
+/* TABLE */
+
+.sr-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.sr-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.sr-table thead th {
+    background: #f5f6f8;
+    color: #5b6879;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    text-align: left;
+    padding: 13px 15px;
+    border-bottom: 1px solid #e6eaf0;
+    white-space: nowrap;
+}
+
+.sr-table tbody td {
+    padding: 14px 15px;
+    border-bottom: 1px solid #edf0f4;
+    font-size: 13px;
+    color: #344255;
+    vertical-align: middle;
+}
+
+.sr-table tbody tr:nth-child(even) {
+    background: #fcfcfd;
+}
+
+.sr-table tbody tr:hover {
+    background: #faf5f7;
+}
+
+.sr-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* STATUS BADGES */
+
+.sr-status {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    background: #eef2f6;
+    color: #526174;
+}
+
+.sr-status-open {
+    background: #fff4df;
+    color: #9b6500;
+}
+
+.sr-status-completed {
+    background: #e7f6ee;
+    color: #168354;
+}
+
+.sr-status-progress {
+    background: #e8f1ff;
+    color: #2866b4;
+}
+
+.sr-status-overdue {
+    background: #fde9e9;
+    color: #b42323;
+}
+
+.sr-status-due {
+    background: #fff1e4;
+    color: #b45b12;
+}
+
+/* EMPTY STATE */
+
+.sr-empty {
+    text-align: center;
+    padding: 45px 20px !important;
+    color: #8792a0 !important;
+}
+
+.sr-empty i {
+    display: block;
+    font-size: 30px;
+    color: #c5cbd3;
+    margin-bottom: 10px;
+}
+
+/* PAGINATION */
+
+.sr-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 15px 20px;
+    border-top: 1px solid #edf0f4;
+    color: #69778a;
+    font-size: 12px;
+}
+
+.sr-pagination-links {
+    display: flex;
+    gap: 6px;
+}
+
+.sr-pagination-links a {
+    padding: 7px 12px;
+    border: 1px solid #d8dee7;
+    border-radius: 6px;
+    color: #344255;
+    text-decoration: none;
+    background: #fff;
+}
+
+.sr-pagination-links a:hover {
+    background: #76213b;
+    color: #fff;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1100px) {
+    .sr-filter-grid {
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .sr-page {
+        padding: 12px;
+    }
+
+    .sr-header h2 {
+        font-size: 21px;
+    }
+
+    .sr-filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sr-header {
+        display: block;
+    }
+
+    .sr-actions {
+        margin-top: 15px;
+    }
+}
+
+/* PRINT */
+
+@media print {
+    body {
+        background: white !important;
+    }
+
+    .sr-page {
+        padding: 0;
+        background: white;
+    }
+
+    .sr-actions,
+    .sr-filter-card,
+    .sr-pagination {
+        display: none !important;
+    }
+
+    .sr-card {
+        box-shadow: none;
+        border: none;
+    }
+
+    .sr-table thead th {
+        background: #eee !important;
+        print-color-adjust: exact;
+    }
+}
+</style>
+
+
+<div class="sr-page">
+
+    <!-- REPORT HEADER -->
+    <div class="sr-header">
+
+        <div>
+            <h2>
+                {% block report_title %}
+                Service & Repair Report
+                {% endblock %}
+            </h2>
+
+            <div class="sr-subtitle">
+                {% block report_subtitle %}
+                Workshop service and repair reports
+                {% endblock %}
+            </div>
+
+            <div class="sr-breadcrumb">
+                <a href="{% url 'fleet_app:fleet_home' %}">Home</a>
+                &nbsp;›&nbsp; Reports
+                &nbsp;›&nbsp; Service & Repair
+                &nbsp;›&nbsp;
+                {% block breadcrumb_title %}Report{% endblock %}
+            </div>
+        </div>
+
+        <div class="sr-actions">
+            <button type="button" class="sr-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i> Print
+            </button>
+        </div>
+
+    </div>
+
+
+    <!-- FILTER SECTION -->
+    {% block filters %}
+    {% endblock %}
+
+
+    <!-- REPORT TABLE CARD -->
+    <div class="sr-card sr-table-card">
+
+        <div class="sr-table-header">
+
+            <div class="sr-table-title">
+                {% block table_title %}
+                Report Records
+                {% endblock %}
+            </div>
+
+            <div class="sr-total">
+                Total Records:
+                <strong>
+                    {% block total_count %}
+                    {{ total_count|default:0 }}
+                    {% endblock %}
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="sr-table-wrapper">
+
+            {% block report_table %}
+            {% endblock %}
+
+        </div>
+
+
+        <!-- PAGINATION -->
+        {% block pagination %}
+
+        {% if page_obj %}
+
+        <div class="sr-pagination">
+
+            <div>
+                Page {{ page_obj.number }}
+                of {{ page_obj.paginator.num_pages }}
+            </div>
+
+            <div class="sr-pagination-links">
+
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}">
+                    Previous
+                </a>
+                {% endif %}
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">
+                    Next
+                </a>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+        {% endblock %}
+
+    </div>
+
+</div>
+
+{% endblock %}

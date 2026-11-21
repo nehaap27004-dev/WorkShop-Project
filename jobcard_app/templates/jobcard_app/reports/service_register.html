@@ -1,0 +1,158 @@
+{% extends 'jobcard_app/reports/service_repair_report_base.html' %}
+
+{% block report_title %}Service Register{% endblock %}
+
+{% block report_subtitle %}
+Complete register of workshop service jobs
+{% endblock %}
+
+{% block breadcrumb_title %}Service Register{% endblock %}
+
+{% block table_title %}Service Records{% endblock %}
+
+
+{% block filters %}
+
+<div class="sr-card sr-filter-card">
+
+    <form method="get">
+
+        <div class="sr-filter-grid">
+
+            <div class="sr-field">
+                <label>Search</label>
+                <input type="text"
+                       name="search"
+                       value="{{ search|default:'' }}"
+                       placeholder="Job card, vehicle or customer">
+            </div>
+
+            <div class="sr-field">
+                <label>From Date</label>
+                <input type="date"
+                       name="date_from"
+                       value="{{ date_from|default:'' }}">
+            </div>
+
+            <div class="sr-field">
+                <label>To Date</label>
+                <input type="date"
+                       name="date_to"
+                       value="{{ date_to|default:'' }}">
+            </div>
+
+            <div class="sr-field">
+                <label>Status</label>
+
+                <select name="status">
+                    <option value="">All Status</option>
+
+                    <option value="Open"
+                        {% if status == "Open" %}selected{% endif %}>
+                        Open
+                    </option>
+
+                    <option value="In Progress"
+                        {% if status == "In Progress" %}selected{% endif %}>
+                        In Progress
+                    </option>
+
+                    <option value="Completed"
+                        {% if status == "Completed" %}selected{% endif %}>
+                        Completed
+                    </option>
+                </select>
+            </div>
+
+            <div class="sr-filter-actions">
+
+                <button type="submit" class="sr-btn sr-btn-primary">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+
+                <a href="{% url 'jobcard_app:service_register_report' %}"
+                   class="sr-btn">
+                    Reset
+                </a>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}
+
+
+{% block report_table %}
+
+<table class="sr-table">
+
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Job Card No.</th>
+            <th>Customer</th>
+            <th>Vehicle</th>
+            <th>Registration No.</th>
+            <th>Mileage</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for jobcard in jobcards %}
+
+        <tr>
+
+            <td>
+                {{ jobcard.date|date:"d-m-Y" }}
+            </td>
+
+            <td>
+                <strong>{{ jobcard.voucher_number|default:jobcard.pk }}</strong>
+            </td>
+
+            <td>
+                {{ jobcard.customer }}
+            </td>
+
+            <td>
+                {{ jobcard.workshop_vehicle }}
+            </td>
+
+            <td>
+                {{ jobcard.workshop_vehicle.registration_number|default:jobcard.workshop_vehicle.vehicle_number }}
+            </td>
+
+            <td>
+                {{ jobcard.mileage|default:"—" }}
+            </td>
+
+            <td>
+                <span class="sr-status">
+                    {{ jobcard.status }}
+                </span>
+            </td>
+
+        </tr>
+
+        {% empty %}
+
+        <tr>
+            <td colspan="7" class="sr-empty">
+                <i class="bi bi-inbox"></i>
+                No service records found.
+            </td>
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endblock %}

@@ -1,0 +1,326 @@
+
+{% extends "fleet_base1.html" %}
+{% block content %}
+
+<style>
+.profit-report {
+    padding: 20px;
+}
+
+.profit-header {
+    color: #76213b;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.profit-subtitle {
+    color: #777;
+    margin-bottom: 20px;
+}
+
+.profit-filter {
+    background: #fff;
+    border: 1px solid #e6d5dc;
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 20px;
+}
+
+.profit-filter label {
+    font-weight: 600;
+    color: #76213b;
+}
+
+.profit-filter input {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+
+.profit-table-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.profit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.profit-table thead {
+    background: #76213b;
+    color: white;
+}
+
+.profit-table th,
+.profit-table td {
+    padding: 12px 10px;
+    text-align: right;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+}
+
+.profit-table th:first-child,
+.profit-table th:nth-child(2),
+.profit-table td:first-child,
+.profit-table td:nth-child(2) {
+    text-align: left;
+}
+
+.profit-table tbody tr:hover {
+    background: #faf5f7;
+}
+
+.profit-positive {
+    color: #198754;
+    font-weight: 600;
+}
+
+.profit-negative {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.summary-card {
+    background: #fff;
+    border: 1px solid #eadce1;
+    border-left: 4px solid #76213b;
+    border-radius: 9px;
+    padding: 16px;
+}
+
+.summary-label {
+    color: #777;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.summary-value {
+    font-size: 21px;
+    font-weight: 700;
+    color: #76213b;
+}
+
+.filter-btn {
+    background: #76213b;
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 6px;
+}
+
+.filter-btn:hover {
+    background: #5d182e;
+    color: white;
+}
+
+.reset-btn {
+    color: #76213b;
+    border: 1px solid #76213b;
+    padding: 9px 18px;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.empty-report {
+    padding: 35px;
+    text-align: center;
+    color: #888;
+}
+
+@media print {
+    .profit-filter,
+    .no-print {
+        display: none !important;
+    }
+
+    .profit-report {
+        padding: 0;
+    }
+
+    .profit-table thead {
+        background: #76213b !important;
+        color: white !important;
+        print-color-adjust: exact;
+    }
+}
+</style>
+
+<div class="profit-report">
+
+    <h2 class="profit-header">Parts Profitability Report</h2>
+
+    <p class="profit-subtitle">
+        Analyze spare parts sales, costs, and profitability.
+    </p>
+
+    <!-- Date Filter -->
+    <form method="GET" class="profit-filter">
+        <div class="row align-items-end">
+
+            <div class="col-md-3 mb-3">
+                <label>From Date</label>
+                <input type="date"
+                       name="start_date"
+                       value="{{ start_date }}"
+                       class="form-control">
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label>To Date</label>
+                <input type="date"
+                       name="end_date"
+                       value="{{ end_date }}"
+                       class="form-control">
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <button type="submit" class="filter-btn">
+                    Apply Filter
+                </button>
+
+                <a href="{% url 'parts_profitability_report' %}"
+                   class="reset-btn">
+                    Reset
+                </a>
+            </div>
+
+            <div class="col-md-3 mb-3 text-md-end no-print">
+                <button type="button"
+                        onclick="window.print()"
+                        class="btn btn-outline-secondary">
+                    Print Report
+                </button>
+            </div>
+
+        </div>
+    </form>
+
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+
+        <div class="summary-card">
+            <div class="summary-label">Total Parts Sold</div>
+            <div class="summary-value">{{ total_quantity|floatformat:2 }}</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-label">Total Sales</div>
+            <div class="summary-value">
+                {{ total_sales|floatformat:2 }}
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-label">Total Cost</div>
+            <div class="summary-value">
+                {{ total_cost|floatformat:2 }}
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-label">Total Profit</div>
+            <div class="summary-value">
+                {{ total_profit|floatformat:2 }}
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-label">Profit Margin</div>
+            <div class="summary-value">
+                {{ overall_profit_percentage|floatformat:2 }}%
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Detailed Report -->
+    <div class="profit-table-card">
+        <div class="table-responsive">
+
+            <table class="profit-table">
+
+                <thead>
+                    <tr>
+                        <th>Part Code</th>
+                        <th>Part Name</th>
+                        <th>Qty Sold</th>
+                        <th>Purchase Rate</th>
+                        <th>Sales Rate</th>
+                        <th>Sales Amount</th>
+                        <th>Cost Amount</th>
+                        <th>Profit</th>
+                        <th>Profit %</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                {% for row in report_rows %}
+                    <tr>
+                        <td>{{ row.item_code|default:"-" }}</td>
+                        <td>{{ row.item_name }}</td>
+                        <td>{{ row.quantity|floatformat:2 }}</td>
+                        <td>{{ row.purchase_rate|floatformat:2 }}</td>
+                        <td>{{ row.sales_rate|floatformat:2 }}</td>
+                        <td>{{ row.sales_amount|floatformat:2 }}</td>
+                        <td>{{ row.cost_amount|floatformat:2 }}</td>
+
+                        <td class="{% if row.profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            {{ row.profit|floatformat:2 }}
+                        </td>
+
+                        <td class="{% if row.profit_percentage >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            {{ row.profit_percentage|floatformat:2 }}%
+                        </td>
+                    </tr>
+
+                {% empty %}
+                    <tr>
+                        <td colspan="9" class="empty-report">
+                            No parts sales found for the selected period.
+                        </td>
+                    </tr>
+                {% endfor %}
+
+                </tbody>
+
+                {% if report_rows %}
+                <tfoot>
+                    <tr style="background:#f8f1f4; font-weight:700;">
+                        <td colspan="2">TOTAL</td>
+                        <td>{{ total_quantity|floatformat:2 }}</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>{{ total_sales|floatformat:2 }}</td>
+                        <td>{{ total_cost|floatformat:2 }}</td>
+                        <td class="{% if total_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            {{ total_profit|floatformat:2 }}
+                        </td>
+                        <td>{{ overall_profit_percentage|floatformat:2 }}%</td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

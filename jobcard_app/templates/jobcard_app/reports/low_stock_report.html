@@ -1,0 +1,172 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+
+<style>
+    .low-stock-container {
+        padding: 20px;
+    }
+
+    .report-header {
+        background: #76213b;
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .report-header h2 {
+        margin: 0;
+    }
+
+    .summary-cards {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .summary-card {
+        background: white;
+        border: 1px solid #eee;
+        border-left: 4px solid #76213b;
+        padding: 15px 20px;
+        border-radius: 8px;
+        min-width: 180px;
+    }
+
+    .summary-card h3 {
+        font-size: 13px;
+        color: #777;
+        margin: 0 0 8px;
+    }
+
+    .summary-card strong {
+        font-size: 24px;
+        color: #76213b;
+    }
+
+    .low-stock-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .low-stock-table th {
+        background: #76213b;
+        color: white;
+        padding: 12px;
+        text-align: left;
+    }
+
+    .low-stock-table td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .low-stock {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .out-stock {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .report-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 15px;
+    }
+
+    .report-actions button {
+        background: #76213b;
+        color: white;
+        border: none;
+        padding: 9px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    @media print {
+        .report-actions {
+            display: none;
+        }
+    }
+</style>
+
+<div class="low-stock-container">
+
+    <div class="report-header">
+        <h2>Low Stock Alert</h2>
+        <p>Spare parts that require stock replenishment</p>
+    </div>
+
+    <div class="summary-cards">
+        <div class="summary-card">
+            <h3>Total Low Stock Items</h3>
+            <strong>{{ low_stock_data|length }}</strong>
+        </div>
+    </div>
+
+    <div class="report-actions">
+        <button onclick="window.print()">Print Report</button>
+    </div>
+
+    <table class="low-stock-table">
+        <thead>
+            <tr>
+                <th>Item Code</th>
+                <th>Item Name</th>
+            <th>Category</th>
+            <th>Current Stock</th>
+            <th>Minimum Stock</th>
+            <th>Reorder Level</th>
+            <th>Purchase Rate</th>
+            <th>Rack</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+
+        <tbody>
+
+        {% for row in low_stock_data %}
+            <tr>
+                <td>{{ row.item.item_code }}</td>
+                <td>{{ row.item.item_name }}</td>
+                <td>{{ row.item.item_category|default:"-" }}</td>
+                <td>{{ row.current_stock }}</td>
+                <td>{{ row.minimum_stock }}</td>
+                <td>{{ row.reorder_level }}</td>
+                <td>{{ row.item.purchase_rate|floatformat:2 }}</td>
+                <td>{{ row.item.rack|default:"-" }}</td>
+                <td>
+                    {% if row.status == "Out of Stock" %}
+                        <span class="status-badge out-stock">Out of Stock</span>
+                    {% else %}
+                        <span class="status-badge low-stock">Low Stock</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="9" style="text-align:center;padding:25px;">
+                    <strong>All spare parts are sufficiently stocked.</strong>
+                </td>
+            </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+
+</div>
+
+{% endblock %}

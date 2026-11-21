@@ -1,0 +1,200 @@
+{% extends 'jobcard_app/reports/service_repair_report_base.html' %}
+
+{% block report_title %}Technician Performance{% endblock %}
+
+{% block report_subtitle %}
+Technician workload, job completion and productivity analysis
+{% endblock %}
+
+{% block breadcrumb_title %}Technician Performance{% endblock %}
+
+{% block table_title %}Technician Performance Summary{% endblock %}
+
+{% block total_count %}
+    {{ total_technicians }}
+{% endblock %}
+{% block filters %}
+
+<div class="sr-card sr-filter-card">
+
+    <form method="get">
+
+        <div class="sr-filter-grid">
+
+            <div class="sr-field">
+                <label>Search Technician</label>
+
+                <input type="text"
+                       name="search"
+                       value="{{ search|default:'' }}"
+                       placeholder="Technician name or ID">
+            </div>
+
+            <div class="sr-field">
+                <label>From Date</label>
+
+                <input type="date"
+                       name="date_from"
+                       value="{{ date_from|default:'' }}">
+            </div>
+
+            <div class="sr-field">
+                <label>To Date</label>
+
+                <input type="date"
+                       name="date_to"
+                       value="{{ date_to|default:'' }}">
+            </div>
+
+            <div class="sr-field">
+                <label>Job Status</label>
+
+                <select name="status">
+
+                    <option value="">All Status</option>
+
+                    <option value="open"
+                        {% if status == "open" %}selected{% endif %}>
+                        Open
+                    </option>
+
+                    <option value="in_progress"
+                        {% if status == "in_progress" %}selected{% endif %}>
+                        In Progress
+                    </option>
+
+                    <option value="waiting"
+                        {% if status == "waiting" %}selected{% endif %}>
+                        Waiting
+                    </option>
+
+                    <option value="completed"
+                        {% if status == "completed" %}selected{% endif %}>
+                        Completed
+                    </option>
+
+                    <option value="closed"
+                        {% if status == "closed" %}selected{% endif %}>
+                        Closed
+                    </option>
+
+                    <option value="cancelled"
+                        {% if status == "cancelled" %}selected{% endif %}>
+                        Cancelled
+                    </option>
+
+                </select>
+            </div>
+
+            <div class="sr-filter-actions">
+
+                <button type="submit" class="sr-btn sr-btn-primary">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+
+                <a href="{% url 'jobcard_app:technician_performance_report' %}"
+                   class="sr-btn">
+                    Reset
+                </a>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}
+
+
+{% block report_table %}
+
+<table class="sr-table">
+
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Technician ID</th>
+            <th>Technician Name</th>
+            <th>Total Jobs</th>
+            <th>Completed</th>
+            <th>In Progress</th>
+            <th>Pending</th>
+            <th>Completion Rate</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for item in report_data %}
+
+        <tr>
+
+            <td>{{ forloop.counter }}</td>
+
+            <td>
+                {{ item.technician.staff_id }}
+            </td>
+
+            <td>
+                <strong>{{ item.technician.full_name }}</strong>
+            </td>
+
+            <td>
+                {{ item.total_jobs }}
+            </td>
+
+            <td>
+                <span class="sr-status sr-status-completed">
+                    {{ item.completed_jobs }}
+                </span>
+            </td>
+
+            <td>
+                <span class="sr-status sr-status-progress">
+                    {{ item.in_progress_jobs }}
+                </span>
+            </td>
+
+            <td>
+                <span class="sr-status sr-status-open">
+                    {{ item.pending_jobs }}
+                </span>
+            </td>
+
+            <td>
+
+                <strong>{{ item.completion_rate|floatformat:1 }}%</strong>
+
+                <div style="width:100px;height:6px;background:#eee;
+                            border-radius:10px;margin-top:5px;">
+
+                    <div style="height:6px;
+                        width:{{ item.completion_rate }}%;
+                        background:#76213b;
+                        border-radius:10px;">
+                    </div>
+
+                </div>
+
+            </td>
+
+        </tr>
+
+        {% empty %}
+
+        <tr>
+            <td colspan="8" class="sr-empty">
+                <i class="bi bi-people"></i>
+                No technician performance records found.
+            </td>
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endblock %}

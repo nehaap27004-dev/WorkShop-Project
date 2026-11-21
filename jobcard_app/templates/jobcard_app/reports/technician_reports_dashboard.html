@@ -1,0 +1,259 @@
+{% extends 'fleet_base1.html' %}
+{% load static i18n %}
+
+{% block content %}
+
+<style>
+    .tech-report-page {
+        padding: 22px;
+        background: #fff;
+        min-height: 80vh;
+    }
+
+    .tech-report-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e1e4e8;
+        margin-bottom: 25px;
+    }
+
+    .tech-report-header-icon {
+        font-size: 32px;
+        color: #76213b;
+    }
+
+    .tech-report-header h2 {
+        margin: 0;
+        font-size: 25px;
+        font-weight: 700;
+        color: #76213b;
+    }
+
+    .tech-breadcrumb {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #8390a0;
+    }
+
+    .tech-breadcrumb a {
+        color: #8390a0;
+        text-decoration: none;
+    }
+
+    .tech-breadcrumb a:hover {
+        color: #76213b;
+    }
+
+    .tech-breadcrumb span {
+        padding: 0 8px;
+        color: #aab1ba;
+    }
+
+    .tech-section {
+        margin-bottom: 22px;
+    }
+
+    .tech-section-heading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .tech-section-heading i {
+        font-size: 19px;
+        color: #76213b;
+    }
+
+    .tech-section-heading h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #202d3c;
+    }
+
+    .tech-report-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 15px;
+    }
+
+    .tech-report-link {
+        min-height: 100px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid #e5e9ef;
+        border-radius: 10px;
+        color: #172536;
+        text-decoration: none !important;
+        background: #fff;
+        transition: all .2s ease;
+    }
+
+    .tech-report-link:hover {
+        border-color: #76213b;
+        background: #fcf8fa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(118, 33, 59, .08);
+        color: #76213b;
+    }
+
+    .tech-report-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f4e8ed;
+        flex-shrink: 0;
+    }
+
+    .tech-report-icon-box i {
+        font-size: 22px;
+        color: #76213b;
+    }
+
+    .tech-report-content {
+        flex: 1;
+    }
+
+    .tech-report-name {
+        font-size: 15px;
+        font-weight: 700;
+        color: #23364a;
+        margin-bottom: 5px;
+    }
+
+    .tech-report-description {
+        font-size: 12px;
+        color: #7b8796;
+        line-height: 1.5;
+    }
+
+    .tech-report-arrow {
+        color: #8793a2;
+        font-size: 14px;
+    }
+
+    @media(max-width: 768px) {
+        .tech-report-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media(max-width: 600px) {
+        .tech-report-page {
+            padding: 15px 10px;
+        }
+
+        .tech-report-header h2 {
+            font-size: 21px;
+        }
+    }
+</style>
+
+
+<div class="tech-report-page">
+
+    <!-- HEADER -->
+    <div class="tech-report-header" style="justify-content: space-between; flex-wrap: wrap;">
+
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <i class="bi bi-people tech-report-header-icon"></i>
+            <div>
+                <h2>Technician Reports</h2>
+                <div class="tech-breadcrumb">
+                    <a href="{% url 'fleet_app:fleet_home' %}">Home</a>
+                    <span>›</span>
+                    <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}">Reports Hub</a>
+                    <span>›</span>
+                    Technician Reports
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=technicians" class="btn btn-sm" style="background: #f1f5f9; color: #76213b; border: 1px solid #cbd5e1; font-weight: 600; border-radius: 6px;">
+                <i class="bi bi-arrow-left mr-1"></i> All Reports Hub
+            </a>
+        </div>
+
+    </div>
+
+
+    <!-- REPORT SECTION -->
+    <div class="tech-section">
+
+        <div class="tech-section-heading">
+            <i class="bi bi-file-earmark-bar-graph"></i>
+            <h4>TECHNICIAN ANALYSIS</h4>
+        </div>
+
+
+        <div class="tech-report-grid">
+
+
+            <!-- TECHNICIAN PERFORMANCE -->
+            <a href="{% url 'jobcard_app:technician_performance_report' %}"
+               class="tech-report-link">
+
+                <div class="tech-report-icon-box">
+                    <i class="bi bi-person-check"></i>
+                </div>
+
+                <div class="tech-report-content">
+
+                    <div class="tech-report-name">
+                        Technician Performance
+                    </div>
+
+                    <div class="tech-report-description">
+                        View technician workload, completed jobs,
+                        pending jobs and completion performance.
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right tech-report-arrow"></i>
+
+            </a>
+
+
+            <!-- TECHNICIAN REVENUE -->
+            <a href="{% url 'jobcard_app:technician_revenue_report' %}"
+               class="tech-report-link">
+
+                <div class="tech-report-icon-box">
+                    <i class="bi bi-currency-exchange"></i>
+                </div>
+
+                <div class="tech-report-content">
+
+                    <div class="tech-report-name">
+                        Technician-wise Revenue
+                    </div>
+
+                    <div class="tech-report-description">
+                        Analyze labour revenue generated by each
+                        technician and completed jobs.
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right tech-report-arrow"></i>
+
+            </a>
+
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,298 @@
+
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+
+<style>
+    .consumption-container {
+        padding: 20px;
+    }
+
+    .consumption-header {
+        background: #76213b;
+        color: white;
+        padding: 22px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .consumption-header h2 {
+        margin: 0;
+        font-size: 23px;
+    }
+
+    .filter-card {
+        background: white;
+        padding: 18px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .filter-form label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .filter-form input {
+        padding: 9px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
+
+    .report-btn {
+        background: #76213b;
+        color: white;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 6px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .summary-cards {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .summary-card {
+        flex: 1;
+        min-width: 200px;
+        background: white;
+        padding: 18px;
+        border-left: 4px solid #76213b;
+        border-radius: 8px;
+    }
+
+    .summary-card small {
+        color: #777;
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .summary-card strong {
+        color: #76213b;
+        font-size: 24px;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        background: white;
+        border-radius: 10px;
+    }
+
+    .consumption-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1000px;
+    }
+
+    .consumption-table th {
+        background: #76213b;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .consumption-table td {
+        padding: 11px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .consumption-table tbody tr:hover {
+        background: #faf5f7;
+    }
+
+    .text-right {
+        text-align: right;
+    }
+
+    .total-row {
+        background: #f3e7ec;
+        font-weight: bold;
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+
+        .consumption-container {
+            padding: 0;
+        }
+
+        .consumption-table {
+            min-width: auto;
+            font-size: 10px;
+        }
+
+        .consumption-table th {
+            background: #76213b !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+
+<div class="consumption-container">
+
+    <div class="consumption-header">
+        <h2>Parts Consumption Report</h2>
+        <p>Spare parts utilized in workshop job cards</p>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-card no-print">
+        <form method="GET" class="filter-form">
+
+            <div>
+                <label>From Date</label>
+                <input type="date"
+                       name="from_date"
+                       value="{{ from_date }}">
+            </div>
+
+            <div>
+                <label>To Date</label>
+                <input type="date"
+                       name="to_date"
+                       value="{{ to_date }}">
+            </div>
+
+            <button type="submit" class="report-btn">
+                Filter
+            </button>
+
+            <a href="{% url 'jobcard_app:parts_consumption_report' %}"
+               class="report-btn">
+                Reset
+            </a>
+
+            <button type="button"
+                    class="report-btn"
+                    onclick="window.print()">
+                Print
+            </button>
+
+        </form>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="summary-cards">
+
+        <div class="summary-card">
+            <small>Total Quantity Consumed</small>
+            <strong>{{ total_quantity }}</strong>
+        </div>
+
+        <div class="summary-card">
+            <small>Total Consumption Value</small>
+            <strong>{{ total_amount|floatformat:2 }}</strong>
+        </div>
+
+        <div class="summary-card">
+            <small>Total Part Entries</small>
+            <strong>{{ parts|length }}</strong>
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrapper">
+
+        <table class="consumption-table">
+
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Job Card No.</th>
+                    <th>Customer</th>
+                    <th>Vehicle</th>
+                    <th>Part Name</th>
+                    <th>Part Number</th>
+                    <th class="text-right">Quantity</th>
+                    <th class="text-right">Unit Price</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for part in parts %}
+
+                <tr>
+                    <td>{{ part.jobcard.date|date:"d-m-Y" }}</td>
+
+                    <td>
+                        {{ part.jobcard.voucher_number|default:"-" }}
+                    </td>
+
+                    <td>
+                        {{ part.jobcard.customer|default:"-" }}
+                    </td>
+
+                    <td>
+                        {{ part.vehicle|default:"-" }}
+                    </td>
+
+                    <td>
+                        {{ part.description|default:"-" }}
+                    </td>
+
+                    <td>
+                        {{ part.part_number|default:"-" }}
+                    </td>
+
+                    <td class="text-right">
+                        {{ part.quantity }}
+                    </td>
+
+                    <td class="text-right">
+                        {{ part.unit_price|floatformat:2 }}
+                    </td>
+
+                    <td class="text-right">
+                        {{ part.total_price|floatformat:2 }}
+                    </td>
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="9" style="text-align:center;padding:30px;">
+                        No parts consumption records found.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+                {% if parts %}
+                <tr class="total-row">
+                    <td colspan="6">TOTAL</td>
+                    <td class="text-right">{{ total_quantity }}</td>
+                    <td></td>
+                    <td class="text-right">{{ total_amount|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

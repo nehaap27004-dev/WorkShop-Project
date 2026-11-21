@@ -921,3 +921,70 @@ class InvoiceStockIntegrationTests(TestCase):
         stocks = Stock.objects.filter(item=self.item)
         net_qty = sum(s.in_quantity - s.out_quantity for s in stocks)
         self.assertEqual(net_qty, 8)
+
+
+class ReportsDashboardTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.user, _ = User.objects.get_or_create(
+            username='reportuser',
+            defaults={
+                'email': 'reportuser@example.com'
+            }
+        )
+        self.user.set_password('password123')
+        self.user.save()
+
+    def test_get_all_categorized_reports_structure(self):
+        from jobcard_app.report_views import get_all_categorized_reports
+        data = get_all_categorized_reports()
+
+        self.assertIn('categories', data)
+        self.assertIn('total_reports', data)
+        self.assertIn('total_categories', data)
+        self.assertIn('total_subgroups', data)
+
+        self.assertGreaterEqual(data['total_reports'], 50)
+        self.assertGreaterEqual(data['total_categories'], 7)
+        self.assertGreaterEqual(data['total_subgroups'], 14)
+
+        for cat in data['categories']:
+            self.assertTrue(cat['id'])
+            self.assertTrue(cat['title'])
+            self.assertTrue(cat['icon'])
+            self.assertGreater(len(cat['subgroups']), 0)
+            for sub in cat['subgroups']:
+                self.assertTrue(sub['id'])
+                self.assertTrue(sub['title'])
+                self.assertGreater(len(sub['reports']), 0)
+                for rep in sub['reports']:
+                    self.assertTrue(rep['name'])
+                    self.assertTrue(rep['url_name'])
+                    self.assertNotEqual(rep['url'], '#', f"URL failed to reverse for {rep['url_name']}")
+                    self.assertTrue(rep['icon'])
+
+    def test_jobcard_reports_dashboard_view_authenticated(self):
+        self.client.login(username='reportuser', password='password123')
+        url = reverse('jobcard_app:jobcard_reports_dashboard')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'jobcard_app/reports/jobcard_reports_dashboard.html')
+        self.assertContains(response, 'Central Reports Dashboard')
+        self.assertContains(response, 'Job Cards &amp; Workshop Operations')
+        self.assertContains(response, 'Service, Repairs &amp; Inspections')
+        self.assertContains(response, 'Technician Analytics &amp; Workforce')
+        self.assertContains(response, 'Spare Parts &amp; Inventory')
+        self.assertContains(response, 'Customers &amp; Vehicles Intelligence')
+        self.assertContains(response, 'Invoicing, Taxes &amp; Deliveries')
+        self.assertContains(response, 'Financial Accounting &amp; Statements')
+
+    def test_jobcard_reports_dashboard_category_filter(self):
+        self.client.login(username='reportuser', password='password123')
+        url = reverse('jobcard_app:jobcard_reports_dashboard') + '?category=financial'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['selected_category'], 'financial')
+

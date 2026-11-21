@@ -1,0 +1,324 @@
+{% extends 'fleet_base1.html' %}
+{% load static i18n %}
+
+{% block content %}
+
+<style>
+    .parts-report-page {
+        padding: 22px;
+        background: #fff;
+        min-height: 80vh;
+    }
+
+    .parts-report-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e1e4e8;
+        margin-bottom: 25px;
+    }
+
+    .parts-header-icon {
+        font-size: 32px;
+        color: #76213b;
+    }
+
+    .parts-report-header h2 {
+        margin: 0;
+        font-size: 25px;
+        font-weight: 700;
+        color: #76213b;
+    }
+
+    .parts-breadcrumb {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #8390a0;
+    }
+
+    .parts-breadcrumb a {
+        color: #8390a0;
+        text-decoration: none;
+    }
+
+    .parts-breadcrumb a:hover {
+        color: #76213b;
+    }
+
+    .parts-breadcrumb span {
+        padding: 0 8px;
+        color: #aab1ba;
+    }
+
+    .parts-section {
+        margin-bottom: 22px;
+    }
+
+    .parts-section-heading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .parts-section-heading i {
+        font-size: 19px;
+        color: #76213b;
+    }
+
+    .parts-section-heading h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #202d3c;
+    }
+
+    .parts-report-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 15px;
+    }
+
+    .parts-report-link {
+        min-height: 105px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border: 1px solid #e5e9ef;
+        border-radius: 10px;
+        color: #172536;
+        text-decoration: none !important;
+        background: #fff;
+        transition: all .2s ease;
+    }
+
+    .parts-report-link:hover {
+        border-color: #76213b;
+        background: #fcf8fa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(118, 33, 59, .08);
+        color: #76213b;
+    }
+
+    .parts-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f4e8ed;
+        flex-shrink: 0;
+    }
+
+    .parts-icon-box i {
+        font-size: 22px;
+        color: #76213b;
+    }
+
+    .parts-report-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .parts-report-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: #23364a;
+        margin-bottom: 5px;
+    }
+
+    .parts-report-description {
+        font-size: 12px;
+        color: #7b8796;
+        line-height: 1.5;
+    }
+
+    .parts-report-arrow {
+        color: #8793a2;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    @media(max-width: 1100px) {
+        .parts-report-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media(max-width: 768px) {
+        .parts-report-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media(max-width: 600px) {
+        .parts-report-page {
+            padding: 15px 10px;
+        }
+
+        .parts-report-header h2 {
+            font-size: 21px;
+        }
+    }
+</style>
+
+
+<div class="parts-report-page">
+
+    <!-- HEADER -->
+    <div class="parts-report-header" style="justify-content: space-between; flex-wrap: wrap;">
+
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <i class="bi bi-box-seam parts-header-icon"></i>
+            <div>
+                <h2>Spare Parts & Inventory Reports</h2>
+                <div class="parts-breadcrumb">
+                    <a href="{% url 'fleet_app:fleet_home' %}">Home</a>
+                    <span>›</span>
+                    <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}">Reports Hub</a>
+                    <span>›</span>
+                    Spare Parts & Inventory
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=inventory" class="btn btn-sm" style="background: #f1f5f9; color: #76213b; border: 1px solid #cbd5e1; font-weight: 600; border-radius: 6px;">
+                <i class="bi bi-arrow-left mr-1"></i> All Reports Hub
+            </a>
+        </div>
+
+    </div>
+
+
+    <!-- REPORT SECTION -->
+    <div class="parts-section">
+
+        <div class="parts-section-heading">
+            <i class="bi bi-boxes"></i>
+            <h4>SPARE PARTS & INVENTORY ANALYSIS</h4>
+        </div>
+
+
+        <div class="parts-report-grid">
+
+
+            <!-- PARTS CONSUMPTION -->
+            <a href="{% url 'jobcard_app:parts_consumption_report' %}"
+               class="parts-report-link">
+
+                <div class="parts-icon-box">
+                    <i class="bi bi-gear"></i>
+                </div>
+
+                <div class="parts-report-content">
+                    <div class="parts-report-name">Parts Consumption</div>
+
+                    <div class="parts-report-description">
+                        Analyze parts consumed in job cards,
+                        quantities used and total consumption cost.
+                    </div>
+                </div>
+
+                <i class="bi bi-chevron-right parts-report-arrow"></i>
+            </a>
+
+
+            <!-- PARTS ISSUE & RETURN -->
+            
+
+
+            <!-- STOCK REPORT -->
+            <a href="{% url 'jobcard_app:parts_stock_report' %}"
+               class="parts-report-link">
+
+                <div class="parts-icon-box">
+                    <i class="bi bi-boxes"></i>
+                </div>
+
+                <div class="parts-report-content">
+                    <div class="parts-report-name">Stock Report</div>
+
+                    <div class="parts-report-description">
+                        View current stock levels, stock value
+                        and item-wise inventory balances.
+                    </div>
+                </div>
+
+                <i class="bi bi-chevron-right parts-report-arrow"></i>
+            </a>
+
+
+            <!-- LOW STOCK ALERT -->
+            <a href="{% url 'jobcard_app:low_stock_report' %}"
+               class="parts-report-link">
+
+                <div class="parts-icon-box">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+
+                <div class="parts-report-content">
+                    <div class="parts-report-name">Low Stock Alert</div>
+
+                    <div class="parts-report-description">
+                        Identify items below minimum stock level
+                        and parts requiring replenishment.
+                    </div>
+                </div>
+
+                <i class="bi bi-chevron-right parts-report-arrow"></i>
+            </a>
+
+
+            <!-- PARTS PURCHASE -->
+            <a href="{% url 'jobcard_app:parts_purchase_report' %}"
+               class="parts-report-link">
+
+                <div class="parts-icon-box">
+                    <i class="bi bi-cart3"></i>
+                </div>
+
+                <div class="parts-report-content">
+                    <div class="parts-report-name">Parts Purchase</div>
+
+                    <div class="parts-report-description">
+                        Review spare parts purchases, suppliers,
+                        quantities and purchase costs.
+                    </div>
+                </div>
+
+                <i class="bi bi-chevron-right parts-report-arrow"></i>
+            </a>
+
+
+            <!-- PARTS PROFITABILITY -->
+            <a href="{% url 'jobcard_app:parts_profitability_report' %}"
+               class="parts-report-link">
+
+                <div class="parts-icon-box">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+
+                <div class="parts-report-content">
+                    <div class="parts-report-name">Parts Profitability</div>
+
+                    <div class="parts-report-description">
+                        Compare spare parts cost, selling value,
+                        gross profit and profit margin.
+                    </div>
+                </div>
+
+                <i class="bi bi-chevron-right parts-report-arrow"></i>
+            </a>
+            
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

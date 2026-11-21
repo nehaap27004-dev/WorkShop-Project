@@ -1,0 +1,135 @@
+{% extends 'fleet_base1.html' %}
+
+{% block content %}
+
+<style>
+    .stock-report-container {
+        padding: 20px;
+    }
+
+    .stock-report-header {
+        background: #76213b;
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .stock-report-header h2 {
+        margin: 0;
+        font-size: 22px;
+    }
+
+    .stock-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .stock-table th {
+        background: #76213b;
+        color: white;
+        padding: 12px;
+        text-align: left;
+    }
+
+    .stock-table td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .stock-table tbody tr:hover {
+        background: #f9f1f4;
+    }
+
+    .stock-value {
+        text-align: right;
+    }
+
+    .stock-total {
+        background: #f3e8ed;
+        font-weight: bold;
+    }
+
+    .report-actions {
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .report-actions button {
+        background: #76213b;
+        color: white;
+        border: none;
+        padding: 9px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    @media print {
+        .report-actions {
+            display: none;
+        }
+    }
+</style>
+
+<div class="stock-report-container">
+
+    <div class="stock-report-header">
+        <h2>Stock Report</h2>
+        <p>Current spare parts inventory and stock valuation</p>
+    </div>
+
+    <div class="report-actions">
+        <button onclick="window.print()">Print Report</button>
+    </div>
+
+    <table class="stock-table">
+
+        <thead>
+            <tr>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Unit</th>
+                <th>Current Stock</th>
+                <th>Purchase Rate</th>
+                <th>Stock Value</th>
+                <th>Min Stock</th>
+                <th>Rack</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for row in stock_data %}
+
+            <tr>
+                <td>{{ row.item.item_code }}</td>
+                <td>{{ row.item.item_name }}</td>
+                <td>{{ row.item.item_category|default:"-" }}</td>
+                <td>{{ row.item.item_unit }}</td>
+                <td>{{ row.quantity }}</td>
+                <td>{{ row.item.purchase_rate|floatformat:2 }}</td>
+                <td>{{ row.stock_value|floatformat:2 }}</td>
+                <td>{{ row.item.min_stock|default:"0" }}</td>
+                <td>{{ row.item.rack|default:"-" }}</td>
+            </tr>
+
+            {% empty %}
+
+            <tr>
+                <td colspan="9" style="text-align:center;">
+                    No spare parts found.
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+    </table>
+
+</div>
+
+{% endblock %}

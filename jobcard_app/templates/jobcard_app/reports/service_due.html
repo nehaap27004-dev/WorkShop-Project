@@ -1,0 +1,171 @@
+{% extends 'jobcard_app/reports/service_repair_report_base.html' %}
+
+{% block report_title %}Service Due Report{% endblock %}
+
+{% block report_subtitle %}
+Vehicles overdue or approaching their scheduled service
+{% endblock %}
+
+{% block breadcrumb_title %}Service Due{% endblock %}
+
+{% block table_title %}Service Due Vehicles{% endblock %}
+
+
+{% block filters %}
+
+<div class="sr-card sr-filter-card">
+
+    <form method="get">
+
+        <div class="sr-filter-grid">
+
+            <div class="sr-field">
+                <label>Search</label>
+
+                <input type="text"
+                       name="search"
+                       value="{{ search|default:'' }}"
+                       placeholder="Vehicle, registration or customer">
+            </div>
+
+            <div class="sr-field">
+                <label>Service Status</label>
+
+                <select name="service_status">
+
+                    <option value="">All Status</option>
+
+                    <option value="overdue"
+                        {% if service_status == "overdue" %}selected{% endif %}>
+                        Overdue
+                    </option>
+
+                    <option value="due_soon"
+                        {% if service_status == "due_soon" %}selected{% endif %}>
+                        Due Soon
+                    </option>
+
+                    <option value="unknown"
+                        {% if service_status == "unknown" %}selected{% endif %}>
+                        Unknown
+                    </option>
+
+                </select>
+            </div>
+
+            <div class="sr-filter-actions">
+
+                <button type="submit" class="sr-btn sr-btn-primary">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+
+                <a href="{% url 'jobcard_app:service_due_report' %}"
+                   class="sr-btn">
+                    Reset
+                </a>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}
+
+
+{% block report_table %}
+
+<table class="sr-table">
+
+    <thead>
+        <tr>
+            <th>Vehicle</th>
+            <th>Registration No.</th>
+            <th>Customer</th>
+            <th>Last Service Date</th>
+            <th>Next Service Date</th>
+            <th>Service Interval</th>
+            <th>Service Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for vehicle in vehicles %}
+
+        <tr>
+
+            <td>
+                <strong>{{ vehicle }}</strong>
+            </td>
+
+            <td>
+                {{ vehicle.registration_number|default:vehicle.vehicle_number }}
+            </td>
+
+            <td>
+                {{ vehicle.customer }}
+            </td>
+
+            <td>
+                {{ vehicle.last_service_date|date:"d-m-Y"|default:"—" }}
+            </td>
+
+            <td>
+                {{ vehicle.next_service_date|date:"d-m-Y"|default:"—" }}
+            </td>
+
+            <td>
+                {{ vehicle.service_interval|default:"—" }}
+            </td>
+
+            <td>
+
+                {% if vehicle.get_service_status == "overdue" %}
+
+                    <span class="sr-status sr-status-overdue">
+                        Overdue
+                    </span>
+
+                {% elif vehicle.get_service_status == "due_soon" %}
+
+                    <span class="sr-status sr-status-due">
+                        Due Soon
+                    </span>
+
+                {% elif vehicle.get_service_status == "ok" %}
+
+                    <span class="sr-status sr-status-completed">
+                        Up to Date
+                    </span>
+
+                {% else %}
+
+                    <span class="sr-status">
+                        Unknown
+                    </span>
+
+                {% endif %}
+
+            </td>
+
+        </tr>
+
+        {% empty %}
+
+        <tr>
+            <td colspan="7" class="sr-empty">
+                <i class="bi bi-calendar-check"></i>
+                No service due vehicles found.
+            </td>
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endblock %}

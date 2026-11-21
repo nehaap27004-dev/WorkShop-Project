@@ -5462,3 +5462,410 @@ def ci_delete(request, pk):
     ci.delete()
     messages.success(request, f'Custom inspection {num} deleted.')
     return redirect('jobcard_app:inspection_list')
+
+
+
+
+def _status_options(model):
+    values = model.objects.order_by().values_list('status', flat=True).distinct()
+    return sorted(
+        [(v, str(v).replace('_', ' ').title()) for v in values if v],
+        key=lambda x: x[1]
+    )
+
+
+def _status_label(obj):
+    fn = getattr(obj, 'get_status_display', None)
+    return fn() if fn else (obj.status or '-')
+
+
+def _invoice_queryset():
+    """All active invoices (including draft / cancelled)."""
+    return (
+        Invoice.objects.filter(is_active=True)
+        .select_related(
+            'customer', 'vehicle',
+            'jobcard', 'jobcard__workshop_vehicle',
+            'delivery_note', 'delivery_note__vehicle',
+        )
+        .prefetch_related('items')
+        .order_by('-invoice_date', '-id')
+    )
+
+
+def _invoice_vehicle(inv):
+    vehicle = inv.vehicle
+    if not vehicle and inv.jobcard:
+        vehicle = inv.jobcard.workshop_vehicle
+    if not vehicle and inv.delivery_note:
+        vehicle = inv.delivery_note.vehicle
+    return report_vehicle_number(vehicle)
+
+
+def _invoice_job_number(inv):
+    job = inv.jobcard or (inv.delivery_note.jobcard if inv.delivery_note else None)
+    return job.voucher_number if job else '-'
+
+
+PAYMENT_LABELS = {
+    'paid': 'Paid', 'partial': 'Partially Paid',
+    'unpaid': 'Unpaid', 'overdue': 'Overdue',
+}
+
+
+def _payment_state(inv, total, paid, today):
+    if total - paid <= 0:
+        return 'paid'
+    if inv.due_date and inv.due_date < today:
+        return 'overdue'
+    if paid > 0:
+        return 'partial'
+    return 'unpaid'
+
+
+def _tax_rate_field():
+    """Find the tax-percentage field on InvoiceItem (name differs per project)."""
+    names = {f.name for f in InvoiceItem._meta.get_fields()}
+    for candidate in (
+        'tax_pct', 'tax_percent', 'tax_percentage', 'tax_rate',
+        'vat_pct', 'vat_percent', 'vat_percentage', 'vat_rate',
+        'gst_pct', 'gst_percent', 'gst_rate', 'tax', 'vat',
+    ):
+        if candidate in names:
+            return candidate
+    return None
+
+
+def _invoice_amounts(inv, rate_field):
+    """Returns subtotal (taxable), tax, total and a {rate: [taxable, tax]} map."""
+    subtotal = ZERO
+    tax = ZERO
+    by_rate = defaultdict(lambda: [ZERO, ZERO])
+
+    for item in inv.items.all():
+        taxable = (
+            _money(item.quantity) * _money(item.unit_price)
+            * (Decimal('1') - _money(item.discount_pct) / Decimal('100'))
+        )
+        subtotal += taxable
+        if rate_field:
+            try:
+                rate = _money(getattr(item, rate_field, 0))
+            except Exception:
+                rate = ZERO
+            item_tax = taxable * rate / Decimal('100')
+            tax += item_tax
+            key = rate.quantize(Decimal('0.01'))
+            by_rate[key][0] += taxable
+            by_rate[key][1] += item_tax
+
+    total = _money(inv.get_grand_total())
+
+    if not rate_field:
+        # No tax field found: treat the difference as tax
+        tax = max(total - subtotal, ZERO)
+        by_rate[None][0] += subtotal
+        by_rate[None][1] += tax
+
+    return {'subtotal': subtotal, 'tax': tax, 'total': total, 'by_rate': by_rate}
+
+
+# =========================================================
+# 1. DELIVERY REGISTER
+# =========================================================
+
+@login_required
+def delivery_register_report(request):
+    search = request.GET.get('search', '').strip()
+    from_date = request.GET.get('from_date', '').strip()
+    to_date = request.GET.get('to_date', '').strip()
+    selected_status = request.GET.get('status', '').strip()
+    invoiced = request.GET.get('invoiced', '').strip()
+
+    invoice_exists = (
+        Invoice.objects.filter(is_active=True)
+        .exclude(status='cancelled')
+        .filter(
+            Q(delivery_note_id=OuterRef('pk'))
+            | Q(jobcard_id=OuterRef('jobcard_id'))
+        )
+    )
+
+    notes = (
+        DeliveryNote.objects.filter(is_active=True)
+        .annotate(has_invoice=Exists(invoice_exists))
+        .select_related('customer', 'jobcard', 'vehicle', 'technician')
+        .prefetch_related('vehicles__vehicle')
+        .order_by('-date', '-id')
+    )
+    notes = _apply_date_range(notes, 'date', from_date, to_date)
+
+    if selected_status:
+        notes = notes.filter(status=selected_status)
+    if invoiced == 'yes':
+        notes = notes.filter(has_invoice=True)
+    elif invoiced == 'no':
+        notes = notes.filter(has_invoice=False)
+
+    if search:
+        notes = notes.filter(
+            Q(voucher_number__icontains=search)
+            | Q(jobcard__voucher_number__icontains=search)
+            | Q(customer__ledger_name__icontains=search)
+            | Q(reg_number__icontains=search)
+            | Q(vehicle__vehicle_number__icontains=search)
+            | Q(vehicles__vehicle__vehicle_number__icontains=search)
+        ).distinct()
+
+    report_rows = []
+    total_amount = ZERO
+    for dn in notes:
+        numbers = [e.vehicle.vehicle_number for e in dn.vehicles.all() if e.vehicle]
+        if not numbers and dn.vehicle:
+            numbers.append(dn.vehicle.vehicle_number)
+        if not numbers and dn.reg_number:
+            numbers.append(dn.reg_number)
+
+        amount = _money(dn.get_grand_total())
+        total_amount += amount
+        report_rows.append({
+            'delivery_number': dn.voucher_number or '-',
+            'date': dn.date,
+            'job_number': dn.jobcard.voucher_number if dn.jobcard else '-',
+            'customer': dn.customer.ledger_name,
+            'vehicle': ', '.join(dict.fromkeys(numbers)) or '-',
+            'technician': str(dn.technician) if dn.technician else '-',
+            'status': _status_label(dn),
+            'invoiced': 'Yes' if dn.has_invoice else 'No',
+            'amount': amount,
+        })
+
+    return render(request, 'jobcard_app/reports/delivery_register_report.html', {
+        'report_rows': report_rows,
+        'search': search, 'from_date': from_date, 'to_date': to_date,
+        'selected_status': selected_status, 'invoiced': invoiced,
+        'status_options': _status_options(DeliveryNote),
+        'total_deliveries': len(report_rows),
+        'not_invoiced': sum(1 for r in report_rows if r['invoiced'] == 'No'),
+        'total_amount': total_amount,
+    })
+
+
+# =========================================================
+# 2. INVOICE REGISTER
+# =========================================================
+
+@login_required
+def invoice_register_report(request):
+    today = timezone.localdate()
+    search = request.GET.get('search', '').strip()
+    from_date = request.GET.get('from_date', '').strip()
+    to_date = request.GET.get('to_date', '').strip()
+    selected_status = request.GET.get('status', '').strip()
+    selected_payment = request.GET.get('payment', '').strip()
+
+    invoices = _apply_date_range(_invoice_queryset(), 'invoice_date', from_date, to_date)
+    if selected_status:
+        invoices = invoices.filter(status=selected_status)
+
+    if search:
+        invoices = invoices.filter(
+            Q(invoice_number__icontains=search)
+            | Q(voucher_number__icontains=search)
+            | Q(customer__ledger_name__icontains=search)
+            | Q(jobcard__voucher_number__icontains=search)
+            | Q(delivery_note__voucher_number__icontains=search)
+            | Q(vehicle__vehicle_number__icontains=search)
+            | Q(jobcard__workshop_vehicle__vehicle_number__icontains=search)
+        ).distinct()
+
+    report_rows = []
+    total_invoiced = total_paid = ZERO
+
+    for inv in invoices:
+        total = _money(inv.get_grand_total())
+        paid = _money(inv.amount_paid)
+        cancelled = inv.status in ('cancelled', 'draft')
+        state = 'cancelled' if inv.status == 'cancelled' else (
+            'draft' if inv.status == 'draft' else _payment_state(inv, total, paid, today)
+        )
+
+        if selected_payment and state != selected_payment:
+            continue
+
+        if not cancelled:
+            total_invoiced += total
+            total_paid += paid
+
+        report_rows.append({
+            'invoice_number': inv.display_number,
+            'date': inv.invoice_date,
+            'due_date': inv.due_date,
+            'job_number': _invoice_job_number(inv),
+            'customer': inv.customer.ledger_name,
+            'vehicle': _invoice_vehicle(inv),
+            'payment_mode': inv.get_payment_mode_display(),
+            'status': _status_label(inv),
+            'payment_status': PAYMENT_LABELS.get(state, state.title()),
+            'total': total,
+            'paid': paid,
+            'balance': ZERO if cancelled else total - paid,
+        })
+
+    return render(request, 'jobcard_app/reports/invoice_register_report.html', {
+        'report_rows': report_rows,
+        'search': search, 'from_date': from_date, 'to_date': to_date,
+        'selected_status': selected_status, 'selected_payment': selected_payment,
+        'status_options': _status_options(Invoice),
+        'total_invoices': len(report_rows),
+        'total_invoiced': total_invoiced,
+        'total_paid': total_paid,
+        'total_balance': total_invoiced - total_paid,
+    })
+
+
+# =========================================================
+# 3. INVOICE SUMMARY
+# =========================================================
+
+@login_required
+def invoice_summary_report(request):
+    from_date = request.GET.get('from_date', '').strip()
+    to_date = request.GET.get('to_date', '').strip()
+    rate_field = _tax_rate_field()
+
+    # Valid invoices (draft / cancelled excluded)
+    valid = list(_valid_invoices(from_date, to_date).select_related('customer'))
+
+    monthly = defaultdict(lambda: {
+        'count': 0, 'subtotal': ZERO, 'tax': ZERO, 'total': ZERO, 'paid': ZERO
+    })
+    by_mode = defaultdict(lambda: {'count': 0, 'total': ZERO, 'paid': ZERO})
+
+    grand_total = grand_paid = ZERO
+    for inv in valid:
+        a = _invoice_amounts(inv, rate_field)
+        paid = _money(inv.amount_paid)
+
+        key = (inv.invoice_date.year, inv.invoice_date.month)
+        m = monthly[key]
+        m['count'] += 1
+        m['subtotal'] += a['subtotal']
+        m['tax'] += a['tax']
+        m['total'] += a['total']
+        m['paid'] += paid
+
+        mode = inv.get_payment_mode_display() or '-'
+        by_mode[mode]['count'] += 1
+        by_mode[mode]['total'] += a['total']
+        by_mode[mode]['paid'] += paid
+
+        grand_total += a['total']
+        grand_paid += paid
+
+    monthly_rows = []
+    for (year, month), m in sorted(monthly.items(), reverse=True):
+        monthly_rows.append({
+            'period': date(year, month, 1),
+            **m,
+            'balance': m['total'] - m['paid'],
+        })
+
+    mode_rows = [
+        {'mode': mode, **d, 'balance': d['total'] - d['paid']}
+        for mode, d in sorted(by_mode.items(), key=lambda x: x[1]['total'], reverse=True)
+    ]
+
+    # Status breakdown uses ALL active invoices so drafts / cancelled show up
+    status_data = defaultdict(lambda: {'count': 0, 'total': ZERO})
+    for inv in _apply_date_range(
+        _invoice_queryset(), 'invoice_date', from_date, to_date
+    ):
+        s = status_data[_status_label(inv)]
+        s['count'] += 1
+        s['total'] += _money(inv.get_grand_total())
+    status_rows = [
+        {'status': k, **v}
+        for k, v in sorted(status_data.items(), key=lambda x: x[1]['total'], reverse=True)
+    ]
+
+    count = len(valid)
+    return render(request, 'jobcard_app/reports/invoice_summary_report.html', {
+        'monthly_rows': monthly_rows,
+        'mode_rows': mode_rows,
+        'status_rows': status_rows,
+        'from_date': from_date, 'to_date': to_date,
+        'total_invoices': count,
+        'grand_total': grand_total,
+        'grand_paid': grand_paid,
+        'grand_balance': grand_total - grand_paid,
+        'average_invoice': grand_total / count if count else ZERO,
+    })
+
+
+# =========================================================
+# 4. INVOICE TAX REPORT
+# =========================================================
+
+@login_required
+def invoice_tax_report(request):
+    search = request.GET.get('search', '').strip()
+    from_date = request.GET.get('from_date', '').strip()
+    to_date = request.GET.get('to_date', '').strip()
+    rate_field = _tax_rate_field()
+
+    invoices = _valid_invoices(from_date, to_date)
+    if search:
+        invoices = invoices.filter(
+            Q(invoice_number__icontains=search)
+            | Q(voucher_number__icontains=search)
+            | Q(customer__ledger_name__icontains=search)
+        )
+
+    report_rows = []
+    rate_totals = defaultdict(lambda: [ZERO, ZERO])
+    total_taxable = total_tax = total_amount = ZERO
+
+    for inv in invoices:
+        a = _invoice_amounts(inv, rate_field)
+        total_taxable += a['subtotal']
+        total_tax += a['tax']
+        total_amount += a['total']
+
+        for rate, (taxable, tax) in a['by_rate'].items():
+            rate_totals[rate][0] += taxable
+            rate_totals[rate][1] += tax
+
+        rates = sorted(r for r in a['by_rate'] if r is not None)
+        report_rows.append({
+            'invoice_number': inv.display_number,
+            'date': inv.invoice_date,
+            'customer': inv.customer.ledger_name,
+            'rate_label': ', '.join(f'{r}%' for r in rates) or '-',
+            'taxable': a['subtotal'],
+            'tax': a['tax'],
+            'total': a['total'],
+        })
+
+    rate_rows = [
+        {
+            'rate_label': f'{rate}%' if rate is not None else 'Derived (total - taxable)',
+            'taxable': vals[0],
+            'tax': vals[1],
+            'total': vals[0] + vals[1],
+        }
+        for rate, vals in sorted(
+            rate_totals.items(), key=lambda x: (x[0] is None, x[0] or 0)
+        )
+    ]
+
+    return render(request, 'jobcard_app/reports/invoice_tax_report.html', {
+        'report_rows': report_rows,
+        'rate_rows': rate_rows,
+        'search': search, 'from_date': from_date, 'to_date': to_date,
+        'total_invoices': len(report_rows),
+        'total_taxable': total_taxable,
+        'total_tax': total_tax,
+        'total_amount': total_amount,
+        'tax_field_found': bool(rate_field),
+    })

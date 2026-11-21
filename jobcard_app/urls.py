@@ -3,6 +3,7 @@ from . import views
 from . import report_views
 from .report_views import technician_pending_jobs_report
 from .report_views import jobcard_reports_dashboard
+from .report_views import parts_profitability_report
 from .report_views import jobcard_aging_report
 app_name = 'jobcard_app'
 
@@ -265,6 +266,42 @@ urlpatterns = [
     path('reports/inspection/failed-items/',report_views.failed_inspection_items_report,name='failed_inspection_items_report'),
     path('reports/inspection/vehicle-history/',report_views.vehicle_inspection_history_report,name='vehicle_inspection_history_report'),
     path('reports/inspection/status-summary/',report_views.inspection_status_summary_report,name='inspection_status_summary_report'),
-    
+    # SERVICE & REPAIR REPORTS
+    path('reports/service-register/',report_views.service_register_report,name='service_register_report'),
+    path('reports/service-due/',report_views.service_due_report,name='service_due_report'),
+    path('reports/repair-register/',report_views.repair_register_report,name='repair_register_report'),
+    path('reports/rework/',report_views.rework_report,name='rework_report'),
+    path('reports/service-repair/',report_views.service_repair_reports_dashboard, name='service_repair_reports_dashboard'),
+    path('reports/technician/',report_views.technician_reports_dashboard,name='technician_reports_dashboard'),
+    path('reports/technician/performance/',report_views.technician_performance_report,name='technician_performance_report'),
+    path('reports/technician/revenue/',report_views.technician_revenue_report,name='technician_revenue_report'),
+    path('reports/spare-parts/',report_views.spare_parts_reports_dashboard,name='spare_parts_reports_dashboard'),
+    path( 'reports/spare-parts/consumption/', report_views.parts_consumption_report,name='parts_consumption_report'),
+    path( 'reports/spare-parts/stock/',report_views.parts_stock_report, name='parts_stock_report'),
+    path('reports/spare-parts/low-stock/',report_views.low_stock_report, name='low_stock_report'),
+    path('reports/spare-parts/purchase/', report_views.parts_purchase_report, name='parts_purchase_report'),
+    path('reports/spare-parts/profitability/', report_views.parts_profitability_report,name='parts_profitability_report'),
+    path('reports/spare-parts/low-stock/',report_views.low_stock_report,name='low_stock_report'),
+    # ── CUSTOMER & VEHICLE REPORTS ───────────────────────────
+    path('reports/customer-vehicle/', report_views.customer_vehicle_reports_dashboard, name='customer_vehicle_reports_dashboard'),
+    path('reports/customer-vehicle/customer-history/', report_views.customer_history_report, name='customer_history_report'),
+    path('reports/customer-vehicle/customer-revenue/', report_views.customer_revenue_report, name='customer_revenue_report'),
+    path('reports/customer-vehicle/repeat-customers/', report_views.repeat_customer_report, name='repeat_customer_report'),
+    path('reports/customer-vehicle/vehicle-register/', report_views.vehicle_register_report, name='vehicle_register_report'),
+    path('reports/customer-vehicle/vehicle-history/', report_views.vehicle_history_report, name='vehicle_history_report'),
+    path('reports/customer-vehicle/repair-cost/', report_views.vehicle_repair_cost_report, name='vehicle_repair_cost_report'),
+    path('reports/customer-vehicle/make-model/', report_views.vehicle_make_model_report, name='vehicle_make_model_report'),
+    # ── DELIVERY & INVOICE REPORTS ───────────────────────────
+    path('reports/delivery-invoice/delivery-register/', report_views.delivery_register_report, name='delivery_register_report'),
+    path('reports/delivery-invoice/invoice-register/', report_views.invoice_register_report, name='invoice_register_report'),
+    path('reports/delivery-invoice/invoice-summary/', report_views.invoice_summary_report, name='invoice_summary_report'),
+    path('reports/delivery-invoice/invoice-tax/', report_views.invoice_tax_report, name='invoice_tax_report'),
+    path('reports/finance/expense/', report_views.expense_report, name='expense_report'),
+    path('reports/finance/revenue-analysis/', report_views.workshop_revenue_report, name='workshop_revenue_report'),
+    # ── OPERATIONS & PERFORMANCE REPORTS ─────────────────────
+    path('reports/operations/daily-activity/', report_views.daily_workshop_activity_report, name='daily_workshop_activity_report'),
+    path('reports/operations/monthly-performance/', report_views.monthly_performance_report, name='monthly_performance_report'),
+    path('reports/operations/turnaround-time/', report_views.job_turnaround_report, name='job_turnaround_report'),
+    path('reports/operations/efficiency/', report_views.workshop_efficiency_report, name='workshop_efficiency_report'),
 ]
 
