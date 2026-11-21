@@ -171,5 +171,6 @@ urlpatterns = [
 
     path('reports/client-pdc/', client_pdc_report, name='client_pdc_report'),
     path('reports/supplier-pdc/', supplier_pdc_report, name='supplier_pdc_report'),
-    
+    path('reports/accounts/',accounts_reports_dashboard,name='accounts_reports_dashboard'),
+    path( 'reports/analysis/',report_analysis_dashboard,name='report_analysis_dashboard'),
 ]

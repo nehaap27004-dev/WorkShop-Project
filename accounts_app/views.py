@@ -41,6 +41,8 @@ from pdf_generator.services.receipt_pdf_builder import (
 from pdf_generator.services.payment_pdf_builder import (
     generate_payment_pdf_response
 )
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 CLEAR_DATA_PASSWORD = "Pass@123"
 
 #MENU ID 
@@ -7906,4 +7908,102 @@ def supplier_pdc_report(request):
         'today': today,
     }
     return render(request, 'supplier_pdc_report.html', context)
- 
+
+@login_required(login_url='accounts_app:admin_login')
+def accounts_reports_dashboard(request):
+
+    reports = [
+        {
+            'name': 'Outstanding Customer',
+            'description': 'View outstanding customer balances.',
+            'url_name': 'accounts_app:new_client_outstanding_report',
+            'icon': 'bi-person',
+        },
+        {
+            'name': 'Outstanding Vendor',
+            'description': 'View outstanding vendor balances.',
+            'url_name': 'accounts_app:new_supplier_outstanding_report',
+            'icon': 'bi-truck',
+        },
+        {
+            'name': 'Debtor List',
+            'description': 'View customer debtor balances.',
+            'url_name': 'accounts_app:new_client_outstanding_report',
+            'icon': 'bi-people',
+        },
+        {
+            'name': 'Creditor List',
+            'description': 'View supplier creditor balances.',
+            'url_name': 'accounts_app:new_supplier_outstanding_report',
+            'icon': 'bi-building',
+        },
+        {
+            'name': 'Bill by Bill Report',
+            'description': 'View bill-wise outstanding details.',
+            'url_name': 'accounts_app:bill_by_bill_report',
+            'icon': 'bi-receipt',
+        },
+        {
+            'name': 'Aging Report',
+            'description': 'Analyze outstanding balances by age.',
+            'url_name': 'accounts_app:aging_report',
+            'icon': 'bi-calendar3',
+        },
+    ]
+
+    return render(
+        request,
+        'accounts_app/reports/report_category_dashboard.html',
+        {
+            'dashboard_title': 'Accounts Report',
+            'dashboard_description': 'Customer, vendor and outstanding reports.',
+            'reports': reports,
+        }
+    )
+
+
+@login_required(login_url='accounts_app:admin_login')
+def report_analysis_dashboard(request):
+
+    reports = [
+        {
+            'name': 'Ledger Posting',
+            'description': 'View all ledger transactions and postings.',
+            'url_name': 'accounts_app:ledger_posting_list',
+            'icon': 'bi-journal-text',
+        },
+        {
+            'name': 'Ledger Report',
+            'description': 'View individual ledger account activity.',
+            'url_name': 'accounts_app:ledger_report_page',
+            'icon': 'bi-book',
+        },
+        {
+            'name': 'Trial Balance',
+            'description': 'View debit and credit balances.',
+            'url_name': 'fleet_app:trial_balance_report',
+            'icon': 'bi-calculator',
+        },
+        {
+            'name': 'Balance Sheet',
+            'description': 'View assets, liabilities and equity.',
+            'url_name': 'fleet_app:balance_sheet',
+            'icon': 'bi-file-earmark-bar-graph',
+        },
+        {
+            'name': 'Profit & Loss',
+            'description': 'View income and expenses.',
+            'url_name': 'fleet_app:profit_loss',
+            'icon': 'bi-graph-up',
+        },
+    ]
+
+    return render(
+        request,
+        'accounts_app/reports/report_category_dashboard.html',
+        {
+            'dashboard_title': 'Report Analysis',
+            'dashboard_description': 'Financial statements and ledger analysis.',
+            'reports': reports,
+        }
+    )

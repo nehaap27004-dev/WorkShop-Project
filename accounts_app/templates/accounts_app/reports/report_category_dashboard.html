@@ -1,0 +1,282 @@
+{% extends 'fleet_base1.html' %}
+{% load static i18n %}
+
+{% block content %}
+
+<style>
+    /* PAGE CONTAINER */
+    .jc-reports-page {
+        padding: 20px 22px;
+        background: #fff;
+        min-height: 80vh;
+    }
+
+    /* PAGE HEADER */
+    .jc-reports-heading {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e1e4e8;
+        margin-bottom: 25px;
+    }
+
+    .jc-heading-icon {
+        font-size: 32px;
+        color: #c2185b;
+    }
+
+    .jc-reports-heading h2 {
+        margin: 0;
+        font-size: 25px;
+        font-weight: 700;
+        color: #23364a;
+    }
+
+    .jc-breadcrumb {
+        margin-top: 5px;
+        font-size: 13px;
+        color: #8390a0;
+    }
+
+    .jc-breadcrumb a {
+        color: #8390a0;
+        text-decoration: none;
+    }
+
+    .jc-breadcrumb a:hover {
+        color: #c2185b;
+    }
+
+    .jc-breadcrumb span {
+        padding: 0 8px;
+        color: #aab1ba;
+    }
+
+    /* SECTION HEADING */
+    .jc-report-section {
+        margin-bottom: 20px;
+    }
+
+    .jc-section-heading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+        padding-left: 5px;
+    }
+
+    .jc-section-heading i {
+        font-size: 19px;
+        color: #c2185b;
+    }
+
+    .jc-section-heading h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #202d3c;
+    }
+
+    /* REPORT GRID */
+    .jc-report-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        row-gap: 14px;
+        column-gap: 0;
+    }
+
+    /* REPORT LINK */
+    .jc-report-link {
+        min-width: 0;
+        min-height: 65px;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        gap: 13px;
+
+        color: #172536;
+        text-decoration: none !important;
+
+        border-right: 1px solid #dfe3e8;
+        transition: background .2s ease, color .2s ease;
+    }
+
+    .jc-report-link:hover {
+        background: #faf7f9;
+        color: #c2185b;
+    }
+
+    .jc-report-link:hover .jc-report-name {
+        color: #c2185b;
+    }
+
+    .jc-report-link:hover .jc-report-arrow {
+        color: #c2185b;
+        transform: translateX(3px);
+    }
+
+    /* REPORT ICON */
+    .jc-report-icon {
+        width: 25px;
+        flex-shrink: 0;
+        text-align: center;
+        font-size: 21px;
+    }
+
+    /* ICON COLORS */
+    .jc-icon-pink {
+        color: #c2185b;
+    }
+
+    .jc-icon-orange {
+        color: #ff7900;
+    }
+
+    .jc-icon-blue {
+        color: #2878df;
+    }
+
+    .jc-icon-green {
+        color: #159c72;
+    }
+
+    .jc-icon-purple {
+        color: #8954d8;
+    }
+
+    /* REPORT NAME */
+    .jc-report-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: #172536;
+        line-height: 1.4;
+        transition: color .2s ease;
+    }
+
+    /* ARROW */
+    .jc-report-arrow {
+        margin-left: auto;
+        flex-shrink: 0;
+        font-size: 12px;
+        color: #65758a;
+        transition: transform .2s ease, color .2s ease;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1200px) {
+        .jc-report-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 900px) {
+        .jc-report-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 600px) {
+        .jc-reports-page {
+            padding: 15px 10px;
+        }
+
+        .jc-report-grid {
+            grid-template-columns: 1fr;
+            row-gap: 5px;
+        }
+
+        .jc-report-link {
+            border-right: none;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 12px 10px;
+        }
+
+        .jc-reports-heading h2 {
+            font-size: 21px;
+        }
+    }
+</style>
+
+
+<div class="jc-reports-page">
+
+    <!-- PAGE HEADER -->
+    <div class="jc-reports-heading">
+
+        <i class="bi bi-graph-up-arrow jc-heading-icon"></i>
+
+        <div>
+            <h2>{{ dashboard_title }}</h2>
+
+            <div class="jc-breadcrumb">
+                <a href="{% url 'fleet_app:fleet_home' %}">Home</a>
+                <span>›</span>
+                Reports
+                <span>›</span>
+                {{ dashboard_title }}
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- REPORT SECTION -->
+    <div class="jc-report-section">
+
+        <div class="jc-section-heading">
+            <i class="bi bi-file-earmark-text"></i>
+            <h4>FINANCIAL REPORTS</h4>
+        </div>
+
+
+        <!-- REPORT GRID -->
+        <div class="jc-report-grid">
+
+
+            <!-- LEDGER POSTING -->
+            {% for report in reports %}
+
+                {% if report.url_name %}
+
+                    <a href="{% url report.url_name %}{% if report.query %}?{{ report.query }}{% endif %}"
+                       class="jc-report-link">
+
+                        <i class="bi {{ report.icon }} jc-report-icon jc-icon-pink"></i>
+
+                        <span class="jc-report-name">
+                            {{ report.name }}
+                        </span>
+
+                        <i class="bi bi-chevron-right jc-report-arrow"></i>
+
+                    </a>
+
+                {% else %}
+
+                    <div class="jc-report-link" style="opacity:.55; cursor:not-allowed;">
+
+                        <i class="bi {{ report.icon }} jc-report-icon jc-icon-purple"></i>
+
+                        <span class="jc-report-name">
+                            {{ report.name }}
+                        </span>
+
+                        <span class="jc-coming-soon" style="margin-left:auto;">
+                            Coming Soon
+                        </span>
+
+                    </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

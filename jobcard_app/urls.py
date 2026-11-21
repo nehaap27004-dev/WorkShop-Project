@@ -3,6 +3,7 @@ from . import views
 from . import report_views
 from .report_views import technician_pending_jobs_report
 from .report_views import jobcard_reports_dashboard
+from .report_views import jobcard_aging_report
 app_name = 'jobcard_app'
 
 urlpatterns = [
@@ -258,5 +259,12 @@ urlpatterns = [
     path('reports/technician-pending-jobs/', report_views.technician_pending_jobs_report, name='technician_pending_jobs_report'),
     path('reports/', report_views.jobcard_reports_dashboard, name='jobcard_reports_dashboard'),
     path('reports/completed-not-delivered/', report_views.completed_not_delivered_report, name='completed_not_delivered_report'),
+    path( 'reports/job-card-aging/', jobcard_aging_report,name='jobcard_aging_report'),
+    path('reports/inspection/', report_views.inspection_reports_dashboard,name='inspection_reports_dashboard'),
+    path('reports/inspection/register/',report_views.inspection_register_report,name='inspection_register_report'),
+    path('reports/inspection/failed-items/',report_views.failed_inspection_items_report,name='failed_inspection_items_report'),
+    path('reports/inspection/vehicle-history/',report_views.vehicle_inspection_history_report,name='vehicle_inspection_history_report'),
+    path('reports/inspection/status-summary/',report_views.inspection_status_summary_report,name='inspection_status_summary_report'),
+    
 ]
 

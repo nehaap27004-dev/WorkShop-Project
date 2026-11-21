@@ -1,0 +1,684 @@
+
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+.status-report {
+    padding: 16px 20px;
+    background: #f7f8fa;
+    min-height: 100vh;
+    color: #343a40;
+}
+
+.status-header {
+    margin-bottom: 16px;
+}
+
+.status-header h2 {
+    font-size: 21px;
+    font-weight: 700;
+    margin: 0;
+    color: #343a40;
+}
+
+.status-header p {
+    color: #6b7280;
+    font-size: 13px;
+    margin: 4px 0 0;
+}
+
+/* FILTERS */
+
+.status-filter-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    padding: 14px;
+    margin-bottom: 16px;
+}
+
+.status-filter-card label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.status-filter-card .form-control,
+.status-filter-card .form-select {
+    height: 37px;
+    font-size: 12px;
+    border-radius: 6px;
+}
+
+.status-btn {
+    height: 37px;
+    padding: 0 15px;
+    border-radius: 6px;
+    border: none;
+    background: #81263f;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-btn:hover {
+    background: #682035;
+    color: #fff;
+}
+
+.status-reset-btn {
+    height: 37px;
+    padding: 0 14px;
+    border-radius: 6px;
+    background: #f1f2f4;
+    border: 1px solid #e5e7eb;
+    color: #555;
+    font-size: 12px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* SUMMARY CARDS */
+
+.status-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.status-summary-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    padding: 14px 16px;
+}
+
+.status-card-label {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.status-card-number {
+    font-size: 25px;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
+.status-card-footer {
+    color: #9ca3af;
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+.status-total {
+    color: #81263f;
+}
+
+.status-pass {
+    color: #198754;
+}
+
+.status-attention {
+    color: #d97706;
+}
+
+.status-fail {
+    color: #dc3545;
+}
+
+/* MAIN GRID */
+
+.status-main-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.status-panel {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    padding: 16px;
+}
+
+.status-panel-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-panel-title i {
+    color: #81263f;
+}
+
+/* DISTRIBUTION */
+
+.status-distribution-row {
+    margin-bottom: 15px;
+}
+
+.status-distribution-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.status-distribution-name {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+}
+
+.dot-pass {
+    background: #198754;
+}
+
+.dot-attention {
+    background: #d97706;
+}
+
+.dot-fail {
+    background: #dc3545;
+}
+
+.status-bar {
+    width: 100%;
+    height: 9px;
+    background: #f0f1f3;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.status-bar-fill {
+    height: 100%;
+    border-radius: 20px;
+}
+
+.fill-pass {
+    background: #198754;
+}
+
+.fill-attention {
+    background: #d97706;
+}
+
+.fill-fail {
+    background: #dc3545;
+}
+
+/* INSPECTOR SUMMARY */
+
+.status-inspector-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.status-inspector-table th {
+    padding: 8px;
+    font-size: 11px;
+    text-align: left;
+    background: #f8f5f6;
+    color: #81263f;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.status-inspector-table td {
+    padding: 9px 8px;
+    font-size: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.status-inspector-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* INSPECTION TABLE */
+
+.status-record-panel {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    overflow: hidden;
+}
+
+.status-record-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.status-record-header h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.status-record-header span {
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.status-record-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.status-record-table thead th {
+    background: #f8f5f6;
+    color: #81263f;
+    padding: 10px;
+    font-size: 11px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-record-table tbody td {
+    padding: 9px 10px;
+    font-size: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+.status-record-table tbody tr:hover {
+    background: #fcf9fa;
+}
+
+.status-record-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* BADGES */
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.badge-pass {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.badge-attention {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-fail {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+/* EMPTY */
+
+.status-empty {
+    padding: 35px 15px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 992px) {
+    .status-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .status-main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .status-report {
+        padding: 10px;
+    }
+
+    .status-header h2 {
+        font-size: 18px;
+    }
+
+    .status-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .status-summary-card {
+        padding: 11px;
+    }
+
+    .status-card-number {
+        font-size: 21px;
+    }
+}
+</style>
+
+<div class="status-report">
+
+    <!-- HEADER -->
+    <div class="status-header">
+        <h2>
+            <i class="bi bi-bar-chart-fill me-2" style="color:#81263F;"></i>
+            Inspection Status Summary
+        </h2>
+        <p>Overview of vehicle inspection results and workshop inspection performance.</p>
+    </div>
+
+    <!-- FILTER -->
+    <div class="status-filter-card">
+        <form method="GET">
+            <div class="row align-items-end g-2">
+
+                <div class="col-lg-3 col-md-6">
+                    <label>From Date</label>
+                    <input type="date"
+                           name="from_date"
+                           class="form-control"
+                           value="{{ from_date }}">
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <label>To Date</label>
+                    <input type="date"
+                           name="to_date"
+                           class="form-control"
+                           value="{{ to_date }}">
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <label>Inspector</label>
+                    <select name="inspector" class="form-select">
+                        <option value="">All Inspectors</option>
+
+                        {% for inspector in inspectors %}
+                        <option value="{{ inspector.inspector_id }}"
+                            {% if selected_inspector == inspector.inspector_id|stringformat:"s" %}selected{% endif %}>
+                            {{ inspector.inspector__full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-lg-2 col-md-6 d-flex gap-2">
+                    <button type="submit" class="status-btn flex-grow-1">
+                        <i class="bi bi-filter me-1"></i> Filter
+                    </button>
+
+                    <a href="{% url 'jobcard_app:inspection_status_summary_report' %}"
+                       class="status-reset-btn">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="status-summary-grid">
+
+        <div class="status-summary-card">
+            <div class="status-card-label">Total Inspections</div>
+            <div class="status-card-number status-total">
+                {{ total_inspections }}
+            </div>
+            <div class="status-card-footer">All inspections</div>
+        </div>
+
+        <div class="status-summary-card">
+            <div class="status-card-label">Passed</div>
+            <div class="status-card-number status-pass">
+                {{ passed_count }}
+            </div>
+            <div class="status-card-footer">
+                {{ pass_percentage }}% of total
+            </div>
+        </div>
+
+        <div class="status-summary-card">
+            <div class="status-card-label">Attention Required</div>
+            <div class="status-card-number status-attention">
+                {{ attention_count }}
+            </div>
+            <div class="status-card-footer">
+                {{ attention_percentage }}% of total
+            </div>
+        </div>
+
+        <div class="status-summary-card">
+            <div class="status-card-label">Failed</div>
+            <div class="status-card-number status-fail">
+                {{ failed_count }}
+            </div>
+            <div class="status-card-footer">
+                {{ fail_percentage }}% of total
+            </div>
+        </div>
+
+    </div>
+
+    <!-- CHART AND INSPECTOR SUMMARY -->
+    <div class="status-main-grid">
+
+        <!-- STATUS DISTRIBUTION -->
+        <div class="status-panel">
+
+            <h4 class="status-panel-title">
+                <i class="bi bi-pie-chart"></i>
+                Inspection Distribution
+            </h4>
+
+            <!-- PASS -->
+            <div class="status-distribution-row">
+                <div class="status-distribution-top">
+                    <div class="status-distribution-name">
+                        <span class="status-dot dot-pass"></span>
+                        Passed
+                    </div>
+                    <div>{{ passed_count }} ({{ pass_percentage }}%)</div>
+                </div>
+
+                <div class="status-bar">
+                    <div class="status-bar-fill fill-pass"
+                         style="width:{{ pass_percentage }}%;"></div>
+                </div>
+            </div>
+
+            <!-- ATTENTION -->
+            <div class="status-distribution-row">
+                <div class="status-distribution-top">
+                    <div class="status-distribution-name">
+                        <span class="status-dot dot-attention"></span>
+                        Attention Required
+                    </div>
+                    <div>{{ attention_count }} ({{ attention_percentage }}%)</div>
+                </div>
+
+                <div class="status-bar">
+                    <div class="status-bar-fill fill-attention"
+                         style="width:{{ attention_percentage }}%;"></div>
+                </div>
+            </div>
+
+            <!-- FAIL -->
+            <div class="status-distribution-row">
+                <div class="status-distribution-top">
+                    <div class="status-distribution-name">
+                        <span class="status-dot dot-fail"></span>
+                        Failed
+                    </div>
+                    <div>{{ failed_count }} ({{ fail_percentage }}%)</div>
+                </div>
+
+                <div class="status-bar">
+                    <div class="status-bar-fill fill-fail"
+                         style="width:{{ fail_percentage }}%;"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- INSPECTOR SUMMARY -->
+        <div class="status-panel">
+
+            <h4 class="status-panel-title">
+                <i class="bi bi-person-check"></i>
+                Inspections by Inspector
+            </h4>
+
+            <div class="table-responsive">
+                <table class="status-inspector-table">
+                    <thead>
+                        <tr>
+                            <th>Inspector</th>
+                            <th>Inspections</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for inspector in inspector_summary %}
+                        <tr>
+                            <td>
+                                {{ inspector.inspector__full_name|default:"Unassigned" }}
+                            </td>
+                            <td>
+                                <strong>{{ inspector.total }}</strong>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted">
+                                No inspector records found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- INSPECTION RECORDS -->
+    <div class="status-record-panel">
+
+        <div class="status-record-header">
+            <h3>
+                <i class="bi bi-list-check me-2" style="color:#81263F;"></i>
+                Inspection Records
+            </h3>
+
+            <span>{{ total_inspections }} records</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="status-record-table">
+
+                <thead>
+                    <tr>
+                        <th>Inspection No.</th>
+                        <th>Date</th>
+                        <th>Vehicle</th>
+                        <th>Customer</th>
+                        <th>Inspector</th>
+                        <th>Odometer</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for inspection in inspections %}
+                    <tr>
+                        <td>
+                            <strong>{{ inspection.voucher_number|default:"-" }}</strong>
+                        </td>
+
+                        <td>
+                            {{ inspection.inspection_date|date:"d M Y" }}
+                        </td>
+
+                        <td>
+                            {% if inspection.vehicle %}
+                                {{ inspection.vehicle.registration_number|default:inspection.vehicle.vehicle_number }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ inspection.customer|default:"-" }}
+                        </td>
+
+                        <td>
+                            {{ inspection.inspector|default:"-" }}
+                        </td>
+
+                        <td>
+                            {{ inspection.odometer|default:"-" }}
+                        </td>
+
+                        <td>
+                            {% if inspection.overall_status == 'pass' %}
+                                <span class="status-badge badge-pass">Pass</span>
+                            {% elif inspection.overall_status == 'attention' %}
+                                <span class="status-badge badge-attention">Attention</span>
+                            {% elif inspection.overall_status == 'fail' %}
+                                <span class="status-badge badge-fail">Failed</span>
+                            {% else %}
+                                <span class="status-badge">
+                                    {{ inspection.overall_status|title }}
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="status-empty">
+                                <i class="bi bi-clipboard-x fs-3"></i>
+                                <p class="mt-2 mb-0">No inspection records found for the selected filters.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,452 @@
+{% extends "fleet_base1.html" %}
+
+{% block content %}
+
+<style>
+    .aging-page {
+        padding: 22px;
+        color: #343434;
+    }
+
+    .aging-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 22px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .aging-header h3 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #652b3c;
+        margin: 0;
+    }
+
+    .aging-summary {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .aging-card {
+        background: #fff;
+        border: 1px solid #e7e1e3;
+        border-radius: 8px;
+        padding: 16px;
+        border-top: 3px solid #652b3c;
+    }
+
+    .aging-card h6 {
+        font-size: 12px;
+        color: #777;
+        margin-bottom: 8px;
+    }
+
+    .aging-card .count {
+        font-size: 25px;
+        font-weight: 700;
+        color: #652b3c;
+    }
+
+    .aging-filter {
+        background: #fff;
+        border: 1px solid #e7e1e3;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .aging-filter label {
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .aging-filter .form-control {
+        font-size: 13px;
+        height: 37px;
+    }
+
+    .aging-table-container {
+        background: #fff;
+        border: 1px solid #e7e1e3;
+        border-radius: 8px;
+        overflow-x: auto;
+    }
+
+    .aging-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 950px;
+    }
+
+    .aging-table thead {
+        background: #652b3c;
+        color: #fff;
+    }
+
+    .aging-table th {
+        padding: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        text-align: left;
+    }
+
+    .aging-table td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        font-size: 12px;
+        vertical-align: middle;
+    }
+
+    .aging-table tbody tr:hover {
+        background: #faf6f7;
+    }
+
+    .aging-days {
+        font-weight: 700;
+        color: #652b3c;
+    }
+
+    .aging-label {
+        display: inline-block;
+        padding: 5px 9px;
+        border-radius: 15px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .aging-today {
+        background: #e8f5e9;
+        color: #28733a;
+    }
+
+    .aging-1-3 {
+        background: #edf3fb;
+        color: #315d91;
+    }
+
+    .aging-4-7 {
+        background: #fff3dc;
+        color: #986400;
+    }
+
+    .aging-8-15 {
+        background: #fdebdc;
+        color: #a45116;
+    }
+
+    .aging-above-15 {
+        background: #f8e1e4;
+        color: #a32b40;
+    }
+
+    .aging-empty {
+        text-align: center;
+        padding: 35px !important;
+        color: #888;
+    }
+
+    @media (max-width: 1100px) {
+        .aging-summary {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 650px) {
+        .aging-summary {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media print {
+        .aging-filter,
+        .no-print,
+        .sidebar,
+        .main-sidebar {
+            display: none !important;
+        }
+
+        .aging-page {
+            padding: 0;
+        }
+
+        .aging-table-container {
+            overflow: visible;
+        }
+
+        .aging-table {
+            min-width: 0;
+        }
+    }
+</style>
+
+<div class="aging-page">
+
+    <div class="aging-header">
+        <div>
+            <h3>Job Card Aging Report</h3>
+            <small class="text-muted">
+                Pending Job Cards grouped by number of days outstanding
+            </small>
+        </div>
+
+        <div class="no-print">
+            <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}"
+               class="btn btn-outline-secondary btn-sm">
+                Back to Reports
+            </a>
+
+            <button type="button"
+                    onclick="window.print()"
+                    class="btn btn-sm"
+                    style="background:#652b3c;color:white;">
+                <i class="bi bi-printer"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Aging Summary -->
+
+    <div class="aging-summary">
+
+        <div class="aging-card">
+            <h6>Total Pending Jobs</h6>
+            <div class="count">{{ total_jobs }}</div>
+        </div>
+
+        <div class="aging-card">
+            <h6>Today</h6>
+            <div class="count">{{ aging_counts.today }}</div>
+        </div>
+
+        <div class="aging-card">
+            <h6>1–3 Days</h6>
+            <div class="count">{{ aging_counts.one_to_three }}</div>
+        </div>
+
+        <div class="aging-card">
+            <h6>4–7 Days</h6>
+            <div class="count">{{ aging_counts.four_to_seven }}</div>
+        </div>
+
+        <div class="aging-card">
+            <h6>8–15 Days</h6>
+            <div class="count">{{ aging_counts.eight_to_fifteen }}</div>
+            <small class="text-muted">
+                Above 15 days: {{ aging_counts.above_fifteen }}
+            </small>
+        </div>
+
+    </div>
+
+    <!-- Filters -->
+
+    <div class="aging-filter no-print">
+
+        <form method="GET">
+
+            <div class="row">
+
+                <div class="col-md-3 mb-2">
+                    <label>Search</label>
+                    <input type="text"
+                           name="search"
+                           value="{{ search }}"
+                           class="form-control"
+                           placeholder="Job No / Customer / Vehicle">
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label>Job Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">All Pending</option>
+                        <option value="open"
+                            {% if status == 'open' %}selected{% endif %}>
+                            Open
+                        </option>
+                        <option value="in_progress"
+                            {% if status == 'in_progress' %}selected{% endif %}>
+                            In Progress
+                        </option>
+                        <option value="waiting"
+                            {% if status == 'waiting' %}selected{% endif %}>
+                            Waiting
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label>Aging Category</label>
+                    <select name="aging_category" class="form-control">
+                        <option value="">All Categories</option>
+
+                        <option value="today"
+                            {% if aging_category == 'today' %}selected{% endif %}>
+                            Today
+                        </option>
+
+                        <option value="one_to_three"
+                            {% if aging_category == 'one_to_three' %}selected{% endif %}>
+                            1–3 Days
+                        </option>
+
+                        <option value="four_to_seven"
+                            {% if aging_category == 'four_to_seven' %}selected{% endif %}>
+                            4–7 Days
+                        </option>
+
+                        <option value="eight_to_fifteen"
+                            {% if aging_category == 'eight_to_fifteen' %}selected{% endif %}>
+                            8–15 Days
+                        </option>
+
+                        <option value="above_fifteen"
+                            {% if aging_category == 'above_fifteen' %}selected{% endif %}>
+                            Above 15 Days
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label>From Date</label>
+                    <input type="date"
+                           name="from_date"
+                           value="{{ from_date }}"
+                           class="form-control">
+                </div>
+
+                <div class="col-md-2 mb-2">
+                    <label>To Date</label>
+                    <input type="date"
+                           name="to_date"
+                           value="{{ to_date }}"
+                           class="form-control">
+                </div>
+
+                <div class="col-md-1 mb-2 d-flex align-items-end">
+                    <button type="submit"
+                            class="btn btn-sm btn-block"
+                            style="background:#652b3c;color:white;">
+                        Filter
+                    </button>
+                </div>
+
+            </div>
+
+            <a href="{% url 'jobcard_app:jobcard_aging_report' %}"
+               class="btn btn-sm btn-outline-secondary mt-2">
+                Clear Filters
+            </a>
+
+        </form>
+
+    </div>
+
+    <!-- Report Table -->
+
+    <div class="aging-table-container">
+
+        <table class="aging-table">
+
+            <thead>
+                <tr>
+                    <th>Sl No.</th>
+                    <th>Job Card No.</th>
+                    <th>Job Date</th>
+                    <th>Customer</th>
+                    <th>Vehicle</th>
+                    <th>Technician</th>
+                    <th>Status</th>
+                    <th>Expected Delivery</th>
+                    <th>Pending Days</th>
+                    <th>Aging Category</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for row in report_rows %}
+
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+
+                    <td>
+                        <strong>{{ row.job_number }}</strong>
+                    </td>
+
+                    <td>{{ row.job_date|date:"d-m-Y" }}</td>
+
+                    <td>{{ row.customer }}</td>
+
+                    <td>{{ row.vehicle }}</td>
+
+                    <td>{{ row.technicians }}</td>
+
+                    <td>{{ row.status }}</td>
+
+                    <td>
+                        {% if row.expected_delivery %}
+                            {{ row.expected_delivery|date:"d-m-Y" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+
+                    <td class="aging-days">
+                        {{ row.days_pending }} days
+                    </td>
+
+                    <td>
+                        {% if row.aging_category == 'today' %}
+                            <span class="aging-label aging-today">
+                                Today
+                            </span>
+                        {% elif row.aging_category == 'one_to_three' %}
+                            <span class="aging-label aging-1-3">
+                                1–3 Days
+                            </span>
+                        {% elif row.aging_category == 'four_to_seven' %}
+                            <span class="aging-label aging-4-7">
+                                4–7 Days
+                            </span>
+                        {% elif row.aging_category == 'eight_to_fifteen' %}
+                            <span class="aging-label aging-8-15">
+                                8–15 Days
+                            </span>
+                        {% else %}
+                            <span class="aging-label aging-above-15">
+                                Above 15 Days
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="10" class="aging-empty">
+                        No pending Job Cards found for the selected filters.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <div class="text-muted mt-3" style="font-size:11px;">
+        Aging is calculated from the Job Card date up to today's date.
+    </div>
+
+</div>
+
+{% endblock %}

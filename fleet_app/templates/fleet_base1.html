@@ -193,7 +193,6 @@
                 <ul class="erp-submenu">
                     <li><a class="erp-submenu-link" href="{% url 'jobcard_app:jobcard_list' %}">{% trans "All Job Cards" %}</a></li>
                     <li><a class="erp-submenu-link" href="{% url 'jobcard_app:jobcard_create' %}">{% trans "Create Job Card" %}</a></li>
-                    <li><a class="erp-submenu-link"href="{% url 'jobcard_app:jobcard_reports_dashboard' %}"><i class="bi bi-bar-chart-line mr-2"></i>{% trans "Job Card Reports" %}</a></li>
                 </ul>
             </li>
 
@@ -381,26 +380,56 @@
                 </ul>
             </li>
 
+            <!-- CENTRAL REPORTS MENU -->
             <li class="erp-nav-item">
+
                 <a class="erp-nav-link" href="#">
                     <i class="bi bi-graph-up-arrow nav-icon"></i>
                     <span>{% trans "Reports" %}</span>
                     <i class="bi bi-chevron-right arrow-icon"></i>
                 </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link"href="{% url 'accounts_app:ledger_posting_list' %}">{% trans "Ledger Posting" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:ledger_report_page' %}">{% trans "Ledger Report" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:trial_balance_report' %}">{% trans "Trial Balance" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:profit_loss' %}">{% trans "Profit & Loss" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:balance_sheet' %}">{% trans "Balance Sheet" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:asset_report' %}">{% trans "Asset Report" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:new_client_outstanding_report' %}">{% trans "Client Outstanding" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:new_supplier_outstanding_report' %}">{% trans "Supplier Outstanding" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:bill_by_bill_report' %}">{% trans "Bill by Bill Report" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:aging_report' %}">{% trans "Aging Report" %}</a></li>
-                </ul>
-            </li>
 
+                <ul class="erp-submenu">
+
+                    <!-- 1. JOB CARD REPORTS -->
+                    <li>
+                        <a class="erp-submenu-link"
+                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}">
+                            <i class="bi bi-card-checklist mr-2"></i>
+                            {% trans "Job Card Reports" %}
+                        </a>
+                    </li>
+
+                    <!-- 2. INSPECTION REPORTS -->
+                    <li>
+                        <a class="erp-submenu-link"
+                        href="{% url 'jobcard_app:inspection_reports_dashboard' %}">
+                            <i class="bi bi-clipboard-check mr-2"></i>
+                            {% trans "Inspection Reports" %}
+                        </a>
+                    </li>
+
+                    <!-- 3. ACCOUNTS REPORT -->
+                    <li>
+                        <a class="erp-submenu-link"
+                        href="{% url 'accounts_app:accounts_reports_dashboard' %}">
+                            <i class="bi bi-wallet2 mr-2"></i>
+                            {% trans "Accounts Report" %}
+                        </a>
+                    </li>
+
+                    <!-- 4. REPORT ANALYSIS -->
+                    <li>
+                        <a class="erp-submenu-link"
+                        href="{% url 'accounts_app:report_analysis_dashboard' %}">
+                            <i class="bi bi-bar-chart-line mr-2"></i>
+                            {% trans "Report Analysis" %}
+                        </a>
+                    </li>
+
+                </ul>
+
+            </li>
             <!-- SYSTEM -->
             <li class="erp-nav-section-title">{% trans "System" %}</li>
 

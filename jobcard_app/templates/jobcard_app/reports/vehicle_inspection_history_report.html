@@ -1,0 +1,852 @@
+
+{% extends 'fleet_base1.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+:root {
+    --inspection-primary: #81263F;
+    --inspection-primary-light: #f8edf1;
+    --inspection-bg: #f7f8fa;
+    --inspection-border: #e5e7eb;
+    --inspection-text: #343a40;
+    --inspection-muted: #6b7280;
+}
+
+.inspection-history-page {
+    padding: 15px 20px;
+    background: var(--inspection-bg);
+    min-height: 100vh;
+    color: var(--inspection-text);
+}
+
+/* PAGE HEADER */
+.inspection-page-header {
+    margin-bottom: 15px;
+}
+
+.inspection-page-header h2 {
+    font-size: 21px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.inspection-page-header p {
+    font-size: 13px;
+    color: var(--inspection-muted);
+    margin: 4px 0 0;
+}
+
+/* FILTER */
+.inspection-filter-card {
+    padding: 12px 16px;
+    margin-bottom: 15px;
+    background: #fff;
+    border: 1px solid var(--inspection-border);
+    border-radius: 9px;
+}
+
+.inspection-filter-card label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.inspection-filter-card select {
+    width: 100%;
+    height: 38px;
+    font-size: 13px;
+    border: 1px solid #d9dee5;
+    border-radius: 6px;
+    padding: 0 12px;
+}
+
+.inspection-filter-card select:focus {
+    border-color: var(--inspection-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(129,38,63,.08);
+}
+
+.inspection-view-btn {
+    height: 38px;
+    min-width: 130px;
+    padding: 0 15px;
+    background: var(--inspection-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.inspection-view-btn:hover {
+    background: #682035;
+    color: white;
+}
+
+/* VEHICLE CARD */
+.inspection-vehicle-card {
+    background: white;
+    border: 1px solid var(--inspection-border);
+    border-radius: 9px;
+    padding: 14px 18px;
+    margin-bottom: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+.inspection-vehicle-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--inspection-primary);
+}
+
+.inspection-vehicle-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.inspection-vehicle-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--inspection-primary-light);
+    color: var(--inspection-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    font-size: 17px;
+}
+
+.inspection-vehicle-heading h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--inspection-primary);
+    margin: 0;
+}
+
+.inspection-vehicle-heading small {
+    font-size: 11px;
+    color: var(--inspection-muted);
+}
+
+.vehicle-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.vehicle-info-item {
+    border-top: 1px solid #f0f0f0;
+    padding-top: 8px;
+}
+
+.vehicle-info-item .label {
+    font-size: 11px;
+    color: var(--inspection-muted);
+    margin-bottom: 3px;
+}
+
+.vehicle-info-item .value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    word-break: break-word;
+}
+
+/* SUMMARY CARDS */
+.inspection-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.inspection-summary-card {
+    background: white;
+    border: 1px solid var(--inspection-border);
+    border-radius: 9px;
+    padding: 13px 16px;
+}
+
+.inspection-summary-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.inspection-summary-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--inspection-muted);
+}
+
+.inspection-summary-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.icon-burgundy {
+    background: #f8edf1;
+    color: var(--inspection-primary);
+}
+
+.icon-orange {
+    background: #fff4e5;
+    color: #d97706;
+}
+
+.inspection-summary-number {
+    font-size: 23px;
+    font-weight: 700;
+    color: var(--inspection-primary);
+    margin-top: 5px;
+}
+
+.inspection-summary-subtitle {
+    font-size: 11px;
+    color: var(--inspection-muted);
+    margin-top: 2px;
+}
+
+/* TIMELINE */
+.inspection-timeline-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.inspection-timeline-title i {
+    color: var(--inspection-primary);
+}
+
+.inspection-timeline {
+    position: relative;
+    margin-left: 8px;
+    padding-left: 18px;
+    border-left: 2px solid #e5d1d8;
+}
+
+.inspection-timeline-item {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.inspection-timeline-item::before {
+    content: "";
+    position: absolute;
+    left: -26px;
+    top: 16px;
+    width: 12px;
+    height: 12px;
+    background: var(--inspection-primary);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--inspection-primary);
+}
+
+/* INSPECTION CARD */
+.inspection-record-card {
+    background: #fff;
+    border: 1px solid var(--inspection-border);
+    border-radius: 9px;
+    overflow: hidden;
+}
+
+.inspection-record-header {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.inspection-record-number {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--inspection-text);
+    margin-bottom: 3px;
+}
+
+.inspection-record-date {
+    color: var(--inspection-primary);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.inspection-record-body {
+    padding: 12px 15px;
+}
+
+/* DETAILS GRID */
+.inspection-details-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.inspection-detail {
+    background: #f8f9fb;
+    padding: 8px 10px;
+    border-radius: 6px;
+}
+
+.inspection-detail-label {
+    font-size: 10px;
+    color: var(--inspection-muted);
+    margin-bottom: 3px;
+}
+
+.inspection-detail-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #343a40;
+    word-break: break-word;
+}
+
+/* JOB CARD */
+.inspection-jobcard {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--inspection-primary-light);
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.inspection-jobcard strong {
+    color: var(--inspection-primary);
+}
+
+/* ISSUES */
+.inspection-issues-heading {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--inspection-primary);
+    margin: 14px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.inspection-issues-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--inspection-border);
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.inspection-issues-table thead th {
+    background: #f8edf1;
+    color: var(--inspection-primary);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--inspection-border);
+}
+
+.inspection-issues-table tbody td {
+    font-size: 11px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+.inspection-issues-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.inspection-issues-table tbody tr:hover {
+    background: #fcf9fa;
+}
+
+.inspection-category-badge {
+    background: #f3e5ea;
+    color: var(--inspection-primary);
+    border-radius: 5px;
+    padding: 4px 7px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* STATUS BADGES */
+.inspection-status-badge {
+    border-radius: 20px;
+    padding: 5px 9px;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-pass {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-attention,
+.status-fair {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-fail,
+.status-poor,
+.status-damaged {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.status-missing {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.status-recorded {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+/* NO ISSUES */
+.inspection-no-issues {
+    background: #f0fdf4;
+    border: 1px solid #dcfce7;
+    color: #15803d;
+    padding: 9px 12px;
+    border-radius: 7px;
+    margin-top: 12px;
+    font-size: 12px;
+}
+
+/* EMPTY STATE */
+.inspection-empty-state {
+    background: white;
+    border: 1px dashed #d1d5db;
+    border-radius: 9px;
+    padding: 30px 15px;
+    text-align: center;
+    color: var(--inspection-muted);
+}
+
+.inspection-empty-state i {
+    font-size: 28px;
+    color: #c5c8ce;
+}
+
+.inspection-empty-state h5 {
+    margin-top: 8px;
+    color: #4b5563;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.inspection-empty-state p {
+    font-size: 12px;
+    margin-bottom: 0;
+}
+
+/* RESPONSIVE */
+@media (max-width: 992px) {
+    .vehicle-info-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .inspection-details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .inspection-history-page {
+        padding: 10px;
+    }
+
+    .inspection-page-header h2 {
+        font-size: 18px;
+    }
+
+    .inspection-filter-card {
+        padding: 12px;
+    }
+
+    .inspection-view-btn {
+        width: 100%;
+    }
+
+    .inspection-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .inspection-timeline {
+        margin-left: 5px;
+        padding-left: 15px;
+    }
+
+    .inspection-timeline-item::before {
+        left: -23px;
+    }
+
+    .inspection-record-header,
+    .inspection-record-body {
+        padding: 10px;
+    }
+
+    .inspection-issues-table {
+        min-width: 500px;
+    }
+}
+
+@media (max-width: 480px) {
+    .vehicle-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .inspection-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .inspection-details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+</style>
+
+<div class="inspection-history-page">
+
+    <!-- PAGE HEADER -->
+    <div class="inspection-page-header">
+        <h2>
+            <i class="bi bi-clock-history me-2" style="color:#81263F;"></i>
+            Vehicle Inspection History
+        </h2>
+        <p>Track inspection records and recurring issues for a vehicle.</p>
+    </div>
+
+    <!-- VEHICLE FILTER -->
+    <div class="inspection-filter-card">
+        <form method="GET">
+            <div class="row align-items-end g-2">
+
+                <div class="col-md-9">
+                    <label for="vehicle" class="form-label">
+                        Select Vehicle
+                    </label>
+
+                    <select name="vehicle" id="vehicle" class="form-select" required>
+                        <option value="">Select Vehicle</option>
+
+                        {% for vehicle in vehicles %}
+                        <option value="{{ vehicle.id }}"
+                            {% if selected_vehicle.id == vehicle.id %}selected{% endif %}>
+                            {{ vehicle.registration_number }}
+                            {% if vehicle.vehicle_model %}
+                                - {{ vehicle.vehicle_model }}
+                            {% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="inspection-view-btn w-100">
+                        <i class="bi bi-search me-1"></i>
+                        View History
+                    </button>
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+    {% if selected_vehicle %}
+
+    <!-- VEHICLE INFORMATION -->
+    <div class="inspection-vehicle-card">
+
+        <div class="inspection-vehicle-heading">
+            <div class="inspection-vehicle-icon">
+                <i class="bi bi-car-front-fill"></i>
+            </div>
+
+            <div>
+                <h4>{{ selected_vehicle.registration_number }}</h4>
+                <small>Vehicle Information</small>
+            </div>
+        </div>
+
+        <div class="vehicle-info-grid">
+
+            <div class="vehicle-info-item">
+                <div class="label">Vehicle Model</div>
+                <div class="value">
+                    {{ selected_vehicle.vehicle_model|default:"-" }}
+                </div>
+            </div>
+
+            <div class="vehicle-info-item">
+                <div class="label">Manufacturer</div>
+                <div class="value">
+                    {{ selected_vehicle.manufacturer|default:"-" }}
+                </div>
+            </div>
+
+            <div class="vehicle-info-item">
+                <div class="label">Customer</div>
+                <div class="value">
+                    {{ selected_vehicle.customer|default:"-" }}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="inspection-summary-grid">
+
+        <div class="inspection-summary-card">
+            <div class="inspection-summary-top">
+                <span class="inspection-summary-label">Total Inspections</span>
+                <div class="inspection-summary-icon icon-burgundy">
+                    <i class="bi bi-clipboard-check"></i>
+                </div>
+            </div>
+
+            <div class="inspection-summary-number">
+                {{ total_inspections }}
+            </div>
+
+            <div class="inspection-summary-subtitle">
+                Recorded inspections
+            </div>
+        </div>
+
+        <div class="inspection-summary-card">
+            <div class="inspection-summary-top">
+                <span class="inspection-summary-label">Total Issues Recorded</span>
+                <div class="inspection-summary-icon icon-orange">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+            </div>
+
+            <div class="inspection-summary-number" style="color:#D97706;">
+                {{ total_issues }}
+            </div>
+
+            <div class="inspection-summary-subtitle">
+                Issues across all inspections
+            </div>
+        </div>
+
+    </div>
+
+    <!-- INSPECTION TIMELINE -->
+    <div class="inspection-timeline-title">
+        <i class="bi bi-calendar3"></i>
+        Inspection Timeline
+    </div>
+
+    {% if history_data %}
+
+    <div class="inspection-timeline">
+
+        {% for record in history_data %}
+
+        <div class="inspection-timeline-item">
+
+            <div class="inspection-record-card">
+
+                <!-- HEADER -->
+                <div class="inspection-record-header">
+
+                    <div>
+                        <div class="inspection-record-number">
+                            Inspection #{{ record.inspection.voucher_number|default:"-" }}
+                        </div>
+
+                        <div class="inspection-record-date">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            {{ record.inspection.inspection_date|date:"d M Y" }}
+                        </div>
+                    </div>
+
+                    {% if record.inspection.overall_status == 'pass' %}
+                        <span class="inspection-status-badge status-pass">
+                            Pass
+                        </span>
+                    {% elif record.inspection.overall_status == 'attention' %}
+                        <span class="inspection-status-badge status-attention">
+                            Attention Required
+                        </span>
+                    {% elif record.inspection.overall_status == 'fail' %}
+                        <span class="inspection-status-badge status-fail">
+                            Failed
+                        </span>
+                    {% else %}
+                        <span class="inspection-status-badge status-recorded">
+                            {{ record.inspection.overall_status|title }}
+                        </span>
+                    {% endif %}
+
+                </div>
+
+                <!-- BODY -->
+                <div class="inspection-record-body">
+
+                    <!-- INSPECTION DETAILS -->
+                    <div class="inspection-details-grid">
+
+                        <div class="inspection-detail">
+                            <div class="inspection-detail-label">Odometer</div>
+                            <div class="inspection-detail-value">
+                                {{ record.inspection.odometer|default:"-" }}
+                            </div>
+                        </div>
+
+                        <div class="inspection-detail">
+                            <div class="inspection-detail-label">Inspector</div>
+                            <div class="inspection-detail-value">
+                                {{ record.inspection.inspector|default:"-" }}
+                            </div>
+                        </div>
+
+                        <div class="inspection-detail">
+                            <div class="inspection-detail-label">Driver</div>
+                            <div class="inspection-detail-value">
+                                {{ record.inspection.driver_name|default:"-" }}
+                            </div>
+                        </div>
+
+                        <div class="inspection-detail">
+                            <div class="inspection-detail-label">Issues Found</div>
+                            <div class="inspection-detail-value">
+                                {{ record.issue_count }}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- RELATED JOB CARD -->
+                    {% if record.inspection.jobcard %}
+                    <div class="inspection-jobcard">
+                        <i class="bi bi-file-earmark-text me-1"></i>
+                        <strong>Related Job Card:</strong>
+                        {{ record.inspection.jobcard }}
+                    </div>
+                    {% endif %}
+
+                    <!-- ISSUES -->
+                    {% if record.issues %}
+
+                    <div class="inspection-issues-heading">
+                        <i class="bi bi-exclamation-circle"></i>
+                        Inspection Issues
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="inspection-issues-table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Inspection Item</th>
+                                    <th>Condition</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for issue in record.issues %}
+                                <tr>
+                                    <td>
+                                        <span class="inspection-category-badge">
+                                            {{ issue.category }}
+                                        </span>
+                                    </td>
+
+                                    <td>{{ issue.item }}</td>
+
+                                    <td>
+                                        {% if issue.condition == 'Poor' %}
+                                            <span class="inspection-status-badge status-poor">Poor</span>
+                                        {% elif issue.condition == 'Fair' %}
+                                            <span class="inspection-status-badge status-fair">Fair</span>
+                                        {% elif issue.condition == 'Missing' %}
+                                            <span class="inspection-status-badge status-missing">Missing</span>
+                                        {% elif issue.condition == 'Damaged' %}
+                                            <span class="inspection-status-badge status-damaged">Damaged</span>
+                                        {% else %}
+                                            <span class="inspection-status-badge status-recorded">
+                                                {{ issue.condition }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {{ issue.notes|default:"-" }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% else %}
+
+                    <div class="inspection-no-issues">
+                        <i class="bi bi-check-circle me-1"></i>
+                        No issues recorded during this inspection.
+                    </div>
+
+                    {% endif %}
+
+                </div>
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="inspection-empty-state">
+        <i class="bi bi-clipboard2-x"></i>
+        <h5>No Inspection History Found</h5>
+        <p>No inspections are available for this vehicle.</p>
+    </div>
+
+    {% endif %}
+
+    {% else %}
+
+    <!-- NO VEHICLE SELECTED -->
+    <div class="inspection-empty-state">
+        <i class="bi bi-car-front"></i>
+        <h5>Select a Vehicle</h5>
+        <p>Select a vehicle above to view its inspection history.</p>
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

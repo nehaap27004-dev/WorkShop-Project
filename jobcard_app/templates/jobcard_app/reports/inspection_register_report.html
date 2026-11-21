@@ -1,0 +1,661 @@
+
+{% extends 'fleet_base1.html' %}
+{% load static i18n %}
+
+{% block content %}
+
+<style>
+    .inspection-report-page {
+        padding: 20px 22px;
+        background: #fff;
+        min-height: 80vh;
+    }
+
+    /* HEADER */
+    .inspection-report-heading {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e1e4e8;
+        margin-bottom: 25px;
+    }
+
+    .inspection-heading-icon {
+        font-size: 32px;
+        color: #c2185b;
+    }
+
+    .inspection-report-heading h2 {
+        margin: 0;
+        font-size: 25px;
+        font-weight: 700;
+        color: #23364a;
+    }
+
+    .inspection-breadcrumb {
+        margin-top: 5px;
+        font-size: 13px;
+        color: #8390a0;
+    }
+
+    .inspection-breadcrumb a {
+        color: #8390a0;
+        text-decoration: none;
+    }
+
+    .inspection-breadcrumb a:hover {
+        color: #c2185b;
+    }
+
+    .inspection-breadcrumb span {
+        padding: 0 8px;
+        color: #aab1ba;
+    }
+
+    /* FILTER CARD */
+    .inspection-filter-card {
+        background: #fff;
+        border: 1px solid #e3e7ed;
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(20, 35, 50, 0.03);
+    }
+
+    .inspection-filter-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #23364a;
+        margin-bottom: 16px;
+    }
+
+    .inspection-filter-card label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #526174;
+        margin-bottom: 6px;
+    }
+
+    .inspection-filter-card .form-control {
+        height: 38px;
+        font-size: 13px;
+        border-radius: 6px;
+        border: 1px solid #dce1e8;
+    }
+
+    .inspection-filter-card .form-control:focus {
+        border-color: #c2185b;
+        box-shadow: 0 0 0 2px rgba(194, 24, 91, 0.08);
+    }
+
+    .inspection-btn-generate {
+        background: #c2185b;
+        color: white;
+        border: none;
+        height: 38px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 0 20px;
+    }
+
+    .inspection-btn-generate:hover {
+        background: #a9144f;
+        color: white;
+    }
+
+    .inspection-btn-reset {
+        background: #fff;
+        color: #526174;
+        border: 1px solid #dce1e8;
+        height: 38px;
+        border-radius: 6px;
+        padding: 0 18px;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .inspection-btn-reset:hover {
+        background: #f6f7f9;
+        color: #c2185b;
+    }
+
+    /* REPORT CARD */
+    .inspection-table-card {
+        background: #fff;
+        border: 1px solid #e3e7ed;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .inspection-table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 17px 20px;
+        border-bottom: 1px solid #e5e8ed;
+    }
+
+    .inspection-table-header h4 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: #23364a;
+    }
+
+    .inspection-count {
+        background: #fce8f0;
+        color: #c2185b;
+        padding: 5px 11px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    /* TABLE */
+    .inspection-table {
+        margin-bottom: 0;
+        white-space: nowrap;
+    }
+
+    .inspection-table thead th {
+        background: #f8f9fb;
+        color: #526174;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        border-top: none;
+        border-bottom: 1px solid #e3e7ed;
+        padding: 13px 14px;
+    }
+
+    .inspection-table tbody td {
+        font-size: 12.5px;
+        color: #334155;
+        padding: 13px 14px;
+        vertical-align: middle;
+        border-bottom: 1px solid #edf0f3;
+    }
+
+    .inspection-table tbody tr:hover {
+        background: #fcf8fa;
+    }
+
+    .inspection-number {
+        color: #c2185b;
+        font-weight: 600;
+    }
+
+    .inspection-vehicle {
+        font-weight: 600;
+        color: #26374a;
+    }
+
+    /* STATUS */
+    .inspection-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .inspection-status.pass {
+        background: #e7f7ef;
+        color: #159c72;
+    }
+
+    .inspection-status.attention {
+        background: #fff4df;
+        color: #d98200;
+    }
+
+    .inspection-status.fail {
+        background: #fde8e8;
+        color: #dc3545;
+    }
+
+    /* SIGNATURE */
+    .inspection-signature {
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .inspection-signature.signed {
+        color: #159c72;
+    }
+
+    .inspection-signature.unsigned {
+        color: #dc3545;
+    }
+
+    /* ACTION */
+    .inspection-view-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #c2185b;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .inspection-view-btn:hover {
+        color: #941044;
+        text-decoration: none;
+    }
+
+    /* EMPTY STATE */
+    .inspection-empty {
+        padding: 45px 20px;
+        text-align: center;
+        color: #8993a2;
+    }
+
+    .inspection-empty i {
+        font-size: 35px;
+        color: #d0d5dd;
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    /* FOOTER */
+    .inspection-table-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 20px;
+        background: #fafbfc;
+        border-top: 1px solid #e5e8ed;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+
+        .inspection-report-page {
+            padding: 15px 10px;
+        }
+
+        .inspection-report-heading h2 {
+            font-size: 21px;
+        }
+
+        .inspection-table-header {
+            padding: 14px;
+        }
+
+        .inspection-table-footer {
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+
+<div class="inspection-report-page">
+
+    <!-- PAGE HEADER -->
+    <div class="inspection-report-heading">
+
+        <i class="bi bi-clipboard-check inspection-heading-icon"></i>
+
+        <div>
+            <h2>Inspection Register</h2>
+
+            <div class="inspection-breadcrumb">
+                <a href="{% url 'fleet_app:fleet_home' %}">Home</a>
+                <span>›</span>
+                Reports
+                <span>›</span>
+                <a href="{% url 'jobcard_app:inspection_reports_dashboard' %}">
+                    Inspection Reports
+                </a>
+                <span>›</span>
+                Inspection Register
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- FILTER SECTION -->
+    <div class="inspection-filter-card">
+
+        <div class="inspection-filter-title">
+            <i class="bi bi-funnel mr-2" style="color:#c2185b;"></i>
+            Filter Inspections
+        </div>
+
+        <form method="get" class="row">
+
+            <!-- SEARCH -->
+            <div class="col-md-3 mb-3">
+                <label>Search</label>
+
+                <input type="text"
+                       name="search"
+                       class="form-control"
+                       value="{{ search }}"
+                       placeholder="Inspection, vehicle, customer">
+            </div>
+
+            <!-- FROM DATE -->
+            <div class="col-md-2 mb-3">
+                <label>From Date</label>
+
+                <input type="date"
+                       name="from_date"
+                       class="form-control"
+                       value="{{ from_date }}">
+            </div>
+
+            <!-- TO DATE -->
+            <div class="col-md-2 mb-3">
+                <label>To Date</label>
+
+                <input type="date"
+                       name="to_date"
+                       class="form-control"
+                       value="{{ to_date }}">
+            </div>
+
+            <!-- STATUS -->
+            <div class="col-md-2 mb-3">
+                <label>Inspection Status</label>
+
+                <select name="status" class="form-control">
+
+                    <option value="">All Statuses</option>
+
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}"
+                        {% if selected_status == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+
+                </select>
+            </div>
+
+            <!-- INSPECTOR -->
+            <div class="col-md-3 mb-3">
+                <label>Inspector</label>
+
+                <select name="inspector" class="form-control">
+
+                    <option value="">All Inspectors</option>
+
+                    {% for inspector in inspectors %}
+                    <option value="{{ inspector.id }}"
+                        {% if selected_inspector == inspector.id|stringformat:"s" %}
+                            selected
+                        {% endif %}>
+                        {{ inspector.full_name }}
+                    </option>
+                    {% endfor %}
+
+                </select>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="col-12 d-flex align-items-center justify-content-end">
+
+                <a href="{% url 'jobcard_app:inspection_register_report' %}"
+                   class="inspection-btn-reset mr-2">
+                    <i class="bi bi-arrow-counterclockwise mr-1"></i>
+                    Reset
+                </a>
+
+                <button type="submit"
+                        class="inspection-btn-generate">
+                    <i class="bi bi-search mr-1"></i>
+                    Generate Report
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- REPORT TABLE -->
+    <div class="inspection-table-card">
+
+        <!-- TABLE HEADER -->
+        <div class="inspection-table-header">
+
+            <h4>
+                <i class="bi bi-list-ul mr-2"
+                   style="color:#c2185b;"></i>
+                Inspection Records
+            </h4>
+
+            <span class="inspection-count">
+                {{ total_inspections }} Records
+            </span>
+
+        </div>
+
+
+        <!-- TABLE -->
+        <div class="table-responsive">
+
+            <table class="table inspection-table">
+
+                <thead>
+                    <tr>
+                        <th>Inspection No.</th>
+                        <th>Date</th>
+                        <th>Job Card</th>
+                        <th>Vehicle</th>
+                        <th>Customer</th>
+                        <th>Inspector</th>
+                        <th>Odometer</th>
+                        <th>Fuel</th>
+                        <th>Status</th>
+                        <th>Signature</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for inspection in inspections %}
+
+                    <tr>
+
+                        <!-- INSPECTION NUMBER -->
+                        <td class="inspection-number">
+                            {{ inspection.voucher_number|default:"-" }}
+                        </td>
+
+                        <!-- DATE -->
+                        <td>
+                            {{ inspection.inspection_date|date:"d-M-Y" }}
+                        </td>
+
+                        <!-- JOB CARD -->
+                        <td>
+                            {% if inspection.jobcard %}
+                                {{ inspection.jobcard }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <!-- VEHICLE -->
+                        <td>
+                            <span class="inspection-vehicle">
+                                {{ inspection.vehicle.registration_number }}
+                            </span>
+                            <br>
+                            <small class="text-muted">
+                                {{ inspection.vehicle.vehicle_number }}
+                            </small>
+                        </td>
+
+                        <!-- CUSTOMER -->
+                        <td>
+                            {{ inspection.customer|default:"-" }}
+                        </td>
+
+                        <!-- INSPECTOR -->
+                        <td>
+                            {% if inspection.inspector %}
+                                {{ inspection.inspector.full_name }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <!-- ODOMETER -->
+                        <td>
+                            {% if inspection.odometer %}
+                                {{ inspection.odometer }} km
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <!-- FUEL -->
+                        <td>
+                            {{ inspection.get_fuel_level_display }}
+                        </td>
+
+                        <!-- STATUS -->
+                        <td>
+
+                            {% if inspection.overall_status == 'pass' %}
+
+                                <span class="inspection-status pass">
+                                    <i class="bi bi-check-circle mr-1"></i>
+                                    Pass / Safe
+                                </span>
+
+                            {% elif inspection.overall_status == 'attention' %}
+
+                                <span class="inspection-status attention">
+                                    <i class="bi bi-exclamation-circle mr-1"></i>
+                                    Needs Attention
+                                </span>
+
+                            {% elif inspection.overall_status == 'fail' %}
+
+                                <span class="inspection-status fail">
+                                    <i class="bi bi-x-circle mr-1"></i>
+                                    Failed / Unsafe
+                                </span>
+
+                            {% else %}
+
+                                {{ inspection.get_overall_status_display }}
+
+                            {% endif %}
+
+                        </td>
+
+                        <!-- CUSTOMER SIGNATURE -->
+                        <td>
+
+                            {% if inspection.customer_signed %}
+
+                                <span class="inspection-signature signed">
+                                    <i class="bi bi-check-circle mr-1"></i>
+                                    Signed
+                                </span>
+
+                            {% else %}
+
+                                <span class="inspection-signature unsigned">
+                                    <i class="bi bi-x-circle mr-1"></i>
+                                    Unsigned
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <!-- ACTION -->
+                        <td>
+
+                            {% if inspection.pdf_file %}
+
+                                <a href="{{ inspection.pdf_file.url }}"
+                                   target="_blank"
+                                   class="inspection-view-btn">
+
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                    View PDF
+
+                                </a>
+
+                            {% else %}
+
+                                <span class="text-muted">
+                                    <i class="bi bi-file-earmark"></i>
+                                    No PDF
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="11">
+
+                            <div class="inspection-empty">
+
+                                <i class="bi bi-clipboard-x"></i>
+
+                                <strong>No inspections found</strong>
+
+                                <div class="mt-2">
+                                    Try changing your search criteria or filters.
+                                </div>
+
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- FOOTER -->
+        <div class="inspection-table-footer">
+
+            <span>
+                Showing {{ total_inspections }} inspection records
+            </span>
+
+            <span>
+                Inspection Register
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
