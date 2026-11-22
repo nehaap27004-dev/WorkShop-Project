@@ -946,8 +946,8 @@ class ReportsDashboardTests(TestCase):
         self.assertIn('total_subgroups', data)
 
         self.assertGreaterEqual(data['total_reports'], 50)
-        self.assertGreaterEqual(data['total_categories'], 7)
-        self.assertGreaterEqual(data['total_subgroups'], 14)
+        self.assertEqual(data['total_categories'], 5)
+        self.assertGreaterEqual(data['total_subgroups'], 10)
 
         for cat in data['categories']:
             self.assertTrue(cat['id'])
@@ -971,14 +971,12 @@ class ReportsDashboardTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'jobcard_app/reports/jobcard_reports_dashboard.html')
-        self.assertContains(response, 'Central Reports Dashboard')
-        self.assertContains(response, 'Job Cards &amp; Workshop Operations')
-        self.assertContains(response, 'Service, Repairs &amp; Inspections')
-        self.assertContains(response, 'Technician Analytics &amp; Workforce')
-        self.assertContains(response, 'Spare Parts &amp; Inventory')
-        self.assertContains(response, 'Customers &amp; Vehicles Intelligence')
-        self.assertContains(response, 'Invoicing, Taxes &amp; Deliveries')
-        self.assertContains(response, 'Financial Accounting &amp; Statements')
+        self.assertContains(response, 'Workshop Operations Reports')
+        self.assertContains(response, 'Workshop Operations')
+        self.assertContains(response, 'Inventory &amp; Stock')
+        self.assertContains(response, 'Billing &amp; Deliveries')
+        self.assertContains(response, 'Customers &amp; Vehicles')
+        self.assertContains(response, 'Financial &amp; Accounts')
 
     def test_jobcard_reports_dashboard_category_filter(self):
         self.client.login(username='reportuser', password='password123')

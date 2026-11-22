@@ -390,77 +390,48 @@
                 </a>
 
                 <ul class="erp-submenu">
-
-                    <!-- CENTRAL REPORTS HUB -->
-                    <li>
-                        <a class="erp-submenu-link fw-bold"
-                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}"
-                        style="color: #76213b; font-weight: 700;">
-                            <i class="bi bi-grid-1x2-fill mr-2" style="color: #c2185b;"></i>
-                            {% trans "Reports Hub (All)" %}
-                        </a>
-                    </li>
-
-                    <!-- 1. JOB CARD REPORTS -->
+                    <!-- 1. WORKSHOP OPERATIONS -->
                     <li>
                         <a class="erp-submenu-link"
-                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=jobcards">
-                            <i class="bi bi-card-checklist mr-2"></i>
-                            {% trans "Job Card & Operations" %}
+                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=operations">
+                            <i class="bi bi-gear-wide-connected mr-2"></i>
+                            {% trans "Workshop Operations" %}
                         </a>
                     </li>
 
-                    <!-- 2. SERVICE & REPAIRS -->
-                    <li>
-                        <a class="erp-submenu-link"
-                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=service-repairs">
-                            <i class="bi bi-tools mr-2"></i>
-                            {% trans "Service & Inspections" %}
-                        </a>
-                    </li>
-
-                    <!-- 3. TECHNICIAN REPORTS -->
-                    <li>
-                        <a class="erp-submenu-link"
-                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=technicians">
-                            <i class="bi bi-people mr-2"></i>
-                            {% trans "Technician Analytics" %}
-                        </a>
-                    </li>
-
-                    <!-- 4. SPARE PARTS & INVENTORY -->
+                    <!-- 2. INVENTORY & STOCK -->
                     <li>
                         <a class="erp-submenu-link"
                         href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=inventory">
                             <i class="bi bi-box-seam mr-2"></i>
-                            {% trans "Spare Parts & Stock" %}
+                            {% trans "Inventory & Stock" %}
                         </a>
                     </li>
 
-                    <!-- 5. CUSTOMER & VEHICLE -->
+                    <!-- 3. BILLING & DELIVERIES -->
                     <li>
                         <a class="erp-submenu-link"
-                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=customers-vehicles">
-                            <i class="bi bi-car-front mr-2"></i>
-                            {% trans "Customer & Vehicle" %}
-                        </a>
-                    </li>
-
-                    <!-- 6. BILLING & DELIVERIES -->
-                    <li>
-                        <a class="erp-submenu-link"
-                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=billing-delivery">
+                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=billing">
                             <i class="bi bi-receipt mr-2"></i>
                             {% trans "Billing & Deliveries" %}
                         </a>
                     </li>
 
-                    <!-- 7. FINANCIAL & ACCOUNTS -->
+                    <!-- 4. CUSTOMERS & VEHICLES -->
+                    <li>
+                        <a class="erp-submenu-link"
+                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=customers">
+                            <i class="bi bi-car-front mr-2"></i>
+                            {% trans "Customers & Vehicles" %}
+                        </a>
+                    </li>
+
+                    <!-- 5. FINANCIAL & ACCOUNTS -->
                     <li>
                         <a class="erp-submenu-link"
                         href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=financial">
                             <i class="bi bi-wallet2 mr-2"></i>
-                            {% trans "Financial & Statements" %}
+                            {% trans "Financial & Accounts" %}
                         </a>
                     </li>
 
