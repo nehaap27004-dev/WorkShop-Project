@@ -26,32 +26,33 @@
                 <i class="bi bi-calendar-event"></i>
                 <span>{% trans "Report Period" %}</span>
             </div>
-            <button type="button" class="erp-period-pill active" data-period="today">
+            <button type="button" class="erp-period-pill {% if selected_period == 'today' %}active{% endif %}" data-period="today">
                 <i class="bi bi-calendar3"></i> {% trans "Today" %}
             </button>
-            <button type="button" class="erp-period-pill" data-period="week">
+            <button type="button" class="erp-period-pill {% if selected_period == 'week' %}active{% endif %}" data-period="week">
                 <i class="bi bi-calendar-week"></i> {% trans "This Week" %}
             </button>
-            <button type="button" class="erp-period-pill" data-period="month">
+            <button type="button" class="erp-period-pill {% if selected_period == 'month' %}active{% endif %}" data-period="month">
                 <i class="bi bi-calendar-month"></i> {% trans "This Month" %}
             </button>
-            <button type="button" class="erp-period-pill" data-period="custom">
+            <button type="button" class="erp-period-pill {% if selected_period == 'custom' %}active{% endif %}" data-period="custom">
                 <i class="bi bi-sliders"></i> {% trans "Custom" %}
             </button>
         </div>
 
-        <form class="erp-filter-group-right" method="GET" action="">
+        <form class="erp-filter-group-right" id="erpFilterForm" method="GET" action="{% url 'fleet_app:fleet_home' %}">
+            <input type="hidden" name="period" id="filterPeriodInput" value="{{ selected_period|default:'today' }}">
             <div class="erp-date-input-wrap">
                 <span>{% trans "From" %}</span>
-                <input type="text" class="erp-date-field" id="fromDate" name="from_date" value="01-Nov-2026">
+                <input type="text" class="erp-date-field" id="fromDate" name="from_date" value="{{ from_date_display }}" placeholder="DD-Mon-YYYY">
                 <i class="bi bi-calendar3 text-muted"></i>
             </div>
             <div class="erp-date-input-wrap">
                 <span>{% trans "To" %}</span>
-                <input type="text" class="erp-date-field" id="toDate" name="to_date" value="30-Nov-2026">
+                <input type="text" class="erp-date-field" id="toDate" name="to_date" value="{{ to_date_display }}" placeholder="DD-Mon-YYYY">
                 <i class="bi bi-calendar3 text-muted"></i>
             </div>
-            <button type="submit" class="erp-btn-search">
+            <button type="submit" class="erp-btn-search" id="btnFilterSearch">
                 <i class="bi bi-search"></i> {% trans "Search" %}
             </button>
         </form>
@@ -67,11 +68,12 @@
                 </div>
                 <div class="erp-stat-details">
                     <div class="erp-stat-title">{% trans "Open Job Cards" %}</div>
-                    <div class="erp-stat-number">{{ open_jobcards_count|default:"12" }}</div>
+                    <div class="erp-stat-number" id="kpiOpenJobCards">{{ open_jobcards_count }}</div>
                 </div>
             </div>
-            <div class="erp-stat-trend positive">
-                <i class="bi bi-arrow-up-short"></i> +20% vs previous period
+            <div class="erp-stat-trend {% if trends.open_jobcards.is_positive %}positive{% else %}negative{% endif %}" id="kpiOpenTrend">
+                <i class="bi {% if trends.open_jobcards.is_positive %}bi-arrow-up-short{% else %}bi-arrow-down-short{% endif %}"></i>
+                <span>{{ trends.open_jobcards.text }}</span>
             </div>
             <i class="bi bi-truck erp-stat-watermark"></i>
         </div>
@@ -84,11 +86,12 @@
                 </div>
                 <div class="erp-stat-details">
                     <div class="erp-stat-title">{% trans "In Service" %}</div>
-                    <div class="erp-stat-number">{{ on_service_fleet|stringformat:"02d"|default:"08" }}</div>
+                    <div class="erp-stat-number" id="kpiInService">{{ in_service_count|stringformat:"02d" }}</div>
                 </div>
             </div>
-            <div class="erp-stat-trend positive">
-                <i class="bi bi-arrow-up-short"></i> +14% vs previous period
+            <div class="erp-stat-trend {% if trends.in_service.is_positive %}positive{% else %}negative{% endif %}" id="kpiInServiceTrend">
+                <i class="bi {% if trends.in_service.is_positive %}bi-arrow-up-short{% else %}bi-arrow-down-short{% endif %}"></i>
+                <span>{{ trends.in_service.text }}</span>
             </div>
             <i class="bi bi-car-front erp-stat-watermark"></i>
         </div>
@@ -101,11 +104,12 @@
                 </div>
                 <div class="erp-stat-details">
                     <div class="erp-stat-title">{% trans "Jobs Completed" %}</div>
-                    <div class="erp-stat-number">{{ jobs_completed_count|stringformat:"02d"|default:"06" }}</div>
+                    <div class="erp-stat-number" id="kpiJobsCompleted">{{ jobs_completed_count|stringformat:"02d" }}</div>
                 </div>
             </div>
-            <div class="erp-stat-trend negative">
-                <i class="bi bi-arrow-down-short"></i> -10% vs previous period
+            <div class="erp-stat-trend {% if trends.jobs_completed.is_positive %}positive{% else %}negative{% endif %}" id="kpiJobsCompletedTrend">
+                <i class="bi {% if trends.jobs_completed.is_positive %}bi-arrow-up-short{% else %}bi-arrow-down-short{% endif %}"></i>
+                <span>{{ trends.jobs_completed.text }}</span>
             </div>
             <i class="bi bi-check-circle erp-stat-watermark"></i>
         </div>
@@ -118,11 +122,12 @@
                 </div>
                 <div class="erp-stat-details">
                     <div class="erp-stat-title">{% trans "Invoices" %}</div>
-                    <div class="erp-stat-number">{{ current_month_invoice|default:"90" }}</div>
+                    <div class="erp-stat-number" id="kpiInvoices">{{ invoices_count|stringformat:"02d" }}</div>
                 </div>
             </div>
-            <div class="erp-stat-trend positive">
-                <i class="bi bi-arrow-up-short"></i> +18% vs previous period
+            <div class="erp-stat-trend {% if trends.invoices.is_positive %}positive{% else %}negative{% endif %}" id="kpiInvoicesTrend">
+                <i class="bi {% if trends.invoices.is_positive %}bi-arrow-up-short{% else %}bi-arrow-down-short{% endif %}"></i>
+                <span>{{ trends.invoices.text }}</span>
             </div>
             <i class="bi bi-file-earmark-text erp-stat-watermark"></i>
         </div>
@@ -135,11 +140,12 @@
                 </div>
                 <div class="erp-stat-details">
                     <div class="erp-stat-title">{% trans "Total Expenses" %}</div>
-                    <div class="erp-stat-number">{% if total_expense %}OMR {{ total_expense|floatformat:2 }}{% else %}OMR 148.00{% endif %}</div>
+                    <div class="erp-stat-number" id="kpiExpenses">{{ total_expense_display }}</div>
                 </div>
             </div>
-            <div class="erp-stat-trend negative">
-                <i class="bi bi-arrow-up-short"></i> +6% vs previous period
+            <div class="erp-stat-trend {% if trends.total_expense.is_positive %}positive{% else %}negative{% endif %}" id="kpiExpensesTrend">
+                <i class="bi {% if trends.total_expense.is_positive %}bi-arrow-up-short{% else %}bi-arrow-down-short{% endif %}"></i>
+                <span>{{ trends.total_expense.text }}</span>
             </div>
             <i class="bi bi-cash-stack erp-stat-watermark"></i>
         </div>
@@ -227,78 +233,34 @@
                 <div class="erp-donut-container">
                     <!-- High-Resolution SVG Donut Chart -->
                     <div class="erp-donut-chart-wrap">
-                        <svg width="150" height="150" viewBox="0 0 160 160">
+                        <svg width="150" height="150" viewBox="0 0 160 160" id="donutSvg">
                             <!-- Background ring -->
                             <circle cx="80" cy="80" r="60" fill="transparent" stroke="#f1f5f9" stroke-width="22" />
-                            
-                            <!-- Closed: 68% -> circumference = 2 * PI * 60 = 376.99. 68% = 256.3 -->
-                            <circle cx="80" cy="80" r="60" fill="transparent" stroke="#cbd5e1" stroke-width="22"
-                                    stroke-dasharray="256.35 120.64" stroke-dashoffset="0"
-                                    transform="rotate(-90 80 80)" />
-
-                            <!-- Open: 13% -> 49.0 -->
-                            <circle cx="80" cy="80" r="60" fill="transparent" stroke="#9f1045" stroke-width="22"
-                                    stroke-dasharray="49.0 327.99" stroke-dashoffset="-256.35"
-                                    transform="rotate(-90 80 80)" />
-
-                            <!-- In Service: 9% -> 33.9 -->
-                            <circle cx="80" cy="80" r="60" fill="transparent" stroke="#16a34a" stroke-width="22"
-                                    stroke-dasharray="33.9 343.09" stroke-dashoffset="-305.35"
-                                    transform="rotate(-90 80 80)" />
-
-                            <!-- Completed: 7% -> 26.4 -->
-                            <circle cx="80" cy="80" r="60" fill="transparent" stroke="#0284c7" stroke-width="22"
-                                    stroke-dasharray="26.4 350.59" stroke-dashoffset="-339.25"
-                                    transform="rotate(-90 80 80)" />
-
-                            <!-- Waiting Parts: 3% -> 11.3 -->
-                            <circle cx="80" cy="80" r="60" fill="transparent" stroke="#f59e0b" stroke-width="22"
-                                    stroke-dasharray="11.3 365.69" stroke-dashoffset="-365.65"
-                                    transform="rotate(-90 80 80)" />
+                            {% for s in donut.slices %}
+                            {% if s.count > 0 %}
+                            <circle cx="80" cy="80" r="60" fill="transparent" stroke="{{ s.color }}" stroke-width="22"
+                                    stroke-dasharray="{{ s.dasharray }}" stroke-dashoffset="{{ s.dashoffset }}"
+                                    transform="rotate(-90 80 80)" class="donut-slice donut-slice-{{ s.key }}" />
+                            {% endif %}
+                            {% endfor %}
                         </svg>
                         <div class="erp-donut-center-label">
                             <div class="erp-donut-center-sub">Total<br>Jobs</div>
-                            <div class="erp-donut-center-num">91</div>
+                            <div class="erp-donut-center-num" id="donutTotal">{{ donut.total }}</div>
                         </div>
                     </div>
 
                     <!-- Legend list -->
-                    <ul class="erp-legend-list">
+                    <ul class="erp-legend-list" id="donutLegendList">
+                        {% for s in donut.slices %}
                         <li class="erp-legend-item">
                             <span class="erp-legend-left">
-                                <span class="erp-legend-dot" style="background:#9f1045;"></span>
-                                <span>{% trans "Open" %}</span>
+                                <span class="erp-legend-dot" style="background:{{ s.color }};"></span>
+                                <span>{{ s.name }}</span>
                             </span>
-                            <span class="erp-legend-value">12 (13%)</span>
+                            <span class="erp-legend-value" id="legendVal-{{ s.key }}">{{ s.count }} ({{ s.pct }}%)</span>
                         </li>
-                        <li class="erp-legend-item">
-                            <span class="erp-legend-left">
-                                <span class="erp-legend-dot" style="background:#16a34a;"></span>
-                                <span>{% trans "In Service" %}</span>
-                            </span>
-                            <span class="erp-legend-value">8 (9%)</span>
-                        </li>
-                        <li class="erp-legend-item">
-                            <span class="erp-legend-left">
-                                <span class="erp-legend-dot" style="background:#0284c7;"></span>
-                                <span>{% trans "Completed" %}</span>
-                            </span>
-                            <span class="erp-legend-value">6 (7%)</span>
-                        </li>
-                        <li class="erp-legend-item">
-                            <span class="erp-legend-left">
-                                <span class="erp-legend-dot" style="background:#f59e0b;"></span>
-                                <span>{% trans "Waiting Parts" %}</span>
-                            </span>
-                            <span class="erp-legend-value">3 (3%)</span>
-                        </li>
-                        <li class="erp-legend-item">
-                            <span class="erp-legend-left">
-                                <span class="erp-legend-dot" style="background:#cbd5e1;"></span>
-                                <span>{% trans "Closed" %}</span>
-                            </span>
-                            <span class="erp-legend-value">62 (68%)</span>
-                        </li>
+                        {% endfor %}
                     </ul>
                 </div>
             </div>
@@ -324,166 +286,53 @@
             </div>
             <div class="erp-panel-body">
                 <div class="erp-bar-chart-body">
-                    <div class="erp-bar-chart-bars">
-                        <!-- Jun: 18, 12 -->
+                    <div class="erp-bar-chart-bars" id="monthlyBarsContainer">
+                        {% for m in monthly_trend %}
                         <div class="erp-bar-group">
                             <div class="erp-bar-pair">
                                 <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">18</div>
-                                    <div class="erp-bar burgundy" style="height: 54px;"></div>
+                                    <div class="erp-bar-val">{{ m.created }}</div>
+                                    <div class="erp-bar burgundy" style="height: {{ m.height_created }}px;"></div>
                                 </div>
                                 <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">12</div>
-                                    <div class="erp-bar gray" style="height: 36px;"></div>
+                                    <div class="erp-bar-val">{{ m.completed }}</div>
+                                    <div class="erp-bar gray" style="height: {{ m.height_completed }}px;"></div>
                                 </div>
                             </div>
-                            <span class="erp-bar-label">Jun</span>
+                            <span class="erp-bar-label">{{ m.month }}</span>
                         </div>
-
-                        <!-- Jul: 22, 16 -->
-                        <div class="erp-bar-group">
-                            <div class="erp-bar-pair">
-                                <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">22</div>
-                                    <div class="erp-bar burgundy" style="height: 66px;"></div>
-                                </div>
-                                <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">16</div>
-                                    <div class="erp-bar gray" style="height: 48px;"></div>
-                                </div>
-                            </div>
-                            <span class="erp-bar-label">Jul</span>
-                        </div>
-
-                        <!-- Aug: 27, 18 -->
-                        <div class="erp-bar-group">
-                            <div class="erp-bar-pair">
-                                <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">27</div>
-                                    <div class="erp-bar burgundy" style="height: 81px;"></div>
-                                </div>
-                                <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">18</div>
-                                    <div class="erp-bar gray" style="height: 54px;"></div>
-                                </div>
-                            </div>
-                            <span class="erp-bar-label">Aug</span>
-                        </div>
-
-                        <!-- Sep: 25, 17 -->
-                        <div class="erp-bar-group">
-                            <div class="erp-bar-pair">
-                                <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">25</div>
-                                    <div class="erp-bar burgundy" style="height: 75px;"></div>
-                                </div>
-                                <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">17</div>
-                                    <div class="erp-bar gray" style="height: 51px;"></div>
-                                </div>
-                            </div>
-                            <span class="erp-bar-label">Sep</span>
-                        </div>
-
-                        <!-- Oct: 32, 20 -->
-                        <div class="erp-bar-group">
-                            <div class="erp-bar-pair">
-                                <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">32</div>
-                                    <div class="erp-bar burgundy" style="height: 96px;"></div>
-                                </div>
-                                <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">20</div>
-                                    <div class="erp-bar gray" style="height: 60px;"></div>
-                                </div>
-                            </div>
-                            <span class="erp-bar-label">Oct</span>
-                        </div>
-
-                        <!-- Nov: 42, 28 -->
-                        <div class="erp-bar-group">
-                            <div class="erp-bar-pair">
-                                <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">42</div>
-                                    <div class="erp-bar burgundy" style="height: 126px;"></div>
-                                </div>
-                                <div style="display:flex; flex-direction:column; align-items:center;">
-                                    <div class="erp-bar-val">28</div>
-                                    <div class="erp-bar gray" style="height: 84px;"></div>
-                                </div>
-                            </div>
-                            <span class="erp-bar-label">Nov</span>
-                        </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Panel 3: Today's Activities Timeline -->
+        <!-- Panel 3: Recent Activities Timeline -->
         <div class="erp-panel-card">
             <div class="erp-panel-header">
                 <h2 class="erp-panel-title">
                     <i class="bi bi-calendar-check"></i>
-                    <span>{% trans "Today's Activities" %}</span>
+                    <span id="activitiesPanelTitle">{% if selected_period == 'today' %}{% trans "Today's Activities" %}{% else %}{% trans "Recent Activities" %}{% endif %}</span>
                 </h2>
             </div>
             <div class="erp-panel-body">
-                <ul class="erp-activity-timeline">
-                    <!-- Item 1: New Job Card -->
+                <ul class="erp-activity-timeline" id="activitiesTimeline">
+                    {% for act in activities %}
                     <li class="erp-activity-item">
-                        <div class="erp-activity-icon red">
-                            <i class="bi bi-file-earmark-text"></i>
+                        <div class="erp-activity-icon {{ act.color }}">
+                            <i class="bi {{ act.icon }}"></i>
                         </div>
                         <div class="erp-activity-content">
                             <div>
-                                <h3 class="erp-activity-title">{% trans "New Job Card – JC-001258" %}</h3>
-                                <p class="erp-activity-sub">Toyota Hilux – Service</p>
+                                <h3 class="erp-activity-title">{{ act.title }}</h3>
+                                <p class="erp-activity-sub">{{ act.subtitle }}</p>
                             </div>
-                            <span class="erp-activity-time">10:20 AM</span>
+                            <span class="erp-activity-time">{{ act.time }}</span>
                         </div>
                     </li>
-
-                    <!-- Item 2: Inspection Completed -->
-                    <li class="erp-activity-item">
-                        <div class="erp-activity-icon green">
-                            <i class="bi bi-check2"></i>
-                        </div>
-                        <div class="erp-activity-content">
-                            <div>
-                                <h3 class="erp-activity-title">{% trans "Inspection Completed – JC-001252" %}</h3>
-                                <p class="erp-activity-sub">Nissan Patrol – 40,000 km Service</p>
-                            </div>
-                            <span class="erp-activity-time">11:05 AM</span>
-                        </div>
-                    </li>
-
-                    <!-- Item 3: Invoice Created -->
-                    <li class="erp-activity-item">
-                        <div class="erp-activity-icon pink">
-                            <i class="bi bi-receipt"></i>
-                        </div>
-                        <div class="erp-activity-content">
-                            <div>
-                                <h3 class="erp-activity-title">{% trans "Invoice Created – INV-000890" %}</h3>
-                                <p class="erp-activity-sub">JC-001246 – OMR 75.000</p>
-                            </div>
-                            <span class="erp-activity-time">12:10 PM</span>
-                        </div>
-                    </li>
-
-                    <!-- Item 4: Job Completed -->
-                    <li class="erp-activity-item">
-                        <div class="erp-activity-icon blue">
-                            <i class="bi bi-car-front-fill"></i>
-                        </div>
-                        <div class="erp-activity-content">
-                            <div>
-                                <h3 class="erp-activity-title">{% trans "Job Completed – JC-001240" %}</h3>
-                                <p class="erp-activity-sub">Honda Civic – Delivered</p>
-                            </div>
-                            <span class="erp-activity-time">02:30 PM</span>
-                        </div>
-                    </li>
+                    {% empty %}
+                    <li class="text-center py-4 text-muted small">No activities recorded for this period.</li>
+                    {% endfor %}
                 </ul>
             </div>
         </div>
@@ -492,13 +341,232 @@
 
 </div>
 
+<!-- Real-time Filter & Dynamic Dashboard Interaction Script -->
 <script>
-    // Simple filter button interactivity
-    document.querySelectorAll('.erp-period-pill').forEach(function(pill) {
-        pill.addEventListener('click', function() {
-            document.querySelectorAll('.erp-period-pill').forEach(function(p) { p.classList.remove('active'); });
-            this.classList.add('active');
+    (function() {
+        const apiUrl = "{% url 'fleet_app:dashboard_metrics_api' %}";
+        const pills = document.querySelectorAll('.erp-period-pill');
+        const periodInput = document.getElementById('filterPeriodInput');
+        const fromDateInput = document.getElementById('fromDate');
+        const toDateInput = document.getElementById('toDate');
+        const filterForm = document.getElementById('erpFilterForm');
+
+        function formatTwoDigits(n) {
+            return (n < 10 ? '0' : '') + n;
+        }
+
+        // Fetch metrics dynamically for a chosen period or custom dates
+        function loadDashboardMetrics(period, fromDate, toDate, updateUrl = true) {
+            let url = apiUrl + '?period=' + encodeURIComponent(period);
+            if (fromDate) url += '&from_date=' + encodeURIComponent(fromDate);
+            if (toDate) url += '&to_date=' + encodeURIComponent(toDate);
+
+            // Subtle opacity transition
+            const kpiCards = document.querySelector('.erp-kpi-grid');
+            if (kpiCards) kpiCards.style.opacity = '0.6';
+
+            fetch(url)
+                .then(function(res) {
+                    if (!res.ok) throw new Error('Network error');
+                    return res.json();
+                })
+                .then(function(data) {
+                    if (data.status !== 'success') return;
+
+                    // Update date input fields
+                    if (fromDateInput && data.from_display) fromDateInput.value = data.from_display;
+                    if (toDateInput && data.to_display) toDateInput.value = data.to_display;
+                    if (periodInput) periodInput.value = data.period;
+
+                    // 1. Update KPI Cards
+                    const kpis = data.kpis;
+                    const elOpen = document.getElementById('kpiOpenJobCards');
+                    if (elOpen) elOpen.textContent = kpis.open_jobcards;
+
+                    const elInService = document.getElementById('kpiInService');
+                    if (elInService) elInService.textContent = formatTwoDigits(kpis.in_service);
+
+                    const elCompleted = document.getElementById('kpiJobsCompleted');
+                    if (elCompleted) elCompleted.textContent = formatTwoDigits(kpis.jobs_completed);
+
+                    const elInvoices = document.getElementById('kpiInvoices');
+                    if (elInvoices) elInvoices.textContent = formatTwoDigits(kpis.invoices);
+
+                    const elExpenses = document.getElementById('kpiExpenses');
+                    if (elExpenses) elExpenses.textContent = kpis.total_expense_display;
+
+                    // Update KPI Trends
+                    updateTrend('kpiOpenTrend', kpis.trends.open_jobcards);
+                    updateTrend('kpiInServiceTrend', kpis.trends.in_service);
+                    updateTrend('kpiJobsCompletedTrend', kpis.trends.jobs_completed);
+                    updateTrend('kpiInvoicesTrend', kpis.trends.invoices);
+                    updateTrend('kpiExpensesTrend', kpis.trends.total_expense);
+
+                    // 2. Update Donut Chart
+                    updateDonut(data.donut);
+
+                    // 3. Update Monthly Trends Bar Chart
+                    updateMonthlyBars(data.monthly_trend);
+
+                    // 4. Update Activities Timeline
+                    updateActivities(data.activities, data.period);
+
+                    // Update browser history URL
+                    if (updateUrl) {
+                        const newUrl = window.location.pathname + '?period=' + encodeURIComponent(data.period) +
+                            (data.period === 'custom' ? ('&from_date=' + encodeURIComponent(fromDateInput.value) + '&to_date=' + encodeURIComponent(toDateInput.value)) : '');
+                        window.history.pushState({ period: data.period }, '', newUrl);
+                    }
+                })
+                .catch(function(err) {
+                    console.error('Failed to load dashboard metrics:', err);
+                })
+                .finally(function() {
+                    if (kpiCards) kpiCards.style.opacity = '1';
+                });
+        }
+
+        function updateTrend(elemId, trend) {
+            const el = document.getElementById(elemId);
+            if (!el || !trend) return;
+            el.className = 'erp-stat-trend ' + (trend.is_positive ? 'positive' : 'negative');
+            const iconClass = trend.is_positive ? 'bi-arrow-up-short' : 'bi-arrow-down-short';
+            el.innerHTML = '<i class="bi ' + iconClass + '"></i> <span>' + trend.text + '</span>';
+        }
+
+        function updateDonut(donut) {
+            if (!donut) return;
+            const elTotal = document.getElementById('donutTotal');
+            if (elTotal) elTotal.textContent = donut.total;
+
+            const svg = document.getElementById('donutSvg');
+            if (svg) {
+                // Clear existing slice circles
+                svg.querySelectorAll('.donut-slice').forEach(c => c.remove());
+                // Append updated slice circles
+                (donut.slices || []).forEach(function(s) {
+                    if (s.count > 0) {
+                        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        circle.setAttribute('cx', '80');
+                        circle.setAttribute('cy', '80');
+                        circle.setAttribute('r', '60');
+                        circle.setAttribute('fill', 'transparent');
+                        circle.setAttribute('stroke', s.color);
+                        circle.setAttribute('stroke-width', '22');
+                        circle.setAttribute('stroke-dasharray', s.dasharray);
+                        circle.setAttribute('stroke-dashoffset', s.dashoffset);
+                        circle.setAttribute('transform', 'rotate(-90 80 80)');
+                        circle.setAttribute('class', 'donut-slice donut-slice-' + s.key);
+                        svg.appendChild(circle);
+                    }
+                });
+            }
+
+            // Update legend items
+            (donut.slices || []).forEach(function(s) {
+                const elLeg = document.getElementById('legendVal-' + s.key);
+                if (elLeg) {
+                    elLeg.textContent = s.count + ' (' + s.pct + '%)';
+                }
+            });
+        }
+
+        function updateMonthlyBars(bars) {
+            const container = document.getElementById('monthlyBarsContainer');
+            if (!container || !bars) return;
+            let html = '';
+            bars.forEach(function(m) {
+                html += '<div class="erp-bar-group">' +
+                    '<div class="erp-bar-pair">' +
+                        '<div style="display:flex; flex-direction:column; align-items:center;">' +
+                            '<div class="erp-bar-val">' + m.created + '</div>' +
+                            '<div class="erp-bar burgundy" style="height: ' + m.height_created + 'px;"></div>' +
+                        '</div>' +
+                        '<div style="display:flex; flex-direction:column; align-items:center;">' +
+                            '<div class="erp-bar-val">' + m.completed + '</div>' +
+                            '<div class="erp-bar gray" style="height: ' + m.height_completed + 'px;"></div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<span class="erp-bar-label">' + m.month + '</span>' +
+                '</div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function updateActivities(activities, period) {
+            const container = document.getElementById('activitiesTimeline');
+            const title = document.getElementById('activitiesPanelTitle');
+            if (title) {
+                title.textContent = (period === 'today') ? "{% trans 'Today’s Activities' %}" : "{% trans 'Recent Activities' %}";
+            }
+            if (!container) return;
+
+            if (!activities || activities.length === 0) {
+                container.innerHTML = '<li class="text-center py-4 text-muted small">{% trans "No activities recorded for this period." %}</li>';
+                return;
+            }
+
+            let html = '';
+            activities.forEach(function(act) {
+                html += '<li class="erp-activity-item">' +
+                    '<div class="erp-activity-icon ' + act.color + '">' +
+                        '<i class="bi ' + act.icon + '"></i>' +
+                    '</div>' +
+                    '<div class="erp-activity-content">' +
+                        '<div>' +
+                            '<h3 class="erp-activity-title">' + act.title + '</h3>' +
+                            '<p class="erp-activity-sub">' + act.subtitle + '</p>' +
+                        '</div>' +
+                        '<span class="erp-activity-time">' + act.time + '</span>' +
+                    '</div>' +
+                '</li>';
+            });
+            container.innerHTML = html;
+        }
+
+        // Attach event listeners to period pills
+        pills.forEach(function(pill) {
+            pill.addEventListener('click', function(e) {
+                e.preventDefault();
+                pills.forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+
+                const period = this.getAttribute('data-period');
+                if (period === 'custom') {
+                    if (fromDateInput) fromDateInput.focus();
+                } else {
+                    loadDashboardMetrics(period, null, null, true);
+                }
+            });
         });
-    });
+
+        // Attach event listener to search form
+        if (filterForm) {
+            filterForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                pills.forEach(p => p.classList.remove('active'));
+                const customPill = document.querySelector('.erp-period-pill[data-period="custom"]');
+                if (customPill) customPill.classList.add('active');
+
+                const fromVal = fromDateInput ? fromDateInput.value.trim() : '';
+                const toVal = toDateInput ? toDateInput.value.trim() : '';
+                loadDashboardMetrics('custom', fromVal, toVal, true);
+            });
+        }
+
+        // Handle browser Back/Forward navigation
+        window.addEventListener('popstate', function(e) {
+            const params = new URLSearchParams(window.location.search);
+            const period = params.get('period') || 'today';
+            const fromDate = params.get('from_date');
+            const toDate = params.get('to_date');
+
+            pills.forEach(function(p) {
+                p.classList.toggle('active', p.getAttribute('data-period') === period);
+            });
+            loadDashboardMetrics(period, fromDate, toDate, false);
+        });
+
+    })();
 </script>
 {% endblock %}

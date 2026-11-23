@@ -32,6 +32,178 @@
     <!-- Azur Override Shield — Must be LAST (neutralizes legacy gray tints & eliminates blue) -->
     <link rel="stylesheet" href="{% static 'css/azur_override.css' %}?v=20261116_sidebarfix">
 
+    <style>
+        /* ==========================================================================
+           EXACT SIDEBAR COLOR THEME (MATCHING SCREENSHOT)
+           - Background: Pitch dark #0d0f12
+           - Top Dashboard Button: Solid Rich Magenta/Burgundy #9f1044 with white text & icon
+           - Inactive Nav Items: Crisp whitish-gray #cbd5e1 with outline slate icon #9ca3af
+           - Active Nav Item: Electric Blue #357fee (as seen on Job Cards in screenshot)
+           - Section Titles: Steel blue #718298 uppercase
+           - Arrow Chevrons: Subtle slate #4b5563
+           ========================================================================== */
+        .erp-sidebar {
+            background-color: #0d0f12 !important;
+            scrollbar-color: #1f242d #0d0f12;
+        }
+        .erp-sidebar::-webkit-scrollbar-track {
+            background: #0d0f12;
+        }
+        .erp-sidebar-nav {
+            padding: 10px 8px 40px 8px !important;
+        }
+
+        /* Top Dashboard Button — Solid Burgundy / Magenta #9f1044 */
+        .erp-nav-dashboard-item {
+            margin: 6px 6px 12px 6px !important;
+        }
+        .erp-nav-dashboard-link {
+            display: flex !important;
+            align-items: center;
+            gap: 12px;
+            padding: 10.5px 16px !important;
+            background-color: #9f1044 !important;
+            background: #9f1044 !important;
+            color: #ffffff !important;
+            text-decoration: none !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            border-radius: 9px !important;
+            box-shadow: 0 3px 8px rgba(159, 16, 68, 0.35) !important;
+            transition: all 0.15s ease;
+        }
+        .erp-nav-dashboard-link:hover {
+            background-color: #b51550 !important;
+            color: #ffffff !important;
+            transform: translateY(-1px);
+        }
+        .erp-nav-dashboard-link i {
+            font-size: 16px !important;
+            color: #ffffff !important;
+        }
+
+        /* Section Headings */
+        .erp-nav-section-title {
+            font-size: 10.5px !important;
+            font-weight: 700 !important;
+            color: #718298 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.8px !important;
+            padding: 12px 14px 6px 14px !important;
+            margin-top: 4px;
+        }
+
+        /* Navigation Links */
+        .erp-sidebar-nav .erp-nav-item {
+            margin-bottom: 2px;
+        }
+        .erp-sidebar-nav .erp-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9.5px 14px !important;
+            color: #cbd5e1 !important;
+            font-size: 13.5px !important;
+            font-weight: 500 !important;
+            border-radius: 7px;
+            text-decoration: none !important;
+            transition: all 0.15s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        .erp-sidebar-nav .erp-nav-link:hover {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.05) !important;
+        }
+        .erp-sidebar-nav .erp-nav-link:hover .nav-icon,
+        .erp-sidebar-nav .erp-nav-link:hover .arrow-icon {
+            color: #ffffff !important;
+        }
+
+        /* Clean Outline Slate Icons */
+        .erp-sidebar-nav .nav-icon {
+            color: #9ca3af !important;
+            font-size: 16px !important;
+            width: 20px !important;
+            text-align: center;
+            flex-shrink: 0;
+            transition: color 0.15s ease;
+        }
+
+        /* Chevron Right Arrow */
+        .erp-sidebar-nav .arrow-icon {
+            color: #4b5563 !important;
+            font-size: 11px !important;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: transform 0.2s ease, color 0.15s ease;
+            margin-left: auto;
+        }
+        .erp-sidebar-nav .arrow-icon:hover {
+            color: #ffffff !important;
+        }
+        .erp-sidebar-nav .erp-nav-item.open > .erp-nav-link .arrow-icon {
+            transform: rotate(90deg);
+            color: #ffffff !important;
+        }
+
+        /* Active State — Vivid Electric Blue #357fee (as in screenshot) */
+        .erp-sidebar-nav .erp-nav-item.active > .erp-nav-link,
+        .erp-sidebar-nav .erp-nav-link.active {
+            color: #357fee !important;
+            font-weight: 600 !important;
+            background-color: rgba(53, 127, 238, 0.08) !important;
+        }
+        .erp-sidebar-nav .erp-nav-item.active > .erp-nav-link .nav-icon,
+        .erp-sidebar-nav .erp-nav-link.active .nav-icon {
+            color: #357fee !important;
+        }
+        .erp-sidebar-nav .erp-nav-item.active > .erp-nav-link .arrow-icon,
+        .erp-sidebar-nav .erp-nav-link.active .arrow-icon {
+            color: #357fee !important;
+        }
+
+        /* Submenus */
+        .erp-submenu {
+            padding: 4px 0 6px 34px !important;
+            margin: 0 !important;
+            list-style: none;
+            border: none !important;
+        }
+        .erp-submenu-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6.5px 10px !important;
+            color: #9ca3af !important;
+            font-size: 12.5px !important;
+            font-weight: 400 !important;
+            border-radius: 5px;
+            text-decoration: none !important;
+            transition: all 0.15s ease;
+        }
+        .erp-submenu-link:hover {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.06) !important;
+        }
+        .erp-submenu-link.active {
+            color: #357fee !important;
+            background-color: rgba(53, 127, 238, 0.12) !important;
+            font-weight: 600 !important;
+        }
+        .erp-submenu-hub-header {
+            color: #718298 !important;
+            font-weight: 700 !important;
+            font-size: 11px !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        .erp-submenu-hub-header:hover {
+            color: #357fee !important;
+        }
+    </style>
+
     <!-- jQuery & Dependencies -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
@@ -169,11 +341,11 @@
         </div>
     </header>
 
-    <!-- Left Sidebar Navigation (Pitch Dark #0d0f12) -->
+    <!-- Left Sidebar Navigation (Pitch Dark #07090c) -->
     <aside class="erp-sidebar" id="erpSidebar">
         <ul class="erp-sidebar-nav">
 
-            <!-- Top Dashboard Burgundy Button (Exact UI Design) -->
+            <!-- 1. DASHBOARD (Solid Burgundy #9f1044 with White House Icon) -->
             <li class="erp-nav-dashboard-item">
                 <a class="erp-nav-dashboard-link" href="{% url 'fleet_app:fleet_home' %}">
                     <i class="bi bi-house-door-fill"></i>
@@ -181,297 +353,82 @@
                 </a>
             </li>
 
-            <!-- WORKSHOP OPERATIONS -->
-            <li class="erp-nav-section-title">{% trans "Workshop Operations" %}</li>
+            <!-- SECTION TITLE: MAIN NAVIGATION -->
+            <li class="erp-nav-section-title">{% trans "Main Navigation" %}</li>
 
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-card-checklist nav-icon"></i>
-                    <span>{% trans "Job Cards" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
+            <!-- 2. WORKSHOP -->
+            <li class="erp-nav-item {% if 'hub/workshop' in request.path or 'jobcard/' in request.path and not 'reports' in request.path %}active{% endif %}">
+                <a class="erp-nav-link {% if 'hub/workshop' in request.path or 'jobcard/' in request.path and not 'reports' in request.path %}active{% endif %}" href="{% url 'fleet_app:hub_workshop' %}">
+                    <i class="bi bi-tools nav-icon"></i>
+                    <span>{% trans "Workshop" %}</span>
                 </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:jobcard_list' %}">{% trans "All Job Cards" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:jobcard_create' %}">{% trans "Create Job Card" %}</a></li>
-                </ul>
             </li>
 
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-clipboard-check nav-icon"></i>
-                    <span>{% trans "Inspections" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
+            <!-- 3. PURCHASE & SALES -->
+            <li class="erp-nav-item {% if 'hub/purchase-sales' in request.path or 'purchase' in request.path or 'sales' in request.path or 'itemgrv' in request.path %}active{% endif %}">
+                <a class="erp-nav-link {% if 'hub/purchase-sales' in request.path or 'purchase' in request.path or 'sales' in request.path or 'itemgrv' in request.path %}active{% endif %}" href="{% url 'fleet_app:hub_purchase_sales' %}">
+                    <i class="bi bi-cart3 nav-icon"></i>
+                    <span>{% trans "Purchase & Sales" %}</span>
                 </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:inspection_list' %}">{% trans "Vehicle Inspections" %}</a></li>
-                </ul>
             </li>
 
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-file-earmark-text nav-icon"></i>
-                    <span>{% trans "Estimates & Quotations" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
+            <!-- 4. VEHICLE & SERVICE MASTER -->
+            <li class="erp-nav-item {% if 'hub/vehicle-service' in request.path or 'vehicle-models' in request.path or 'vehicle-categories' in request.path or 'manufacturers' in request.path or 'service-category' in request.path or 'service-type' in request.path %}active{% endif %}">
+                <a class="erp-nav-link {% if 'hub/vehicle-service' in request.path or 'vehicle-models' in request.path or 'vehicle-categories' in request.path or 'manufacturers' in request.path or 'service-category' in request.path or 'service-type' in request.path %}active{% endif %}" href="{% url 'fleet_app:hub_vehicle_service' %}">
+                    <i class="bi bi-car-front-fill nav-icon"></i>
+                    <span>{% trans "Vehicle & Service Master" %}</span>
                 </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:estimate_list' %}">{% trans "Estimates" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:quotation_list' %}">{% trans "Quotations" %}</a></li>
-                </ul>
             </li>
 
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-box-arrow-right nav-icon"></i>
-                    <span>{% trans "Delivery Notes" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
+            <!-- 5. INVENTORY MANAGEMENT -->
+            <li class="erp-nav-item {% if 'hub/inventory' in request.path or 'items' in request.path or 'stock' in request.path or 'item/categories' in request.path or 'units' in request.path or 'VAT' in request.path or 'batches' in request.path or 'cost-center' in request.path %}active{% endif %}">
+                <a class="erp-nav-link {% if 'hub/inventory' in request.path or 'items' in request.path or 'stock' in request.path or 'item/categories' in request.path or 'units' in request.path or 'VAT' in request.path or 'batches' in request.path or 'cost-center' in request.path %}active{% endif %}" href="{% url 'fleet_app:hub_inventory' %}">
+                    <i class="bi bi-box-seam-fill nav-icon"></i>
+                    <span>{% trans "Inventory Management" %}</span>
                 </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:delivery_list' %}">{% trans "Delivery Notes List" %}</a></li>
-                </ul>
             </li>
 
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-receipt nav-icon"></i>
-                    <span>{% trans "Invoices" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
+            <!-- 6. CUSTOMERS & STAFF -->
+            <li class="erp-nav-item {% if 'hub/people-parties' in request.path or 'hub/customers-staff' in request.path or 'vendors-manage' in request.path or 'customers-manage' in request.path or 'staff' in request.path or 'skill-tags' in request.path %}active{% endif %}">
+                <a class="erp-nav-link {% if 'hub/people-parties' in request.path or 'hub/customers-staff' in request.path or 'vendors-manage' in request.path or 'customers-manage' in request.path or 'staff' in request.path or 'skill-tags' in request.path %}active{% endif %}" href="{% url 'fleet_app:hub_customers_staff' %}">
+                    <i class="bi bi-people-fill nav-icon"></i>
+                    <span>{% trans "Customers & Staff" %}</span>
                 </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:invoice_list' %}">{% trans "Invoices List" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:invoice_create' %}">{% trans "Create Invoice" %}</a></li>
-                </ul>
             </li>
 
-            <!-- FLEET & VEHICLES -->
-            <li class="erp-nav-section-title">{% trans "Customers & Vehicles" %}</li>
-
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-people nav-icon"></i>
-                    <span>{% trans "Customers" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
+            <!-- 7. ACCOUNTS -->
+            <li class="erp-nav-item {% if 'hub/accounts' in request.path or 'receipt' in request.path or 'payment' in request.path or 'cheque' in request.path or 'journal' in request.path or 'contra' in request.path or 'expense' in request.path or 'debitnote' in request.path or 'creditnote' in request.path or 'openingvoucher' in request.path %}active{% endif %}">
+                <a class="erp-nav-link {% if 'hub/accounts' in request.path or 'receipt' in request.path or 'payment' in request.path or 'cheque' in request.path or 'journal' in request.path or 'contra' in request.path or 'expense' in request.path or 'debitnote' in request.path or 'creditnote' in request.path or 'openingvoucher' in request.path %}active{% endif %}" href="{% url 'fleet_app:hub_accounts' %}">
+                    <i class="bi bi-wallet2 nav-icon"></i>
+                    <span>{% trans "Accounts" %}</span>
                 </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:manage_customers' %}">{% trans "Manage Customers" %}</a></li>
-                </ul>
             </li>
 
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-truck nav-icon"></i>
-                    <span>{% trans "Vehicles" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
-                </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:wv_list' %}">{% trans "Vehicle Register" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:vehicle_model_list' %}">{% trans "Vehicle Models" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:create_vehicle_category' %}">{% trans "Vehicle Types" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:manufacturer_list' %}">{% trans "Manufacturers" %}</a></li>
-                </ul>
-            </li>
-
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-gear-wide-connected nav-icon"></i>
-                    <span>{% trans "Service Masters" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
-                </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:service_category_list' %}">{% trans "Service Categories" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:service_type_list' %}">{% trans "Service Types" %}</a></li>
-                </ul>
-            </li>
-
-            <!-- INVENTORY & PURCHASE -->
-            <li class="erp-nav-section-title">{% trans "Inventory & Purchase" %}</li>
-
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-boxes nav-icon"></i>
-                    <span>{% trans "Inventory & Spare Parts" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
-                </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:item_list' %}">{% trans "Item Master" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:stock_list' %}">{% trans "Stock Summary" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:item_category_create_update_list' %}">{% trans "Item Categories" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:unit_manage' %}">{% trans "Units of Measure" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:VAT_manage' %}">{% trans "VAT Master" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:batch_create' %}">{% trans "Batch Management" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:cost_center_create' %}">{% trans "Cost Center" %}</a></li>
-                </ul>
-            </li>
-
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-bag-check nav-icon"></i>
-                    <span>{% trans "Purchasing & Vouchers" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
-                </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:po_create' %}">{% trans "Purchase Orders" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:create_purchase_voucher' %}">{% trans "Purchase Vouchers" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:sales_voucher_create' %}">{% trans "Issue Vouchers" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:purchase_return_voucher_create' %}">{% trans "Purchase Return" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:create_salesreturn_voucher' %}">{% trans "Sales Return" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'item_master:create_itemgrv_voucher' %}">{% trans "Create GRV" %}</a></li>
-                </ul>
-            </li>
-
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-handbag nav-icon"></i>
-                    <span>{% trans "Suppliers & Vendors" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
-                </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:manage_vendors' %}">{% trans "Vendor Directory" %}</a></li>
-                </ul>
-            </li>
-
-            <!-- PEOPLE & RESOURCES -->
-            <li class="erp-nav-section-title">{% trans "People & Resources" %}</li>
-
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-person-badge nav-icon"></i>
-                    <span>{% trans "Technicians & Staff" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
-                </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:staff_manage' %}">{% trans "Staff Directory" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:staff_category_manage' %}">{% trans "Staff Categories" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:skill_tag_list' %}">{% trans "Skill Tags" %}</a></li>
-                </ul>
-            </li>
-
-            <!-- FINANCE & REPORTS -->
-            <li class="erp-nav-section-title">{% trans "Finance & Reports" %}</li>
-
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-credit-card nav-icon"></i>
-                    <span>{% trans "Payments & Receipts" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
-                </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:receipt_create' %}">{% trans "Create Receipt" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:list_payment' %}">{% trans "Payments List" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:cheque_clearance' %}">{% trans "Cheque Clearance" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:create_receiptbill' %}">{% trans "Receipt-Bill Clearance" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:create_paymentbill' %}">{% trans "Payment-Bill Clearance" %}</a></li>
-                </ul>
-            </li>
-
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-journal-bookmark nav-icon"></i>
-                    <span>{% trans "Accounting Ledgers" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
-                </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:ledger_view' %}">{% trans "Ledgers Overview" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:journal_list' %}">{% trans "Journal" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:contra_list' %}">{% trans "Contra" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:expense_list' %}">{% trans "Expense Voucher" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:list_debitnote' %}">{% trans "Debit Note" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:list_creditnote' %}">{% trans "Credit Note" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:list_openingvoucher' %}">{% trans "Opening Voucher" %}</a></li>
-                </ul>
-            </li>
-
-            <!-- CENTRAL REPORTS MENU -->
-            <li class="erp-nav-item">
-
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-graph-up-arrow nav-icon"></i>
-                    <span>{% trans "Reports" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
-                </a>
-
-                <ul class="erp-submenu">
-                    <!-- 1. WORKSHOP OPERATIONS -->
-                    <li>
-                        <a class="erp-submenu-link"
-                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=operations">
-                            <i class="bi bi-gear-wide-connected mr-2"></i>
-                            {% trans "Workshop Operations" %}
-                        </a>
-                    </li>
-
-                    <!-- 2. INVENTORY & STOCK -->
-                    <li>
-                        <a class="erp-submenu-link"
-                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=inventory">
-                            <i class="bi bi-box-seam mr-2"></i>
-                            {% trans "Inventory & Stock" %}
-                        </a>
-                    </li>
-
-                    <!-- 3. BILLING & DELIVERIES -->
-                    <li>
-                        <a class="erp-submenu-link"
-                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=billing">
-                            <i class="bi bi-receipt mr-2"></i>
-                            {% trans "Billing & Deliveries" %}
-                        </a>
-                    </li>
-
-                    <!-- 4. CUSTOMERS & VEHICLES -->
-                    <li>
-                        <a class="erp-submenu-link"
-                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=customers">
-                            <i class="bi bi-car-front mr-2"></i>
-                            {% trans "Customers & Vehicles" %}
-                        </a>
-                    </li>
-
-                    <!-- 5. FINANCIAL & ACCOUNTS -->
-                    <li>
-                        <a class="erp-submenu-link"
-                        href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=financial">
-                            <i class="bi bi-wallet2 mr-2"></i>
-                            {% trans "Financial & Accounts" %}
-                        </a>
-                    </li>
-
-                </ul>
-
-            </li>
-            <!-- SYSTEM -->
-            <li class="erp-nav-section-title">{% trans "System" %}</li>
-
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-gear nav-icon"></i>
-                    <span>{% trans "Company & Settings" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
-                </a>
-                <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:company_setup' %}">{% trans "Company Setup" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'fleet_app:document_crud' %}">{% trans "Document Center" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'asset_app:asset_master' %}">{% trans "Asset Master" %}</a></li>
-                </ul>
-            </li>
-
-            {% if request.user.is_superuser or request.user.user_role.is_admin %}
-            <li class="erp-nav-section-title">{% trans "Admin" %}</li>
-            <li class="erp-nav-item">
-                <a class="erp-nav-link" href="#">
-                    <i class="bi bi-shield-lock nav-icon"></i>
+            <!-- 8. ADMIN MASTER -->
+            <li class="erp-nav-item {% if 'hub/admin-master' in request.path or 'company' in request.path or 'roles' in request.path or 'users' in request.path or 'privileges' in request.path or 'groups' in request.path or 'ledger' in request.path %}active{% endif %}">
+                <a class="erp-nav-link {% if 'hub/admin-master' in request.path or 'company' in request.path or 'roles' in request.path or 'users' in request.path or 'privileges' in request.path or 'groups' in request.path or 'ledger' in request.path %}active{% endif %}" href="{% url 'fleet_app:hub_admin_master' %}">
+                    <i class="bi bi-shield-check nav-icon"></i>
                     <span>{% trans "Admin Master" %}</span>
-                    <i class="bi bi-chevron-right arrow-icon"></i>
+                </a>
+            </li>
+
+            <!-- 9. REPORTS (HAS SUB-MENU SECTIONS) -->
+            <li class="erp-nav-item {% if 'reports' in request.path or 'activity-log' in request.path %}active open{% endif %}">
+                <a class="erp-nav-link" href="{% url 'jobcard_app:jobcard_reports_dashboard' %}">
+                    <i class="bi bi-bar-chart-line-fill nav-icon"></i>
+                    <span>{% trans "Reports" %}</span>
+                    <i class="bi bi-chevron-right arrow-icon" title="Toggle reports menu"></i>
                 </a>
                 <ul class="erp-submenu">
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:role_management' %}">{% trans "Roles" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:user_management' %}">{% trans "Users" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:menu_list_create' %}">{% trans "Menus" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:manage_privileges' %}">{% trans "Manage Privileges" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'accounts_app:group_management' %}">{% trans "Groups" %}</a></li>
-                    <li><a class="erp-submenu-link" href="{% url 'audit_app:activity_log_list' %}">{% trans "Activity Logs" %}</a></li>
+                    <li><a class="erp-submenu-link erp-submenu-hub-header" href="{% url 'jobcard_app:jobcard_reports_dashboard' %}"><i class="bi bi-speedometer2 mr-1"></i> {% trans "Reports Hub" %}</a></li>
+                    <li><a class="erp-submenu-link" href="{% url 'audit_app:activity_log_list' %}">{% trans "Active Logs" %}</a></li>
+                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=operations">{% trans "Workshop Operations" %}</a></li>
+                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=inventory">{% trans "Inventory & Stock" %}</a></li>
+                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=billing">{% trans "Billing & Deliveries" %}</a></li>
+                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=customers">{% trans "Customers & Vehicles" %}</a></li>
+                    <li><a class="erp-submenu-link" href="{% url 'jobcard_app:jobcard_reports_dashboard' %}?category=financial">{% trans "Financial & Accounts" %}</a></li>
                 </ul>
             </li>
-            {% endif %}
 
         </ul>
     </aside>
@@ -588,19 +545,16 @@
             $('body').addClass('erp-sidebar-collapsed');
         }
 
-        // Accordion Submenu Toggles
-        $('.erp-sidebar-nav > .erp-nav-item > .erp-nav-link').on('click', function (e) {
-            const $parent = $(this).parent('.erp-nav-item');
-            const $submenu = $parent.children('.erp-submenu');
-
-            if ($submenu.length > 0) {
-                e.preventDefault();
-                if ($parent.hasClass('open')) {
-                    $parent.removeClass('open');
-                } else {
-                    $('.erp-sidebar-nav > .erp-nav-item').removeClass('open');
-                    $parent.addClass('open');
-                }
+        // Accordion Submenu Arrow Toggles (allows category link to navigate to dedicated dashboard)
+        $('.erp-sidebar-nav .arrow-icon').on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const $parent = $(this).closest('.erp-nav-item');
+            if ($parent.hasClass('open')) {
+                $parent.removeClass('open');
+            } else {
+                $('.erp-sidebar-nav > .erp-nav-item').removeClass('open');
+                $parent.addClass('open');
             }
         });
 

@@ -1,0 +1,234 @@
+{% extends 'fleet_base1.html' %}
+{% load static i18n %}
+
+{% block content %}
+<style>
+    /* PAGE CONTAINER */
+    .hub-page-container {
+        padding: 32px 38px 60px 38px;
+        background: #ffffff;
+        min-height: 85vh;
+    }
+
+    /* BREADCRUMB */
+    .hub-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13.5px;
+        color: #64748b;
+        margin-bottom: 22px;
+        font-weight: 500;
+    }
+
+    .hub-breadcrumb a {
+        color: #64748b;
+        text-decoration: none;
+        transition: color 0.15s ease;
+    }
+
+    .hub-breadcrumb a:hover {
+        color: #76213b;
+    }
+
+    .hub-breadcrumb .sep {
+        color: #94a3b8;
+        font-size: 13px;
+    }
+
+    .hub-breadcrumb .current {
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    /* HEADER */
+    .hub-header-section {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 34px;
+    }
+
+    .hub-header-icon-box {
+        font-size: 32px;
+        color: #76213b;
+        line-height: 1;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    .hub-header-text h1 {
+        margin: 0 0 6px 0;
+        font-size: 24px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.3px;
+        line-height: 1.2;
+    }
+
+    .hub-header-text p {
+        margin: 0;
+        font-size: 13.5px;
+        color: #64748b;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+
+    /* 3-COLUMN ACTION GRID */
+    .hub-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    /* INDIVIDUAL ACTION CARD */
+    .hub-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 22px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        text-decoration: none !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        cursor: pointer;
+    }
+
+    .hub-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
+    }
+
+    /* ROUNDED SOFT-PINK ICON BOX */
+    .hub-card-icon {
+        width: 52px;
+        height: 52px;
+        min-width: 52px;
+        border-radius: 12px;
+        background: #fdf2f4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.15s ease;
+    }
+
+    .hub-card:hover .hub-card-icon {
+        background: #fae4ea;
+    }
+
+    .hub-card-icon i {
+        font-size: 24px;
+        color: #76213b;
+        transition: transform 0.15s ease;
+    }
+
+    .hub-card:hover .hub-card-icon i {
+        transform: scale(1.08);
+    }
+
+    /* CARD TEXT INFO */
+    .hub-card-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .hub-card-title {
+        font-size: 15.5px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 3px 0;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: color 0.15s ease;
+    }
+
+    .hub-card:hover .hub-card-title {
+        color: #76213b;
+    }
+
+    .hub-card-desc {
+        font-size: 13px;
+        color: #64748b;
+        margin: 0;
+        line-height: 1.35;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* CHEVRON RIGHT ARROW */
+    .hub-card-arrow {
+        font-size: 14px;
+        color: #64748b;
+        margin-left: auto;
+        flex-shrink: 0;
+        transition: transform 0.15s ease, color 0.15s ease;
+    }
+
+    .hub-card:hover .hub-card-arrow {
+        transform: translateX(3px);
+        color: #76213b;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1100px) {
+        .hub-cards-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 700px) {
+        .hub-page-container {
+            padding: 20px 16px 40px 16px;
+        }
+        .hub-cards-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+    }
+</style>
+
+<div class="hub-page-container">
+
+    <!-- BREADCRUMB -->
+    <div class="hub-breadcrumb">
+        <a href="{% url 'fleet_app:fleet_home' %}">Dashboard</a>
+        <span class="sep">&rsaquo;</span>
+        <span class="current">{{ hub_title }}</span>
+    </div>
+
+    <!-- PAGE HEADER -->
+    <div class="hub-header-section">
+        <div class="hub-header-icon-box">
+            <i class="bi {{ hub_icon }}"></i>
+        </div>
+        <div class="hub-header-text">
+            <h1>{{ hub_heading }}</h1>
+            <p>{{ hub_subtitle }}</p>
+        </div>
+    </div>
+
+    <!-- CARDS GRID -->
+    <div class="hub-cards-grid">
+        {% for item in items %}
+        <a href="{{ item.url }}" class="hub-card">
+            <div class="hub-card-icon">
+                <i class="bi {{ item.icon }}"></i>
+            </div>
+            <div class="hub-card-body">
+                <div class="hub-card-title">{{ item.name }}</div>
+                <div class="hub-card-desc">{{ item.description }}</div>
+            </div>
+            <i class="bi bi-chevron-right hub-card-arrow"></i>
+        </a>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

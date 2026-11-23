@@ -121,6 +121,15 @@ thead th,
     background: #ffffff !important;
 }
 
+/* Branded Report Tables with dark burgundy headings */
+.report-table th,
+.report-table thead th,
+.report-table thead tr th {
+    background-color: #76213b !important;
+    background: #76213b !important;
+    color: #ffffff !important;
+}
+
 .table-hover tbody tr:hover,
 tbody tr:hover,
 .stbl tbody tr:hover,

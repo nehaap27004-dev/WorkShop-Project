@@ -1,9 +1,27 @@
 from django.urls import path
 from fleet_app.views import *
+from fleet_app.hub_views import (
+    hub_workshop, hub_purchase_sales, hub_vehicle_service,
+    hub_inventory, hub_people_parties, hub_accounts, hub_admin_master,
+    hub_manage, hub_master, hub_transactions
+)
+
 app_name = 'fleet_app'
 
 urlpatterns = [
     path('', fleet_home, name='fleet_home'),
+    path('api/dashboard-metrics/', dashboard_metrics_api, name='dashboard_metrics_api'),
+    path('hub/workshop/', hub_workshop, name='hub_workshop'),
+    path('hub/purchase-sales/', hub_purchase_sales, name='hub_purchase_sales'),
+    path('hub/vehicle-service/', hub_vehicle_service, name='hub_vehicle_service'),
+    path('hub/inventory/', hub_inventory, name='hub_inventory'),
+    path('hub/people-parties/', hub_people_parties, name='hub_people_parties'),
+    path('hub/customers-staff/', hub_people_parties, name='hub_customers_staff'),
+    path('hub/accounts/', hub_accounts, name='hub_accounts'),
+    path('hub/admin-master/', hub_admin_master, name='hub_admin_master'),
+    path('hub/manage/', hub_manage, name='hub_manage'),
+    path('hub/master/', hub_master, name='hub_master'),
+    path('hub/transactions/', hub_transactions, name='hub_transactions'),
     path('vehicles/', vehicle_list, name='vehicle_list'),
     
     path('manufacturers/', manufacturer_list, name='manufacturer_list'),

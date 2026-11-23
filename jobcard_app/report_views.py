@@ -1524,6 +1524,17 @@ def get_all_categorized_reports():
                             'is_pinned': False,
                         },
                         {
+                            'id': 'fin_active_logs',
+                            'name': 'Active Logs',
+                            'description': 'System activity audit trails, user modifications and transactional event logs.',
+                            'url_name': 'audit_app:activity_log_list',
+                            'icon': 'bi-shield-check',
+                            'color': '#e11d48',
+                            'badge': 'Active Logs',
+                            'badge_type': 'danger',
+                            'is_pinned': True,
+                        },
+                        {
                             'id': 'fin_trial_balance',
                             'name': 'Trial Balance',
                             'description': 'Comprehensive debit and credit balances verifying ledger equality.',

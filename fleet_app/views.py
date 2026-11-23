@@ -124,41 +124,67 @@ SUNDRY_CREDITOR_GROUP_ID = 28
 
 @login_required(login_url='accounts_app:admin_login')
 def fleet_home(request):
+    from fleet_app.dashboard_services import calculate_dashboard_metrics
 
-    vehicles = Vehicle.objects.all()
+    period = request.GET.get('period', 'today')
+    from_date = request.GET.get('from_date')
+    to_date = request.GET.get('to_date')
+    if from_date or to_date:
+        period = request.GET.get('period', 'custom')
 
-
+    metrics = calculate_dashboard_metrics(period=period, from_date_str=from_date, to_date_str=to_date)
 
     context = {
+        'dashboard_data': metrics,
+        'selected_period': metrics['period'],
+        'period_label': metrics['period_label'],
+        'from_date_display': metrics['from_display'],
+        'to_date_display': metrics['to_display'],
+        'from_date_iso': metrics['from_date'],
+        'to_date_iso': metrics['to_date'],
+
+        'open_jobcards_count': metrics['kpis']['open_jobcards'],
+        'in_service_count': metrics['kpis']['in_service'],
+        'on_service_fleet': metrics['kpis']['in_service'],
+        'jobs_completed_count': metrics['kpis']['jobs_completed'],
+        'invoices_count': metrics['kpis']['invoices'],
+        'current_month_invoice': metrics['kpis']['invoices'],
+        'total_expense': metrics['kpis']['total_expense'],
+        'total_expense_display': metrics['kpis']['total_expense_display'],
+        'trends': metrics['kpis']['trends'],
+        'donut': metrics['donut'],
+        'monthly_trend': metrics['monthly_trend'],
+        'activities': metrics['activities'],
+
         'total_client_outstanding': f"{get_client_outstanding():.3f}",
         'total_supplier_outstanding': f"{get_supplier_outstanding():.3f}",
-
-        'current_month_invoice': get_current_month_invoice_count(),
         'current_month_delivery_contract': get_current_month_delivery_contract_count(),
         'current_month_off_hire': get_current_month_off_hire_count(),
         'current_month_hire': get_current_month_hire_count(),
         'current_month_purchase': get_current_month_purchase_count(),
-        'current_month_expense': get_current_month_expense(),
-
+        'current_month_expense': metrics['kpis']['total_expense'],
         'current_month_reading': get_current_month_reading_count(),
         'current_month_repair': get_current_month_repair_count(),
         'current_month_service': get_current_month_service_count(),
-
         'supplier_pending_pdc': get_supplier_pending_pdc_count(),
         'client_pending_pdc': get_client_pending_pdc_count(),
-
         'available_fleet': get_available_fleet_count(),
         'on_rent_fleet': get_on_rent_fleet_count(),
-        'on_service_fleet': get_on_service_fleet_count(),
-
         'active_customers': get_active_customer_count(),
     }
 
-    value = get_client_outstanding()
-    print('CLIENT OUTSTANDING:', value)
-    context['total_client_outstanding'] = value
-
     return render(request, 'fleet_home.html', context)
+
+
+@login_required(login_url='accounts_app:admin_login')
+def dashboard_metrics_api(request):
+    from fleet_app.dashboard_services import calculate_dashboard_metrics
+
+    period = request.GET.get('period', 'today')
+    from_date = request.GET.get('from_date')
+    to_date = request.GET.get('to_date')
+    data = calculate_dashboard_metrics(period=period, from_date_str=from_date, to_date_str=to_date)
+    return JsonResponse(data)
 
 
 
