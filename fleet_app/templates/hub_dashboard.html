@@ -204,6 +204,19 @@
     </div>
 
     <!-- PAGE HEADER -->
+    {% if messages %}
+    <div style="margin-bottom: 18px;">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert" style="border-radius: 10px;">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="hub-header-section">
         <div class="hub-header-icon-box">
             <i class="bi {{ hub_icon }}"></i>
@@ -228,6 +241,26 @@
             <i class="bi bi-chevron-right hub-card-arrow"></i>
         </a>
         {% endfor %}
+        {% if hub_id == 'workshop' %}
+        <form method="post"
+              action="{% url 'fleet_app:clear_transactions' %}"
+              onsubmit="return confirm('Are you sure you want to clear all transactions? Master and setup data will be preserved.');"
+              style="margin: 0;">
+            {% csrf_token %}
+            <button type="submit"
+                    class="hub-card"
+                    style="width: 100%; text-align: left; font-family: inherit;">
+                <div class="hub-card-icon" style="background: #fef2f2;">
+                    <i class="bi bi-trash3" style="color: #dc2626;"></i>
+                </div>
+                <div class="hub-card-body">
+                    <div class="hub-card-title" style="color: #dc2626;">{% trans "Clear Transactions" %}</div>
+                    <div class="hub-card-desc">{% trans "Remove all transactional records" %}</div>
+                </div>
+                <i class="bi bi-chevron-right hub-card-arrow" style="color: #dc2626;"></i>
+            </button>
+        </form>
+        {% endif %}
     </div>
 
 </div>

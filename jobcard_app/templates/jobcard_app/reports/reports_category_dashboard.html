@@ -1,0 +1,528 @@
+{% extends 'fleet_base1.html' %}
+{% load static i18n %}
+
+{% block content %}
+<style>
+    /* PAGE CONTAINER */
+    .jc-reports-page {
+        padding: 24px 30px 50px;
+        background: #fff;
+        min-height: 85vh;
+    }
+
+    /* PAGE HEADER */
+    .jc-reports-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #eef2f6;
+        margin-bottom: 26px;
+        flex-wrap: wrap;
+    }
+
+    .jc-header-title-box {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .jc-header-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        background: #fdf2f4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: {{ current_category.accent|default:'#76213b' }};
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .jc-header-text h2 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1e293b;
+        letter-spacing: -0.2px;
+    }
+
+    .jc-breadcrumb {
+        margin-top: 4px;
+        font-size: 13px;
+        color: #8a99ad;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .jc-breadcrumb a {
+        color: #8a99ad;
+        text-decoration: none;
+        transition: color .15s ease;
+    }
+
+    .jc-breadcrumb a:hover {
+        color: #76213b;
+    }
+
+    .jc-breadcrumb span.sep {
+        color: #b8c2cc;
+        font-size: 11px;
+    }
+
+    .jc-breadcrumb .active-crumb {
+        color: #475569;
+        font-weight: 600;
+    }
+
+    /* RIGHT HEADER ACTIONS */
+    .jc-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .jc-back-hub-btn {
+        height: 38px;
+        padding: 6px 14px;
+        border: 1px solid #d8dee6;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        text-decoration: none !important;
+        transition: all .15s ease;
+    }
+
+    .jc-back-hub-btn:hover {
+        background: #fdf2f4;
+        border-color: #76213b;
+        color: #76213b;
+    }
+
+    /* CATEGORY SELECTOR DROPDOWN */
+    .jc-cat-dropdown {
+        position: relative;
+    }
+
+    .jc-cat-select-btn {
+        height: 38px;
+        padding: 6px 14px;
+        border: 1px solid #d8dee6;
+        border-radius: 6px;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all .15s ease;
+        text-decoration: none !important;
+    }
+
+    .jc-cat-select-btn:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #76213b;
+    }
+
+    .jc-cat-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 4px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        min-width: 230px;
+        z-index: 1050;
+        padding: 6px 0;
+    }
+
+    .jc-cat-menu.show {
+        display: block;
+    }
+
+    .jc-cat-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 16px;
+        font-size: 13px;
+        color: #334155;
+        text-decoration: none !important;
+        transition: background .15s ease, color .15s ease;
+    }
+
+    .jc-cat-menu-item:hover {
+        background: #f8fafc;
+        color: #76213b;
+    }
+
+    .jc-cat-menu-item.active {
+        background: #fdf2f4;
+        color: #76213b;
+        font-weight: 600;
+    }
+
+    .jc-search-container {
+        position: relative;
+        width: 280px;
+        max-width: 100%;
+    }
+
+    .jc-search-container i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 14px;
+        pointer-events: none;
+    }
+
+    .jc-search-input {
+        width: 100%;
+        height: 38px;
+        padding: 6px 12px 6px 36px;
+        border: 1px solid #d8dee6;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #1e293b;
+        background: #fdfdfd;
+        outline: none;
+        transition: all .2s ease;
+    }
+
+    .jc-search-input:focus {
+        border-color: #76213b;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(118, 33, 59, 0.08);
+    }
+
+    /* CATEGORY DESCRIPTION BANNER */
+    .jc-category-intro {
+        font-size: 13.5px;
+        color: #64748b;
+        margin: -12px 0 24px 0;
+    }
+
+    /* SECTION / SUBGROUP HEADER */
+    .jc-subgroup-block {
+        margin-bottom: 28px;
+    }
+
+    .jc-subgroup-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        padding-left: 2px;
+    }
+
+    .jc-subgroup-header i {
+        font-size: 16px;
+        color: #76213b;
+    }
+
+    .jc-subgroup-header h4 {
+        margin: 0;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #202d3c;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* 4-COLUMN STANDARD REPORT GRID */
+    .jc-report-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        row-gap: 0;
+        column-gap: 0;
+        border: 1px solid #e5e9ef;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    /* REPORT LINK ITEM */
+    .jc-report-link {
+        min-width: 0;
+        min-height: 54px;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #1e293b;
+        text-decoration: none !important;
+        border-right: 1px solid #edf1f7;
+        border-bottom: 1px solid #edf1f7;
+        transition: background-color .15s ease, color .15s ease;
+        background: #fff;
+    }
+
+    .jc-report-link:nth-child(4n) {
+        border-right: none;
+    }
+
+    .jc-report-link:hover {
+        background-color: #fcf8f9;
+    }
+
+    .jc-report-link:hover .jc-report-name {
+        color: #76213b;
+    }
+
+    .jc-report-link:hover .jc-report-arrow {
+        color: #76213b;
+        transform: translateX(3px);
+    }
+
+    .jc-report-icon {
+        width: 22px;
+        flex-shrink: 0;
+        text-align: center;
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    .jc-report-name {
+        font-size: 13.5px;
+        font-weight: 500;
+        color: #1e293b;
+        line-height: 1.35;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+    }
+
+    .jc-report-arrow {
+        margin-left: auto;
+        flex-shrink: 0;
+        font-size: 11px;
+        color: #94a3b8;
+        transition: transform .15s ease, color .15s ease;
+    }
+
+    /* EMPTY / NO RESULTS */
+    .jc-no-results {
+        display: none;
+        padding: 48px 24px;
+        text-align: center;
+        color: #64748b;
+        font-size: 14px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px dashed #cbd5e1;
+        margin-top: 20px;
+    }
+
+    /* RESPONSIVE LAYOUT */
+    @media (max-width: 1200px) {
+        .jc-report-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .jc-report-link:nth-child(4n) {
+            border-right: 1px solid #edf1f7;
+        }
+        .jc-report-link:nth-child(3n) {
+            border-right: none;
+        }
+    }
+
+    @media (max-width: 850px) {
+        .jc-report-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .jc-report-link:nth-child(3n) {
+            border-right: 1px solid #edf1f7;
+        }
+        .jc-report-link:nth-child(2n) {
+            border-right: none;
+        }
+        .jc-search-container {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 550px) {
+        .jc-reports-page {
+            padding: 16px 14px;
+        }
+        .jc-report-grid {
+            grid-template-columns: 1fr;
+        }
+        .jc-report-link {
+            border-right: none !important;
+        }
+    }
+</style>
+
+<div class="jc-reports-page">
+
+    <!-- PAGE HEADER -->
+    <div class="jc-reports-header">
+        <div class="jc-header-title-box">
+            <div class="jc-header-icon">
+                <i class="bi {{ current_category.icon }}"></i>
+            </div>
+            <div class="jc-header-text">
+                <h2>{{ current_category.title }} Reports</h2>
+                <div class="jc-breadcrumb">
+                    <a href="{% url 'fleet_app:fleet_home' %}">{% trans "Home" %}</a>
+                    <span class="sep">&rsaquo;</span>
+                    <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}">{% trans "Reports" %}</a>
+                    <span class="sep">&rsaquo;</span>
+                    <span class="active-crumb">{{ current_category.title }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- BACK TO HUB, CATEGORY SWITCHER & SEARCH -->
+        <div class="jc-header-actions">
+            <a href="{% url 'jobcard_app:jobcard_reports_dashboard' %}" class="jc-back-hub-btn">
+                <i class="bi bi-arrow-left"></i>
+                <span>{% trans "All Categories" %}</span>
+            </a>
+
+            <div class="jc-cat-dropdown">
+                <button type="button" class="jc-cat-select-btn" id="catDropdownBtn" onclick="toggleCatMenu(event)">
+                    <i class="bi {{ current_category.icon }}"></i>
+                    <span>{{ current_category.title }}</span>
+                    <i class="bi bi-chevron-down" style="font-size: 10px; color: #94a3b8;"></i>
+                </button>
+                <div class="jc-cat-menu" id="catDropdownMenu">
+                    {% for cat in categories %}
+                    <a href="{% if cat.direct_url %}{{ cat.direct_url }}{% else %}{% url 'jobcard_app:reports_category_dashboard' category_id=cat.id %}{% endif %}"
+                       class="jc-cat-menu-item {% if cat.id == selected_category %}active{% endif %}">
+                        <i class="bi {{ cat.icon }}" style="color: {{ cat.accent }};"></i>
+                        <span>{{ cat.title }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="jc-search-container">
+                <i class="bi bi-search"></i>
+                <input type="text"
+                       id="reportSearchInput"
+                       class="jc-search-input"
+                       value="{{ search_query }}"
+                       placeholder="Search {{ current_category.title|lower }}..."
+                       autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    {% if current_category.description %}
+    <p class="jc-category-intro">{{ current_category.description }}</p>
+    {% endif %}
+
+    <!-- CATEGORIZED REPORT BLOCKS FOR CURRENT CATEGORY -->
+    <div id="reportsContainer">
+        {% for sub in current_category.subgroups %}
+        <div class="jc-subgroup-block" id="sub-block-{{ sub.id }}">
+            <div class="jc-subgroup-header">
+                <i class="bi {{ sub.icon }}"></i>
+                <h4>{{ sub.title }}</h4>
+            </div>
+
+            <div class="jc-report-grid">
+                {% for rep in sub.reports %}
+                <a href="{{ rep.url }}"
+                   class="jc-report-link"
+                   data-report-name="{{ rep.name|lower }} {{ rep.description|lower }}">
+                    <i class="bi {{ rep.icon }} jc-report-icon" style="color: {{ rep.color|default:'#76213b' }};"></i>
+                    <span class="jc-report-name">{{ rep.name }}</span>
+                    <i class="bi bi-chevron-right jc-report-arrow"></i>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- NO RESULTS MESSAGE -->
+    <div class="jc-no-results" id="noResultsBlock">
+        <i class="bi bi-search" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
+        {% trans "No reports found matching your search." %}
+    </div>
+
+</div>
+
+<script>
+    function toggleCatMenu(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('catDropdownMenu');
+        if (menu) {
+            menu.classList.toggle('show');
+        }
+    }
+
+    document.addEventListener('click', () => {
+        const menu = document.getElementById('catDropdownMenu');
+        if (menu) {
+            menu.classList.remove('show');
+        }
+    });
+
+    function applySearch() {
+        const input = document.getElementById('reportSearchInput');
+        if (!input) return;
+        const query = input.value.trim().toLowerCase();
+        const subgroups = document.querySelectorAll('.jc-subgroup-block');
+        let totalVisible = 0;
+
+        subgroups.forEach(subBlock => {
+            const links = subBlock.querySelectorAll('.jc-report-link');
+            let subHasVisible = false;
+
+            links.forEach(link => {
+                const name = link.getAttribute('data-report-name') || '';
+                const matches = !query || name.includes(query);
+
+                if (matches) {
+                    link.style.display = 'flex';
+                    subHasVisible = true;
+                    totalVisible++;
+                } else {
+                    link.style.display = 'none';
+                }
+            });
+
+            subBlock.style.display = subHasVisible ? 'block' : 'none';
+        });
+
+        const noResults = document.getElementById('noResultsBlock');
+        if (noResults) {
+            noResults.style.display = (totalVisible === 0) ? 'block' : 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('reportSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', applySearch);
+            if (searchInput.value.trim()) {
+                applySearch();
+            }
+        }
+    });
+</script>
+{% endblock %}

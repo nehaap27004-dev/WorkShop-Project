@@ -1615,6 +1615,35 @@ def get_all_categorized_reports():
                 },
             ]
         },
+        {
+            'id': 'active-logs',
+            'title': 'Active Logs',
+            'icon': 'bi-shield-check',
+            'accent': '#e11d48',
+            'badge_class': 'badge-danger',
+            'direct_url_name': 'audit_app:activity_log_list',
+            'description': 'System activity audit trails, user modifications and transactional event logs.',
+            'subgroups': [
+                {
+                    'id': 'audit_activity_logs',
+                    'title': 'Activity & Audit Trails',
+                    'icon': 'bi-activity',
+                    'reports': [
+                        {
+                            'id': 'act_active_logs',
+                            'name': 'Active Logs',
+                            'description': 'System activity audit trails, user modifications and transactional event logs.',
+                            'url_name': 'audit_app:activity_log_list',
+                            'icon': 'bi-shield-check',
+                            'color': '#e11d48',
+                            'badge': 'Live Logs',
+                            'badge_type': 'danger',
+                            'is_pinned': True,
+                        },
+                    ]
+                },
+            ]
+        },
     ]
 
     total_reports = 0
@@ -1622,6 +1651,11 @@ def get_all_categorized_reports():
 
     for cat in categories:
         cat_report_count = 0
+        if cat.get('direct_url_name'):
+            try:
+                cat['direct_url'] = reverse(cat['direct_url_name'])
+            except Exception:
+                cat['direct_url'] = None
         for sub in cat['subgroups']:
             total_subgroups += 1
             for rep in sub['reports']:
@@ -1646,8 +1680,39 @@ def get_all_categorized_reports():
 
 @login_required
 def jobcard_reports_dashboard(request):
-    reports_data = get_all_categorized_reports()
+    """
+    Main Reports Hub: Shows all report categories as large cards.
+    Clicking a category leads to its dedicated sub-dashboard.
+    Individual reports are ONLY accessible from category sub-dashboards.
+    """
     raw_category = request.GET.get('category', '').strip()
+    if raw_category:
+        from django.shortcuts import redirect
+        return redirect('jobcard_app:reports_category_dashboard', category_id=raw_category)
+
+    reports_data = get_all_categorized_reports()
+    search_query = request.GET.get('search', '').strip()
+
+    context = {
+        **reports_data,
+        'search_query': search_query,
+        'page_title': 'Reports Dashboard',
+        'is_main_hub': True,
+    }
+    return render(
+        request,
+        'jobcard_app/reports/jobcard_reports_dashboard.html',
+        context
+    )
+
+
+@login_required
+def reports_category_dashboard(request, category_id):
+    """
+    Category Sub-Dashboard: Shows all subgroups and reports for a specific category.
+    This is the ONLY entry point to individual reports.
+    """
+    reports_data = get_all_categorized_reports()
 
     category_alias_map = {
         'jobcards': 'operations',
@@ -1663,31 +1728,44 @@ def jobcard_reports_dashboard(request):
         'finance': 'financial',
     }
 
-    if raw_category in category_alias_map:
-        selected_category = category_alias_map[raw_category]
-    else:
-        # Default to the first category (e.g. Workshop Operations) so user is not overwhelmed
-        selected_category = reports_data['categories'][0]['id']
-
+    resolved_id = category_alias_map.get(category_id, category_id)
     current_category = next(
-        (cat for cat in reports_data['categories'] if cat['id'] == selected_category),
-        reports_data['categories'][0]
+        (cat for cat in reports_data['categories'] if cat['id'] == resolved_id),
+        None
     )
 
+    if not current_category:
+        # Redirect to main hub if category not found
+        from django.shortcuts import redirect
+        return redirect('jobcard_app:jobcard_reports_dashboard')
+
+    if current_category.get('direct_url'):
+        from django.shortcuts import redirect
+        return redirect(current_category['direct_url'])
+
     search_query = request.GET.get('search', '').strip()
+    # Find adjacent categories for navigation
+    cats = reports_data['categories']
+    current_idx = next((i for i, c in enumerate(cats) if c['id'] == resolved_id), 0)
+    prev_category = cats[current_idx - 1] if current_idx > 0 else None
+    next_category = cats[current_idx + 1] if current_idx < len(cats) - 1 else None
 
     context = {
         **reports_data,
-        'selected_category': selected_category,
         'current_category': current_category,
+        'selected_category': resolved_id,
         'search_query': search_query,
         'page_title': f"{current_category['title']} Reports",
+        'is_main_hub': False,
+        'prev_category': prev_category,
+        'next_category': next_category,
     }
     return render(
         request,
-        'jobcard_app/reports/jobcard_reports_dashboard.html',
+        'jobcard_app/reports/reports_category_dashboard.html',
         context
     )
+
 
 @login_required
 def completed_not_delivered_report(request):

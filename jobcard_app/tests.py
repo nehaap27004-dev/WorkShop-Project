@@ -946,7 +946,7 @@ class ReportsDashboardTests(TestCase):
         self.assertIn('total_subgroups', data)
 
         self.assertGreaterEqual(data['total_reports'], 50)
-        self.assertEqual(data['total_categories'], 5)
+        self.assertEqual(data['total_categories'], 6)
         self.assertGreaterEqual(data['total_subgroups'], 10)
 
         for cat in data['categories']:
@@ -971,18 +971,87 @@ class ReportsDashboardTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'jobcard_app/reports/jobcard_reports_dashboard.html')
-        self.assertContains(response, 'Workshop Operations Reports')
+        self.assertTrue(response.context['is_main_hub'])
+        self.assertContains(response, 'Reports Dashboard')
         self.assertContains(response, 'Workshop Operations')
         self.assertContains(response, 'Inventory &amp; Stock')
         self.assertContains(response, 'Billing &amp; Deliveries')
         self.assertContains(response, 'Customers &amp; Vehicles')
         self.assertContains(response, 'Financial &amp; Accounts')
+        self.assertContains(response, 'Active Logs')
 
-    def test_jobcard_reports_dashboard_category_filter(self):
+        # Main hub links to category sub-dashboards, NOT individual report views
+        self.assertContains(
+            response,
+            reverse('jobcard_app:reports_category_dashboard', kwargs={'category_id': 'operations'})
+        )
+        self.assertContains(response, reverse('audit_app:activity_log_list'))
+        self.assertNotContains(response, 'Job Card Status')
+        self.assertNotContains(response, reverse('jobcard_app:jobcard_status_report'))
+
+    def test_reports_category_dashboard_view(self):
+        self.client.login(username='reportuser', password='password123')
+        url = reverse('jobcard_app:reports_category_dashboard', kwargs={'category_id': 'operations'})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'jobcard_app/reports/reports_category_dashboard.html')
+        self.assertFalse(response.context['is_main_hub'])
+        self.assertEqual(response.context['selected_category'], 'operations')
+        self.assertContains(response, 'Workshop Operations Reports')
+        self.assertContains(response, 'Job Card Status')
+        self.assertContains(response, reverse('jobcard_app:jobcard_status_report'))
+
+    def test_jobcard_reports_dashboard_category_query_redirects(self):
         self.client.login(username='reportuser', password='password123')
         url = reverse('jobcard_app:jobcard_reports_dashboard') + '?category=financial'
         response = self.client.get(url)
 
+        self.assertRedirects(
+            response,
+            reverse('jobcard_app:reports_category_dashboard', kwargs={'category_id': 'financial'})
+        )
+
+    def test_reports_category_dashboard_invalid_category_redirects_to_hub(self):
+        self.client.login(username='reportuser', password='password123')
+        url = reverse('jobcard_app:reports_category_dashboard', kwargs={'category_id': 'nonexistent'})
+        response = self.client.get(url)
+
+        self.assertRedirects(response, reverse('jobcard_app:jobcard_reports_dashboard'))
+
+
+class ClearTransactionsTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.user, _ = User.objects.get_or_create(
+            username='clearuser',
+            defaults={'email': 'clearuser@example.com'}
+        )
+        self.user.set_password('password123')
+        self.user.save()
+
+    def test_workshop_hub_shows_clear_transactions_button(self):
+        self.client.login(username='clearuser', password='password123')
+        response = self.client.get(reverse('fleet_app:hub_workshop'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['selected_category'], 'financial')
+        self.assertContains(response, 'Clear Transactions')
+        self.assertContains(response, reverse('fleet_app:clear_transactions'))
+        self.assertContains(response, 'return confirm(')
+
+    def test_clear_transactions_deletes_transactions_and_preserves_users(self):
+        from django.contrib.auth import get_user_model
+        from audit_app.models import ActivityLog
+        ActivityLog.objects.create(
+            user=self.user,
+            action_type='CREATE',
+            module='JOBCARD',
+            entity_type='JobCard',
+            entity_reference='JC-002',
+        )
+        self.client.login(username='clearuser', password='password123')
+        response = self.client.post(reverse('fleet_app:clear_transactions'))
+        self.assertRedirects(response, reverse('fleet_app:hub_workshop'))
+        self.assertEqual(ActivityLog.objects.count(), 0)
+        self.assertTrue(get_user_model().objects.filter(username='clearuser').exists())
 

@@ -259,6 +259,7 @@ urlpatterns = [
     path('reports/invoiced-payment-pending/', report_views.invoiced_payment_pending_report, name='invoiced_payment_pending_report'),
     path('reports/technician-pending-jobs/', report_views.technician_pending_jobs_report, name='technician_pending_jobs_report'),
     path('reports/', report_views.jobcard_reports_dashboard, name='jobcard_reports_dashboard'),
+    path('reports/category/<str:category_id>/', report_views.reports_category_dashboard, name='reports_category_dashboard'),
     path('reports/completed-not-delivered/', report_views.completed_not_delivered_report, name='completed_not_delivered_report'),
     path( 'reports/job-card-aging/', jobcard_aging_report,name='jobcard_aging_report'),
     path('reports/inspection/', report_views.inspection_reports_dashboard,name='inspection_reports_dashboard'),

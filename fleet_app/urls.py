@@ -3,7 +3,7 @@ from fleet_app.views import *
 from fleet_app.hub_views import (
     hub_workshop, hub_purchase_sales, hub_vehicle_service,
     hub_inventory, hub_people_parties, hub_accounts, hub_admin_master,
-    hub_manage, hub_master, hub_transactions
+    hub_manage, hub_master, hub_transactions, clear_transactions
 )
 
 app_name = 'fleet_app'
@@ -12,6 +12,7 @@ urlpatterns = [
     path('', fleet_home, name='fleet_home'),
     path('api/dashboard-metrics/', dashboard_metrics_api, name='dashboard_metrics_api'),
     path('hub/workshop/', hub_workshop, name='hub_workshop'),
+    path('hub/workshop/clear-transactions/', clear_transactions, name='clear_transactions'),
     path('hub/purchase-sales/', hub_purchase_sales, name='hub_purchase_sales'),
     path('hub/vehicle-service/', hub_vehicle_service, name='hub_vehicle_service'),
     path('hub/inventory/', hub_inventory, name='hub_inventory'),

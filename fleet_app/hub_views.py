@@ -1,5 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+from django.db import transaction
 from django.urls import reverse
 
 
@@ -442,3 +445,120 @@ def hub_master(request):
 @login_required
 def hub_transactions(request):
     return redirect('fleet_app:hub_purchase_sales')
+
+
+@login_required
+@require_POST
+def clear_transactions(request):
+    """
+    Deletes all transactional records across workshop, accounting, inventory,
+    fleet operations, and activity logs while preserving all master/setup data.
+    """
+    from jobcard_app.models import (
+        InvoiceItem, InvoiceVehicle, Invoice as JCInvoice,
+        DeliveryService, DeliveryPart, DeliveryLabour, DeliveryNoteVehicle, DeliveryNote,
+        QuotationItem, QuotationComplaint, QuotationVehicle, Quotation,
+        EstimateItem, EstimateComplaint, EstimateVehicle, Estimate,
+        ExteriorDamage, InteriorInspection, MechanicalInspection, AccessoriesInspection,
+        InspectionFinding, VehicleInspection,
+        CustomInspectionAnswer, CustomInspection,
+        JobCardPart, JobCardLabour, JobCardFinding, JobCardComplaint, JobCardVehicle, JobCard,
+    )
+    from accounts_app.models import (
+        LedgerPosting, BillClearance, BillWiseOpening,
+        ReceiptDetails, ReceiptMaster, ReceiptBillDetails, ReceiptBillMaster,
+        ReceiptItems, ReceiptCheque, Receipt,
+        PaymentDetails, PaymentMaster, PaymentBillDetails, PaymentBillMaster,
+        LocalPaymentItems, LocalPaymentCheque, LocalPayment, Payment,
+        ExpenseDetails, ExpenseMaster,
+        JournalDetail, JournalMaster, Journal,
+        ContraMaster, Contra,
+        DebitNoteDetail, DebitNoteMaster,
+        CreditNoteDetail, CreditNoteMaster,
+        OpeningVoucherDetails, OpeningVoucherMaster,
+    )
+    from item_master.models import (
+        Stock, StockTransferItem, StockTransfer, OpeningStockDetail, OpeningStockMaster,
+        ItemGrvDetail, ItemGrvMaster,
+        PurchaseDetail, PurchaseMaster,
+        PurchaseReturnDetail, PurchaseReturnMaster,
+        SalesDetail, SalesMaster,
+        SalesReturnDetail, SalesReturnMaster,
+        Batch, OutstandingReport, BillByBill, DayBookReport,
+    )
+    from fleet_app.models import (
+        OffHireDetails, OffHire,
+        DeliveryContractSpareParts, DeliveryContractDetails, DeliveryContract,
+        FleetHireDetails, FleetHire, FleetContract,
+        FleetQuotationItem, FleetQuotation,
+        SimpleQuotationDetails, SimpleQuotation,
+        InvoiceDetails, Invoice as FleetInvoice,
+        TimeSheetDetail, TimeSheet,
+        RepairAndMaintenanceItem, RepairAndMaintenance,
+        SpareParts, LabourCharge, RepairMaster,
+        ReplacementDetail, ReplacementMaster,
+        ReturnSparePartsDetails, ReturnSparePartsMaster,
+        EMIInstallment, VehicleEMI, VehicleProfitLoss,
+        PODetails, POMaster,
+    )
+    from audit_app.models import ActivityLog
+
+    models_to_clear = [
+        # 1. Workshop / Job Card Operations (child -> parent)
+        InvoiceItem, InvoiceVehicle, JCInvoice,
+        DeliveryService, DeliveryPart, DeliveryLabour, DeliveryNoteVehicle, DeliveryNote,
+        QuotationItem, QuotationComplaint, QuotationVehicle, Quotation,
+        EstimateItem, EstimateComplaint, EstimateVehicle, Estimate,
+        ExteriorDamage, InteriorInspection, MechanicalInspection, AccessoriesInspection,
+        InspectionFinding, VehicleInspection,
+        CustomInspectionAnswer, CustomInspection,
+        JobCardPart, JobCardLabour, JobCardFinding, JobCardComplaint, JobCardVehicle, JobCard,
+        # 2. Accounting & Vouchers
+        LedgerPosting, BillClearance, BillWiseOpening,
+        ReceiptDetails, ReceiptMaster, ReceiptBillDetails, ReceiptBillMaster,
+        ReceiptItems, ReceiptCheque, Receipt,
+        PaymentDetails, PaymentMaster, PaymentBillDetails, PaymentBillMaster,
+        LocalPaymentItems, LocalPaymentCheque, LocalPayment, Payment,
+        ExpenseDetails, ExpenseMaster,
+        JournalDetail, JournalMaster, Journal,
+        ContraMaster, Contra,
+        DebitNoteDetail, DebitNoteMaster,
+        CreditNoteDetail, CreditNoteMaster,
+        OpeningVoucherDetails, OpeningVoucherMaster,
+        # 3. Inventory & Stock
+        Stock, StockTransferItem, StockTransfer, OpeningStockDetail, OpeningStockMaster,
+        ItemGrvDetail, ItemGrvMaster,
+        PurchaseDetail, PurchaseMaster,
+        PurchaseReturnDetail, PurchaseReturnMaster,
+        SalesDetail, SalesMaster,
+        SalesReturnDetail, SalesReturnMaster,
+        Batch, OutstandingReport, BillByBill, DayBookReport,
+        # 4. Fleet Operations & Contracts
+        OffHireDetails, OffHire,
+        DeliveryContractSpareParts, DeliveryContractDetails, DeliveryContract,
+        FleetHireDetails, FleetHire, FleetContract,
+        FleetQuotationItem, FleetQuotation,
+        SimpleQuotationDetails, SimpleQuotation,
+        InvoiceDetails, FleetInvoice,
+        TimeSheetDetail, TimeSheet,
+        RepairAndMaintenanceItem, RepairAndMaintenance,
+        SpareParts, LabourCharge, RepairMaster,
+        ReplacementDetail, ReplacementMaster,
+        ReturnSparePartsDetails, ReturnSparePartsMaster,
+        EMIInstallment, VehicleEMI, VehicleProfitLoss,
+        PODetails, POMaster,
+        # 5. Activity Logs
+        ActivityLog,
+    ]
+
+    total_deleted = 0
+    with transaction.atomic():
+        for model in models_to_clear:
+            deleted_count, _ = model.objects.all().delete()
+            total_deleted += deleted_count
+
+    messages.success(
+        request,
+        f'All transactional data cleared successfully ({total_deleted} records removed). Master and setup data preserved.'
+    )
+    return redirect('fleet_app:hub_workshop')
