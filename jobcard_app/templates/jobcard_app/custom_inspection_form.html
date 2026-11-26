@@ -30,9 +30,6 @@
 .ci-add{background:#9f1045;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .ci-add:hover{background:#830d38}
 .ci-err{color:#dc2626;font-size:11.5px;margin-top:4px;min-height:14px}
-.ci-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;max-height:70px;overflow-y:auto}
-.ci-chip{background:#fdf2f5;border:1px solid #f9c9d5;color:#9f1045;border-radius:20px;padding:2px 4px 2px 10px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
-.ci-chip button{background:none;border:none;color:#9f1045;cursor:pointer;font-size:12px;padding:0 4px}
 .ci-main{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
 @media(max-width:900px){.ci-main{grid-template-columns:1fr}}
 .ci-ph{background:#9f1045;color:#fff;border-radius:10px 10px 0 0;padding:10px 16px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
@@ -57,40 +54,23 @@
 #ciMsg.ok{display:block;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
 #ciMsg.err{display:block;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
 /* Compact detail fields layout */
-.ci-section {
-    margin-bottom: 10px !important;
-    padding: 8px 10px !important;
-}
-
-.ci-tbl {
-    border-spacing: 0;
-    margin-top: 2px !important;
-}
-
-.ci-tbl th {
-    padding: 5px 6px !important;
-}
-
-.ci-tbl td {
-    padding: 3px 4px !important;
-    vertical-align: middle;
-}
-
-.ci-tbl .ci-in {
-    padding: 5px 7px !important;
-    height: 34px;
-}
-
-.ci-tbl tr {
-    height: auto;
-}
-
-.ci-tbl td:last-child {
-    white-space: nowrap;
-    width: 85px;
-}
-
-.ci-ic {width: 30px;height: 30px;margin: 0 2px;}
+.ci-section{margin-bottom:10px!important;padding:8px 10px!important}
+.ci-tbl{border-spacing:0;margin-top:2px!important}
+.ci-tbl th{padding:5px 6px!important}
+.ci-tbl td{padding:3px 4px!important;vertical-align:middle}
+.ci-tbl .ci-in{padding:5px 7px!important;height:34px}
+.ci-tbl tr{height:auto}
+.ci-tbl td:last-child{white-space:nowrap;width:85px}
+.ci-ic{width:30px;height:30px;margin:0 2px}
+/* Manage Types */
+.ci-link{background:none;border:none;color:#9f1045;font-size:12px;font-weight:700;cursor:pointer;padding:4px 0;margin-top:2px}
+.ci-link:hover{text-decoration:underline}
+.ci-modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;align-items:center;justify-content:center}
+.ci-modal.show{display:flex}
+.ci-modal-box{background:#fff;border-radius:12px;width:92%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
+.ci-tylist{margin-top:10px;overflow-y:auto;max-height:50vh}
+.ci-tyrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 4px;border-bottom:1px solid #f1f5f9;font-size:13px}
+.ci-tyrow:last-child{border-bottom:none}
 </style>
 
 <div class="ci-wrap">
@@ -129,6 +109,9 @@
       <div class="ci-lbl">Type <i>*</i></div>
       <div class="ci-row"><input id="tyName" class="ci-in" placeholder="e.g. General Check"><button class="ci-add" onclick="addNode('type')">+ Add Type</button></div>
       <div class="ci-err" id="tyErr"></div>
+      <button type="button" class="ci-link" onclick="openTypes()">
+        <i class="bi bi-list-ul"></i> Manage types (<span id="tyCount">0</span>)
+      </button>
     </div>
   </div>
 
@@ -152,6 +135,20 @@
   <div class="ci-bar">
     <a href="{% url 'jobcard_app:inspection_list' %}" class="ci-btn">{% trans "Cancel" %}</a>
     <button class="ci-btn pri" onclick="saveVoucher()"><i class="bi bi-check2-circle"></i> {% trans "Save Voucher" %}</button>
+  </div>
+</div>
+
+<!-- Manage Types popup -->
+<div id="tyModal" class="ci-modal" onclick="if(event.target===this)closeTypes()">
+  <div class="ci-modal-box">
+    <div class="ci-ph">
+      <span><i class="bi bi-tags mr-2"></i> Manage Types</span>
+      <button type="button" class="ci-btn" onclick="closeTypes()">✕</button>
+    </div>
+    <div class="ci-pb">
+      <input id="tySearch" class="ci-in" placeholder="Search types..." oninput="renderTypeList()">
+      <div id="tyList" class="ci-tylist"></div>
+    </div>
   </div>
 </div>
 
@@ -211,9 +208,53 @@ async function loadTree() {
   renderTypes(); renderTree(); renderFields();
 }
 
+/* ── Types: count + Manage Types popup ── */
 function renderTypes() {
+  el('tyCount').textContent = types.length;
+  if (el('tyModal').classList.contains('show')) renderTypeList();
+}
+function openTypes() {
+  el('tySearch').value = '';
+  el('tyModal').classList.add('show');
+  renderTypeList();
+  el('tySearch').focus();
+}
+function closeTypes() { el('tyModal').classList.remove('show'); }
+
+function renderTypeList() {
+  const q = el('tySearch').value.trim().toLowerCase();
+  const list = types
+    .filter(t => t.name.toLowerCase().includes(q))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  el('tyList').innerHTML = list.map(t => `
+    <div class="ci-tyrow">
+      <span>${esc(t.name)}</span>
+      <span>
+        <button type="button" class="ci-ic" title="Rename" onclick="renameType(${t.id})"><i class="bi bi-pencil"></i></button>
+        <button type="button" class="ci-ic del" title="Delete" onclick="delType(${t.id})"><i class="bi bi-trash"></i></button>
+      </span>
+    </div>`).join('') || '<div class="ci-empty">No types found.</div>';
 }
 
+async function renameType(id) {
+  const t = types.find(x => x.id === id);
+  if (!t) return;
+  const name = prompt('Rename type:', t.name);
+  if (name === null || !name.trim() || name.trim() === t.name) return;
+  const r = await post(URLS.node, { kind: 'type', id, name: name.trim() });
+  if (!r.ok) { msg(r.data.error || 'Rename failed.', 'err'); return; }
+  flushVals(); await loadTree(); msg('Type renamed.', 'ok');
+}
+
+async function delType(id) {
+  const t = types.find(x => x.id === id);
+  if (!t || !confirm(`Delete type "${t.name}"?`)) return;
+  const r = await post(URLS.del, { kind: 'type', id });
+  if (!r.ok) { msg(r.data.error || 'Delete failed.', 'err'); return; }
+  flushVals(); await loadTree(); msg('Type deleted.', 'ok');
+}
+
+/* ── Tree ── */
 function renderTree() {
   el('subParent').textContent = sel.main ? findMain(sel.main).name : 'none selected';
   el('tree').innerHTML = tree.map(m => {
@@ -235,20 +276,17 @@ function selMain(id) {
   sel = { main: id, sub: null }; renderTree(); renderFields();
 }
 function selSub(id) {
-    const f = findSub(id);
-    flushVals();
-
-    sel = { main: f.m.id, sub: id };
-
-    // Move the selected section to the top
-    selectedSubs = selectedSubs.filter(x => x !== id);
-    selectedSubs.unshift(id);
-
-    open[f.m.id] = true;
-
-    renderTree();
-    renderFields();
+  const f = findSub(id);
+  flushVals();
+  sel = { main: f.m.id, sub: id };
+  // Move the selected section to the top
+  selectedSubs = selectedSubs.filter(x => x !== id);
+  selectedSubs.unshift(id);
+  open[f.m.id] = true;
+  renderTree();
+  renderFields();
 }
+
 /* ── Main Head / Sub Head / Type ── */
 async function addNode(kind) {
   const ids = { main: ['mhName', 'mhErr'], sub: ['shName', 'shErr'], type: ['tyName', 'tyErr'] }[kind];
@@ -267,12 +305,7 @@ async function addNode(kind) {
   if (kind === 'sub')  { sel = { main: +parent, sub: r.data.id }; open[+parent] = true; }
   renderTree(); renderFields();
 }
-async function delType(id, name) {
-  if (!confirm(`Delete type "${name}"?`)) return;
-  const r = await post(URLS.del, { kind: 'type', id });
-  if (!r.ok) { msg(r.data.error || 'Delete failed.', 'err'); return; }
-  flushVals(); await loadTree(); msg('Type deleted.', 'ok');
-}
+
 async function deleteSelected() {
   let kind, id, name;
   if (sel.sub)       { kind = 'sub';  id = sel.sub;  name = findSub(id).s.name; }
@@ -281,7 +314,14 @@ async function deleteSelected() {
   if (!confirm(`Delete ${kind === 'sub' ? 'sub head' : 'main head'} "${name}" and its fields? Saved vouchers keep their entries.`)) return;
   const r = await post(URLS.del, { kind, id });
   if (!r.ok) { msg(r.data.error || 'Delete failed.', 'err'); return; }
-  if (kind === 'sub') sel.sub = null; else sel = { main: null, sub: null };
+  if (kind === 'sub') {
+    selectedSubs = selectedSubs.filter(x => x !== id);
+    sel.sub = null;
+  } else {
+    const m = findMain(id);
+    if (m) m.subs.forEach(s => { selectedSubs = selectedSubs.filter(x => x !== s.id); });
+    sel = { main: null, sub: null };
+  }
   flushVals(); await loadTree(); msg('Deleted.', 'ok');
 }
 
@@ -294,126 +334,74 @@ function rowsFor(s) {
   return edits[s.id];
 }
 function cur(subId = sel.sub) {
-    return rowsFor(findSub(subId).s);
+  return rowsFor(findSub(subId).s);
 }
 function typeOptions(v) {
   return '<option value="">— Select Type —</option>' +
     types.map(t => `<option value="${t.id}" ${String(t.id) === String(v) ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
 }
 function renderFields() {
-    const box = el('fieldsBox');
+  const box = el('fieldsBox');
 
-    if (!selectedSubs.length) {
-        box.innerHTML =
-            '<div class="ci-empty">Select Sub Heads in the tree to see their fields.</div>';
-        return;
-    }
+  if (!selectedSubs.length) {
+    box.innerHTML = '<div class="ci-empty">Select Sub Heads in the tree to see their fields.</div>';
+    return;
+  }
 
-    box.innerHTML = selectedSubs.map(subId => {
-        const found = findSub(subId);
-        if (!found) return '';
+  box.innerHTML = selectedSubs.map(subId => {
+    const found = findSub(subId);
+    if (!found) return '';
 
-        const { m, s } = found;
-        const rows = rowsFor(s);
+    const { m, s } = found;
+    const rows = rowsFor(s);
 
-        return `
-        <div class="ci-section" style="
-            margin-bottom:20px;
-            padding:15px;
-            border:1px solid #e2e8f0;
-            border-radius:8px;
-            background:#fff;
-        ">
-            <div style="font-weight:700;color:#9f1045;margin-bottom:8px">
-                ${esc(m.name)} › ${esc(s.name)}
-            </div>
-
-            <div style="overflow-x:auto">
-                <table class="ci-tbl">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Description</th>
-                            <th>Value</th>
-                            <th>Type</th>
-                            <th>Remark</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    ${rows.length ? rows.map((f, i) => `
-                        <tr>
-                            <td>${i + 1}</td>
-                            <td>
-                                <input class="ci-in"
-                                    ${f._edit ? '' : 'readonly'}
-                                    value="${esc(f.label)}"
-                                    oninput="upd(${subId},${i},'label',this.value)">
-                            </td>
-                            <td>
-                                <input class="ci-in"
-                                    value="${esc(f.value)}"
-                                    oninput="upd(${subId},${i},'value',this.value)">
-                            </td>
-                            <td>
-                                <select class="ci-in"
-                                    onchange="upd(${subId},${i},'type_id',this.value)">
-                                    ${typeOptions(f.type_id)}
-                                </select>
-                            </td>
-                            <td>
-                                <input class="ci-in"
-                                    value="${esc(f.remark)}"
-                                    oninput="upd(${subId},${i},'remark',this.value)">
-                            </td>
-                            <td>
-                                <button class="ci-ic"
-                                    onclick="toggleEdit(${subId},${i})">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="ci-ic del"
-                                    onclick="delField(${subId},${i})">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `).join('') : `
-                        <tr>
-                            <td colspan="6" class="ci-empty">
-                                No fields yet.
-                            </td>
-                        </tr>
-                    `}
-                    </tbody>
-                </table>
-            </div>
-        </div>`;
-    }).join('');
+    return `
+    <div class="ci-section" style="margin-bottom:20px;padding:15px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;">
+      <div style="font-weight:700;color:#9f1045;margin-bottom:8px">${esc(m.name)} › ${esc(s.name)}</div>
+      <div style="overflow-x:auto">
+        <table class="ci-tbl">
+          <thead>
+            <tr><th>#</th><th>Description</th><th>Value</th><th>Type</th><th>Remark</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+          ${rows.length ? rows.map((f, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td><input class="ci-in" ${f._edit ? '' : 'readonly'} value="${esc(f.label)}" oninput="upd(${subId},${i},'label',this.value)"></td>
+              <td><input class="ci-in" value="${esc(f.value)}" oninput="upd(${subId},${i},'value',this.value)"></td>
+              <td><select class="ci-in" onchange="upd(${subId},${i},'type_id',this.value)">${typeOptions(f.type_id)}</select></td>
+              <td><input class="ci-in" value="${esc(f.remark)}" oninput="upd(${subId},${i},'remark',this.value)"></td>
+              <td>
+                <button class="ci-ic" onclick="toggleEdit(${subId},${i})"><i class="bi bi-pencil"></i></button>
+                <button class="ci-ic del" onclick="delField(${subId},${i})"><i class="bi bi-trash"></i></button>
+              </td>
+            </tr>`).join('') : `
+            <tr><td colspan="6" class="ci-empty">No fields yet.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
 }
 function upd(subId, i, key, val) {
-    cur(subId)[i][key] = val;
-
-    if (key === 'label') {
-        tplDirty[subId] = true;
-    }
+  cur(subId)[i][key] = val;
+  if (key === 'label') tplDirty[subId] = true;
 }
 function toggleEdit(subId, i) {
-    const r = cur(subId)[i];
-    r._edit = !r._edit;
-    renderFields();
+  const r = cur(subId)[i];
+  r._edit = !r._edit;
+  renderFields();
 }
-
 function delField(subId, i) {
-    cur(subId).splice(i, 1);
-    tplDirty[subId] = true;
-
-    renderFields();
-    renderTree();
+  cur(subId).splice(i, 1);
+  tplDirty[subId] = true;
+  renderFields();
+  renderTree();
 }
 function addField() {
   if (!sel.sub) { msg('Select a Sub Head first.', 'err'); return; }
   const rows = cur();
-  rows.push({ id: null, label: '', value: '', type_id: '', remark: '', _edit: true });   // numbered prefix, editable
+  rows.push({ id: null, label: '', value: '', type_id: '', remark: '', _edit: true });
   tplDirty[sel.sub] = true;
   renderFields(); renderTree();
   const inp = document.querySelector('#fieldsBox tbody tr:last-child td:nth-child(2) input');

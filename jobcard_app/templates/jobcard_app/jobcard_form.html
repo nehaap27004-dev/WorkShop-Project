@@ -329,11 +329,15 @@
               </td>
               <td><input type="text" name="complaint_description[]" value="{{ c.description }}" class="fi" placeholder="Describe complaint..."></td>
               <td>
-                <select name="complaint_technician[]" class="complaint-tech-select fi" data-initial-tech-id="{{ c.technician_id|default:'' }}">
-                  <option value="">— Select Technician —</option>
-                </select>
+                <div class="cust-group">
+                  <select name="complaint_technician[]" class="complaint-tech-select fi" data-initial-tech-id="{{ c.technician_id|default:'' }}">
+                    <option value="">— Select Technician —</option>
+                  </select>
+                  <button type="button" class="btn-plus" onclick="openNewStaff()" title="{% trans 'Create new technician' %}">
+                    <i class="bi bi-plus-lg"></i>
+                  </button>
+                </div>
                 <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="{% if c.is_manual_override %}1{% else %}0{% endif %}">
-                
               </td>
               <td>
                 <select name="complaint_status[]" class="fi">
@@ -368,9 +372,15 @@
               </td>
               <td><input type="text" name="complaint_description[]" class="fi" placeholder="Describe complaint..."></td>
               <td>
-                <select name="complaint_technician[]" class="complaint-tech-select fi"><option value="">— Select Technician —</option></select>
+                <div class="cust-group">
+                  <select name="complaint_technician[]" class="complaint-tech-select fi">
+                    <option value="">— Select Technician —</option>
+                  </select>
+                  <button type="button" class="btn-plus" onclick="openNewStaff()" title="{% trans 'Create new technician' %}">
+                    <i class="bi bi-plus-lg"></i>
+                  </button>
+                </div>
                 <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
-                
               </td>
               <td>
                 <select name="complaint_status[]" class="fi">
@@ -604,6 +614,7 @@
   </div>
 </div>
 <script>
+const RELATIONAL_URL = "{% url 'jobcard_app:ajax_relational_mapping' %}";
 const VEH_URL       = "{% url 'jobcard_app:ajax_wv_by_customer' %}";
 const INSP_URL      = "{% url 'jobcard_app:ajax_get_inspections' %}";
 const ALL_ITEMS_URL = "{% url 'jobcard_app:ajax_get_all_items' %}";
@@ -1151,7 +1162,38 @@ function handleOverrideToggle(checkbox) {
   const skillName = o ? (o.dataset.skillName || '') : '';
   updateTechnicianOptions(tr, skillId, checkbox.checked, skillName);
 }
+/* ══════════ ADD NEW STAFF / TECHNICIAN (opens in a new tab) ══════════ */
+var STAFF_CREATE_URL = "{% url 'fleet_app:staff_manage' %}";
+var staffRefreshPending = false;
 
+function openNewStaff() {
+  staffRefreshPending = true;
+  var w = window.open(STAFF_CREATE_URL, '_blank');
+  if (!w) alert('The browser blocked the new tab. Please allow pop-ups for this site.');
+}
+
+window.addEventListener('focus', function () {
+  if (staffRefreshPending) refreshTechnicians();
+});
+
+async function refreshTechnicians() {
+  staffRefreshPending = false;
+  try {
+    var resp = await fetch(RELATIONAL_URL, { credentials: 'same-origin' });
+    var fresh = await resp.json();
+    relationalMappingData.technicians = fresh.technicians || [];
+
+    // Rebuild every technician dropdown, keeping each row's current selection
+    document.querySelectorAll('#complaintBody tr').forEach(function (tr) {
+      var typeSelect = tr.querySelector('.complaint-type-select');
+      var o = typeSelect && typeSelect.value ? typeSelect.options[typeSelect.selectedIndex] : null;
+      var skillId   = o ? parseInt(o.dataset.skillId || '0', 10) : 0;
+      var skillName = o ? (o.dataset.skillName || '') : '';
+      var cb = tr.querySelector('.override-cb');
+      updateTechnicianOptions(tr, skillId, cb ? cb.checked : false, skillName);
+    });
+  } catch (e) { console.error('Technician refresh failed:', e); }
+}
 function updateTechnicianOptions(tr, skillId, isOverride, skillName = '') {
   const techSelect = tr.querySelector('.complaint-tech-select');
   const skillBadge = tr.querySelector('.skill-badge-info');
@@ -1241,7 +1283,12 @@ function addComplaint(desc = '', bg = '', vehId = '') {
     </td>
     <td><input type="text" name="complaint_description[]" value="${desc.replace(/"/g,'&quot;')}" placeholder="Describe complaint..." class="fi"></td>
     <td>
-      <select name="complaint_technician[]" class="complaint-tech-select fi"><option value="">— Select Technician —</option></select>
+      <div class="cust-group">
+        <select name="complaint_technician[]" class="complaint-tech-select fi"><option value="">— Select Technician —</option></select>
+        <button type="button" class="btn-plus" onclick="openNewStaff()" title="Create new technician">
+          <i class="bi bi-plus-lg"></i>
+        </button>
+      </div>
       <input type="hidden" name="complaint_manual_override[]" class="override-hidden" value="0">
     </td>
     <td>

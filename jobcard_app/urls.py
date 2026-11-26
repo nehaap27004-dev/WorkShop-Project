@@ -304,5 +304,8 @@ urlpatterns = [
     path('reports/operations/monthly-performance/', report_views.monthly_performance_report, name='monthly_performance_report'),
     path('reports/operations/turnaround-time/', report_views.job_turnaround_report, name='job_turnaround_report'),
     path('reports/operations/efficiency/', report_views.workshop_efficiency_report, name='workshop_efficiency_report'),
+    path('ajax/relational-mapping/', views.ajax_relational_mapping, name='ajax_relational_mapping'),
+
 ]
+
 

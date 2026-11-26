@@ -1580,7 +1580,9 @@ def jobcard_delete(request, pk):
         remark=f"Job Card {voucher_no} deleted"
     )
     return redirect('jobcard_app:jobcard_list')
-
+@login_required
+def ajax_relational_mapping(request):
+    return JsonResponse(_get_relational_mapping_dict())
 # ─────────────────────────────────────────────────────────────
 # AJAX — vehicles belonging to the selected customer
 # ─────────────────────────────────────────────────────────────
