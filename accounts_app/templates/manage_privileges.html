@@ -150,13 +150,23 @@
         padding-left: 1.25rem;
     }
 
-    /* Checkbox control */
-    .priv-checkbox {
-        width: 1.25rem;
-        height: 1.25rem;
+    /* Checkbox control (override legacy theme hiding of [type="checkbox"]) */
+    .priv-checkbox,
+    input[type="checkbox"].priv-checkbox:not(:checked),
+    input[type="checkbox"].priv-checkbox:checked {
+        position: static !important;
+        left: auto !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        appearance: auto !important;
+        -webkit-appearance: checkbox !important;
+        width: 1.15rem !important;
+        height: 1.15rem !important;
         accent-color: var(--primary-burgundy);
         cursor: pointer;
         vertical-align: middle;
+        margin: 0 auto;
     }
 
     .header-checkbox-label {

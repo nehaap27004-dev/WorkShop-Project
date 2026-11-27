@@ -405,8 +405,8 @@
             </li>
 
             <!-- 8. ADMIN MASTER -->
-            <li class="erp-nav-item {% if 'hub/admin-master' in request.path or 'company' in request.path or 'roles' in request.path or 'users' in request.path or 'privileges' in request.path or 'groups' in request.path or 'ledger' in request.path %}active{% endif %}">
-                <a class="erp-nav-link {% if 'hub/admin-master' in request.path or 'company' in request.path or 'roles' in request.path or 'users' in request.path or 'privileges' in request.path or 'groups' in request.path or 'ledger' in request.path %}active{% endif %}" href="{% url 'fleet_app:hub_admin_master' %}">
+            <li class="erp-nav-item {% if 'hub/admin-master' in request.path or 'company' in request.path or 'roles' in request.path or 'users' in request.path or 'menus' in request.path or 'privileges' in request.path or 'groups' in request.path or 'ledger' in request.path %}active{% endif %}">
+                <a class="erp-nav-link {% if 'hub/admin-master' in request.path or 'company' in request.path or 'roles' in request.path or 'users' in request.path or 'menus' in request.path or 'privileges' in request.path or 'groups' in request.path or 'ledger' in request.path %}active{% endif %}" href="{% url 'fleet_app:hub_admin_master' %}">
                     <i class="bi bi-shield-check nav-icon"></i>
                     <span>{% trans "Admin Master" %}</span>
                 </a>

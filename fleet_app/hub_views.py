@@ -375,7 +375,7 @@ def hub_accounts(request):
 @login_required
 def hub_admin_master(request):
     """
-    Admin Master: Company Setup, Roles, Users, Menu Privileges, Document Centers, Groups, Ledgers.
+    Admin Master: Company Setup, Roles, Users, Menus, Menu Privileges, Document Centers, Groups, Ledgers.
     """
     items = [
         {
@@ -395,6 +395,12 @@ def hub_admin_master(request):
             'description': 'System user logins and accounts',
             'url': reverse('accounts_app:user_management'),
             'icon': 'bi-person-check',
+        },
+        {
+            'name': 'Menus',
+            'description': 'Configure system and user menus',
+            'url': reverse('accounts_app:menu_list_create'),
+            'icon': 'bi-list-ul',
         },
         {
             'name': 'Menu Privileges',
