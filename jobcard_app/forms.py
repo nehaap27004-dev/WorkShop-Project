@@ -1,6 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from .models import *
+from .models import WorkshopVehicle, FuelType
 '''class DocumentForm(forms.ModelForm):
     class Meta:
         model = Document
@@ -111,6 +112,10 @@ def model_queryset():
         "vehicle_category",
     ).order_by("model_name")
 class WorkshopVehicleForm(forms.ModelForm):
+    fuel_type = forms.ChoiceField(
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
     class Meta:
         model = WorkshopVehicle
         # FIX: "is_active" removed. It is a checkbox that the page never draws,
@@ -210,7 +215,9 @@ class WorkshopVehicleForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
+        self.fields["fuel_type"].choices = [("", "---------")] + list(
+            FuelType.objects.values_list("code", "name")
+        )
         # FIX: Vehicle Number is required.
         self.fields["vehicle_number"].required = True
 

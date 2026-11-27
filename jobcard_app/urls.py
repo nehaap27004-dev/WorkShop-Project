@@ -305,6 +305,7 @@ urlpatterns = [
     path('reports/operations/turnaround-time/', report_views.job_turnaround_report, name='job_turnaround_report'),
     path('reports/operations/efficiency/', report_views.workshop_efficiency_report, name='workshop_efficiency_report'),
     path('ajax/relational-mapping/', views.ajax_relational_mapping, name='ajax_relational_mapping'),
+    path('ajax/fuel-type/create/', views.ajax_fuel_type_create, name='ajax_fuel_type_create'),
 
 ]
 

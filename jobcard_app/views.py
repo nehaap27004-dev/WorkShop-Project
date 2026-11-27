@@ -8,6 +8,8 @@ from django.db import transaction
 from django.utils import timezone
 import logging
 import json
+from django.utils.text import slugify
+from django.views.decorators.http import require_POST
 import uuid
 from collections import OrderedDict
 from .constants import JOBCARD_MENU_ID, INSPECTION_MENU_ID, ESTIMATE_MENU_ID, QUOTATION_MENU_ID, DELIVERY_MENU_ID
@@ -45,6 +47,7 @@ from .models import (
     Invoice,
     
 )
+from .models import FuelType
 from accounts_app.models import LedgerCreation
 from fleet_app.models import VehicleCategory
 from fleet_app.models import VehicleCategory
@@ -1586,6 +1589,22 @@ def ajax_relational_mapping(request):
 # ─────────────────────────────────────────────────────────────
 # AJAX — vehicles belonging to the selected customer
 # ─────────────────────────────────────────────────────────────
+@login_required
+@require_POST
+def ajax_fuel_type_create(request):
+    name = (request.POST.get('name') or '').strip()[:50]
+    if not name:
+        return JsonResponse({'ok': False, 'error': 'Fuel type name is required.'}, status=400)
+    if FuelType.objects.filter(name__iexact=name).exists():
+        return JsonResponse({'ok': False, 'error': f'"{name}" already exists.'}, status=400)
+
+    base = slugify(name).replace('-', '_')[:16] or 'fuel'
+    code, n = base, 1
+    while FuelType.objects.filter(code=code).exists():
+        n += 1
+        code = f'{base}_{n}'
+    obj = FuelType.objects.create(code=code, name=name)
+    return JsonResponse({'ok': True, 'code': obj.code, 'name': obj.name})
 @login_required
 def ajax_wv_by_customer(request):
     customer_id = request.GET.get('customer_id')
@@ -3334,7 +3353,7 @@ def wv_list(request):
         'q':            q,
         'customer_id':  customer_id,
         'fuel_filter':  fuel_filter,
-        'fuel_choices': WorkshopVehicle.FUEL_CHOICES,
+        'fuel_choices': list(FuelType.objects.values_list('code', 'name')),
         'counts':       counts,
     })
  

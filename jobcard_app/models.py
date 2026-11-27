@@ -95,20 +95,21 @@ class TechnicianSkill(models.Model):
         unique_together = ('technician', 'skill')
         verbose_name = 'Technician Skill'
         verbose_name_plural = 'Technician Skills'
-      
+
+class FuelType(models.Model):
+    code = models.CharField(max_length=20, unique=True)   # value stored on the vehicle
+    name = models.CharField(max_length=50, unique=True)   # label shown to the user
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']      
 
 
 class WorkshopVehicle(models.Model):
 
-    FUEL_CHOICES = [
-        ('petrol',   'Petrol'),
-        ('diesel',   'Diesel'),
-        ('electric', 'Electric'),
-        ('hybrid',   'Hybrid'),
-        ('cng',      'CNG'),
-        ('lpg',      'LPG'),
-        ('other',    'Other'),
-    ]
+    
 
     STATUS_CHOICES = [
         ('active',   'Active'),
@@ -130,7 +131,7 @@ class WorkshopVehicle(models.Model):
     vehicle_model = models.ForeignKey('fleet_app.VehicleModel',on_delete=models.PROTECT,null=True, blank=True )
     year = models.PositiveIntegerField(blank=True,null=True )
     color = models.CharField( max_length=50, blank=True,null=True )
-    fuel_type = models.CharField(max_length=20,choices=FUEL_CHOICES,blank=True,null=True )
+    fuel_type = models.CharField(max_length=20, blank=True, null=True)
     odometer = models.PositiveIntegerField( blank=True,null=True)
     mileage = models.DecimalField( max_digits=6, decimal_places=2, blank=True, null=True)
 
