@@ -207,9 +207,22 @@
                         {{ form.model_year }}
                     </div>
 
+                    <!-- Fuel Type + add button -->
                     <div class="col-md-3 mb-3">
                         <label>{{ form.fuel_type.label }}</label>
-                        {{ form.fuel_type }}
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1" style="min-width:0;">
+                                {{ form.fuel_type }}
+                            </div>
+                            <button type="button"
+                                    id="addFuelTypeBtn"
+                                    class="btn btn-outline-burgundy ml-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width:40px; height:40px; border-radius:6px;"
+                                    title="{% trans 'Add New Fuel Type' %}">
+                                <i class="bi bi-plus-lg text-burgundy font-weight-bold"></i>
+                            </button>
+                        </div>
+                        {% if form.fuel_type.errors %}<div class="text-danger small mt-1">{{ form.fuel_type.errors.0 }}</div>{% endif %}
                     </div>
 
                     <div class="col-md-3 mb-3">
@@ -271,6 +284,26 @@
             </button>
         </div>
     </form>
+</div>
+
+<!-- Fuel Type popup (outside any <form>) -->
+<div id="fuelModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;width:92%;max-width:380px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.3);">
+    <div style="background:#9f1045;color:#fff;padding:12px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">
+      <span><i class="bi bi-fuel-pump mr-2"></i>{% trans "Add Fuel Type" %}</span>
+      <button type="button" onclick="closeFuelModal()" style="width:auto!important;height:auto!important;background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:16px;">
+      <label for="fuelName">{% trans "Fuel Type Name" %} <span class="text-danger">*</span></label>
+      <input type="text" id="fuelName" class="form-control" placeholder="e.g. Bio Diesel" maxlength="50"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();saveFuelType();}">
+      <div id="fuelErr" class="text-danger small mt-1" style="min-height:16px;"></div>
+      <div class="text-right mt-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm mr-1" style="width:auto!important;height:auto!important;" onclick="closeFuelModal()">{% trans "Cancel" %}</button>
+        <button type="button" class="btn btn-custom-primary btn-sm" style="width:auto!important;height:auto!important;" onclick="saveFuelType()">{% trans "Save" %}</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Manufacturer Modal -->
@@ -379,7 +412,7 @@
             });
         }
 
-        // Helper to show/hide modals supporting both Bootstrap 4 and Bootstrap 5
+        // Helper to show/hide Bootstrap 4 modals
         function showModal(modalEl) {
             if (window.jQuery && typeof $(modalEl).modal === 'function') {
                 $(modalEl).modal('show');
@@ -395,6 +428,7 @@
                 console.error('Bootstrap 4 modal is not loaded.');
             }
         }
+
         // --- Manufacturer modal ---
         const addManufacturerBtn = document.getElementById('addManufacturerBtn');
         const manufacturerModalEl = document.getElementById('manufacturerModal');
@@ -495,5 +529,43 @@
             });
         }
     });
+
+    // ── Add Fuel Type (small popup, no Bootstrap modal needed) ──
+    var FUEL_URL = "{% url 'jobcard_app:ajax_fuel_type_create' %}";
+
+    document.getElementById('addFuelTypeBtn').addEventListener('click', openFuelModal);
+
+    function openFuelModal() {
+        document.getElementById('fuelName').value = '';
+        document.getElementById('fuelErr').textContent = '';
+        document.getElementById('fuelModal').style.display = 'flex';
+        document.getElementById('fuelName').focus();
+    }
+    function closeFuelModal() {
+        document.getElementById('fuelModal').style.display = 'none';
+    }
+    async function saveFuelType() {
+        var err = document.getElementById('fuelErr');
+        var name = document.getElementById('fuelName').value.trim();
+        if (!name) { err.textContent = 'Fuel type name is required.'; return; }
+
+        var token = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        try {
+            var resp = await fetch(FUEL_URL, {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'X-CSRFToken': token },
+                body: new URLSearchParams({ name: name })
+            });
+            var data = await resp.json();
+            if (!data.ok) { err.textContent = data.error || 'Could not save.'; return; }
+
+            var sel = document.getElementById('{{ form.fuel_type.id_for_label }}');
+            sel.add(new Option(data.name, data.code));
+            sel.value = data.code;
+            closeFuelModal();
+        } catch (e) {
+            err.textContent = 'Something went wrong. Please try again.';
+        }
+    }
 </script>
 {% endblock %}

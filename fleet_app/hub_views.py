@@ -567,4 +567,4 @@ def clear_transactions(request):
         request,
         f'All transactional data cleared successfully ({total_deleted} records removed). Master and setup data preserved.'
     )
-    return redirect('fleet_app:hub_workshop')
+    return redirect('fleet_app:hub_admin_master')

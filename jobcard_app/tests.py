@@ -1031,13 +1031,17 @@ class ClearTransactionsTests(TestCase):
         self.user.set_password('password123')
         self.user.save()
 
-    def test_workshop_hub_shows_clear_transactions_button(self):
+    def test_admin_master_hub_shows_clear_transactions_button_and_workshop_does_not(self):
         self.client.login(username='clearuser', password='password123')
-        response = self.client.get(reverse('fleet_app:hub_workshop'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Clear Transactions')
-        self.assertContains(response, reverse('fleet_app:clear_transactions'))
-        self.assertContains(response, 'return confirm(')
+        workshop_response = self.client.get(reverse('fleet_app:hub_workshop'))
+        self.assertEqual(workshop_response.status_code, 200)
+        self.assertNotContains(workshop_response, reverse('fleet_app:clear_transactions'))
+
+        admin_response = self.client.get(reverse('fleet_app:hub_admin_master'))
+        self.assertEqual(admin_response.status_code, 200)
+        self.assertContains(admin_response, 'Clear Transactions')
+        self.assertContains(admin_response, reverse('fleet_app:clear_transactions'))
+        self.assertContains(admin_response, 'clearTransactionsModal')
 
     def test_clear_transactions_deletes_transactions_and_preserves_users(self):
         from django.contrib.auth import get_user_model
@@ -1051,7 +1055,7 @@ class ClearTransactionsTests(TestCase):
         )
         self.client.login(username='clearuser', password='password123')
         response = self.client.post(reverse('fleet_app:clear_transactions'))
-        self.assertRedirects(response, reverse('fleet_app:hub_workshop'))
+        self.assertRedirects(response, reverse('fleet_app:hub_admin_master'))
         self.assertEqual(ActivityLog.objects.count(), 0)
         self.assertTrue(get_user_model().objects.filter(username='clearuser').exists())
 
